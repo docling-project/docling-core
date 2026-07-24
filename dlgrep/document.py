@@ -233,6 +233,18 @@ class LoadedDocument:
     def unit_for_target(self, target: DocLangSourceTarget) -> Unit | None:
         return next((unit for unit in self.units if unit.target == target), None)
 
+    def display_unit(self, unit: Unit) -> Unit:
+        item = unit.item or self.target_item(unit.target)
+        if item is None or not _covered_by_parent(item, self.document):
+            return unit
+        while item.parent is not None:
+            item = item.parent.resolve(self.document)
+            if parent := next(
+                (candidate for candidate in self.context_units if candidate.item_ref == item.self_ref), None
+            ):
+                return parent
+        return unit
+
     def is_descendant(self, item_ref: str | None, ancestor_ref: str) -> bool:
         if item_ref is None:
             return False
@@ -262,18 +274,45 @@ class LoadedDocument:
         return None
 
     def context_for(
-        self, unit: Unit, before: int, after: int, scope: str, eligible: list[Unit]
+        self,
+        unit: Unit,
+        before: int,
+        after: int,
+        scope: str,
+        eligible: list[Unit],
+        *,
+        include_overlapping_before: bool = False,
     ) -> tuple[list[Unit], list[Unit], tuple[str, int, int] | None]:
         scoped, sequence = self._scope_units(unit, scope, eligible)
-        try:
-            index = scoped.index(unit)
-        except ValueError:
+        indexes = [
+            index
+            for index, candidate in enumerate(scoped)
+            if any(
+                selected == context
+                or selected.startswith(context + "/")
+                or context.startswith(selected + "/")
+                for selected in unit.xpaths
+                for context in candidate.xpaths
+            )
+            or (
+                unit.item_ref is not None
+                and candidate.item_ref is not None
+                and unit.item_ref != candidate.item_ref
+                and candidate.item is not None
+                and _covers_nested_items(candidate.item)
+                and self.is_descendant(unit.item_ref, candidate.item_ref)
+            )
+        ]
+        if not indexes:
             return [], [], None
-        start = max(0, index - before)
-        end = min(len(scoped), index + 1 + after)
+
+        first, last = indexes[0], indexes[-1]
+        before_end = last + 1 if include_overlapping_before else first
+        start = max(0, first - before)
+        end = min(len(scoped), last + 1 + after)
         return (
-            scoped[start:index],
-            scoped[index + 1 : end],
+            scoped[start:before_end],
+            scoped[last + 1 : end],
             (sequence, start, end - 1),
         )
 
@@ -339,9 +378,7 @@ class LoadedDocument:
                     metadata=serialized_metadata.text,
                 )
                 self.units.append(unit)
-                if (isinstance(item, TextItem) and not _covered_by_parent(item, self.document)) or (
-                    isinstance(item, InlineGroup) and logical_type != "inline"
-                ):
+                if isinstance(item, (TextItem, InlineGroup)) and not _covered_by_parent(item, self.document):
                     self.context_units.append(unit)
 
             if isinstance(item, TableItem):
@@ -516,19 +553,20 @@ def _logical_type(item: NodeItem, source_type: str | None = None) -> str:
     return item.label.value
 
 
-def _covered_by_parent(item: TextItem, document: DoclingDocument) -> bool:
+def _covered_by_parent(item: NodeItem, document: DoclingDocument) -> bool:
     parent = item.parent.resolve(document) if item.parent is not None else None
     while parent is not None:
-        if isinstance(parent, (InlineGroup, TableItem, ListItem)):
-            return True
-        if isinstance(parent, TextItem) and parent.label in {
-            DocItemLabel.FIELD_KEY,
-            DocItemLabel.FIELD_VALUE,
-            DocItemLabel.FIELD_HINT,
-        }:
+        if _covers_nested_items(parent):
             return True
         parent = parent.parent.resolve(document) if parent.parent is not None else None
     return False
+
+
+def _covers_nested_items(item: NodeItem) -> bool:
+    return isinstance(item, (InlineGroup, TableItem, ListItem)) or (
+        isinstance(item, TextItem)
+        and item.label in {DocItemLabel.FIELD_KEY, DocItemLabel.FIELD_VALUE, DocItemLabel.FIELD_HINT}
+    )
 
 
 def _is_metadata_element(element: etree._Element) -> bool:

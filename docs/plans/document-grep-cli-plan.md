@@ -450,6 +450,12 @@ Containers such as an entire table, list, picture, or field region are not
 searched in addition to their children by default because that would duplicate
 matches. They become search units when explicitly selected with `--type`.
 
+Inline units covered by a rendered parent are likewise not separate default
+search units. Explicit type-filtered search returns the complete parent unit.
+`show` remains exact: an inline XPath returns that selected unit, while a
+context option includes its containing rendered unit without consuming a
+numbered neighbour. Thus `-C 0` adds only that structural parent.
+
 ### 8.3 Text projection
 
 The default `visible` view includes:
@@ -577,6 +583,13 @@ the sequence. This prevents a table, its row, and its cells from consuming
 three context positions for the same content. Threaded fragments count as one
 logical element unless `--physical` is active.
 
+Every selected unit maps to its overlapping source or semantic span in that
+sequence. For a nested inline unit, the span includes its represented parents;
+for a structural container, the span covers its represented descendants. `-B`
+counts backward from the start of the span and `-A` forward from its end.
+Search coalesces inline matches into the rendered parent; exact `show` keeps
+the selected unit and exposes that parent separately when context is requested.
+
 Search filters determine which elements may match, but do not filter the
 neighbourhood. For example, `--type heading -C 2` finds headings and returns
 the two surrounding semantic elements even when those elements are paragraphs
@@ -606,13 +619,14 @@ place it between adjacent semantic elements inside one group. Without context,
 matching elements are emitted consecutively without a group separator.
 
 With `-n` or `--with-xpath`, each physical output line is prefixed with its
-semantic XPath. A colon separates the XPath from the directly matching or
-selected element, while a hyphen separates the XPath from a context element:
+short semantic XPath, omitting the `/d:doclang` root and `d:` namespace
+prefixes. A colon separates the XPath from the directly matching or selected
+element, while a hyphen separates the XPath from a context element:
 
 ```text
-/d:doclang/d:text[16]-context before
-/d:doclang/d:text[17]:matching text
-/d:doclang/d:text[18]-context after
+/text[16]-context before
+/text[17]:matching text
+/text[18]-context after
 ```
 
 Document order indicates whether hyphen-prefixed context is before or after the
@@ -681,7 +695,7 @@ Default behavior:
 1. evaluate the XPath;
 2. resolve selected source nodes through the source map;
 3. deduplicate identical logical targets;
-4. serialize the logical unit through Docling;
+4. serialize the selected logical unit through Docling;
 5. attach structural context and source metadata to the result record;
 6. enforce output bounds.
 
@@ -903,14 +917,15 @@ Multi-input search prefixes the document name as grep does, because otherwise
 the source of each result would be lost.
 
 With `-n` or `--with-xpath`, use XPath as the semantic equivalent of grep's
-line number. A colon marks the matching or explicitly selected unit and a
-hyphen marks context. Repeat the prefix for every physical line of a multiline
-unit:
+line number. Omit the `/d:doclang` root and `d:` namespace prefixes to keep
+human output compact. A colon marks the matching or explicitly selected unit
+and a hyphen marks context. Repeat the prefix for every physical line of a
+multiline unit:
 
 ```text
-/d:doclang/d:table[3]/d:fcel[6]-Operating margin was 21.4%.
-/d:doclang/d:table[3]/d:fcel[7]:The company reported gross margin of 48.2%.
-/d:doclang/d:table[3]/d:fcel[8]-Net margin was 18.1%.
+/table[3]/fcel[6]-Operating margin was 21.4%.
+/table[3]/fcel[7]:The company reported gross margin of 48.2%.
+/table[3]/fcel[8]-Net margin was 18.1%.
 ```
 
 Human search output highlights only the matching substring when standard

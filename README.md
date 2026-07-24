@@ -13,7 +13,7 @@ and returns bounded evidence with reusable XPath addresses.
 
 ```console
 $ dlgrep -F '6 CONCLUSION' paper.dclx --type heading -n
-/d:doclang/d:heading[17]:6 CONCLUSION
+/heading[17]:6 CONCLUSION
 ```
 
 ## Features
@@ -102,8 +102,8 @@ $ echo "$conclusion_xpath"
 $ dlgrep -i 'dataset|performance' paper.dclx \
     --within-xpath "$conclusion_xpath" --section \
     --type text --limit 3 --max-chars 240 -n
-/d:doclang/d:text[64]:In this paper, we presented the DocLayNet dataset. It provides the document conversion and layout analysis research community a new and challenging dataset to improve and fine-tune novel ML methods on. In contrast to many other…
-/d:doclang/d:text[65]:From the dataset, we have derived on the one hand reference metrics for human performance on document-layout annotation (through double and triple annotations) and on the other hand evaluated the baseline performance of commonl…
+/text[64]:In this paper, we presented the DocLayNet dataset. It provides the document conversion and layout analysis research community a new and challenging dataset to improve and fine-tune novel ML methods on. In contrast to many other…
+/text[65]:From the dataset, we have derived on the one hand reference metrics for human performance on document-layout annotation (through double and triple annotations) and on the other hand evaluated the baseline performance of commonl…
 ```
 
 The same XPath can retrieve the entire section:
@@ -122,9 +122,9 @@ disjoint context groups:
 $ dlgrep -F 'reference metrics for human performance' paper.dclx \
     --within-xpath "$conclusion_xpath" --section --type text \
     -B 1 -A 1 --context-scope section --max-chars 220 -n
-/d:doclang/d:text[64]-In this paper, we presented the DocLayNet dataset. It provides the document conversion and layout analysis research community a new and challenging dataset to improve and fine-tune novel ML methods on. In co…
-/d:doclang/d:text[65]:From the dataset, we have derived on the one hand reference metrics for human performance on document-layout annotation (through double and triple annotations) and on the other hand evaluated the baseline pe…
-/d:doclang/d:text[66]-To date, there is still a significant gap between human and ML accuracy on the layout interpretation task, and we hope that this work will inspire the research community to close that gap.
+/text[64]-In this paper, we presented the DocLayNet dataset. It provides the document conversion and layout analysis research community a new and challenging dataset to improve and fine-tune novel ML methods on. In co…
+/text[65]:From the dataset, we have derived on the one hand reference metrics for human performance on document-layout annotation (through double and triple annotations) and on the other hand evaluated the baseline pe…
+/text[66]-To date, there is still a significant gap between human and ML accuracy on the layout interpretation task, and we hope that this work will inspire the research community to close that gap.
 ```
 
 ### Search a table cell with its structural context
@@ -147,9 +147,9 @@ $ dlgrep -F '2.73 5.39' paper.dclx --format json |
 ```console
 $ dlgrep -F 'Third item with numId 2' handbook.dclx \
     -C 1 --context-scope auto -n
-/d:doclang/d:list[7]/d:ldiv[2]-2. Second item with numId 2
-/d:doclang/d:list[7]/d:ldiv[3]:3. Third item with numId 2
-/d:doclang/d:list[7]/d:ldiv[4]-4. Fourth item with numId 2
+/list[7]/ldiv[2]-2. Second item with numId 2
+/list[7]/ldiv[3]:3. Third item with numId 2
+/list[7]/ldiv[4]-4. Fourth item with numId 2
 ```
 
 ### Use dlgrep in shell pipelines

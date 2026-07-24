@@ -138,7 +138,7 @@ def test_text_output_collapses_formatting_and_marks_truncation(tmp_path: Path, c
 
     assert main(["-F", "See this important article for details.", str(path), "-n"]) == 0
     output = capsys.readouterr().out
-    assert "/d:doclang/d:text[4]:See this important article for details." in output
+    assert "/text[4]:See this important article for details." in output
     assert "XPath:" not in output
 
     assert main(["Revenue", str(path), "--max-chars", "8"]) == 0
@@ -148,8 +148,9 @@ def test_text_output_collapses_formatting_and_marks_truncation(tmp_path: Path, c
 
     assert main(["show", str(path), "/formula[1]", "-B", "1", "-n"]) == 0
     output = capsys.readouterr().out
-    assert "/d:doclang/d:code[1]-public  class Main {}" in output
-    assert "/d:doclang/d:formula[1]:$$E = mc^2$$" in output
+    assert "/code[1]-public  class Main {}" in output
+    assert "/formula[1]:$$E = mc^2$$" in output
+    assert "/d:" not in output
     assert "\n--\n" not in output
     assert "XPath:" not in output
 
@@ -183,13 +184,56 @@ def test_text_context_merges_overlapping_windows(tmp_path: Path, capsys) -> None
 
     assert output.count("\n--\n") == 1
     assert output.count("Shared context") == 1
-    assert "/d:doclang/d:text[2]:Information one" in output
-    assert "/d:doclang/d:text[4]:Information two" in output
-    assert "/d:doclang/d:text[9]:Information three" in output
-    assert "/d:doclang/d:text[2]-" not in output
-    assert "/d:doclang/d:text[4]-" not in output
+    assert "/text[2]:Information one" in output
+    assert "/text[4]:Information two" in output
+    assert "/text[9]:Information three" in output
+    assert "/text[2]-" not in output
+    assert "/text[4]-" not in output
     assert "Omitted one" not in output
     assert "Omitted two" not in output
+
+
+def test_hierarchical_hits_use_context_span(tmp_path: Path, capsys) -> None:
+    path = tmp_path / "nested.dclg"
+    path.write_text(
+        """<doclang xmlns="https://www.doclang.ai/ns/v0">
+  <text>Early before</text>
+  <formula>early</formula>
+  <text>Early after</text>
+  <list><ldiv/><text>Late item <formula>late</formula></text></list>
+  <text>Late after</text>
+</doclang>
+""",
+        encoding="utf-8",
+    )
+
+    assert main(["show", str(path), "//formula", "-C", "1", "-n"]) == 0
+    output = capsys.readouterr().out
+    assert "/list[1]/ldiv[1]-- Late item $late$" in output
+    assert "/list[1]/text[1]/formula[1]:$$late$$" in output
+    assert output.count("late") == 2
+    assert "/text[2]-Early after" in output
+    assert "/text[3]-Late after" in output
+
+    assert main(["show", str(path), "/list[1]/text[1]/formula[1]", "-n"]) == 0
+    assert capsys.readouterr().out == "/list[1]/text[1]/formula[1]:$$late$$\n"
+
+    assert main(["show", str(path), "/list[1]/text[1]/formula[1]", "-C", "0", "-n"]) == 0
+    assert capsys.readouterr().out == (
+        "/list[1]/ldiv[1]-- Late item $late$\n/list[1]/text[1]/formula[1]:$$late$$\n"
+    )
+
+    assert main(["late", str(path), "--type", "formula", "-n"]) == 0
+    assert capsys.readouterr().out == "/list[1]/ldiv[1]:- Late item $late$\n"
+
+    assert main(["late", str(path), "--all", "-n"]) == 0
+    assert capsys.readouterr().out == "/list[1]/ldiv[1]:- Late item $late$\n"
+
+    assert main(["show", str(path), "/list[1]", "-C", "1", "-n"]) == 0
+    output = capsys.readouterr().out
+    assert "/text[2]-Early after" in output
+    assert "/list[1]:- Late item $late$" in output
+    assert "/text[3]-Late after" in output
 
 
 def test_text_views_use_core_serializer_modes_without_trimming(tmp_path: Path, capsys) -> None:

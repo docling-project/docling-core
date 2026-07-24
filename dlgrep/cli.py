@@ -315,13 +315,18 @@ def _search(args: SimpleNamespace) -> int:
             )
             candidates, context_units = _filtered_units(loaded, args, requested_types, pages)
             input_hits = 0
+            seen: set[str] = set()
             for unit in candidates:
-                text = _projected_text(unit, args.view)
-                matches = _matches(text, regexes)
+                matches = _matches(_projected_text(unit, args.view), regexes)
                 if not matches:
                     continue
+                display = loaded.display_unit(unit)
+                if display.xpath in seen:
+                    continue
+                seen.add(display.xpath)
+                text = _projected_text(display, args.view)
                 input_hits += 1
-                hits.append((loaded, unit, text, matches, context_units))
+                hits.append((loaded, display, text, _matches(text, regexes), context_units))
             counts.append((source, input_hits))
         except DlgrepError as exc:
             errors = True
@@ -526,7 +531,9 @@ def _show(args: SimpleNamespace) -> int:
     if not isinstance(selected, list) or not selected or not all(_is_element(value) for value in selected):
         raise DlgrepError("show XPath must select one or more elements")
     before_count, after_count = _context_counts(args.context_events)
+    context_requested = bool(args.context_events)
     records: list[dict[str, Any]] = []
+    seen: set[str] = set()
     for element in selected:
         xpath = _canonical_xpath(element)
         raw_element = loaded.raw_elements[xpath]
@@ -563,9 +570,12 @@ def _show(args: SimpleNamespace) -> int:
                 }
             )
             continue
+        if unit.xpath in seen:
+            continue
+        seen.add(unit.xpath)
         text = unit.text
         logical_type = unit.logical_type
-        doc_items: tuple[str, ...] | None = None
+        doc_items: tuple[str, ...] | None = unit.doc_items
         if args.section:
             item = loaded.target_item(target)
             if not isinstance(item, (TitleItem, SectionHeaderItem)):
@@ -579,7 +589,12 @@ def _show(args: SimpleNamespace) -> int:
             doc_items = tuple(dict.fromkeys(span.item.self_ref for span in serialized.spans))
             logical_type = "section"
         before, after, context_group = loaded.context_for(
-            unit, before_count, after_count, args.context_scope, loaded.context_units
+            unit,
+            before_count,
+            after_count,
+            args.context_scope,
+            loaded.context_units,
+            include_overlapping_before=context_requested and loaded.display_unit(unit) is not unit,
         )
         record = _result_record(
             loaded,
@@ -599,7 +614,7 @@ def _show(args: SimpleNamespace) -> int:
         records,
         args.format,
         with_xpath=args.with_xpath,
-        context_requested=bool(before_count or after_count),
+        context_requested=context_requested,
     )
     return 0
 
@@ -709,7 +724,9 @@ def _filtered_units(
         candidates = [
             unit
             for unit in candidates
-            if not unit.container and unit.logical_type not in {"page_header", "page_footer"}
+            if not unit.container
+            and unit.logical_type not in {"page_header", "page_footer"}
+            and loaded.display_unit(unit) is unit
         ]
     if args.class_name:
         candidates = [unit for unit in candidates if _class_matches(loaded, unit, args.class_name)]
@@ -966,7 +983,7 @@ def _render_records(
                 text = _highlight(hit["text"], hit.get("matches", [])) if hit is not None else value["text"]
                 fields = [group["document"]] if with_filename else []
                 if with_xpath:
-                    fields.append(value["xpath"])
+                    fields.append(value["xpath"].removeprefix("/d:doclang").replace("/d:", "/"))
                 prefix = separator.join(fields) + separator if fields else ""
                 print("\n".join(prefix + line for line in text.split("\n")))
 
