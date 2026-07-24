@@ -45,6 +45,17 @@ class PlainTextTextSerializer(MarkdownTextSerializer):
         item: Union[TitleItem, SectionHeaderItem],
         in_table_cell: bool = False,
     ) -> str:
+        """Return the heading text without any ``#`` markers.
+
+        Args:
+            text: The heading text content, already post-processed.
+            item: The title or section header item being formatted.
+            in_table_cell: Accepted for interface compatibility; has no effect
+                because this serializer always returns plain text.
+
+        Returns:
+            The undecorated heading text.
+        """
         return text
 
 
