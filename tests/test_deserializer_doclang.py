@@ -2701,3 +2701,19 @@ def test_custom_field_structured_roundtrip() -> None:
     out = DocLangDocSerializer(doc=doc2).serialize().text
     assert out == DocLangDocSerializer(doc=doc).serialize().text
     assert "<content>" not in out  # nested values are not wrapped just for containing newlines
+
+
+
+def test_leading_text_before_lone_formatting_tag_is_preserved() -> None:
+    """Regression: the leading run was silently dropped for text + one formatting child."""
+    cases = {
+        "<text>2<superscript>nd</superscript></text>": ["2", "nd"],
+        "<text>plain <bold>b</bold></text>": ["plain", "b"],
+        "<footnote>see <italic>ibid</italic></footnote>": ["see", "ibid"],
+        # guards for the shapes that already worked
+        "<text><superscript>nd</superscript> place</text>": ["nd", "place"],
+        "<text>H<subscript>2</subscript>O</text>": ["H", "2", "O"],
+    }
+    for frag, expected in cases.items():
+        doc = DocLangDocDeserializer().deserialize_str(f'<doclang version="0.7">{frag}</doclang>')
+        assert [t.text.strip() for t in doc.texts] == expected, frag
