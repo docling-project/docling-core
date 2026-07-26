@@ -20,15 +20,17 @@
       <value class="fillable">Max Mustermann</value>
       <value class="fillable">
         <checkbox class="unselected"/>
-        <content>Clark </content>
-        <bold>Kent</bold>
+        <content>Clark  </content>
+        <bold>
+          <content>Kent </content>
+        </bold>
         <hint>Select this if you are a Superman fan</hint>
       </value>
       <value></value>
       <text>
-        <content>My first input </content>
+        <content>My first input  </content>
         <value class="fillable"></value>
-        <content> and my second input </content>
+        <content> and my second input  </content>
         <value class="fillable">m</value>
       </text>
     </field_item>

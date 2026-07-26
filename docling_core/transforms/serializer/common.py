@@ -8,7 +8,7 @@ from abc import abstractmethod
 from collections.abc import Iterable
 from functools import cached_property
 from pathlib import Path, PurePath
-from typing import Annotated, Any, Final, Optional, Union
+from typing import Annotated, Any, ClassVar, Final, Optional, Union
 from urllib.parse import quote, urlsplit, urlunsplit
 
 from pydantic import (
@@ -350,6 +350,11 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
     params: CommonParams = CommonParams()
 
+    # Move whitespace at the edges of a run outside the formatting/hyperlink markers.
+    # Off for formats whose own whitespace channel must keep it inside the markup
+    # (DocLang wraps it in `<content>`), on where adjacency breaks the markup (Markdown).
+    hoist_decoration_whitespace: ClassVar[bool] = False
+
     _excluded_refs_cache: dict[str, set[str]] = {}
 
     @computed_field  # type: ignore[misc]
@@ -675,7 +680,23 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     ) -> str:
         """Apply some text post-processing steps."""
         params = self.params.merge_with_patch(patch=kwargs)
+
+        lead = trail = ""
         res = text
+        if self.hoist_decoration_whitespace:
+            # Inline runs carry their own significant whitespace, which may sit *inside* a
+            # formatted run (common in DOCX/HTML). Decorating it verbatim produces
+            # `**bold ** tail`, which CommonMark renders as literal asterisks. Hoist the edge
+            # whitespace around the *complete* decoration stack -- hoisting inside an
+            # individual formatter would let the hyperlink capture it again.
+            core = text.strip()
+            if not core:
+                # Whitespace-only (or empty) run: no markers, no empty hyperlink.
+                return text
+            lead = text[: len(text) - len(text.lstrip())]
+            trail = text[len(text.rstrip()) :]
+            res = core
+
         if params.include_formatting and formatting:
             if formatting.bold:
                 res = self.serialize_bold(text=res, **kwargs)
@@ -691,7 +712,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 res = self.serialize_superscript(text=res, **kwargs)
         if params.include_hyperlinks and hyperlink:
             res = self.serialize_hyperlink(text=res, hyperlink=hyperlink, **kwargs)
-        return res
+        return f"{lead}{res}{trail}"
 
     @override
     def serialize_bold(self, text: str, **kwargs: Any) -> str:
