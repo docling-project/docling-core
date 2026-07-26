@@ -48,27 +48,37 @@ def test_search_returns_source_identity_and_structural_context(tmp_path: Path, c
     result = json.loads(capsys.readouterr().out)[0]
 
     assert set(result) == {
-        "filename",
-        "chunk_index",
+        "document",
+        "xpaths",
+        "logical_type",
         "text",
-        "raw_text",
-        "num_tokens",
-        "headings",
-        "captions",
+        "pages",
         "doc_items",
-        "page_numbers",
-        "metadata",
+        "matches",
+        "context",
+        "cell_context",
     }
-    assert result["metadata"]["xpath"] == "/d:doclang/d:table[1]/d:fcel[1]"
-    assert result["headings"] == ["Report", "Results"]
-    assert result["metadata"]["context"]["row_headers"] == ["Margin"]
-    assert result["metadata"]["context"]["column_headers"] == ["Value"]
-    assert result["metadata"]["context"]["before"][0]["xpath"].endswith("/d:rhed[1]")
-    assert "after" not in result["metadata"]["context"]
+    assert result["xpaths"] == ["/d:doclang/d:table[1]/d:fcel[1]"]
+    assert result["text"] == "48.2%"
+    assert result["cell_context"]["row_headers"] == ["Margin"]
+    assert result["cell_context"]["column_headers"] == ["Value"]
+    assert "table" not in result
+    assert result["context"]["before"][0]["xpaths"][0].endswith("/d:rhed[1]")
+    assert set(result["context"]["before"][0]) == {
+        "document",
+        "xpaths",
+        "logical_type",
+        "text",
+        "pages",
+        "doc_items",
+    }
+    assert result["context"]["after"] == []
 
     assert main(["beta", str(path), "--format", "json"]) == 0
     threaded = json.loads(capsys.readouterr().out)[0]
-    assert threaded["metadata"]["xpaths"] == ["/d:doclang/d:text[2]", "/d:doclang/d:text[3]"]
+    assert threaded["xpaths"] == ["/d:doclang/d:text[2]", "/d:doclang/d:text[3]"]
+    assert "context" not in threaded
+    assert "truncated" not in threaded
 
 
 def test_retrieval_commands_share_xpath_addresses(tmp_path: Path, capsys) -> None:
@@ -76,37 +86,64 @@ def test_retrieval_commands_share_xpath_addresses(tmp_path: Path, capsys) -> Non
 
     assert main(["show", str(path), "/heading[2]", "--section", "--format", "json"]) == 0
     section = json.loads(capsys.readouterr().out)[0]
-    assert "Termination notice" in section["raw_text"]
-    assert "Outside the section" not in section["raw_text"]
-    assert "| Metric" in section["raw_text"]
+    assert "Termination notice" in section["text"]
+    assert "Outside the section" not in section["text"]
+    assert "| Metric" in section["text"]
     assert "#/tables/0" in section["doc_items"]
+    assert section["logical_type"] == "section"
+    assert "matches" not in section
+
+    assert main(["show", str(path), "/table[1]", "--format", "json"]) == 0
+    table = json.loads(capsys.readouterr().out)[0]
+    assert isinstance(table["text"], str)
+    assert table["table"]["cells"] == [
+        {"row": 0, "column": 0, "text": "Metric", "role": "column_header"},
+        {"row": 0, "column": 1, "text": "Value", "role": "column_header"},
+        {"row": 1, "column": 0, "text": "Margin", "role": "row_header"},
+        {"row": 1, "column": 1, "text": "48.2%"},
+    ]
+    assert "cell_context" not in table
 
     assert main(["show", str(path), "/doclang/heading[2]", "--raw"]) == 0
     assert 'level="2">Results</heading>' in capsys.readouterr().out
 
     assert main(["outline", str(path), "--format", "json"]) == 0
     outline = json.loads(capsys.readouterr().out)
-    assert [heading["xpath"] for heading in outline["headings"]] == [
+    assert [heading["xpaths"][0] for heading in outline] == [
         "/d:doclang/d:heading[1]",
         "/d:doclang/d:heading[2]",
         "/d:doclang/d:heading[3]",
     ]
+    assert outline[1]["logical_type"] == "heading"
+    assert outline[1]["depth"] == 2
+    assert outline[1]["document"] == str(path)
 
     assert main(["select", str(path), "count(/heading)", "--format", "json"]) == 0
     assert json.loads(capsys.readouterr().out)["value"] == 3.0
     assert main(["select", str(path), "count(descendant::heading)", "--format", "json"]) == 0
     assert json.loads(capsys.readouterr().out)["value"] == 3.0
+    assert main(["select", str(path), "/heading[1]", "--format", "json"]) == 0
+    selected = json.loads(capsys.readouterr().out)["results"][0]
+    assert selected["xpaths"] == ["/d:doclang/d:heading[1]"]
+    assert "truncated" not in selected
     assert main(["select", str(path), "/heading[1]", "--format", "text", "--max-chars", "5"]) == 0
     assert capsys.readouterr().out == "Repo…\n"
 
     assert main(["inspect", str(path), "--format", "json"]) == 0
     inventory = json.loads(capsys.readouterr().out)[0]
-    assert set(inventory) == {"document", "input_type", "pages", "semantic_units", "elements", "metadata"}
+    assert set(inventory) == {
+        "document",
+        "input_type",
+        "page_count",
+        "semantic_units",
+        "elements",
+        "metadata_elements",
+    }
     assert inventory["semantic_units"] > 0
     assert inventory["elements"]["code"] == 1
     assert "bold" not in inventory["elements"]
     assert "fcel" not in inventory["elements"]
-    assert inventory["metadata"] == {}
+    assert inventory["metadata_elements"] == {}
 
     assert main(["Revenue", str(path), "--within-xpath", "/heading[2]", "--section", "-q"]) == 0
 
@@ -145,6 +182,11 @@ def test_text_output_collapses_formatting_and_marks_truncation(tmp_path: Path, c
     output = capsys.readouterr().out
     assert output.rstrip().endswith("Revenue…")
     assert "[truncated]" not in output
+
+    assert main(["Revenue", str(path), "--max-chars", "8", "--format", "json"]) == 0
+    record = json.loads(capsys.readouterr().out)[0]
+    assert record["text"] == "Revenue…"
+    assert record["truncated"] is True
 
     assert main(["show", str(path), "/formula[1]", "-B", "1", "-n"]) == 0
     output = capsys.readouterr().out
@@ -219,9 +261,7 @@ def test_hierarchical_hits_use_context_span(tmp_path: Path, capsys) -> None:
     assert capsys.readouterr().out == "/list[1]/text[1]/formula[1]:$$late$$\n"
 
     assert main(["show", str(path), "/list[1]/text[1]/formula[1]", "-C", "0", "-n"]) == 0
-    assert capsys.readouterr().out == (
-        "/list[1]/ldiv[1]-- Late item $late$\n/list[1]/text[1]/formula[1]:$$late$$\n"
-    )
+    assert capsys.readouterr().out == ("/list[1]/ldiv[1]-- Late item $late$\n/list[1]/text[1]/formula[1]:$$late$$\n")
 
     assert main(["late", str(path), "--type", "formula", "-n"]) == 0
     assert capsys.readouterr().out == "/list[1]/ldiv[1]:- Late item $late$\n"
@@ -241,16 +281,16 @@ def test_text_views_use_core_serializer_modes_without_trimming(tmp_path: Path, c
     path.write_text(PROJECTION_DOCUMENT, encoding="utf-8")
 
     assert main(["show", str(path), "/code[1]", "--format", "json"]) == 0
-    assert json.loads(capsys.readouterr().out)[0]["raw_text"] == "  SELECT 1;\n  "
+    assert json.loads(capsys.readouterr().out)[0]["text"] == "  SELECT 1;\n  "
 
     assert main(["-F", "Chart summary", str(path), "--type", "picture", "--view", "visible", "-q"]) == 1
     assert main(["-F", "Chart summary", str(path), "--type", "picture", "--view", "metadata", "-q"]) == 0
 
     assert main(["-F", "Chart summary", str(path), "--type", "picture", "--view", "metadata", "--format", "json"]) == 0
-    assert json.loads(capsys.readouterr().out)[0]["raw_text"] == "Chart summary"
+    assert json.loads(capsys.readouterr().out)[0]["text"] == "Chart summary"
 
     assert main(["-F", "Chart summary", str(path), "--type", "picture", "--view", "all", "--format", "json"]) == 0
-    assert json.loads(capsys.readouterr().out)[0]["raw_text"] == "Chart caption\n\nChart summary"
+    assert json.loads(capsys.readouterr().out)[0]["text"] == "Chart caption\n\nChart summary"
 
 
 def test_archive_input_and_grep_exit_codes(tmp_path: Path, capsys) -> None:
@@ -260,7 +300,7 @@ def test_archive_input_and_grep_exit_codes(tmp_path: Path, capsys) -> None:
 
     assert main(["-F", "Termination notice", str(archive), "-q"]) == 0
     assert main(["Outside", str(archive), "--page", "2", "--format", "json"]) == 0
-    assert json.loads(capsys.readouterr().out)[0]["page_numbers"] == [2]
+    assert json.loads(capsys.readouterr().out)[0]["pages"] == [2]
     assert main(["missing", str(archive), "-q"]) == 1
     assert main(["[", str(archive)]) == 2
     assert "invalid regular expression" in capsys.readouterr().err
@@ -271,7 +311,7 @@ def test_archive_input_and_grep_exit_codes(tmp_path: Path, capsys) -> None:
         encoding="utf-8",
     )
     assert main(["prefixed", str(prefixed), "--format", "json"]) == 0
-    assert json.loads(capsys.readouterr().out)[0]["metadata"]["xpath"] == "/d:doclang/d:text[1]"
+    assert json.loads(capsys.readouterr().out)[0]["xpaths"] == ["/d:doclang/d:text[1]"]
 
 
 def test_typer_help_version_and_validation(tmp_path: Path, capsys) -> None:

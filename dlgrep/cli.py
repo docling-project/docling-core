@@ -110,7 +110,6 @@ def search(
         typer.Option("-C", "--context", min=0, callback=_record_context, help="Show semantic units around a hit."),
     ] = None,
     context_scope: Annotated[ContextScope, typer.Option(help="Boundary used for semantic context.")] = "document",
-    no_ancestors: Annotated[bool, typer.Option("--no-ancestors", help="Omit heading ancestors from results.")] = False,
     types: Annotated[list[str] | None, typer.Option("--type", help="Filter semantic unit types.")] = None,
     class_name: Annotated[str | None, typer.Option("--class", help="Filter Docling item classes.")] = None,
     layer: Annotated[
@@ -154,7 +153,6 @@ def search(
                 word_regexp=word_regexp,
                 context_events=ctx.meta.get("context_events", []),
                 context_scope=context_scope,
-                no_ancestors=no_ancestors,
                 types=types or [],
                 class_name=class_name,
                 layer=layer,
@@ -249,7 +247,6 @@ def show_command(
         typer.Option("-C", "--context", min=0, callback=_record_context, help="Show semantic units around it."),
     ] = None,
     context_scope: Annotated[ContextScope, typer.Option(help="Boundary used for semantic context.")] = "document",
-    no_ancestors: Annotated[bool, typer.Option("--no-ancestors", help="Omit heading ancestors from results.")] = False,
     max_chars: Annotated[int, typer.Option(min=0, help="Maximum characters per result.")] = DEFAULT_MAX_CHARS,
     with_xpath: Annotated[
         bool, typer.Option("-n", "--with-xpath", help="Prefix text output with XPath addresses.")
@@ -267,7 +264,6 @@ def show_command(
                 section=section,
                 context_events=ctx.meta.get("context_events", []),
                 context_scope=context_scope,
-                no_ancestors=no_ancestors,
                 max_chars=max_chars,
                 with_xpath=with_xpath,
                 format=output_format,
@@ -360,7 +356,6 @@ def _search(args: SimpleNamespace) -> int:
                 context_before,
                 context_after,
                 max_chars=max_chars,
-                ancestors=not args.no_ancestors,
                 context_group=context_group,
             )
         )
@@ -403,11 +398,11 @@ def _inspect(args: SimpleNamespace) -> int:
                 print("--")
             print(record["document"])
             print(f"Type: {record['input_type']}")
-            print(f"Pages: {record['pages']}")
+            print(f"Pages: {record['page_count']}")
             print(f"Semantic units: {record['semantic_units']}")
             print("Elements: " + ", ".join(f"{key}={value}" for key, value in record["elements"].items()))
-            if record["metadata"]:
-                print("Metadata: " + ", ".join(f"{key}={value}" for key, value in record["metadata"].items()))
+            if record["metadata_elements"]:
+                print("Metadata: " + ", ".join(f"{key}={value}" for key, value in record["metadata_elements"].items()))
     return 0
 
 
@@ -431,25 +426,16 @@ def _outline(args: SimpleNamespace) -> int:
         if args.depth is not None and heading_depth > args.depth:
             continue
         target = DocLangSourceTarget(kind="item", item_ref=item.self_ref)
-        xpaths = loaded.source_map.xpaths_by_target.get(target, [])
-        if xpaths:
-            records.append(
-                {
-                    "xpath": xpaths[0],
-                    "xpaths": xpaths,
-                    "depth": heading_depth,
-                    "text": outline_item["title"],
-                }
-            )
+        unit = loaded.unit_for_target(target)
+        if unit is not None:
+            record = _unit_record(loaded, unit, text=outline_item["title"])
+            record["depth"] = heading_depth
+            records.append(record)
     if args.format == "json":
-        print(
-            json.dumps(
-                {"document": args.input, "sha256": loaded.sha256, "headings": records}, ensure_ascii=False, indent=2
-            )
-        )
+        print(json.dumps(records, ensure_ascii=False, indent=2))
     else:
         for record in records:
-            print(f"{'  ' * (record['depth'] - 1)}{record['text']}\t{record['xpath']}")
+            print(f"{'  ' * (record['depth'] - 1)}{record['text']}\t{record['xpaths'][0]}")
     return 0
 
 
@@ -486,9 +472,11 @@ def _select(args: SimpleNamespace) -> int:
             raw_element = loaded.raw_elements[xpath]
             xml = etree.tostring(raw_element, encoding="unicode", with_tail=False)
             bounded, truncated = _truncate(xml, max_chars)
-            record = {"xpath": xpath, "xml": bounded, "truncated": truncated}
+            record: dict[str, Any] = {"xpaths": [xpath], "xml": bounded}
+            if truncated:
+                record["truncated"] = True
             if args.semantic and (target := loaded.source_map.targets_by_xpath.get(xpath)) is not None:
-                record["semantic"] = asdict(target)
+                record["semantic"] = {key: value for key, value in asdict(target).items() if value is not None}
             records.append(record)
         else:
             records.append({"value": str(value)})
@@ -498,8 +486,8 @@ def _select(args: SimpleNamespace) -> int:
             print(record.get("xml", record.get("value", "")))
     elif args.format == "text":
         for record in records:
-            if "xpath" in record:
-                selected_xpath = record["xpath"]
+            if "xpaths" in record:
+                selected_xpath = record["xpaths"][0]
                 if not isinstance(selected_xpath, str):
                     raise DlgrepError("invalid internal XPath result")
                 element = loaded.raw_elements[selected_xpath]
@@ -544,11 +532,10 @@ def _show(args: SimpleNamespace) -> int:
             records.append(
                 {
                     "document": args.input,
-                    "sha256": loaded.sha256,
-                    "xpath": xpath,
+                    "xpaths": [xpath],
                     "logical_type": "raw",
                     "text": text,
-                    "truncated": truncated,
+                    **({"truncated": True} if truncated else {}),
                 }
             )
             continue
@@ -561,12 +548,10 @@ def _show(args: SimpleNamespace) -> int:
             records.append(
                 {
                     "document": args.input,
-                    "sha256": loaded.sha256,
-                    "xpath": xpath,
+                    "xpaths": [xpath],
                     "logical_type": "raw",
                     "text": text,
-                    "truncated": truncated,
-                    "semantic": False,
+                    **({"truncated": True} if truncated else {}),
                 }
             )
             continue
@@ -600,11 +585,10 @@ def _show(args: SimpleNamespace) -> int:
             loaded,
             unit,
             text,
-            [],
+            None,
             before,
             after,
             max_chars=args.max_chars,
-            ancestors=not args.no_ancestors,
             doc_items=doc_items,
             context_group=context_group,
         )
@@ -831,55 +815,83 @@ def _result_record(
     loaded: LoadedDocument,
     unit: Unit,
     text: str,
-    matches: list[dict[str, Any]],
+    matches: list[dict[str, Any]] | None,
     before: list[Unit],
     after: list[Unit],
     *,
     max_chars: int,
-    ancestors: bool,
     doc_items: tuple[str, ...] | None = None,
     context_group: tuple[str, int, int] | None = None,
 ) -> dict[str, Any]:
     bounded, truncated = _truncate(text, max_chars)
-    context: dict[str, Any] = {
-        "before": [_context_record(value, max_chars) for value in before],
-        "after": [_context_record(value, max_chars) for value in after],
-    }
-    if ancestors:
-        context["headings"] = loaded.heading_chain(unit)
-    context.update(_table_context(loaded, unit))
+    record = _unit_record(loaded, unit, text=bounded, doc_items=doc_items)
+    if matches is not None:
+        record["matches"] = matches
+    if before or after:
+        record["context"] = {
+            "before": [_context_record(loaded, value, max_chars) for value in before],
+            "after": [_context_record(loaded, value, max_chars) for value in after],
+        }
+    if table := _table_record(loaded, unit):
+        record["table"] = table
+    if cell_context := _cell_context(loaded, unit):
+        record["cell_context"] = cell_context
+    if truncated:
+        record["truncated"] = True
+    record["_context_group"] = context_group
+    return record
+
+
+def _unit_record(
+    loaded: LoadedDocument,
+    unit: Unit,
+    *,
+    text: str | None = None,
+    doc_items: tuple[str, ...] | None = None,
+) -> dict[str, Any]:
     return {
         "document": loaded.name,
-        "sha256": loaded.sha256,
-        "xpath": unit.xpath,
         "xpaths": list(unit.xpaths),
-        "cardinality": len(unit.xpaths),
         "logical_type": unit.logical_type,
-        "page": unit.page,
-        "pages": list(unit.pages),
-        "layer": unit.layer,
-        "text": bounded,
-        "doc_items": list(doc_items if doc_items is not None else unit.doc_items),
-        "matches": matches,
-        "context": context,
-        "truncated": truncated,
-        "_context_group": context_group,
+        "text": unit.text if text is None else text,
+        "pages": sorted(set(unit.pages)),
+        "doc_items": list(dict.fromkeys(doc_items if doc_items is not None else unit.doc_items)),
     }
 
 
-def _context_record(unit: Unit, max_chars: int) -> dict[str, Any]:
+def _context_record(loaded: LoadedDocument, unit: Unit, max_chars: int) -> dict[str, Any]:
     text, truncated = _truncate(unit.text, max_chars)
-    return {
-        "xpath": unit.xpath,
-        "logical_type": unit.logical_type,
-        "page": unit.page,
-        "pages": list(unit.pages),
-        "text": text,
-        "truncated": truncated,
-    }
+    record = _unit_record(loaded, unit, text=text)
+    if truncated:
+        record["truncated"] = True
+    return record
 
 
-def _table_context(loaded: LoadedDocument, unit: Unit) -> dict[str, Any]:
+def _table_record(loaded: LoadedDocument, unit: Unit) -> dict[str, Any]:
+    item = unit.item or loaded.target_item(unit.target)
+    if unit.logical_type != "table" or not isinstance(item, TableItem):
+        return {}
+    cells = []
+    for cell in sorted(
+        item.data.table_cells, key=lambda value: (value.start_row_offset_idx, value.start_col_offset_idx)
+    ):
+        record: dict[str, Any] = {
+            "row": cell.start_row_offset_idx,
+            "column": cell.start_col_offset_idx,
+            "text": cell.text,
+        }
+        if cell.column_header:
+            record["role"] = "column_header"
+        elif cell.row_header:
+            record["role"] = "row_header"
+        cells.append(record)
+    result: dict[str, Any] = {"cells": cells}
+    if caption := item.caption_text(loaded.document):
+        result["caption"] = caption
+    return result
+
+
+def _cell_context(loaded: LoadedDocument, unit: Unit) -> dict[str, Any]:
     if unit.target.kind != "table_cell" or unit.item_ref is None or unit.row is None or unit.col is None:
         return {}
     item = loaded.target_item(unit.target)
@@ -888,13 +900,14 @@ def _table_context(loaded: LoadedDocument, unit: Unit) -> dict[str, Any]:
     grid = item.data.grid
     row_headers = [cell.text for cell in grid[unit.row] if cell.row_header and cell.text]
     column_headers = [row[unit.col].text for row in grid if row[unit.col].column_header and row[unit.col].text]
-    return {
-        "table_caption": item.caption_text(loaded.document),
-        "row": unit.row,
-        "column": unit.col,
-        "row_headers": list(dict.fromkeys(row_headers)),
-        "column_headers": list(dict.fromkeys(column_headers)),
-    }
+    result: dict[str, Any] = {"row": unit.row, "column": unit.col}
+    if row_headers:
+        result["row_headers"] = list(dict.fromkeys(row_headers))
+    if column_headers:
+        result["column_headers"] = list(dict.fromkeys(column_headers))
+    if caption := item.caption_text(loaded.document):
+        result["caption"] = caption
+    return result
 
 
 def _heading_ancestors(item: Any, loaded: LoadedDocument) -> list[Any]:
@@ -915,7 +928,8 @@ def _truncate(text: str, limit: int) -> tuple[str, bool]:
 def _bound_record_text(records: list[dict[str, Any]], limit: int) -> None:
     remaining = limit
     for record in records:
-        values = [*record["context"]["before"], record, *record["context"]["after"]]
+        context = record.get("context", {"before": [], "after": []})
+        values = [*context["before"], record, *context["after"]]
         for value in values:
             text = value["text"]
             if len(text) <= remaining:
@@ -937,16 +951,16 @@ def _render_records(
     if output_format == "json":
         print(
             json.dumps(
-                [_chunk_record(record, index) for index, record in enumerate(records)],
+                [_public_record(record) for record in records],
                 ensure_ascii=False,
                 indent=2,
             )
         )
     elif output_format == "jsonl":
-        for index, record in enumerate(records):
-            print(json.dumps(_chunk_record(record, index), ensure_ascii=False, sort_keys=True))
+        for record in records:
+            print(json.dumps(_public_record(record), ensure_ascii=False, sort_keys=True))
     else:
-        hits = {(record["document"], record["xpath"]): record for record in records}
+        hits = {(record["document"], record["xpaths"][0]): record for record in records}
         groups: list[dict[str, Any]] = []
         for record in records:
             context_values = record.get("context", {"before": [], "after": []})
@@ -960,8 +974,8 @@ def _render_records(
                 and groups[-1]["sequence"] == sequence
                 and start <= groups[-1]["end"] + 1
             ):
-                known = {value["xpath"] for value in groups[-1]["values"]}
-                groups[-1]["values"].extend(value for value in values if value["xpath"] not in known)
+                known = {value["xpaths"][0] for value in groups[-1]["values"]}
+                groups[-1]["values"].extend(value for value in values if value["xpaths"][0] not in known)
                 groups[-1]["end"] = max(groups[-1]["end"], end)
             else:
                 groups.append(
@@ -978,54 +992,18 @@ def _render_records(
                 print("--")
 
             for value in group["values"]:
-                hit = hits.get((group["document"], value["xpath"]))
+                hit = hits.get((group["document"], value["xpaths"][0]))
                 separator = ":" if hit is not None else "-"
                 text = _highlight(hit["text"], hit.get("matches", [])) if hit is not None else value["text"]
                 fields = [group["document"]] if with_filename else []
                 if with_xpath:
-                    fields.append(value["xpath"].removeprefix("/d:doclang").replace("/d:", "/"))
+                    fields.append(value["xpaths"][0].removeprefix("/d:doclang").replace("/d:", "/"))
                 prefix = separator.join(fields) + separator if fields else ""
                 print("\n".join(prefix + line for line in text.split("\n")))
 
 
-def _chunk_record(record: dict[str, Any], index: int) -> dict[str, Any]:
-    context = record.get("context", {})
-    headings = context.get("headings") or None
-    caption = context.get("table_caption")
-    captions = [caption] if caption else None
-    metadata: dict[str, Any] = {
-        "source": record["document"],
-        "xpath": record["xpath"],
-        "logical_type": record["logical_type"],
-    }
-    xpaths = record.get("xpaths", [record["xpath"]])
-    if len(xpaths) > 1:
-        metadata["xpaths"] = xpaths
-    if matches := record.get("matches"):
-        metadata["matches"] = matches
-    structural = {
-        key: value
-        for key, value in context.items()
-        if key not in {"headings", "table_caption"} and value not in (None, [], {}, "")
-    }
-    if structural:
-        metadata["context"] = structural
-    if record["truncated"]:
-        metadata["truncated"] = True
-    raw_text = record["text"]
-    contextualized = "\n".join([*(headings or []), *(captions or []), raw_text])
-    return {
-        "filename": Path(record["document"]).stem if record["document"] != "-" else "stdin",
-        "chunk_index": index,
-        "text": contextualized,
-        "raw_text": raw_text,
-        "num_tokens": None,
-        "headings": headings,
-        "captions": captions,
-        "doc_items": record.get("doc_items", []),
-        "page_numbers": record.get("pages", [record["page"]] if record.get("page") is not None else []),
-        "metadata": metadata,
-    }
+def _public_record(record: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in record.items() if not key.startswith("_")}
 
 
 def _render_summary(counts: list[tuple[str, int]], *, files_only: bool, output_format: str) -> None:

@@ -25,6 +25,7 @@ from docling_core.types.doc import (
     DocItem,
     DocItemLabel,
     DoclingDocument,
+    GroupItem,
     InlineGroup,
     ListGroup,
     ListItem,
@@ -256,15 +257,6 @@ class LoadedDocument:
                 return False
             item = item.parent.resolve(self.document)
 
-    def heading_chain(self, unit: Unit) -> list[str]:
-        item = unit.item or self.target_item(unit.target)
-        headings: list[str] = []
-        while item is not None and item.parent is not None:
-            item = item.parent.resolve(self.document)
-            if isinstance(item, (TitleItem, SectionHeaderItem)):
-                headings.append(item.text)
-        return list(reversed(headings))
-
     def nearest_heading_ref(self, unit: Unit) -> str | None:
         item = unit.item or self.target_item(unit.target)
         while item is not None:
@@ -288,9 +280,7 @@ class LoadedDocument:
             index
             for index, candidate in enumerate(scoped)
             if any(
-                selected == context
-                or selected.startswith(context + "/")
-                or context.startswith(selected + "/")
+                selected == context or selected.startswith(context + "/") or context.startswith(selected + "/")
                 for selected in unit.xpaths
                 for context in candidate.xpaths
             )
@@ -330,10 +320,10 @@ class LoadedDocument:
         return {
             "document": self.name,
             "input_type": self.input_type,
-            "pages": len(self.document.pages),
+            "page_count": len(self.document.pages),
             "semantic_units": len(self.context_units),
             "elements": dict(sorted(element_counts.items())),
-            "metadata": dict(sorted(metadata_counts.items())),
+            "metadata_elements": dict(sorted(metadata_counts.items())),
         }
 
     def _build_units(self) -> None:
@@ -550,6 +540,7 @@ def _logical_type(item: NodeItem, source_type: str | None = None) -> str:
         return "code"
     if isinstance(item, DocItem):
         return item.label.value
+    assert isinstance(item, GroupItem)
     return item.label.value
 
 

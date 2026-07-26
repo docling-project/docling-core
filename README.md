@@ -20,7 +20,7 @@ $ dlgrep -F '6 CONCLUSION' paper.dclx --type heading -n
 
 - 🔎 **Semantic search** across headings, paragraphs, captions, footnotes,
   list items, table cells, formulas, code, and metadata
-- 🧭 **Structural context** with heading ancestry, list siblings, table
+- 🧭 **Structural context** with section-aware neighbours, list siblings, table
   headers, captions, and document reading order
 - 🔗 **Reusable XPath addresses** for every result
 - 🎯 **Precise filters** for sections, XPath regions, pages, layers, semantic
@@ -95,7 +95,7 @@ Capture a section heading's XPath, then pass it directly into another search:
 
 ```console
 $ conclusion_xpath=$(dlgrep -F '6 CONCLUSION' paper.dclx \
-    --type heading --format json | jq -r '.[0].metadata.xpath')
+    --type heading --format json | jq -r '.[0].xpaths[0]')
 $ echo "$conclusion_xpath"
 /d:doclang/d:heading[17]
 
@@ -131,12 +131,11 @@ $ dlgrep -F 'reference metrics for human performance' paper.dclx \
 
 ```console
 $ dlgrep -F '2.73 5.39' paper.dclx --format json |
-  jq '.[0] | {xpath: .metadata.xpath, text: .raw_text, page: .page_numbers[0], heading: .headings[-1], column: .metadata.context.column_headers[0], table: .captions[0][0:96]}'
+  jq '.[0] | {xpath: .xpaths[0], text, page: .pages[0], column: .cell_context.column_headers[0], table: .cell_context.caption[0:96]}'
 {
   "xpath": "/d:doclang/d:table[1]/d:fcel[8]",
   "text": "2.73 5.39",
   "page": 1,
-  "heading": "5.1 Hyper Parameter Optimization",
   "column": "Inference time (secs)",
   "table": "Table 1. HPO performed in OTSL and HTML representation on the same transformer-based TableFormer"
 }
