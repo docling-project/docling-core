@@ -39,14 +39,14 @@ Affiliation 2
     36: list_item: item 1 of sub list
     37: list_item: 
      38: inline with name=group
-      39: text: Here a code snippet:
+      39: text: Here a code snippet: 
       40: code: print("Hello world")
-      41: text: (to be displayed inline)
+      41: text:  (to be displayed inline)
     42: list_item: 
      43: inline with name=group
-      44: text: Here a formula:
+      44: text: Here a formula: 
       45: formula: E=mc^2
-      46: text: (to be displayed inline)
+      46: text:  (to be displayed inline)
  47: text: Here a code block:
  48: code: print("Hello world")
  49: text: Here a formula block:
@@ -54,15 +54,15 @@ Affiliation 2
  51: key_value_region
  52: form
  53: inline with name=group
-  54: text: Some formatting chops:
-  55: text: bold
-  56: text: italic
-  57: text: underline
-  58: text: strikethrough
-  59: text: subscript
-  60: text: superscript
-  61: text: hyperlink
-  62: text: &
+  54: text: Some formatting chops: 
+  55: text: bold 
+  56: text: italic 
+  57: text: underline 
+  58: text: strikethrough 
+  59: text: subscript 
+  60: text: superscript 
+  61: text: hyperlink 
+  62: text: & 
   63: text: everything at the same time.
  64: list with name=list A
   65: list_item: Item 1 in A
