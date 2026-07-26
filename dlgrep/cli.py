@@ -21,7 +21,6 @@ from docling_core.experimental.serializer.outline import (
     OutlineParams,
 )
 from docling_core.transforms.deserializer import DocLangSourceTarget
-from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer, PlainTextParams
 from docling_core.types.doc import (
     SectionHeaderItem,
     TableItem,
@@ -520,6 +519,24 @@ def _show(args: SimpleNamespace) -> int:
     context_requested = bool(args.context_events)
     records: list[dict[str, Any]] = []
     seen: set[str] = set()
+    if args.section and not args.raw:
+        if context_requested:
+            raise DlgrepError("context flags cannot be combined with --section")
+        heading_refs: set[str] = set()
+        for element in selected:
+            target = loaded.source_map.targets_by_xpath.get(_canonical_xpath(element))
+            item = loaded.target_item(target) if target is not None else None
+            if not isinstance(item, (TitleItem, SectionHeaderItem)):
+                raise DlgrepError("--section requires a heading XPath")
+            heading_refs.add(item.self_ref)
+        records = [
+            _result_record(loaded, unit, unit.text, None, [], [], max_chars=args.max_chars)
+            for unit in loaded.context_units
+            if any(loaded.is_descendant(unit.item_ref, heading_ref) for heading_ref in heading_refs)
+        ]
+        _render_records(records, args.format, with_xpath=args.with_xpath)
+        return 0
+
     for element in selected:
         xpath = _canonical_xpath(element)
         raw_element = loaded.raw_elements[xpath]
@@ -557,20 +574,6 @@ def _show(args: SimpleNamespace) -> int:
             continue
         seen.add(unit.xpath)
         text = unit.text
-        logical_type = unit.logical_type
-        doc_items: tuple[str, ...] | None = unit.doc_items
-        if args.section:
-            item = loaded.target_item(target)
-            if not isinstance(item, (TitleItem, SectionHeaderItem)):
-                raise DlgrepError("--section requires a heading XPath")
-            serializer = PlainTextDocSerializer(
-                doc=loaded.document,
-                params=PlainTextParams(allowed_meta_names=set(), include_annotations=False),
-            )
-            serialized = serializer.serialize_doc(parts=serializer.get_parts(item=item))
-            text = serialized.text
-            doc_items = tuple(dict.fromkeys(span.item.self_ref for span in serialized.spans))
-            logical_type = "section"
         before, after, context_group = loaded.context_for(
             unit,
             before_count,
@@ -587,10 +590,8 @@ def _show(args: SimpleNamespace) -> int:
             before,
             after,
             max_chars=args.max_chars,
-            doc_items=doc_items,
             context_group=context_group,
         )
-        record["logical_type"] = logical_type
         records.append(record)
     _render_records(
         records,

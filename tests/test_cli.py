@@ -14,11 +14,13 @@ DOCUMENT = """<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.7">
   <code><bold>public</bold><content> class Main {}</content></code>
   <formula>E = mc^2</formula>
   <list><ldiv/><content>Termination notice</content></list>
+  <page_break/>
+  <heading level="3">Details</heading>
+  <text>Nested section content that is long enough to truncate.</text>
   <table>
     <ched/>Metric<ched/>Value<nl/>
     <rhed/>Margin<fcel/>48.2%<nl/>
   </table>
-  <page_break/>
   <heading level="2">Other</heading>
   <text>Outside the section.</text>
 </doclang>
@@ -85,13 +87,57 @@ def test_retrieval_commands_share_xpath_addresses(tmp_path: Path, capsys) -> Non
     path = _document(tmp_path)
 
     assert main(["show", str(path), "/heading[2]", "--section", "--format", "json"]) == 0
-    section = json.loads(capsys.readouterr().out)[0]
-    assert "Termination notice" in section["text"]
-    assert "Outside the section" not in section["text"]
-    assert "| Metric" in section["text"]
-    assert "#/tables/0" in section["doc_items"]
-    assert section["logical_type"] == "section"
-    assert "matches" not in section
+    section = json.loads(capsys.readouterr().out)
+    assert [record["xpaths"][0] for record in section] == [
+        "/d:doclang/d:heading[2]",
+        "/d:doclang/d:text[1]",
+        "/d:doclang/d:text[2]",
+        "/d:doclang/d:text[4]",
+        "/d:doclang/d:code[1]",
+        "/d:doclang/d:formula[1]",
+        "/d:doclang/d:list[1]/d:ldiv[1]",
+        "/d:doclang/d:heading[3]",
+        "/d:doclang/d:text[5]",
+        "/d:doclang/d:table[1]/d:ched[1]",
+        "/d:doclang/d:table[1]/d:ched[2]",
+        "/d:doclang/d:table[1]/d:rhed[1]",
+        "/d:doclang/d:table[1]/d:fcel[1]",
+    ]
+    assert section[0]["logical_type"] == "heading"
+    assert section[0]["pages"] == [1]
+    assert section[-1]["logical_type"] == "table_cell"
+    assert section[-1]["pages"] == [2]
+    assert section[-1]["doc_items"] == ["#/tables/0"]
+    assert section[-1]["cell_context"] == {
+        "row": 1,
+        "column": 1,
+        "row_headers": ["Margin"],
+        "column_headers": ["Value"],
+    }
+    assert all("matches" not in record for record in section)
+    assert all(record["logical_type"] != "section" for record in section)
+
+    assert (
+        main(["show", str(path), "/heading[2] | /heading[3]", "--section", "--max-chars", "8", "--format", "json"]) == 0
+    )
+    bounded = json.loads(capsys.readouterr().out)
+    assert [record["xpaths"][0] for record in bounded] == [record["xpaths"][0] for record in section]
+    assert bounded[8]["truncated"] is True
+    assert bounded[-1]["text"] == "48.2%"
+
+    assert main(["show", str(path), "/heading[2]", "--section", "-n"]) == 0
+    section_text = capsys.readouterr().out
+    assert "/heading[2]:Results" in section_text
+    assert "/text[1]:Revenue grew." in section_text
+    assert "/table[1]/fcel[1]:48.2%" in section_text
+    assert "/heading[2]:\n" not in section_text
+    assert "Outside the section" not in section_text
+
+    assert main(["show", str(path), "/heading[2]", "--section", "--format", "jsonl"]) == 0
+    assert len(capsys.readouterr().out.splitlines()) == len(section)
+
+    assert main(["show", str(path), "/heading[2]", "--section", "-A", "1"]) == 2
+    assert "context flags cannot be combined with --section" in capsys.readouterr().err
 
     assert main(["show", str(path), "/table[1]", "--format", "json"]) == 0
     table = json.loads(capsys.readouterr().out)[0]
@@ -113,15 +159,16 @@ def test_retrieval_commands_share_xpath_addresses(tmp_path: Path, capsys) -> Non
         "/d:doclang/d:heading[1]",
         "/d:doclang/d:heading[2]",
         "/d:doclang/d:heading[3]",
+        "/d:doclang/d:heading[4]",
     ]
     assert outline[1]["logical_type"] == "heading"
     assert outline[1]["depth"] == 2
     assert outline[1]["document"] == str(path)
 
     assert main(["select", str(path), "count(/heading)", "--format", "json"]) == 0
-    assert json.loads(capsys.readouterr().out)["value"] == 3.0
+    assert json.loads(capsys.readouterr().out)["value"] == 4.0
     assert main(["select", str(path), "count(descendant::heading)", "--format", "json"]) == 0
-    assert json.loads(capsys.readouterr().out)["value"] == 3.0
+    assert json.loads(capsys.readouterr().out)["value"] == 4.0
     assert main(["select", str(path), "/heading[1]", "--format", "json"]) == 0
     selected = json.loads(capsys.readouterr().out)["results"][0]
     assert selected["xpaths"] == ["/d:doclang/d:heading[1]"]

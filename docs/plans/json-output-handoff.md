@@ -66,7 +66,7 @@ top-level `metadata` bag.
 - `document`: input source path or `-` for stdin.
 - `xpaths`: all source XPaths contributing to the result.
   - Single-element list for the normal case.
-  - Multi-element list for threaded, section, or aggregate results.
+  - Multi-element list for threaded or other aggregate results.
   - Do not also emit a separate `xpath` field.
 - `logical_type`: dlgrep semantic type for the hit.
 - `text`: canonical plain-text rendering of the hit.
@@ -76,6 +76,10 @@ top-level `metadata` bag.
 - `context`: present only when context was requested and there is at least one
   before/after record.
 - `truncated`: present only when text was truncated.
+
+`show --section` is a selection mode: it emits one normal record per canonical
+semantic element in the selected heading subtree. It does not create a
+multi-XPath aggregate record or a synthetic `section` logical type.
 
 ## Context rules
 

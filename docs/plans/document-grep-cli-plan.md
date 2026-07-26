@@ -693,15 +693,17 @@ Default behavior:
 1. evaluate the XPath;
 2. resolve selected source nodes through the source map;
 3. deduplicate identical logical targets;
-4. serialize the selected logical unit through Docling;
-5. attach structural context and source metadata to the result record;
-6. enforce output bounds.
+4. for `--section`, select the ordered canonical semantic units in every
+   selected heading subtree and deduplicate overlapping selections;
+5. serialize every selected logical unit independently through Docling;
+6. attach structural context and source metadata to each result record;
+7. enforce output bounds independently for each result.
 
 Options:
 
 ```text
 --raw                     return exact selected XML instead of semantic output
---section                 expand a selected heading to its semantic subtree
+--section                 select ordered elements in a heading subtree
 -A, -B, -C                include neighbouring semantic elements
 --context-scope SCOPE     choose neighbor scope
 --max-chars N             bound serialized text
@@ -711,6 +713,12 @@ Options:
 
 If a selected XML node has no semantic binding, `show` falls back to raw XML
 and states that no Docling semantic target exists.
+
+Section selection emits ordinary addressable records, including the heading
+anchor, in semantic document order. It preserves every element's own XPath,
+logical type, pages, contributing items, and structured table-cell context.
+There is no aggregate section result. Until span context is implemented,
+`show --section` rejects `-A`, `-B`, and `-C`.
 
 ## 11. `select`
 
@@ -855,18 +863,24 @@ Example:
 /d:doclang//d:text[d:thread[@thread_id = 42]]
 ```
 
-### 15.3 Derived units
+### 15.3 Section selection
+
+A heading XPath combined with `--section` selects an ordered span of ordinary
+logical units. The heading and each canonical descendant remain separate,
+addressable results. Section selection does not derive a new logical unit or
+replace any selected unit's `logical_type`.
+
+### 15.4 Derived units
 
 XPath anchors a derived logical unit:
 
-- heading XPath plus `section` semantics;
 - `ldiv` XPath plus list-item semantics;
 - OTSL marker XPath plus cell semantics;
 - page-range XPath plus page semantics.
 
 The expansion mode is explicit in machine output as `logical_type`.
 
-### 15.4 Document identity
+### 15.5 Document identity
 
 Every machine-readable address includes SHA-256 of the raw DocLang
 `document.xml` bytes. This prevents silently reusing positional XPath against a
