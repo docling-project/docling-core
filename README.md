@@ -12,8 +12,10 @@
 and returns bounded evidence with reusable XPath addresses.
 
 ```console
-$ dlgrep -F '6 CONCLUSION' paper.dclx --type heading -n
-/heading[17]:6 CONCLUSION
+$ dlgrep 'GPU|CPU' paper.dclg \
+    --within-xpath '/heading[13]' --section -n
+/list[4]/ldiv[1]:- AWS EC2 VM ... Nvidia L4 GPU ...
+/text[42]:All experiments ... GPU acceleration ... x86 CPU ...
 ```
 
 ## Features
@@ -23,8 +25,8 @@ $ dlgrep -F '6 CONCLUSION' paper.dclx --type heading -n
 - 🧭 **Structural context** with section-aware neighbours, list siblings, table
   headers, captions, and document reading order
 - 🔗 **Reusable XPath addresses** for every result
-- 🎯 **Precise filters** for sections, XPath regions, pages, layers, semantic
-  types, and Docling classes
+- 🎯 **Precise filters** for sections, XPath regions, pages, layers, and
+  semantic types
 - 📑 **Document navigation** with structural inventory, heading outlines,
   semantic retrieval, and raw XPath selection
 - 📦 **DocLang input** from `.dclg`, `.dclg.xml`, `.xml`, `.dclx`, or standard
@@ -53,8 +55,7 @@ docling report.pdf handbook.docx --to dclx --output converted
 ### 3. Search
 
 ```bash
-dlgrep -i 'termination|cancellation' converted/report.dclx \
-  -C 2 --context-scope auto
+dlgrep -i 'termination|cancellation' converted/report.dclx
 ```
 
 Search is the default command, so `dlgrep PATTERN INPUT` and
@@ -77,68 +78,73 @@ Metadata: author=2, date=1, keywords=1
 ### Navigate the heading hierarchy
 
 ```console
-$ dlgrep outline handbook.dclx
-Test Document	/d:doclang/d:heading[1]
-  1 Section 1	/d:doclang/d:heading[2]
-    1.1 Section 1.1	/d:doclang/d:heading[3]
-    1.2 Section 1.2	/d:doclang/d:heading[4]
-      1.2.1 Section 1.2.3	/d:doclang/d:heading[5]
-  2 Section 2	/d:doclang/d:heading[6]
-    2.1.1 Section 2.1.1	/d:doclang/d:heading[7]
-    2.2 Section 2.1	/d:doclang/d:heading[8]
-    REFERENCES	/d:doclang/d:heading[9]
+$ dlgrep outline paper.dclg
+Docling: An Efficient Open-Source Toolkit for AI-driven Document Conversion  /heading[1]
+  Abstract                                      /heading[2]
+  1 Introduction                               /heading[3]
+  ...
+  3 Design and Architecture                    /heading[5]
+  5 Performance                                /heading[11]
+  5.2 System Configurations                    /heading[13]
+  ...
+  6 Applications                               /heading[16]
+  ...
+  References                                   /heading[19]
 ```
 
-### Chain searches with XPath
-
-Capture a section heading's XPath, then pass it directly into another search:
+### Retrieve a section by XPath
 
 ```console
-$ conclusion_xpath=$(dlgrep -F '6 CONCLUSION' paper.dclx \
-    --type heading --format json | jq -r '.[0].xpaths[0]')
-$ echo "$conclusion_xpath"
-/d:doclang/d:heading[17]
-
-$ dlgrep -i 'dataset|performance' paper.dclx \
-    --within-xpath "$conclusion_xpath" --section \
-    --type text --limit 3 --max-chars 240 -n
-/text[64]:In this paper, we presented the DocLayNet dataset. It provides the document conversion and layout analysis research community a new and challenging dataset to improve and fine-tune novel ML methods on. In contrast to many other…
-/text[65]:From the dataset, we have derived on the one hand reference metrics for human performance on document-layout annotation (through double and triple annotations) and on the other hand evaluated the baseline performance of commonl…
+$ dlgrep show paper.dclg '/heading[13]' --section --max-chars 220 -n
+/heading[13]:5.2 System Configurations
+/text[41]:We schedule our benchmark experiments each on two different systems...
+/list[4]/ldiv[1]:- AWS EC2 VM (g6.xlarge)...
+/list[4]/ldiv[2]:- MacBook Pro M3 Max (ARM)...
+/text[42]:All experiments on the AWS EC2 VM...
+/table[1]/ched[1]:Asset
+/table[1]/ched[2]:Version
+...
 ```
 
-The same XPath can retrieve the entire section:
+Each section element keeps its own reusable XPath.
 
-```bash
-dlgrep show paper.dclx "$conclusion_xpath" --section
-```
+### Query the source XML
 
-### Inspect element neighbourhood
-
-`-B` and `-A` return addressable semantic elements before and after a hit.
-Overlapping neighbourhoods are merged; a standalone `--` separates only
-disjoint context groups:
+JSON includes document identity alongside scalar results:
 
 ```console
-$ dlgrep -F 'reference metrics for human performance' paper.dclx \
-    --within-xpath "$conclusion_xpath" --section --type text \
-    -B 1 -A 1 --context-scope section --max-chars 220 -n
-/text[64]-In this paper, we presented the DocLayNet dataset. It provides the document conversion and layout analysis research community a new and challenging dataset to improve and fine-tune novel ML methods on. In co…
-/text[65]:From the dataset, we have derived on the one hand reference metrics for human performance on document-layout annotation (through double and triple annotations) and on the other hand evaluated the baseline pe…
-/text[66]-To date, there is still a significant gap between human and ML accuracy on the layout interpretation task, and we hope that this work will inspire the research community to close that gap.
+$ dlgrep select paper.dclg 'count(//page_break) + 1' --format json
+{
+  "document": "paper.dclg",
+  "sha256": "284b9b63bf3e11a75ffd2ad23c7505a9b5e75407531a13044ceae001e0d1550e",
+  "value": 8.0
+}
+
+$ dlgrep select paper.dclg \
+    'normalize-space(string(//table[1]/caption))'
+Table 1: Versions and configuration options considered for each tested asset. * denotes the default setting.
 ```
 
 ### Search a table cell with its structural context
 
+The direct JSON record includes document identity, match offsets, and
+contributing document items; the relevant fields are shown here:
+
 ```console
-$ dlgrep -F '2.73 5.39' paper.dclx --format json |
-  jq '.[0] | {xpath: .xpaths[0], text, page: .pages[0], column: .cell_context.column_headers[0], table: .cell_context.caption[0:96]}'
-{
-  "xpath": "/d:doclang/d:table[1]/d:fcel[8]",
-  "text": "2.73 5.39",
-  "page": 1,
-  "column": "Inference time (secs)",
-  "table": "Table 1. HPO performed in OTSL and HTML representation on the same transformer-based TableFormer"
-}
+$ dlgrep -F '2.73 5.39' paper.dclx --format json
+[
+  {
+    ...
+    "xpaths": ["/d:doclang/d:table[1]/d:fcel[8]"],
+    "logical_type": "table_cell",
+    "text": "2.73 5.39",
+    "pages": [1],
+    "cell_context": {
+      "column_headers": ["Inference time (secs)"],
+      "caption": "Table 1. HPO performed in OTSL and HTML representation on the same transformer-based TableFormer..."
+    }
+  }
+]
 ```
 
 ### Get list-aware context

@@ -165,6 +165,11 @@ def test_retrieval_commands_share_xpath_addresses(tmp_path: Path, capsys) -> Non
     assert outline[1]["depth"] == 2
     assert outline[1]["document"] == str(path)
 
+    assert main(["outline", str(path)]) == 0
+    outline_text = capsys.readouterr().out
+    assert "/heading[1]" in outline_text
+    assert "/d:" not in outline_text
+
     assert main(["select", str(path), "count(/heading)", "--format", "json"]) == 0
     assert json.loads(capsys.readouterr().out)["value"] == 4.0
     assert main(["select", str(path), "count(descendant::heading)", "--format", "json"]) == 0

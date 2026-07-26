@@ -432,7 +432,7 @@ def _outline(args: SimpleNamespace) -> int:
         print(json.dumps(records, ensure_ascii=False, indent=2))
     else:
         for record in records:
-            print(f"{'  ' * (record['depth'] - 1)}{record['text']}\t{record['xpaths'][0]}")
+            print(f"{'  ' * (record['depth'] - 1)}{record['text']}\t{_short_xpath(record['xpaths'][0])}")
     return 0
 
 
@@ -988,9 +988,13 @@ def _render_records(
                 text = _highlight(hit["text"], hit.get("matches", [])) if hit is not None else value["text"]
                 fields = [group["document"]] if with_filename else []
                 if with_xpath:
-                    fields.append(value["xpaths"][0].removeprefix("/d:doclang").replace("/d:", "/"))
+                    fields.append(_short_xpath(value["xpaths"][0]))
                 prefix = separator.join(fields) + separator if fields else ""
                 print("\n".join(prefix + line for line in text.split("\n")))
+
+
+def _short_xpath(xpath: str) -> str:
+    return xpath.removeprefix("/d:doclang").replace("/d:", "/")
 
 
 def _public_record(record: dict[str, Any]) -> dict[str, Any]:
