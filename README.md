@@ -196,7 +196,6 @@ fi
 | `-A N`, `-B N`, `-C N` | Include semantic context |
 | `--context-scope SCOPE` | Use `auto`, `container`, `section`, `page`, or `document` context |
 | `--type TYPE` | Filter semantic unit types |
-| `--class CLASS` | Filter Docling item classes |
 | `--layer LAYER` | Filter body, furniture, or background content |
 | `--page LIST` | Filter pages and ranges such as `2-4,7` |
 | `--within-xpath XPATH` | Restrict search to an XPath selection |

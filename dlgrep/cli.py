@@ -111,7 +111,6 @@ def search(
     ] = None,
     context_scope: Annotated[ContextScope, typer.Option(help="Boundary used for semantic context.")] = "document",
     types: Annotated[list[str] | None, typer.Option("--type", help="Filter semantic unit types.")] = None,
-    class_name: Annotated[str | None, typer.Option("--class", help="Filter Docling item classes.")] = None,
     layer: Annotated[
         Literal["body", "furniture", "background", "all"], typer.Option(help="Filter content layers.")
     ] = "body",
@@ -154,7 +153,6 @@ def search(
                 context_events=ctx.meta.get("context_events", []),
                 context_scope=context_scope,
                 types=types or [],
-                class_name=class_name,
                 layer=layer,
                 page=page,
                 within_xpath=within_xpath,
@@ -712,8 +710,6 @@ def _filtered_units(
             and unit.logical_type not in {"page_header", "page_footer"}
             and loaded.display_unit(unit) is unit
         ]
-    if args.class_name:
-        candidates = [unit for unit in candidates if _class_matches(loaded, unit, args.class_name)]
     return candidates, context_units
 
 
@@ -736,12 +732,6 @@ def _requested_types(values: Iterable[str]) -> set[str]:
 
 def _type_matches(logical_type: str, requested: set[str]) -> bool:
     return logical_type in requested or ("table_cell" in requested and logical_type in {"index_cell", "chart_cell"})
-
-
-def _class_matches(loaded: LoadedDocument, unit: Unit, class_name: str) -> bool:
-    if unit.item is not None and type(unit.item).__name__.casefold() == class_name.casefold():
-        return True
-    return any(loaded.raw_elements[xpath].get("class") == class_name for xpath in unit.xpaths)
 
 
 def _projected_text(unit: Unit, view: str) -> str:

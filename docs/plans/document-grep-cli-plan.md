@@ -377,7 +377,6 @@ dlgrep -i 'terminate|cancellation' contract.dclx
 dlgrep -F 'gross margin' report.dclg
 dlgrep -i -e 'termination' -e 'cancellation' contract.dclx
 dlgrep -w 'margin' report.dclg --page 2-4,7
-dlgrep 'pending' form.dclx --type value --class fillable
 dlgrep -C 30 'force majeure' contract.dclx
 dlgrep -B 5 -A 10 'net income' report.dclx
 dlgrep -l 'termination' contracts/*.dclx
@@ -398,7 +397,6 @@ Core options:
 -B, --before-context N    include N preceding semantic elements
 -C, --context N           include N preceding and N following semantic elements
 --type TYPE[,TYPE...]     restrict semantic unit types
---class CLASS             restrict a DocLang or Docling subclass
 --layer LAYER             body, furniture, background, or all
 --page LIST               restrict to pages and inclusive ranges
 --within-xpath XPATH      restrict source scope

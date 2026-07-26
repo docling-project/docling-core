@@ -322,6 +322,9 @@ def test_typer_help_version_and_validation(tmp_path: Path, capsys) -> None:
     assert "inspect" in help_text
     assert "search" in help_text
 
+    assert main(["search", "--help"]) == 0
+    assert "--class" not in capsys.readouterr().out
+
     assert main(["--version"]) == 0
     assert capsys.readouterr().out.strip() == "0.0.0"
 
