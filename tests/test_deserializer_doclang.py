@@ -2649,3 +2649,18 @@ def test_empty_code_is_kept() -> None:
     assert [type(t).__name__ for t in doc.texts] == ["CodeItem", "CodeItem"]
     assert all(t.text == "" for t in doc.texts)
     assert not doc.groups
+
+
+def test_leading_text_before_lone_formatting_tag_is_preserved() -> None:
+    """Regression: the leading run was silently dropped for text + one formatting child."""
+    cases = {
+        "<text>2<superscript>nd</superscript></text>": ["2", "nd"],
+        "<text>plain <bold>b</bold></text>": ["plain", "b"],
+        "<footnote>see <italic>ibid</italic></footnote>": ["see", "ibid"],
+        # guards for the shapes that already worked
+        "<text><superscript>nd</superscript> place</text>": ["nd", "place"],
+        "<text>H<subscript>2</subscript>O</text>": ["H", "2", "O"],
+    }
+    for frag, expected in cases.items():
+        doc = DocLangDocDeserializer().deserialize_str(f'<doclang version="0.7">{frag}</doclang>')
+        assert [t.text.strip() for t in doc.texts] == expected, frag
