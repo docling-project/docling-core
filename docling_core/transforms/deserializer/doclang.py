@@ -402,6 +402,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 }:
                     return None
                 elif tmp := self._get_children_simple_text_block(el):
+                    if result is not None:
+                        return None
                     result = tmp
             elif isinstance(el, Text) and el.data.strip():  # TODO should still support whitespace-only
                 if result is None:
