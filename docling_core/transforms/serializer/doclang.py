@@ -1620,17 +1620,23 @@ class DocLangInlineSerializer(BaseInlineSerializer):
                     )
                     parts.append(create_ser_result(text=loc_str))
             params.add_location = False
-        parts.extend(
-            doc_serializer.get_parts(
-                item=item,
-                list_level=list_level,
-                is_inline_scope=True,
-                visited=my_visited,
-                **{**kwargs, **params.model_dump()},
-            )
+        head_parts = list(parts)
+        inline_parts = doc_serializer.get_parts(
+            item=item,
+            list_level=list_level,
+            is_inline_scope=True,
+            visited=my_visited,
+            **{**kwargs, **params.model_dump()},
         )
+        parts.extend(inline_parts)
         delim = _get_delim(params=params)
-        text_res = delim.join([p.text for p in parts if p.text])
+        # Inline runs carry their own significant whitespace; concatenate them faithfully.
+        # The delimiter separates the element head from the body, it is not a whitespace
+        # channel — `<content>` is (see `_escape_text`).
+        segments = [p.text for p in head_parts if p.text]
+        if inline_text := "".join([p.text for p in inline_parts if p.text]):
+            segments.append(inline_text)
+        text_res = delim.join(segments)
         if text_res:
             text_res = f"{text_res}{delim}"
 

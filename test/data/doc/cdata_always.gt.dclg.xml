@@ -99,17 +99,17 @@ Affiliation 2]]></content>
       <ldiv>
         <marker><![CDATA[□]]></marker>
       </ldiv>
-<![CDATA[Here a code snippet:]]>      
+      <content><![CDATA[Here a code snippet: ]]></content>
       <code>
         <label value="Python"/>
 <![CDATA[print("Hello world")]]>      </code>
-<![CDATA[(to be displayed inline)]]>      
+      <content><![CDATA[ (to be displayed inline)]]></content>
       <ldiv>
         <marker><![CDATA[□]]></marker>
       </ldiv>
-<![CDATA[Here a formula:]]>      
+      <content><![CDATA[Here a formula: ]]></content>
       <formula><![CDATA[E=mc^2]]></formula>
-<![CDATA[(to be displayed inline)]]>      
+      <content><![CDATA[ (to be displayed inline)]]></content>
     </list>
   </list>
   <text><![CDATA[Here a code block:]]></text>
@@ -119,15 +119,27 @@ Affiliation 2]]></content>
   <text><![CDATA[Here a formula block:]]></text>
   <formula><![CDATA[E=mc^2]]></formula>
   <text>
-<![CDATA[Some formatting chops:]]>    
-    <bold><![CDATA[bold]]></bold>
-    <italic><![CDATA[italic]]></italic>
-    <underline><![CDATA[underline]]></underline>
-    <strikethrough><![CDATA[strikethrough]]></strikethrough>
-    <subscript><![CDATA[subscript]]></subscript>
-    <superscript><![CDATA[superscript]]></superscript>
-<![CDATA[hyperlink]]>    
-<![CDATA[&]]>    
+    <content><![CDATA[Some formatting chops: ]]></content>
+    <bold>
+      <content><![CDATA[bold ]]></content>
+    </bold>
+    <italic>
+      <content><![CDATA[italic ]]></content>
+    </italic>
+    <underline>
+      <content><![CDATA[underline ]]></content>
+    </underline>
+    <strikethrough>
+      <content><![CDATA[strikethrough ]]></content>
+    </strikethrough>
+    <subscript>
+      <content><![CDATA[subscript ]]></content>
+    </subscript>
+    <superscript>
+      <content><![CDATA[superscript ]]></content>
+    </superscript>
+    <content><![CDATA[hyperlink ]]></content>
+    <content><![CDATA[& ]]></content>
     <strikethrough>
       <underline>
         <italic>

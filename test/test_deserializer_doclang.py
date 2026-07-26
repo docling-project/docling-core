@@ -1867,7 +1867,9 @@ def test_otsl_xml_sensitive_virtual_and_explicit_text_cells():
     doc = _deserialize(doclang)
 
     assert doc.tables[0].data.grid[0][0].text == "virtual & <cell> \"quoted\" 'apostrophe'"
-    assert doc.tables[0].data.grid[0][1].text == "nested & <cell>bold & styled"
+    # The source writes `<bold> bold &amp; styled</bold>`; that leading space is a significant
+    # run boundary under the inline whitespace contract, so it survives.
+    assert doc.tables[0].data.grid[0][1].text == "nested & <cell> bold & styled"
     assert isinstance(doc.tables[0].data.grid[0][1], RichTableCell)
 
 

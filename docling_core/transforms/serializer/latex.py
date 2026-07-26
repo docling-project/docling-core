@@ -2,7 +2,7 @@
 
 import re
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, ClassVar, Optional, Union
 
 from pydantic import AnyUrl, BaseModel
 from typing_extensions import override
@@ -514,14 +514,15 @@ class LaTeXInlineSerializer(BaseInlineSerializer):
         list_level: int = 0,
         **kwargs: Any,
     ) -> SerializationResult:
-        """Serialize inline children joining them with spaces for LaTeX output."""
+        """Serialize inline children concatenating them faithfully for LaTeX output."""
         parts = doc_serializer.get_parts(
             item=item,
             list_level=list_level,
             is_inline_scope=True,
             **kwargs,
         )
-        text_res = " ".join([p.text for p in parts if p.text])
+        # Inline runs carry their own significant whitespace; concatenate faithfully.
+        text_res = "".join([p.text for p in parts if p.text])
         return create_ser_result(text=text_res, span_source=parts)
 
 
@@ -565,6 +566,10 @@ class LaTeXDocSerializer(DocSerializer):
     annotation_serializer: BaseAnnotationSerializer = LaTeXAnnotationSerializer()
 
     params: LaTeXParams = LaTeXParams()
+
+    # `\textbf{bold }tail` renders the same as `\textbf{bold} tail`, but keeping the space
+    # outside the group matches the other formats and keeps escaping predictable.
+    hoist_decoration_whitespace: ClassVar[bool] = True
 
     @override
     def serialize_bold(self, text: str, **kwargs: Any) -> str:

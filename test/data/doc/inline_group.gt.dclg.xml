@@ -6,7 +6,7 @@
     <location value="502"/>
     One
     <bold>Two</bold>
-Three
+    Three
   </text>
   <list>
     <ldiv/>
@@ -14,6 +14,6 @@ Three
     <ldiv/>
     Four
     <bold>Five</bold>
-Six
+    Six
   </list>
 </doclang>
