@@ -1,6 +1,7 @@
 """Unit tests for Doclang create_closing_token helper."""
 
 import warnings
+import xml.etree.ElementTree as ET
 from itertools import chain
 from pathlib import Path
 from typing import Optional
@@ -326,6 +327,30 @@ def _create_escape_test_doc(inp_doc: DoclingDocument):
     )
 
     return doc
+
+
+@pytest.mark.parametrize("pretty_indentation", [None, "  "])
+def test_doclang_replaces_xml_illegal_characters(pretty_indentation: Optional[str]):
+    """DocLang output remains valid when document text contains XML-illegal controls."""
+    doc = DoclingDocument(name="xml_illegal_character")
+    doc.add_text(label=DocItemLabel.TEXT, text="Before break\x0bAfter break")
+
+    result = (
+        DocLangDocSerializer(
+            doc=doc,
+            params=DocLangParams(
+                include_version=False,
+                add_location=False,
+                pretty_indentation=pretty_indentation,
+            ),
+        )
+        .serialize()
+        .text
+    )
+
+    ET.fromstring(result)
+    assert "Before break[U+000B]After break" in result
+    assert "\x0b" not in result
 
 
 def test_cdata_always(sample_doc: DoclingDocument):
