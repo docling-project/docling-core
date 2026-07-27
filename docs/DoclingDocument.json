@@ -685,22 +685,14 @@
           "title": "Charspan"
         },
         "value": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
           "description": "Numeric value as written, before scale application. E.g. 4.0 for '$4B'.",
           "examples": [
             4.0,
             30.0,
             3.0
           ],
-          "title": "Value"
+          "title": "Value",
+          "type": "number"
         },
         "unit": {
           "anyOf": [
@@ -852,7 +844,8 @@
         }
       },
       "required": [
-        "text"
+        "text",
+        "value"
       ],
       "title": "DataPointMention",
       "type": "object"

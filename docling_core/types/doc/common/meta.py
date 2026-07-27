@@ -190,12 +190,12 @@ class DataPointMention(EntityMention):
     """
 
     value: Annotated[
-        Optional[float],
+        float,
         Field(
             description="Numeric value as written, before scale application. E.g. 4.0 for '$4B'.",
             examples=[4.0, 30.0, 3.0],
         ),
-    ] = None
+    ]
 
     unit: Annotated[
         Optional[str],
@@ -296,11 +296,9 @@ class DataPointMention(EntityMention):
     def compute_normalized_value(self) -> Optional[float]:
         """Return value * scale_factor without caching.
 
-        Returns None when value is absent or scale is present but unrecognised.
+        Returns None when scale is present but unrecognised.
         Use this to derive or refresh normalized_value after construction.
         """
-        if self.value is None:
-            return None
         factor = self.scale_factor
         if factor is None and self.scale is not None:
             return None

@@ -416,10 +416,10 @@ def test_data_point_roundtrip_and_html_rendering() -> None:
     assert meta.has_content()
 
     plain, dp = meta.entities.mentions
-    # plain EntityMention comes back as DataPointMention (subclass tried first in Union)
-    # but carries no numeric fields
-    assert isinstance(plain, DataPointMention)
-    assert plain.value is None
+    # plain EntityMention has no value field, so Pydantic correctly falls back
+    # to the base EntityMention type in the Union
+    assert isinstance(plain, EntityMention)
+    assert not isinstance(plain, DataPointMention)
 
     assert isinstance(dp, DataPointMention)
     assert dp.orig == "$4B"
@@ -490,20 +490,21 @@ def test_data_point_range_and_direction() -> None:
 
 def test_data_point_numeric_helpers() -> None:
     # scale_factor maps canonical scale strings to their multipliers
-    assert DataPointMention(text="4B", scale="billion").scale_factor == 1e9
-    assert DataPointMention(text="5k", scale="k").scale_factor == 1e3
-    assert DataPointMention(text="x").scale_factor is None
+    assert DataPointMention(text="4B", value=4.0, scale="billion").scale_factor == 1e9
+    assert DataPointMention(text="5k", value=5.0, scale="k").scale_factor == 1e3
+    assert DataPointMention(text="x", value=0.0).scale_factor is None
 
     # compute_normalized_value applies the scale factor on demand
     assert DataPointMention(text="4B", value=4.0, scale="billion").compute_normalized_value() == 4_000_000_000.0
     assert DataPointMention(text="30", value=30.0).compute_normalized_value() == 30.0
-    assert DataPointMention(text="n/a", scale="billion").compute_normalized_value() is None
-
     # display_dp is independent of the numeric value: "3%" and "3.0%" share value=3.0
     assert DataPointMention(text="3%", value=3.0, display_dp=0).display_dp == 0
     assert DataPointMention(text="3.0%", value=3.0, display_dp=1).display_dp == 1
 
 
 def test_data_point_range_end_requires_value() -> None:
+    # range_end validator now only guards against a None value field;
+    # since value is required, this test verifies the validator still rejects
+    # a DataPointMention constructed with value explicitly set to None via raw dict
     with pytest.raises(ValidationError, match="range_end requires value"):
-        DataPointMention(text="x", range_end=20.0)
+        DataPointMention.model_validate({"text": "x", "value": None, "range_end": 20.0})
