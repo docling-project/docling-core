@@ -1763,16 +1763,13 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         }
     )
 
-    def _bbox_from_location_text_fragments(
-        self, *, doc: DoclingDocument, fragments: list[str]
-    ) -> Optional[BoundingBox]:
-        r"""Build a TOPLEFT bbox from four ``<location value=\"...\"/>`` XML fragments."""
-        if len(fragments) != 4:
+    def _bbox_from_location_elements(self, *, doc: DoclingDocument, locations: list[Element]) -> Optional[BoundingBox]:
+        """Build a TOPLEFT bbox from four location elements."""
+        if len(locations) != 4:
             return None
         values: list[int] = []
         res_for_group: Optional[int] = None
-        for fragment in fragments:
-            loc_el = self._parse_xml_string(fragment)
+        for loc_el in locations:
             if loc_el.tagName != DocLangToken.LOCATION.value:
                 return None
             try:
@@ -1800,42 +1797,38 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         self,
         *,
         doc: Optional[DoclingDocument],
-        texts: list[str],
+        texts: list[str | Element],
         start: int,
     ) -> tuple[int, Optional[BoundingBox]]:
-        """Consume a leading quartet of location fragments; return next index and bbox."""
-        frags: list[str] = []
+        """Consume a leading quartet of location elements; return next index and bbox."""
+        locations: list[Element] = []
         idx = start
-        loc_tag = f"<{DocLangToken.LOCATION.value}"
-        while idx < len(texts) and texts[idx].strip().startswith(loc_tag):
-            frags.append(texts[idx])
+        while idx < len(texts):
+            item = texts[idx]
+            if not isinstance(item, Element) or item.tagName != DocLangToken.LOCATION.value:
+                break
+            locations.append(item)
             idx += 1
-            if len(frags) == 4:
-                bbox = self._bbox_from_location_text_fragments(doc=doc, fragments=frags) if doc is not None else None
+            if len(locations) == 4:
+                bbox = self._bbox_from_location_elements(doc=doc, locations=locations) if doc is not None else None
                 return idx, bbox
         return start, None
 
-    def _consume_otsl_cell_body_parts(self, texts: list[str], start: int) -> tuple[int, list[str]]:
+    def _otsl_structural_token(self, item: str | Element) -> Optional[str]:
+        if isinstance(item, Element) and item.tagName in self._OTSL_STRUCTURAL_TAGS:
+            return f"<{item.tagName}/>"
+        return None
+
+    def _consume_otsl_cell_body_parts(self, texts: list[str | Element], start: int) -> tuple[int, list[str | Element]]:
         """Collect OTSL cell body fragments until the next structural token."""
-        structural = {
-            DocLangVocabulary._create_selfclosing_token(token=DocLangToken.FCEL),
-            DocLangVocabulary._create_selfclosing_token(token=DocLangToken.ECEL),
-            DocLangVocabulary._create_selfclosing_token(token=DocLangToken.LCEL),
-            DocLangVocabulary._create_selfclosing_token(token=DocLangToken.UCEL),
-            DocLangVocabulary._create_selfclosing_token(token=DocLangToken.XCEL),
-            DocLangVocabulary._create_selfclosing_token(token=DocLangToken.NL),
-            DocLangVocabulary._create_selfclosing_token(token=DocLangToken.CHED),
-            DocLangVocabulary._create_selfclosing_token(token=DocLangToken.RHED),
-            DocLangVocabulary._create_selfclosing_token(token=DocLangToken.SROW),
-        }
-        parts: list[str] = []
+        parts: list[str | Element] = []
         idx = start
-        while idx < len(texts) and texts[idx] not in structural:
+        while idx < len(texts) and self._otsl_structural_token(texts[idx]) is None:
             parts.append(texts[idx])
             idx += 1
         return idx, parts
 
-    def _otsl_extract_tokens_and_text(self, s: str) -> tuple[list[str], list[str]]:
+    def _otsl_extract_tokens_and_text(self, s: str) -> tuple[list[str], list[str | Element]]:
         """Extract OTSL structural tokens and interleaved text.
 
         Strips the outer wrapper and preserves OTSL body content including per-cell
@@ -1843,7 +1836,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         ``<text><italic>...</italic></text>``) by keeping them as single units.
         """
         tokens: list[str] = []
-        parts: list[str] = []
+        parts: list[str | Element] = []
 
         otsl_el = self._parse_xml_string(s)
 
@@ -1870,18 +1863,13 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 if tag_name in otsl_tokens:
                     token_str = f"<{tag_name}/>"
                     tokens.append(token_str)
-                    parts.append(token_str)
-                else:
-                    # This is a nested element (like <text>, <italic>, etc.)
-                    # Keep it as a complete XML string
-                    xml_str = node.toxml()
-                    parts.append(xml_str)
+                parts.append(node)
 
         return tokens, parts
 
     def _otsl_parse_texts(
         self,
-        texts: list[str],
+        texts: list[str | Element],
         tokens: list[str],
         doc: Optional["DoclingDocument"] = None,
         parent: Optional[NodeItem] = None,
@@ -1904,9 +1892,9 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
 
         # Clean tokens to only structural OTSL markers
         clean_tokens: list[str] = []
-        for t in tokens:
-            if t in [ecel, fcel, lcel, ucel, xcel, nl, ched, rhed, srow, corn]:
-                clean_tokens.append(t)
+        for token in tokens:
+            if token in [ecel, fcel, lcel, ucel, xcel, nl, ched, rhed, srow, corn]:
+                clean_tokens.append(token)
         tokens = clean_tokens
 
         # Split into rows by NL markers while keeping segments
@@ -1935,14 +1923,15 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         origin_tokens = [fcel, ecel, ched, rhed, srow, corn]
         continuation_origin_tokens = [lcel, ucel, xcel]
 
-        for i, t in enumerate(texts):
+        for i, item in enumerate(texts):
+            t = self._otsl_structural_token(item)
             cell_text = ""
             if t in origin_tokens + continuation_origin_tokens:
                 row_span = 1
                 col_span = 1
                 cell_bbox: Optional[BoundingBox] = None
                 content_idx = i + 1
-                cell_parts: list[str] = []
+                cell_parts: list[str | Element] = []
                 if t != ecel and content_idx < len(texts):
                     content_idx, cell_bbox = self._consume_leading_location_fragments(
                         doc=doc,
@@ -1950,13 +1939,13 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                         start=content_idx,
                     )
                     content_idx, cell_parts = self._consume_otsl_cell_body_parts(texts, content_idx)
-                    cell_text = "".join(cell_parts)
+                    cell_text = "".join(part if isinstance(part, str) else part.toxml() for part in cell_parts)
 
                 is_continuation_origin = t in continuation_origin_tokens
                 if is_continuation_origin and not cell_text.strip() and not cell_parts:
                     pass
                 else:
-                    next_right = texts[content_idx] if content_idx < len(texts) else ""
+                    next_right = self._otsl_structural_token(texts[content_idx]) if content_idx < len(texts) else None
                     next_bottom = (
                         split_row_tokens[r_idx + 1][c_idx]
                         if (r_idx + 1) < len(split_row_tokens) and c_idx < len(split_row_tokens[r_idx + 1])
@@ -1969,22 +1958,14 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                         row_span += count_down(split_row_tokens, c_idx, r_idx + 1, [ucel, xcel])
 
                     cell_text_stripped = cell_text.strip()
-                    xml_parts = [
-                        part.strip()
-                        for part in cell_parts
-                        if part.strip().startswith("<") and part.strip().endswith(">")
-                    ]
+                    element_parts = [part for part in cell_parts if isinstance(part, Element)]
                     cell_added = False
-                    if xml_parts and doc is not None and parent is not None:
+                    if element_parts and doc is not None and parent is not None:
                         cell_group = doc.add_group(parent=parent, label=GroupLabel.UNSPECIFIED)
                         text_parts: list[str] = []
-                        for part in xml_parts:
-                            wrapped_xml = f"<root>{part}</root>"
-                            root_el = self._parse_xml_string(wrapped_xml)
-                            for child_node in root_el.childNodes:
-                                if isinstance(child_node, Element):
-                                    self._dispatch_element(doc=doc, el=child_node, parent=cell_group)
-                                    text_parts.append(self._get_text(child_node))
+                        for part in element_parts:
+                            self._dispatch_element(doc=doc, el=part, parent=cell_group)
+                            text_parts.append(self._get_text(part))
                         actual_text = "".join(text_parts).strip() or cell_text_stripped
                         table_cells.append(
                             RichTableCell(

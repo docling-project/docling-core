@@ -1871,6 +1871,35 @@ def test_otsl_xml_sensitive_virtual_and_explicit_text_cells():
     assert isinstance(doc.tables[0].data.grid[0][1], RichTableCell)
 
 
+@pytest.mark.parametrize(
+    "literal",
+    [
+        "<none>",
+        "<none/>",
+        "<Month number>",
+        "<text>not literal</text>",
+        "<fcel/>",
+    ],
+)
+def test_otsl_angle_delimited_text_remains_text(literal: str) -> None:
+    xml = f'<doclang version="0.7"><table><fcel/><content><![CDATA[{literal}]]></content><nl/></table></doclang>'
+    assert_valid_dclg_xml(xml)
+
+    cell = DocLangDocDeserializer().deserialize_str(xml).tables[0].data.grid[0][0]
+
+    assert type(cell) is TableCell
+    assert cell.text == literal
+
+
+def test_otsl_real_text_element_remains_rich() -> None:
+    xml = '<doclang version="0.7"><table><fcel/><text>not literal</text><nl/></table></doclang>'
+
+    cell = DocLangDocDeserializer().deserialize_str(xml).tables[0].data.grid[0][0]
+
+    assert isinstance(cell, RichTableCell)
+    assert cell.text == "not literal"
+
+
 def test_picture_body_table_is_semantic_content_not_chart_tabular():
     """``<table>`` after the preamble is nested picture content, not ``meta.tabular_chart``."""
     doclang = (
