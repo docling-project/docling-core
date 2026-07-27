@@ -1,0 +1,180 @@
+{
+  "schema_name": "DoclingDocument",
+  "version": "1.10.0",
+  "name": "entity-mentions-example",
+  "furniture": {
+    "self_ref": "#/furniture",
+    "children": [],
+    "content_layer": "furniture",
+    "name": "_root_",
+    "label": "unspecified"
+  },
+  "body": {
+    "self_ref": "#/body",
+    "children": [
+      {
+        "$ref": "#/texts/0"
+      },
+      {
+        "$ref": "#/texts/1"
+      },
+      {
+        "$ref": "#/texts/2"
+      }
+    ],
+    "content_layer": "body",
+    "name": "_root_",
+    "label": "unspecified"
+  },
+  "groups": [],
+  "texts": [
+    {
+      "self_ref": "#/texts/0",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "meta": {
+        "entities": {
+          "mentions": [
+            {
+              "text": "IBM",
+              "label": "ORG",
+              "charspan": [
+                0,
+                3
+              ]
+            },
+            {
+              "text": "Q3 2025",
+              "label": "DATE",
+              "charspan": [
+                34,
+                41
+              ]
+            },
+            {
+              "text": "16.3 billion USD",
+              "orig": "$16.3B",
+              "label": "REVENUE",
+              "charspan": [
+                24,
+                30
+              ],
+              "value": 16.3,
+              "unit": "USD",
+              "scale": "billion",
+              "normalized_value": 16300000000.0,
+              "display_dp": 1,
+              "precision": "exact"
+            },
+            {
+              "text": "9 percent",
+              "orig": "9%",
+              "label": "GROWTH_RATE",
+              "charspan": [
+                46,
+                48
+              ],
+              "value": 9.0,
+              "unit": "%",
+              "display_dp": 0,
+              "precision": "exact",
+              "direction": "increase"
+            }
+          ]
+        }
+      },
+      "label": "text",
+      "prov": [],
+      "orig": "IBM reported revenue of $16.3B in Q3 2025, up 9% year-over-year.",
+      "text": "IBM reported revenue of $16.3B in Q3 2025, up 9% year-over-year."
+    },
+    {
+      "self_ref": "#/texts/1",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "meta": {
+        "entities": {
+          "mentions": [
+            {
+              "text": "Switzerland",
+              "label": "LOC",
+              "charspan": [
+                18,
+                29
+              ]
+            },
+            {
+              "text": "2026",
+              "label": "DATE",
+              "charspan": [
+                33,
+                37
+              ]
+            },
+            {
+              "text": "9 million",
+              "label": "POPULATION",
+              "charspan": [
+                55,
+                64
+              ],
+              "value": 9.0,
+              "scale": "million",
+              "normalized_value": 9000000.0,
+              "display_dp": 0,
+              "precision": "approximate"
+            }
+          ]
+        }
+      },
+      "label": "text",
+      "prov": [],
+      "orig": "The population of Switzerland in 2026 is approximately 9 million people.",
+      "text": "The population of Switzerland in 2026 is approximately 9 million people."
+    },
+    {
+      "self_ref": "#/texts/2",
+      "parent": {
+        "$ref": "#/body"
+      },
+      "children": [],
+      "content_layer": "body",
+      "meta": {
+        "entities": {
+          "mentions": [
+            {
+              "text": "18 to 21 percent",
+              "orig": "18%",
+              "label": "OPERATING_MARGIN",
+              "charspan": [
+                37,
+                40
+              ],
+              "value": 18.0,
+              "unit": "%",
+              "range_end": 21.0,
+              "display_dp": 0,
+              "precision": "range_low",
+              "direction": "increase"
+            }
+          ]
+        }
+      },
+      "label": "text",
+      "prov": [],
+      "orig": "Operating margins improved to between 18% and 21% during the period.",
+      "text": "Operating margins improved to between 18% and 21% during the period."
+    }
+  ],
+  "pictures": [],
+  "tables": [],
+  "key_value_items": [],
+  "form_items": [],
+  "pages": {}
+}
