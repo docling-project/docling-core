@@ -14,6 +14,10 @@ from typing import Annotated, Any, Literal
 
 import click
 import typer
+from lxml import etree
+
+from dlgrep import __version__
+from dlgrep.document import DlgrepError, LoadedDocument, Unit, _canonical_xpath, _is_element
 from docling_core.experimental.serializer.outline import (
     OutlineDocSerializer,
     OutlineFormat,
@@ -26,10 +30,6 @@ from docling_core.types.doc import (
     TableItem,
     TitleItem,
 )
-from lxml import etree
-
-from dlgrep import __version__
-from dlgrep.document import DlgrepError, LoadedDocument, Unit, _canonical_xpath, _is_element
 
 DEFAULT_LIMIT = 20
 DEFAULT_MAX_CHARS = 2_000
@@ -53,6 +53,13 @@ class _DefaultCommandGroup(typer.core.TyperGroup):
         return super().parse_args(ctx, args)
 
 
+# dlgrep is versioned in lockstep with docling-core, so its version number says
+# nothing about its own maturity. The help output is the only place we can say so.
+EXPERIMENTAL_NOTICE = (
+    "EXPERIMENTAL: dlgrep is under active development. Commands, options, output "
+    "formats and exit codes may change incompatibly in any release."
+)
+
 app = typer.Typer(
     name="dlgrep",
     cls=_DefaultCommandGroup,
@@ -60,7 +67,7 @@ app = typer.Typer(
     add_completion=False,
     pretty_exceptions_enable=False,
     context_settings={"help_option_names": ["-h", "--help"]},
-    help="Search semantic units in DocLang documents and return XPath addresses.",
+    help=f"Search semantic units in DocLang documents and return XPath addresses.\n\n{EXPERIMENTAL_NOTICE}",
 )
 
 

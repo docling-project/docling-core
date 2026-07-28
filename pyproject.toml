@@ -118,6 +118,8 @@ dev = [
     "opencv-python-headless>=4.6.0.66,<5.0.0.0",
     "universal-pathlib>=0.3.10",
     "doclang[schematron-saxon]>=0.7.1,<0.8",
+    # workspace member, so that `uv sync` gives lint/typecheck/test coverage of it
+    "dlgrep",
 ]
 constraints = [
     'pandas (>=2.1.4,<3.0.0); python_version < "3.11"',
@@ -127,6 +129,12 @@ constraints = [
 
 [tool.uv]
 package = true
+
+[tool.uv.workspace]
+members = ["packages/dlgrep"]
+
+[tool.uv.sources]
+dlgrep = { workspace = true }
 
 [tool.setuptools.packages.find]
 where = [".", "docling_core/resources/schemas"]
@@ -223,6 +231,7 @@ module = [
     "jsondiff.*",
     "jsonref.*",
     "jsonschema.*",
+    "lxml.*",
     "requests.*",
     "semchunk.*",
     "tabulate.*",
@@ -233,7 +242,7 @@ module = [
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["test.*"]
+module = ["test.*", "tests.*"]  # `tests.*` is packages/dlgrep/tests
 disallow_untyped_defs = false
 
 [tool.semantic_release]

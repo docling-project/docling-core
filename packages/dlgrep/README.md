@@ -41,8 +41,7 @@ $ dlgrep 'GPU|CPU' paper.dclg \
 ### 1. Install
 
 ```bash
-python -m pip install \
-  "dlgrep @ git+https://github.com/docling-project/dlgrep.git"
+python -m pip install dlgrep
 ```
 
 ### 2. Convert source documents to DocLang
@@ -226,9 +225,14 @@ XPath input may omit the namespace and document root: `/formula[1]`,
 
 ## Development
 
+`dlgrep` lives in the [docling-core](https://github.com/docling-project/docling-core)
+repository as a workspace member under `packages/dlgrep`, and is released in
+lockstep with `docling-core` (same version, exact dependency pin). Work on it
+from the repository root:
+
 ```bash
-uv sync
-uv run pytest
+uv sync --all-extras --all-packages
+uv run pytest packages/dlgrep/tests
 uv run pre-commit run --all-files
 ```
 

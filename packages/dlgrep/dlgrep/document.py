@@ -13,6 +13,8 @@ from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from lxml import etree
+
 from docling_core.transforms.deserializer import (
     DocLangDocDeserializer,
     DocLangSourceMap,
@@ -37,7 +39,6 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
 )
-from lxml import etree
 
 DOCLANG_NS = "https://www.doclang.ai/ns/v0"
 NS = {"d": DOCLANG_NS}

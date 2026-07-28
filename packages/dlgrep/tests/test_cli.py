@@ -2,6 +2,7 @@ import json
 import zipfile
 from pathlib import Path
 
+from dlgrep import __version__
 from dlgrep.cli import main
 
 DOCUMENT = """<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.7">
@@ -373,12 +374,14 @@ def test_typer_help_version_and_validation(tmp_path: Path, capsys) -> None:
     help_text = capsys.readouterr().out
     assert "inspect" in help_text
     assert "search" in help_text
+    # the version tracks docling-core, so the help is the only maturity signal
+    assert "EXPERIMENTAL" in help_text
 
     assert main(["search", "--help"]) == 0
     assert "--class" not in capsys.readouterr().out
 
     assert main(["--version"]) == 0
-    assert capsys.readouterr().out.strip() == "0.0.0"
+    assert capsys.readouterr().out.strip() == __version__
 
     assert main(["Report", str(path), "--format", "yaml"]) == 2
     assert "Invalid value" in capsys.readouterr().err
