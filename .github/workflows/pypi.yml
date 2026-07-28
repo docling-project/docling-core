@@ -21,7 +21,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
       - name: Install dependencies
-        run: uv sync --all-extras --all-packages
+        run: uv sync --frozen --all-extras --all-packages
       - name: Build packages
         run: bash .github/scripts/build-packages.sh
       # Last gate before anything is public. Installing both wheels in one
@@ -62,13 +62,11 @@ jobs:
           packages-dir: dist/docling-core/
 
   publish-dlgrep:
-    # dlgrep pins docling-core exactly, so publish it second. No propagation
-    # wait: at worst an install in the seconds between the two uploads has to
-    # be retried - not a reason to hold up a release.
+    # dlgrep pins docling-core exactly, so publish it second.
     needs: publish-docling-core
     runs-on: ubuntu-latest
     environment:
-      name: pypi-dlgrep
+      name: pypi
       url: https://pypi.org/p/dlgrep
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing

@@ -7,8 +7,6 @@ set -x  # display command on output
 # can upload them independently (a single `dist/` makes the second publish step
 # re-upload the first package's files and fail on `skip-existing: false`).
 
-python3 .github/scripts/check_lockstep.py
-
 echo "Building docling-core package..."
 uv build --package docling-core --out-dir dist/docling-core
 

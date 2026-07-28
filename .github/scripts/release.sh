@@ -12,11 +12,9 @@ CHGLOG_FILE="${CHGLOG_FILE:-CHANGELOG.md}"
 # update package versions:
 #   - root pyproject.toml               = docling-core
 #   - packages/dlgrep/pyproject.toml    = dlgrep (lockstep, incl. its docling-core== pin)
-uvx --from=toml-cli toml set --toml-path=pyproject.toml project.version "${TARGET_VERSION}"
-uvx --from=toml-cli toml set --toml-path=packages/dlgrep/pyproject.toml project.version "${TARGET_VERSION}"
-sed -i.bak -E "s/\"docling-core==[0-9][^\"]*\"/\"docling-core==${TARGET_VERSION}\"/" packages/dlgrep/pyproject.toml
-rm -f packages/dlgrep/pyproject.toml.bak
-python3 .github/scripts/check_lockstep.py
+uv version "${TARGET_VERSION}" --package docling-core --frozen
+uv version "${TARGET_VERSION}" --package dlgrep --frozen
+uv add "docling-core==${TARGET_VERSION}" --package dlgrep --frozen
 
 uv lock --upgrade-package docling-core --upgrade-package dlgrep
 

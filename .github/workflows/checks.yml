@@ -61,7 +61,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
       - name: Install dependencies
-        run: uv sync --all-extras --all-packages
+        run: uv sync --frozen --all-extras --all-packages
       - name: Build packages
         run: bash .github/scripts/build-packages.sh
       - name: Check content of wheels

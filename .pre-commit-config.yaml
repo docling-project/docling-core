@@ -35,12 +35,6 @@ repos:
         pass_filenames: false
         language: system
         files: '\.py$'
-      - id: lockstep-version
-        name: "dlgrep/docling-core version lockstep"
-        entry: uv run --no-sync python .github/scripts/check_lockstep.py
-        pass_filenames: false
-        language: system
-        files: 'pyproject\.toml$'
   - repo: local
     hooks:
       - id: docs
