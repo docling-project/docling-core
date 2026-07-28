@@ -1084,7 +1084,7 @@ requires-dist = [
     { name = "tree-sitter-python", marker = "extra == 'chunking-openai'", specifier = ">=0.23.6" },
     { name = "tree-sitter-typescript", marker = "extra == 'chunking'", specifier = ">=0.23.2" },
     { name = "tree-sitter-typescript", marker = "extra == 'chunking-openai'", specifier = ">=0.23.2" },
-    { name = "typer", specifier = ">=0.12.5,<0.25.0" },
+    { name = "typer", specifier = ">=0.12.5,<0.27.0" },
     { name = "typing-extensions", specifier = ">=4.12.2,<5.0.0" },
 ]
 provides-extras = ["chunking", "chunking-openai", "examples"]
