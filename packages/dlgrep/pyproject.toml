@@ -29,11 +29,7 @@ requires-python = ">=3.10,<4.0"
 dependencies = [
     # Pinned exactly: dlgrep rides on docling-core internals and is released from
     # the same commit, in lockstep. Bumped by .github/scripts/release.sh.
-    "docling-core==2.88.0",
-    "doclang>=0.7,<0.8",
-    "typer>=0.15.1,<0.25.0",
-    "click>=8.0.0",
-    "lxml>=6.0.2",
+    "docling-core[dlgrep]==2.88.0",
 ]
 
 [project.urls]

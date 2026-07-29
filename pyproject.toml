@@ -68,6 +68,12 @@ docling-view = "docling_core.cli.view:app"
 docling-serialize = "docling_core.cli.serialize:app"
 
 [project.optional-dependencies]
+dlgrep = [
+    "doclang>=0.7,<0.8",
+    "typer>=0.15.1,<0.25.0",
+    "click>=8.0.0",
+    "lxml>=6.0.2",
+]
 chunking = [
     # common:
     'semchunk (>=2.2.0,<4.0.0)',

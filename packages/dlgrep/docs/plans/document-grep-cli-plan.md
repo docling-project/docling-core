@@ -127,12 +127,10 @@ without depending on the MCP server, cache, or tool protocol.
 
 ### 4.5 Runtime dependency boundary
 
-The CLI has three direct runtime dependencies:
+The CLI has one direct runtime dependency:
 
-- `typer>=0.15.1,<0.25.0`, for the command surface, help, typed options, and
-  validation;
-- `doclang>=0.7,<0.8`, for validation and archive behavior;
-- `docling-core>=2.87.1`, for semantic document behavior and source bindings.
+- `docling-core[dlgrep]==<same version>`, for semantic document behavior and
+  source bindings. The extra supplies Typer, DocLang, Click, and lxml.
 
 It may reuse code patterns from `docling-agent` and `docling-mcp`, but it must
 not pull their LLM, server, or integration dependencies into the runtime. Use

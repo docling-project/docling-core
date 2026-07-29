@@ -11,10 +11,10 @@ CHGLOG_FILE="${CHGLOG_FILE:-CHANGELOG.md}"
 
 # update package versions:
 #   - root pyproject.toml               = docling-core
-#   - packages/dlgrep/pyproject.toml    = dlgrep (lockstep, incl. its docling-core== pin)
+#   - packages/dlgrep/pyproject.toml    = dlgrep (lockstep, incl. its docling-core[dlgrep]== pin)
 uv version "${TARGET_VERSION}" --package docling-core --frozen
 uv version "${TARGET_VERSION}" --package dlgrep --frozen
-uv add "docling-core==${TARGET_VERSION}" --package dlgrep --frozen
+uv add "docling-core[dlgrep]==${TARGET_VERSION}" --package dlgrep --frozen
 
 uv lock --upgrade-package docling-core --upgrade-package dlgrep
 

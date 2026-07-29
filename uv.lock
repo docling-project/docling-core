@@ -973,21 +973,11 @@ name = "dlgrep"
 version = "2.88.0"
 source = { editable = "packages/dlgrep" }
 dependencies = [
-    { name = "click" },
-    { name = "doclang" },
-    { name = "docling-core" },
-    { name = "lxml" },
-    { name = "typer" },
+    { name = "docling-core", extra = ["dlgrep"] },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "click", specifier = ">=8.0.0" },
-    { name = "doclang", specifier = ">=0.7,<0.8" },
-    { name = "docling-core", editable = "." },
-    { name = "lxml", specifier = ">=6.0.2" },
-    { name = "typer", specifier = ">=0.15.1,<0.25.0" },
-]
+requires-dist = [{ name = "docling-core", extras = ["dlgrep"], editable = "." }]
 
 [[package]]
 name = "doclang"
@@ -1047,6 +1037,12 @@ chunking-openai = [
     { name = "tree-sitter-python" },
     { name = "tree-sitter-typescript" },
 ]
+dlgrep = [
+    { name = "click" },
+    { name = "doclang" },
+    { name = "lxml" },
+    { name = "typer" },
+]
 examples = [
     { name = "datasets" },
     { name = "matplotlib", version = "3.10.9", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -1083,12 +1079,15 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "click", marker = "extra == 'dlgrep'", specifier = ">=8.0.0" },
     { name = "datasets", marker = "extra == 'examples'", specifier = ">=4.0.0" },
     { name = "defusedxml", specifier = ">=0.7.1,<0.8.0" },
     { name = "doclang", specifier = ">=0.7,<0.8" },
+    { name = "doclang", marker = "extra == 'dlgrep'", specifier = ">=0.7,<0.8" },
     { name = "jsonref", specifier = ">=1.1.0,<2.0.0" },
     { name = "jsonschema", specifier = ">=4.16.0,<5.0.0" },
     { name = "latex2mathml", specifier = ">=3.77.0,<4.0.0" },
+    { name = "lxml", marker = "extra == 'dlgrep'", specifier = ">=6.0.2" },
     { name = "matplotlib", marker = "extra == 'examples'", specifier = ">=3.7.0" },
     { name = "openpyxl", marker = "extra == 'examples'", specifier = ">=3.1.5" },
     { name = "pandas", specifier = ">=2.1.4,<4.0.0" },
@@ -1113,9 +1112,10 @@ requires-dist = [
     { name = "tree-sitter-typescript", marker = "extra == 'chunking'", specifier = ">=0.23.2" },
     { name = "tree-sitter-typescript", marker = "extra == 'chunking-openai'", specifier = ">=0.23.2" },
     { name = "typer", specifier = ">=0.12.5,<0.27.0" },
+    { name = "typer", marker = "extra == 'dlgrep'", specifier = ">=0.15.1,<0.25.0" },
     { name = "typing-extensions", specifier = ">=4.12.2,<5.0.0" },
 ]
-provides-extras = ["chunking", "chunking-openai", "examples"]
+provides-extras = ["dlgrep", "chunking", "chunking-openai", "examples"]
 
 [package.metadata.requires-dev]
 constraints = [
