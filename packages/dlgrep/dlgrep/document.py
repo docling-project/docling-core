@@ -189,7 +189,7 @@ class LoadedDocument:
         try:
             document = DocLangDocDeserializer().deserialize_str(text, source_map=source_map)
             document.name = Path(source).stem if source != "-" else "stdin"
-            document.hierarchize()
+            document._hierarchize()
         except Exception as exc:
             raise DlgrepError(f"could not deserialize DocLang: {exc}") from exc
 

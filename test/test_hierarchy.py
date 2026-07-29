@@ -43,7 +43,7 @@ def test_flatten(mixed_hierarchy_doc: DoclingDocument):
 
 def test_hierarchize(mixed_hierarchy_doc):
     doc: DoclingDocument = mixed_hierarchy_doc
-    doc.hierarchize()
+    doc._hierarchize()
 
     doc._normalize_references()
 

@@ -148,10 +148,10 @@ Everything in §4.2 is consumed as-is and read-only. The design also needs a
 small, clearly bounded set of additions inside `docling-core` itself, so the
 CLI never reaches into deserializer internals:
 
-1. Source-binding collector at the deserialization boundary. An opt-in
-   collector records, at each item and structural-unit creation point, the
+1. Source-binding recorder at the deserialization boundary. An opt-in sidecar
+   records, at each item and structural-unit creation point, the
    mapping from source element to the resulting `self_ref` (§18.1). When no
-   collector is supplied, deserializer behavior and output are unchanged. This
+   recorder is supplied, deserializer behavior and output are unchanged. This
    boundary is the authoritative place to build the source map; the CLI only
    consumes it.
 
@@ -163,14 +163,12 @@ CLI never reaches into deserializer internals:
    each `TableCell`. This is the one binding a CLI-local shim cannot
    reconstruct cleanly.
 
-3. Stable public entry points. `DoclingDocument._hierarchize()` and the
-   experimental `OutlineDocSerializer` are private or experimental today. The
-   CLI needs public, stable equivalents rather than depending on internal
-   names.
+3. Package-local hierarchy reuse. Because dlgrep ships with docling-core, it
+   calls `DoclingDocument._hierarchize()` directly rather than adding a public
+   API solely for this package-local consumer.
 
-Items 1 and 3 are additive and low-risk. Item 2 is the only change that touches
-existing deserialization logic, and it is the gating dependency for table-cell
-addressing.
+The sidecar recorder is additive and does not affect ordinary deserialization.
+Origin identity remains the gating dependency for table-cell addressing.
 
 ## 5. System model
 
@@ -1039,8 +1037,8 @@ or unstable object identities.
 
 ### 18.1 Preferred source-map integration
 
-Add an optional source-binding collector to DocLang deserialization. The
-collector records a binding at the point each item or structural unit is
+Add an optional source-binding recorder sidecar to DocLang deserialization. The
+recorder records a binding at the point each item or structural unit is
 created or merged.
 
 Required hook points:
@@ -1053,7 +1051,7 @@ Required hook points:
 6. thread fragment merge into an existing item;
 7. page-break advancement.
 
-The ordinary deserializer API and output remain unchanged when no collector is
+The ordinary deserializer API and output remain unchanged when no recorder is
 provided.
 
 Hook point 4 is the one that cannot be satisfied by observation alone. The OTSL
@@ -1063,9 +1061,8 @@ XPath without post-hoc text matching therefore requires the deserializer to
 carry a stable origin identity through OTSL parsing. This is a docling-core
 extension, not a CLI concern; see §4.6.
 
-A CLI-local instrumented deserializer is acceptable for an initial spike, but
-the source map should ultimately live at the deserialization boundary where
-the mapping is authoritative.
+The source map lives at the deserialization boundary where the mapping is
+authoritative; the CLI only consumes the completed map.
 
 ### 18.2 Reuse points
 
@@ -1075,7 +1072,7 @@ Use:
 - Docling's default-command `TyperGroup` pattern for bare search syntax;
 - DocLang validation and archive rules;
 - `DocLangDocDeserializer` for semantic reconstruction;
-- `DoclingDocument._hierarchize()` or its future public equivalent;
+- package-local `DoclingDocument._hierarchize()`;
 - `DoclingDocument.iterate_items()` for semantic order and filters;
 - `OutlineDocSerializer` for outlines;
 - Markdown/HTML serializers for rich semantic output;
@@ -1314,13 +1311,11 @@ required.
 
 The following are intentionally left open in this draft:
 
-1. whether the source-map API belongs directly in `docling-core` or begins as
-   a CLI-local experimental wrapper;
-2. final default character limits after testing representative large
+1. final default character limits after testing representative large
    documents;
-3. whether XPath 3.1 selection is required beyond the generated XPath
+2. whether XPath 3.1 selection is required beyond the generated XPath
    1.0-compatible subset;
-4. exact stable JSON schema naming before the first public release.
+3. exact stable JSON schema naming before the first public release.
 
 These decisions do not change the core architecture: XPath remains the public
 source address, `DoclingDocument` provides semantic behavior, and the

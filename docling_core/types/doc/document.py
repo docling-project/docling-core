@@ -1228,9 +1228,9 @@ class DoclingDocument(BaseModel):
                 return True
         return False
 
-    def hierarchize(self) -> None:
+    def _hierarchize(self):
         """Structure the document's titles and headings into an explicit hierarchy based on their levels."""
-        section_root_by_level: dict[int, NodeItem] = {-1: self.body}
+        section_root_by_level: dict[int, Union[TitleItem, SectionHeaderItem]] = {-1: self.body}
         resume_node: Optional[NodeItem] = self.body
 
         while resume_node:
@@ -1281,10 +1281,6 @@ class DoclingDocument(BaseModel):
                     for k in keys_to_delete:
                         del section_root_by_level[k]
                     section_root_by_level[introduced_level] = item
-
-    def _hierarchize(self) -> None:
-        """Compatibility alias for :meth:`hierarchize`."""
-        self.hierarchize()
 
     def _flatten(self):
         """Flatten the document's titles and headings into a single level."""
