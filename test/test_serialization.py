@@ -900,6 +900,50 @@ def test_html_list_item_markers(sample_doc):
         )
 
 
+def test_html_mixed_list_items_do_not_invent_markers():
+    doc = DoclingDocument(name="mixed-list")
+    list_group = doc.add_list_group(name="table-of-contents")
+
+    doc.add_list_item(
+        text="Purpose",
+        orig="1. Purpose",
+        enumerated=True,
+        marker="1.",
+        parent=list_group,
+    )
+    doc.add_list_item(
+        text="1.1 Scope",
+        orig="1.1 Scope",
+        enumerated=False,
+        marker="",
+        parent=list_group,
+    )
+    doc.add_list_item(
+        text="Operation",
+        orig="2. Operation",
+        enumerated=True,
+        marker="2.",
+        parent=list_group,
+    )
+
+    html = (
+        HTMLDocSerializer(
+            doc=doc,
+            params=HTMLParams(
+                prettify=False,
+                show_original_list_item_marker=True,
+            ),
+        )
+        .serialize()
+        .text
+    )
+
+    assert "<ol>" in html
+    assert "<li style=\"list-style-type: '1. ';\">Purpose</li>" in html
+    assert '<li style="list-style-type: none;">1.1 Scope</li>' in html
+    assert "<li style=\"list-style-type: '2. ';\">Operation</li>" in html
+
+
 def test_html_nested_lists():
     src = Path("./test/data/doc/polymers.json")
     doc = DoclingDocument.load_from_json(src)
