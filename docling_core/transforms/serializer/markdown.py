@@ -5,8 +5,9 @@ import logging
 import re
 import textwrap
 from enum import Enum
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Annotated, Any, Optional, Union
+from urllib.parse import quote, urlsplit, urlunsplit
 
 from pydantic import AnyUrl, BaseModel, Field, PositiveInt
 from tabulate import _column_type, tabulate
@@ -744,11 +745,78 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             ):
                 text_res = image_placeholder
             else:
-                text_res = f"![Image]({item.image.uri!s})"
+                text_res = f"![Image]({self._escape_uri_path(item.image.uri)})"
         else:
             text_res = image_placeholder
 
         return create_ser_result(text=text_res, span_source=item)
+
+    @classmethod
+    def _escape_uri_path(cls, value: Union[AnyUrl, PurePath]) -> str:
+        """Encode a URL or filesystem path as a Markdown link destination.
+
+        Handles URLs of any scheme (https/s3/ftp/...) as well as POSIX and Windows
+        paths, keeps relative paths relative, and never double-encodes. A Windows path
+        is recognized by either flavour, so a document authored on Windows still
+        resolves when it is exported on POSIX.
+
+        The only destination this gives a ``file://`` scheme to is an absolute Windows
+        path, where it is the sole spelling a renderer cannot misread as a URL scheme
+        (``C:``) or as an authority (``//server``). A URL that already carries the
+        scheme is passed through, since dropping it would turn an absolute filesystem
+        reference into a root-relative URL.
+
+        Known limitation: behavior is unknown if value is a POSIX filename, containing
+        an actual backslash in the filename.
+
+        Args:
+            value: The URL or path to encode.
+
+        Returns:
+            A percent-encoded Markdown link destination.
+        """
+
+        # Characters that survive percent-encoding in a link destination.
+        # The RFC 3986 reserved characters that carry meaning in a URI, plus ``%`` so that an
+        # already-encoded destination is not encoded a second time. Whitespace and parentheses
+        # are deliberately absent: they would end a Markdown inline link.
+        _URI_KEEP_CHARS: str = "/%:@+,;=~$!&'*"
+
+        # Matches the drive prefix of an absolute Windows path, e.g. ``C:/``.
+        _WINDOWS_DRIVE_RE: re.Pattern = re.compile(r"[A-Za-z]:/")
+
+        keep = _URI_KEEP_CHARS
+        # A backslash is both the Windows separator and a Markdown escape character, and
+        # is read as a separator whatever flavour the path arrives in: a document authored
+        # on Windows keeps its backslashes once it is re-read on POSIX, where the flavour
+        # can no longer tell. A URL is unaffected, as pydantic normalizes backslashes away
+        # when parsing.
+        s = str(value).replace("\\", "/")
+
+        if s.startswith("//"):  # In case of a fileshare (//someserver/somefolder)
+            host, _, tail = s.lstrip("/").partition("/")  # get the end of the path
+            # file://<host>/<path>, with <host> being a possibly empty string.
+            return urlunsplit(("file", host, quote(f"/{tail}", safe=keep), "", ""))
+        if _WINDOWS_DRIVE_RE.match(s):  # In case of a Windows filename with drive letter
+            # file://<full_path_with_filename>
+            return urlunsplit(("file", "", quote(f"/{s}", safe=keep), "", ""))
+
+        # A URL keeps its scheme, authority and delimiters; only its components are
+        # encoded. A single-character scheme cannot be real, so it is read as a path.
+        parts = urlsplit(s)
+        if len(parts.scheme) > 1:
+            return urlunsplit(
+                (
+                    parts.scheme,
+                    parts.netloc,
+                    quote(parts.path, safe=keep),
+                    quote(parts.query, safe=keep + "="),
+                    quote(parts.fragment, safe=keep),
+                )
+            )
+
+        # A relative or root-relative local path.
+        return quote(s, safe=keep)
 
 
 class MarkdownKeyValueSerializer(BaseKeyValueSerializer):
