@@ -219,8 +219,8 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                     html_tag="li",
                     text=text,
                     attrs=(
-                        {"style": f"list-style-type: '{item.marker} ';"}
-                        if params.show_original_list_item_marker and item.marker
+                        {"style": (f"list-style-type: '{item.marker} ';" if item.marker else "list-style-type: none;")}
+                        if params.show_original_list_item_marker
                         else {}
                     ),
                 )
