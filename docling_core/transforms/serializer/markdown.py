@@ -751,8 +751,8 @@ class MarkdownPictureSerializer(BasePictureSerializer):
 
         return create_ser_result(text=text_res, span_source=item)
 
-    @classmethod
-    def _escape_uri_path(cls, value: Union[AnyUrl, PurePath]) -> str:
+    @staticmethod
+    def _escape_uri_path(value: Union[AnyUrl, PurePath]) -> str:
         """Encode a URL or filesystem path as a Markdown link destination.
 
         Handles URLs of any scheme (https/s3/ftp/...) as well as POSIX and Windows
