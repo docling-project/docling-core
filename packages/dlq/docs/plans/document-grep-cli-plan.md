@@ -1,7 +1,8 @@
 # Document Grep CLI
 
-Status: Implementation specification
-Executable and package name: `dlgrep`
+Status: Historical; superseded by
+[`dlq-restructure-spec.md`](dlq-restructure-spec.md).
+Executable and package name: `dlgrep` (historical)
 Target users: agents, developers, and document-processing pipelines
 
 ## 1. Summary

@@ -10,11 +10,11 @@ set -x  # display command on output
 echo "Building docling-core package..."
 uv build --package docling-core --out-dir dist/docling-core
 
-echo "Building dlgrep package..."
-uv build --package dlgrep --out-dir dist/dlgrep
+echo "Building dlq package..."
+uv build --package dlq --out-dir dist/dlq
 
 echo "Build complete."
 echo "docling-core artifacts:"
 ls -lh dist/docling-core/
-echo "dlgrep artifacts:"
-ls -lh dist/dlgrep/
+echo "dlq artifacts:"
+ls -lh dist/dlq/

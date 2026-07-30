@@ -1,11 +1,11 @@
 [project]
-name = "dlgrep"
+name = "dlq"
 version = "2.88.0"  # DO NOT EDIT, updated automatically (lockstep with docling-core)
-description = "Semantic grep for DocLang documents"
+description = "Query DocLang documents: grep, list, outline, and XPath over semantic document structure"
 license = "MIT"
 license-files = ["LICENSE"]
 readme = "README.md"
-keywords = ["docling", "doclang", "grep", "search", "xpath", "cli"]
+keywords = ["docling", "doclang", "query", "grep", "search", "xpath", "cli"]
 authors = [
     { name = "Christoph Auer", email = "cau@zurich.ibm.com" },
 ]
@@ -27,9 +27,9 @@ classifiers = [
 ]
 requires-python = ">=3.10,<4.0"
 dependencies = [
-    # Pinned exactly: dlgrep rides on docling-core internals and is released from
+    # Pinned exactly: dlq rides on docling-core internals and is released from
     # the same commit, in lockstep. Bumped by .github/scripts/release.sh.
-    "docling-core[dlgrep]==2.88.0",
+    "docling-core[dlq]==2.88.0",
 ]
 
 [project.urls]
@@ -39,7 +39,7 @@ issues = "https://github.com/docling-project/docling-core/issues"
 changelog = "https://github.com/docling-project/docling-core/blob/main/CHANGELOG.md"
 
 [project.scripts]
-dlgrep = "dlgrep.cli:main"
+dlq = "dlq.cli:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -49,9 +49,9 @@ build-backend = "hatchling.build"
 docling-core = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
-packages = ["dlgrep"]
+packages = ["dlq"]
 
 [tool.hatch.build.targets.sdist]
-only-include = ["dlgrep", "pyproject.toml", "README.md", "LICENSE"]
+only-include = ["dlq", "pyproject.toml", "README.md", "LICENSE"]
 
 # ruff / mypy / pytest configuration is inherited from the repo root.

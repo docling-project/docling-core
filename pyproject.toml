@@ -68,7 +68,7 @@ docling-view = "docling_core.cli.view:app"
 docling-serialize = "docling_core.cli.serialize:app"
 
 [project.optional-dependencies]
-dlgrep = [
+dlq = [
     "doclang>=0.7,<0.8",
     "typer>=0.15.1,<0.25.0",
     "click>=8.0.0",
@@ -125,7 +125,7 @@ dev = [
     "universal-pathlib>=0.3.10",
     "doclang[schematron-saxon]>=0.7.1,<0.8",
     # workspace member, so that `uv sync` gives lint/typecheck/test coverage of it
-    "dlgrep",
+    "dlq",
 ]
 constraints = [
     'pandas (>=2.1.4,<3.0.0); python_version < "3.11"',
@@ -137,10 +137,10 @@ constraints = [
 package = true
 
 [tool.uv.workspace]
-members = ["packages/dlgrep"]
+members = ["packages/dlq"]
 
 [tool.uv.sources]
-dlgrep = { workspace = true }
+dlq = { workspace = true }
 
 [tool.setuptools.packages.find]
 where = [".", "docling_core/resources/schemas"]
@@ -248,7 +248,7 @@ module = [
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["test.*", "tests.*"]  # `tests.*` is packages/dlgrep/tests
+module = ["test.*", "tests.*"]  # `tests.*` is packages/dlq/tests
 disallow_untyped_defs = false
 
 [tool.semantic_release]

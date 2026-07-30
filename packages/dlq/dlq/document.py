@@ -82,7 +82,7 @@ MAX_ARCHIVE_MEMBER_BYTES = 512 * 1024 * 1024
 MAX_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024
 
 
-class DlgrepError(ValueError):
+class DlqError(ValueError):
     """Expected user-facing input or query error."""
 
 
@@ -142,29 +142,29 @@ class LoadedDocument:
     ) -> LoadedDocument:
         raw, input_type, members = _read_source(source, stdin_bytes=stdin_bytes)
         if len(raw) > MAX_XML_BYTES:
-            raise DlgrepError(f"DocLang XML exceeds the {MAX_XML_BYTES}-byte limit")
+            raise DlqError(f"DocLang XML exceeds the {MAX_XML_BYTES}-byte limit")
 
         parser = etree.XMLParser(resolve_entities=False, no_network=True, load_dtd=False, huge_tree=False)
         try:
             raw_root = etree.fromstring(raw, parser=parser)
         except (etree.XMLSyntaxError, ValueError) as exc:
-            raise DlgrepError(f"invalid DocLang XML: {exc}") from exc
+            raise DlqError(f"invalid DocLang XML: {exc}") from exc
 
         root_name = etree.QName(raw_root).localname
         namespace = etree.QName(raw_root).namespace
         if root_name != "doclang" or namespace not in {None, "", DOCLANG_NS}:
-            raise DlgrepError(f"expected a DocLang root element, got {raw_root.tag!r}")
+            raise DlqError(f"expected a DocLang root element, got {raw_root.tag!r}")
 
         if validate:
             from doclang.validation import validate as validate_doclang
 
-            with tempfile.TemporaryDirectory(prefix="dlgrep-") as temporary:
+            with tempfile.TemporaryDirectory(prefix="dlq-") as temporary:
                 validation_path = Path(temporary) / "document.xml"
                 validation_path.write_bytes(raw)
                 try:
                     validate_doclang(validation_path, allow_empty_namespace=not namespace)
                 except Exception as exc:
-                    raise DlgrepError(str(exc)) from exc
+                    raise DlqError(str(exc)) from exc
 
         query_root = copy.deepcopy(raw_root)
         if not namespace:
@@ -176,7 +176,7 @@ class LoadedDocument:
         try:
             raw.decode("utf-8-sig")
         except UnicodeDecodeError as exc:
-            raise DlgrepError("DocLang XML must be UTF-8") from exc
+            raise DlqError("DocLang XML must be UTF-8") from exc
 
         semantic_root = copy.deepcopy(raw_root)
         for element in semantic_root.iter():
@@ -191,7 +191,7 @@ class LoadedDocument:
             document.name = Path(source).stem if source != "-" else "stdin"
             document._hierarchize()
         except Exception as exc:
-            raise DlgrepError(f"could not deserialize DocLang: {exc}") from exc
+            raise DlqError(f"could not deserialize DocLang: {exc}") from exc
 
         loaded = cls(
             name=source,
@@ -219,12 +219,12 @@ class LoadedDocument:
         try:
             return self.query_root.xpath(_normalize_xpath(xpath), namespaces=NS)
         except etree.XPathError as exc:
-            raise DlgrepError(f"invalid XPath: {exc}") from exc
+            raise DlqError(f"invalid XPath: {exc}") from exc
 
     def selected_paths(self, xpath: str) -> set[str]:
         result = self.evaluate_xpath(xpath)
         if not isinstance(result, list) or not result or not all(_is_element(node) for node in result):
-            raise DlgrepError("XPath must select one or more elements")
+            raise DlqError("XPath must select one or more elements")
         return {_canonical_xpath(node) for node in result}
 
     def target_item(self, target: DocLangSourceTarget) -> NodeItem | None:
@@ -415,11 +415,6 @@ class LoadedDocument:
     def _scope_units(self, unit: Unit, scope: str, eligible: list[Unit]) -> tuple[list[Unit], str]:
         if scope == "document":
             return eligible, "document"
-        if scope == "page":
-            return (
-                [candidate for candidate in eligible if set(candidate.pages) & set(unit.pages)],
-                "page:" + ",".join(map(str, unit.pages)),
-            )
 
         item = unit.item or self.target_item(unit.target)
         if scope == "auto":
@@ -456,13 +451,13 @@ class LoadedDocument:
                 ):
                     siblings.append(candidate)
             return siblings, f"container:{parent_ref}"
-        raise DlgrepError(f"unknown context scope: {scope}")
+        raise DlqError(f"unknown context scope: {scope}")
 
 
 def _read_source(source: str, *, stdin_bytes: bytes | None) -> tuple[bytes, str, tuple[str, ...]]:
     if source == "-":
         if stdin_bytes is None:
-            raise DlgrepError("standard input was not provided")
+            raise DlqError("standard input was not provided")
         return stdin_bytes, "stdin", ()
 
     path = Path(source)
@@ -473,26 +468,26 @@ def _read_source(source: str, *, stdin_bytes: bytes | None) -> tuple[bytes, str,
                 for info in infos:
                     member = PurePosixPath(info.filename.replace("\\", "/"))
                     if member.is_absolute() or ".." in member.parts:
-                        raise DlgrepError(f"unsafe archive member: {info.filename!r}")
+                        raise DlqError(f"unsafe archive member: {info.filename!r}")
                     if info.file_size > MAX_ARCHIVE_MEMBER_BYTES:
-                        raise DlgrepError(f"archive member exceeds the size limit: {info.filename!r}")
+                        raise DlqError(f"archive member exceeds the size limit: {info.filename!r}")
                 if sum(info.file_size for info in infos) > MAX_ARCHIVE_BYTES:
-                    raise DlgrepError("archive exceeds the total uncompressed size limit")
+                    raise DlqError("archive exceeds the total uncompressed size limit")
                 documents = [info for info in infos if info.filename == "document.xml"]
                 if len(documents) != 1:
-                    raise DlgrepError("DocLang archive must contain exactly one document.xml")
+                    raise DlqError("DocLang archive must contain exactly one document.xml")
                 if documents[0].file_size > MAX_XML_BYTES:
-                    raise DlgrepError(f"document.xml exceeds the {MAX_XML_BYTES}-byte limit")
+                    raise DlqError(f"document.xml exceeds the {MAX_XML_BYTES}-byte limit")
                 return archive.read(documents[0]), "dclx", tuple(info.filename for info in infos)
         except (OSError, zipfile.BadZipFile) as exc:
-            raise DlgrepError(f"could not read DocLang archive: {exc}") from exc
+            raise DlqError(f"could not read DocLang archive: {exc}") from exc
 
     if path.suffix.lower() not in {".dclg", ".xml"}:
-        raise DlgrepError(f"unsupported input type: {path.suffix or source!r}")
+        raise DlqError(f"unsupported input type: {path.suffix or source!r}")
     try:
         return path.read_bytes(), path.suffix.lower().lstrip("."), ()
     except OSError as exc:
-        raise DlgrepError(f"could not read {source}: {exc}") from exc
+        raise DlqError(f"could not read {source}: {exc}") from exc
 
 
 def _canonical_xpath(element: etree._Element) -> str:

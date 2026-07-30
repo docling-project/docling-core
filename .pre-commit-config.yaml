@@ -6,18 +6,18 @@ repos:
       - id: ruff-check
         name: "Ruff linter"
         args: [--exit-non-zero-on-fix, --fix, --config=pyproject.toml]
-        files: '^(docling_core|test|docs/examples|examples|packages/dlgrep).*\.(py|ipynb)$'
+        files: '^(docling_core|test|docs/examples|examples|packages/dlq).*\.(py|ipynb)$'
         pass_filenames: false
       - id: ruff-format
         name: "Ruff formatter"
         args: [--config=pyproject.toml]
-        files: '^(docling_core|test|docs/examples|examples|packages/dlgrep).*\.(py|ipynb)$'
+        files: '^(docling_core|test|docs/examples|examples|packages/dlq).*\.(py|ipynb)$'
         pass_filenames: false
   - repo: local
     hooks:
       - id: mypy
         name: MyPy
-        entry: uv run --no-sync mypy docling_core test packages/dlgrep/dlgrep packages/dlgrep/tests
+        entry: uv run --no-sync mypy docling_core test packages/dlq/dlq packages/dlq/tests
         pass_filenames: false
         language: system
         files: '\.py$'
@@ -29,9 +29,9 @@ repos:
         pass_filenames: false
         language: system
         files: '\.py$'
-      - id: pytest-dlgrep
-        name: Pytest (dlgrep)
-        entry: uv run --no-sync pytest packages/dlgrep/tests
+      - id: pytest-dlq
+        name: Pytest (dlq)
+        entry: uv run --no-sync pytest packages/dlq/tests
         pass_filenames: false
         language: system
         files: '\.py$'

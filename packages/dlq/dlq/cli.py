@@ -1,4 +1,4 @@
-"""Command-line interface for dlgrep."""
+"""Command-line interface for dlq."""
 
 from __future__ import annotations
 
@@ -16,8 +16,8 @@ import click
 import typer
 from lxml import etree
 
-from dlgrep import __version__
-from dlgrep.document import DlgrepError, LoadedDocument, Unit, _canonical_xpath, _is_element
+from dlq import __version__
+from dlq.document import DlqError, LoadedDocument, Unit, _canonical_xpath, _is_element
 from docling_core.experimental.serializer.outline import (
     OutlineDocSerializer,
     OutlineFormat,
@@ -39,35 +39,22 @@ HARD_MAX_CHARS = 1_000_000
 HARD_MAX_OUTPUT_CHARS = 10_000_000
 
 OutputFormat = Literal["text", "json", "jsonl"]
-ContextScope = Literal["auto", "container", "section", "page", "document"]
+ContextScope = Literal["auto", "container", "section", "document"]
 
-
-class _DefaultCommandGroup(typer.core.TyperGroup):
-    """Route bare grep arguments to the search command."""
-
-    default_command = "search"
-
-    def parse_args(self, ctx: click.Context, args: list[str]) -> list[str]:
-        if args and args[0] not in self.commands and args[0] not in {"--help", "-h"}:
-            args = [self.default_command, *args]
-        return super().parse_args(ctx, args)
-
-
-# dlgrep is versioned in lockstep with docling-core, so its version number says
+# dlq is versioned in lockstep with docling-core, so its version number says
 # nothing about its own maturity. The help output is the only place we can say so.
 EXPERIMENTAL_NOTICE = (
-    "EXPERIMENTAL: dlgrep is under active development. Commands, options, output "
+    "EXPERIMENTAL: dlq is under active development. Commands, options, output "
     "formats and exit codes may change incompatibly in any release."
 )
 
 app = typer.Typer(
-    name="dlgrep",
-    cls=_DefaultCommandGroup,
+    name="dlq",
     no_args_is_help=True,
     add_completion=False,
     pretty_exceptions_enable=False,
     context_settings={"help_option_names": ["-h", "--help"]},
-    help=f"Search semantic units in DocLang documents and return XPath addresses.\n\n{EXPERIMENTAL_NOTICE}",
+    help=f"Query semantic units in DocLang documents and return XPath addresses.\n\n{EXPERIMENTAL_NOTICE}",
 )
 
 
@@ -75,6 +62,16 @@ def _version_callback(value: bool) -> None:
     if value:
         typer.echo(__version__)
         raise typer.Exit()
+
+
+@app.callback()
+def _main_callback(
+    _version: Annotated[
+        bool,
+        typer.Option("--version", callback=_version_callback, is_eager=True, help="Show the version and exit."),
+    ] = False,
+) -> None:
+    pass
 
 
 def _record_context(ctx: typer.Context, param: click.Parameter, value: int | None) -> int | None:
@@ -89,8 +86,8 @@ def _exit(code: int) -> None:
         raise typer.Exit(code)
 
 
-@app.command()
-def search(
+@app.command("grep", no_args_is_help=True)
+def grep_command(
     ctx: typer.Context,
     arguments: Annotated[
         list[str],
@@ -141,16 +138,13 @@ def search(
     ] = False,
     output_format: Annotated[OutputFormat, typer.Option("--format", help="Output format.")] = "text",
     validate: Annotated[bool, typer.Option("--validate", help="Validate DocLang before searching.")] = False,
-    _version: Annotated[
-        bool,
-        typer.Option("--version", callback=_version_callback, is_eager=True, help="Show the version and exit."),
-    ] = False,
 ) -> None:
-    """Search DocLang semantic units; the command name may be omitted."""
+    """Search DocLang semantic units for a pattern."""
     _exit(
         _search(
             SimpleNamespace(
                 arguments=arguments,
+                listing=False,
                 regexp=regexp or [],
                 file=pattern_files or [],
                 fixed_strings=fixed_strings,
@@ -158,6 +152,70 @@ def search(
                 word_regexp=word_regexp,
                 context_events=ctx.meta.get("context_events", []),
                 context_scope=context_scope,
+                types=types or [],
+                layer=layer,
+                page=page,
+                within_xpath=within_xpath,
+                section=section,
+                view=view,
+                offset=offset,
+                limit=limit,
+                max_chars=max_chars,
+                max_output_chars=max_output_chars,
+                all_results=all_results,
+                quiet=quiet,
+                count=count,
+                files_with_matches=files_with_matches,
+                with_xpath=with_xpath,
+                format=output_format,
+                validate=validate,
+            )
+        )
+    )
+
+
+@app.command("list", no_args_is_help=True)
+def list_command(
+    inputs: Annotated[list[str], typer.Argument(..., metavar="INPUT", help="One or more DocLang inputs.")],
+    types: Annotated[list[str] | None, typer.Option("--type", help="Filter semantic unit types.")] = None,
+    layer: Annotated[
+        Literal["body", "furniture", "background", "all"], typer.Option(help="Filter content layers.")
+    ] = "body",
+    page: Annotated[str | None, typer.Option(help="Filter pages, for example 1,3-5.")] = None,
+    within_xpath: Annotated[str | None, typer.Option(help="List only within an XPath selection.")] = None,
+    section: Annotated[
+        bool, typer.Option("--section", help="Treat --within-xpath headings as section boundaries.")
+    ] = False,
+    view: Annotated[Literal["visible", "metadata", "all"], typer.Option(help="Text projection to list.")] = "visible",
+    offset: Annotated[int, typer.Option(min=0, help="Skip this many units.")] = 0,
+    limit: Annotated[int | None, typer.Option(min=0, max=HARD_LIMIT, help="Maximum units to return.")] = None,
+    max_chars: Annotated[int | None, typer.Option(min=0, help="Maximum characters per result.")] = None,
+    max_output_chars: Annotated[int | None, typer.Option(min=0, help="Maximum characters across results.")] = None,
+    all_results: Annotated[bool, typer.Option("--all", help="Use hard limits instead of default limits.")] = False,
+    quiet: Annotated[bool, typer.Option("-q", "--quiet", help="Return only the exit status.")] = False,
+    count: Annotated[bool, typer.Option("-c", "--count", help="Print unit counts.")] = False,
+    files_with_matches: Annotated[
+        bool, typer.Option("-l", "--files-with-matches", help="Print names of inputs with units.")
+    ] = False,
+    with_xpath: Annotated[
+        bool, typer.Option("-n", "--with-xpath", help="Prefix text output with XPath addresses.")
+    ] = False,
+    output_format: Annotated[OutputFormat, typer.Option("--format", help="Output format.")] = "text",
+    validate: Annotated[bool, typer.Option("--validate", help="Validate DocLang before listing.")] = False,
+) -> None:
+    """List DocLang semantic units without a pattern."""
+    _exit(
+        _search(
+            SimpleNamespace(
+                arguments=inputs,
+                listing=True,
+                regexp=[],
+                file=[],
+                fixed_strings=False,
+                ignore_case=False,
+                word_regexp=False,
+                context_events=[],
+                context_scope="document",
                 types=types or [],
                 layer=layer,
                 page=page,
@@ -278,16 +336,16 @@ def show_command(
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Run dlgrep and return its grep-compatible exit status."""
+    """Run dlq and return its grep-compatible exit status."""
     try:
         result = typer.main.get_command(app).main(
             args=list(argv) if argv is not None else None,
-            prog_name="dlgrep",
+            prog_name="dlq",
             standalone_mode=False,
         )
         return result if isinstance(result, int) else 0
-    except DlgrepError as exc:
-        print(f"dlgrep: {exc}", file=sys.stderr)
+    except DlqError as exc:
+        print(f"dlq: {exc}", file=sys.stderr)
         return 2
     except click.exceptions.Exit as exc:
         return exc.exit_code
@@ -304,7 +362,7 @@ def _search(args: SimpleNamespace) -> int:
 
     requested_types = _requested_types(args.types)
     pages = _parse_pages(args.page) if args.page else None
-    hits: list[tuple[LoadedDocument, Unit, str, list[dict[str, Any]], list[Unit]]] = []
+    hits: list[tuple[LoadedDocument, Unit, str, list[dict[str, Any]] | None, list[Unit]]] = []
     counts: list[tuple[str, int]] = []
     errors = False
 
@@ -317,8 +375,7 @@ def _search(args: SimpleNamespace) -> int:
             input_hits = 0
             seen: set[str] = set()
             for unit in candidates:
-                matches = _matches(_projected_text(unit, args.view), regexes)
-                if not matches:
+                if not args.listing and not _matches(_projected_text(unit, args.view), regexes):
                     continue
                 display = loaded.display_unit(unit)
                 if display.xpath in seen:
@@ -326,11 +383,11 @@ def _search(args: SimpleNamespace) -> int:
                 seen.add(display.xpath)
                 text = _projected_text(display, args.view)
                 input_hits += 1
-                hits.append((loaded, display, text, _matches(text, regexes), context_units))
+                hits.append((loaded, display, text, None if args.listing else _matches(text, regexes), context_units))
             counts.append((source, input_hits))
-        except DlgrepError as exc:
+        except DlqError as exc:
             errors = True
-            print(f"dlgrep: {source}: {exc}", file=sys.stderr)
+            print(f"dlq: {source}: {exc}", file=sys.stderr)
 
     any_match = any(count for _, count in counts)
     if args.quiet:
@@ -376,12 +433,13 @@ def _search(args: SimpleNamespace) -> int:
         with_filename=len(inputs) > 1,
         context_requested=bool(before or after),
     )
-    return 2 if errors else (0 if any_match else 1)
+    any_output = bool(selected) if args.listing else any_match
+    return 2 if errors else (0 if any_output else 1)
 
 
 def _inspect(args: SimpleNamespace) -> int:
     if args.inputs.count("-") > 1:
-        raise DlgrepError("standard input may be used only once")
+        raise DlqError("standard input may be used only once")
     stdin_bytes = sys.stdin.buffer.read() if "-" in args.inputs else None
     records = [
         LoadedDocument.load(
@@ -445,9 +503,9 @@ def _outline(args: SimpleNamespace) -> int:
 
 def _select(args: SimpleNamespace) -> int:
     if (args.limit is not None and args.limit < 0) or (args.max_chars is not None and args.max_chars < 0):
-        raise DlgrepError("limits must be non-negative")
+        raise DlqError("limits must be non-negative")
     if args.limit is not None and args.limit > HARD_LIMIT:
-        raise DlgrepError(f"--limit cannot exceed {HARD_LIMIT}")
+        raise DlqError(f"--limit cannot exceed {HARD_LIMIT}")
     loaded = _load_command_input(args.input, validate=args.validate)
     selected = loaded.evaluate_xpath(args.xpath)
     if not isinstance(selected, list):
@@ -493,7 +551,7 @@ def _select(args: SimpleNamespace) -> int:
             if "xpaths" in record:
                 selected_xpath = record["xpaths"][0]
                 if not isinstance(selected_xpath, str):
-                    raise DlgrepError("invalid internal XPath result")
+                    raise DlqError("invalid internal XPath result")
                 element = loaded.raw_elements[selected_xpath]
                 text = etree.tostring(element, method="text", encoding="unicode", with_tail=False)
                 print(_truncate(text, max_chars)[0])
@@ -517,24 +575,24 @@ def _select(args: SimpleNamespace) -> int:
 
 def _show(args: SimpleNamespace) -> int:
     if args.max_chars < 0:
-        raise DlgrepError("--max-chars must be non-negative")
+        raise DlqError("--max-chars must be non-negative")
     loaded = _load_command_input(args.input, validate=args.validate)
     selected = loaded.evaluate_xpath(args.xpath)
     if not isinstance(selected, list) or not selected or not all(_is_element(value) for value in selected):
-        raise DlgrepError("show XPath must select one or more elements")
+        raise DlqError("show XPath must select one or more elements")
     before_count, after_count = _context_counts(args.context_events)
     context_requested = bool(args.context_events)
     records: list[dict[str, Any]] = []
     seen: set[str] = set()
     if args.section and not args.raw:
         if context_requested:
-            raise DlgrepError("context flags cannot be combined with --section")
+            raise DlqError("context flags cannot be combined with --section")
         heading_refs: set[str] = set()
         for element in selected:
             target = loaded.source_map.targets_by_xpath.get(_canonical_xpath(element))
             item = loaded.target_item(target) if target is not None else None
             if not isinstance(item, (TitleItem, SectionHeaderItem)):
-                raise DlgrepError("--section requires a heading XPath")
+                raise DlqError("--section requires a heading XPath")
             heading_refs.add(item.self_ref)
         records = [
             _result_record(loaded, unit, unit.text, None, [], [], max_chars=args.max_chars)
@@ -612,18 +670,18 @@ def _show(args: SimpleNamespace) -> int:
 def _patterns_and_inputs(args: SimpleNamespace) -> tuple[list[str], list[str], bytes | None]:
     stdin_bytes: bytes | None = None
     patterns = list(args.regexp)
-    if args.regexp or args.file:
+    if args.listing or args.regexp or args.file:
         inputs = list(args.arguments)
     else:
         if len(args.arguments) < 2:
-            raise DlgrepError("provide a PATTERN and at least one INPUT")
+            raise DlqError("provide a PATTERN and at least one INPUT")
         patterns = [args.arguments[0]]
         inputs = list(args.arguments[1:])
 
     if inputs.count("-") > 1:
-        raise DlgrepError("standard input may be used as a document only once")
+        raise DlqError("standard input may be used as a document only once")
     if "-" in args.file and "-" in inputs:
-        raise DlgrepError("standard input cannot supply both patterns and a document")
+        raise DlqError("standard input cannot supply both patterns and a document")
     if "-" in args.file or "-" in inputs:
         stdin_bytes = sys.stdin.buffer.read()
 
@@ -635,7 +693,7 @@ def _patterns_and_inputs(args: SimpleNamespace) -> tuple[list[str], list[str], b
                 else Path(filename).read_text(encoding="utf-8")
             )
         except (OSError, UnicodeDecodeError) as exc:
-            raise DlgrepError(f"could not read pattern file {filename!r}: {exc}") from exc
+            raise DlqError(f"could not read pattern file {filename!r}: {exc}") from exc
         patterns.extend(content.splitlines())
     return patterns, inputs, stdin_bytes
 
@@ -658,7 +716,7 @@ def _compile_patterns(patterns: Iterable[str], *, fixed: bool, ignore_case: bool
         try:
             regexes.append(re.compile(expression, flags))
         except re.error as exc:
-            raise DlgrepError(f"invalid regular expression {pattern!r}: {exc}") from exc
+            raise DlqError(f"invalid regular expression {pattern!r}: {exc}") from exc
     return regexes
 
 
@@ -682,10 +740,10 @@ def _filtered_units(
                 target = loaded.source_map.targets_by_xpath.get(xpath)
                 item = loaded.target_item(target) if target is not None else None
                 if not isinstance(item, (TitleItem, SectionHeaderItem)):
-                    raise DlgrepError("--section requires --within-xpath to select headings")
+                    raise DlqError("--section requires --within-xpath to select headings")
                 section_refs.add(item.self_ref)
     elif args.section:
-        raise DlgrepError("--section requires --within-xpath")
+        raise DlqError("--section requires --within-xpath")
 
     def boundary(unit: Unit) -> bool:
         if args.layer != "all" and unit.layer != args.layer:
@@ -754,19 +812,19 @@ def _parse_pages(value: str) -> set[int]:
     pages: set[int] = set()
     for member in value.split(","):
         if not member:
-            raise DlgrepError("empty member in --page")
+            raise DlqError("empty member in --page")
         if "-" in member:
             start_text, end_text = member.split("-", maxsplit=1)
             if not start_text.isdigit() or not end_text.isdigit():
-                raise DlgrepError(f"invalid page range: {member!r}")
+                raise DlqError(f"invalid page range: {member!r}")
             start, end = int(start_text), int(end_text)
             if start < 1 or end < start:
-                raise DlgrepError(f"invalid page range: {member!r}")
+                raise DlqError(f"invalid page range: {member!r}")
             pages.update(range(start, end + 1))
         elif member.isdigit() and int(member) > 0:
             pages.add(int(member))
         else:
-            raise DlgrepError(f"invalid page number: {member!r}")
+            raise DlqError(f"invalid page number: {member!r}")
     return pages
 
 
@@ -774,7 +832,7 @@ def _context_counts(events: Iterable[tuple[str, int]]) -> tuple[int, int]:
     before = after = 0
     for option, value in events:
         if value < 0:
-            raise DlgrepError("context counts must be non-negative")
+            raise DlqError("context counts must be non-negative")
         if option in {"-C", "--context"}:
             before = after = value
         elif option in {"-B", "--before-context"}:
@@ -792,11 +850,11 @@ def _validate_search_options(args: SimpleNamespace, before: int, after: int) -> 
         "--max-output-chars": args.max_output_chars,
     }.items():
         if value is not None and value < 0:
-            raise DlgrepError(f"{name} must be non-negative")
+            raise DlqError(f"{name} must be non-negative")
     if args.limit is not None and args.limit > HARD_LIMIT:
-        raise DlgrepError(f"--limit cannot exceed {HARD_LIMIT}")
+        raise DlqError(f"--limit cannot exceed {HARD_LIMIT}")
     if sum((args.count, args.files_with_matches, args.quiet)) > 1:
-        raise DlgrepError("choose only one of --count, --files-with-matches, or --quiet")
+        raise DlqError("choose only one of --count, --files-with-matches, or --quiet")
     if (args.count or args.files_with_matches or args.quiet) and (
         before
         or after
@@ -806,7 +864,7 @@ def _validate_search_options(args: SimpleNamespace, before: int, after: int) -> 
         or args.max_output_chars is not None
         or args.all_results
     ):
-        raise DlgrepError("summary modes cannot be combined with context, offset, limit, or --all")
+        raise DlqError("summary modes cannot be combined with context, offset, limit, or --all")
 
 
 def _result_record(

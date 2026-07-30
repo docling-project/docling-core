@@ -20,7 +20,7 @@ resolution-markers = [
 
 [manifest]
 members = [
-    "dlgrep",
+    "dlq",
     "docling-core",
 ]
 
@@ -969,15 +969,15 @@ wheels = [
 ]
 
 [[package]]
-name = "dlgrep"
+name = "dlq"
 version = "2.88.0"
-source = { editable = "packages/dlgrep" }
+source = { editable = "packages/dlq" }
 dependencies = [
-    { name = "docling-core", extra = ["dlgrep"] },
+    { name = "docling-core", extra = ["dlq"] },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "docling-core", extras = ["dlgrep"], editable = "." }]
+requires-dist = [{ name = "docling-core", extras = ["dlq"], editable = "." }]
 
 [[package]]
 name = "doclang"
@@ -1037,7 +1037,7 @@ chunking-openai = [
     { name = "tree-sitter-python" },
     { name = "tree-sitter-typescript" },
 ]
-dlgrep = [
+dlq = [
     { name = "click" },
     { name = "doclang" },
     { name = "lxml" },
@@ -1059,7 +1059,7 @@ constraints = [
 ]
 dev = [
     { name = "coverage" },
-    { name = "dlgrep" },
+    { name = "dlq" },
     { name = "doclang", extra = ["schematron-saxon"] },
     { name = "ipykernel" },
     { name = "jsondiff" },
@@ -1079,15 +1079,15 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "click", marker = "extra == 'dlgrep'", specifier = ">=8.0.0" },
+    { name = "click", marker = "extra == 'dlq'", specifier = ">=8.0.0" },
     { name = "datasets", marker = "extra == 'examples'", specifier = ">=4.0.0" },
     { name = "defusedxml", specifier = ">=0.7.1,<0.8.0" },
     { name = "doclang", specifier = ">=0.7,<0.8" },
-    { name = "doclang", marker = "extra == 'dlgrep'", specifier = ">=0.7,<0.8" },
+    { name = "doclang", marker = "extra == 'dlq'", specifier = ">=0.7,<0.8" },
     { name = "jsonref", specifier = ">=1.1.0,<2.0.0" },
     { name = "jsonschema", specifier = ">=4.16.0,<5.0.0" },
     { name = "latex2mathml", specifier = ">=3.77.0,<4.0.0" },
-    { name = "lxml", marker = "extra == 'dlgrep'", specifier = ">=6.0.2" },
+    { name = "lxml", marker = "extra == 'dlq'", specifier = ">=6.0.2" },
     { name = "matplotlib", marker = "extra == 'examples'", specifier = ">=3.7.0" },
     { name = "openpyxl", marker = "extra == 'examples'", specifier = ">=3.1.5" },
     { name = "pandas", specifier = ">=2.1.4,<4.0.0" },
@@ -1112,10 +1112,10 @@ requires-dist = [
     { name = "tree-sitter-typescript", marker = "extra == 'chunking'", specifier = ">=0.23.2" },
     { name = "tree-sitter-typescript", marker = "extra == 'chunking-openai'", specifier = ">=0.23.2" },
     { name = "typer", specifier = ">=0.12.5,<0.27.0" },
-    { name = "typer", marker = "extra == 'dlgrep'", specifier = ">=0.15.1,<0.25.0" },
+    { name = "typer", marker = "extra == 'dlq'", specifier = ">=0.15.1,<0.25.0" },
     { name = "typing-extensions", specifier = ">=4.12.2,<5.0.0" },
 ]
-provides-extras = ["dlgrep", "chunking", "chunking-openai", "examples"]
+provides-extras = ["dlq", "chunking", "chunking-openai", "examples"]
 
 [package.metadata.requires-dev]
 constraints = [
@@ -1125,7 +1125,7 @@ constraints = [
 ]
 dev = [
     { name = "coverage", specifier = "~=7.6" },
-    { name = "dlgrep", editable = "packages/dlgrep" },
+    { name = "dlq", editable = "packages/dlq" },
     { name = "doclang", extras = ["schematron-saxon"], specifier = ">=0.7.1,<0.8" },
     { name = "ipykernel", specifier = "~=6.29" },
     { name = "jsondiff", specifier = "~=2.0" },

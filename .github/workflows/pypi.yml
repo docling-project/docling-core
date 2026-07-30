@@ -25,16 +25,16 @@ jobs:
       - name: Build packages
         run: bash .github/scripts/build-packages.sh
       # Last gate before anything is public. Installing both wheels in one
-      # command forces the resolver to satisfy dlgrep's exact `docling-core==`
+      # command forces the resolver to satisfy dlq's exact `docling-core==`
       # pin with the core wheel built from this same commit: if the pin named
       # any other version the two explicit requests conflict and this fails,
-      # rather than shipping a dlgrep wheel nothing can install.
+      # rather than shipping a dlq wheel nothing can install.
       - name: Verify the two packages release together
         run: |
           uv venv /tmp/relcheck
-          VIRTUAL_ENV=/tmp/relcheck uv pip install dist/docling-core/*.whl dist/dlgrep/*.whl
+          VIRTUAL_ENV=/tmp/relcheck uv pip install dist/docling-core/*.whl dist/dlq/*.whl
           /tmp/relcheck/bin/python -c 'from docling_core.types.doc import DoclingDocument'
-          /tmp/relcheck/bin/dlgrep --version
+          /tmp/relcheck/bin/dlq --version
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -61,13 +61,13 @@ jobs:
           attestations: true
           packages-dir: dist/docling-core/
 
-  publish-dlgrep:
-    # dlgrep pins docling-core exactly, so publish it second.
+  publish-dlq:
+    # dlq pins docling-core exactly, so publish it second.
     needs: publish-docling-core
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/dlgrep
+      url: https://pypi.org/p/dlq
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
     steps:
@@ -76,8 +76,8 @@ jobs:
         with:
           name: dist
           path: dist/
-      - name: Publish dlgrep distribution 📦 to PyPI
+      - name: Publish dlq distribution 📦 to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           attestations: true
-          packages-dir: dist/dlgrep/
+          packages-dir: dist/dlq/
