@@ -1344,7 +1344,14 @@ class DocLangPictureSerializer(BasePictureSerializer):
                 if chart_data and chart_data.table_cells:
                     temp_doc = DoclingDocument(name="temp")
                     temp_table = temp_doc.add_table(data=chart_data)
-                    params_chart = DocLangParams(**{**params.model_dump(), "add_table_cell_location": False})
+                    params_chart = DocLangParams(
+                        **{
+                            **params.model_dump(),
+                            "add_table_cell_location": False,
+                            "content_types": set(params.content_types)
+                            | {ContentType.TABLE_CELL},
+                        }
+                    )
                     otsl_content = DocLangTableSerializer()._emit_otsl(
                         item=temp_table,  # type: ignore[arg-type]
                         doc_serializer=doc_serializer,
