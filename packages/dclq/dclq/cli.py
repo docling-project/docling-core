@@ -1,4 +1,4 @@
-"""Command-line interface for dlq."""
+"""Command-line interface for dclq."""
 
 from __future__ import annotations
 
@@ -16,8 +16,8 @@ import click
 import typer
 from lxml import etree
 
-from dlq import __version__
-from dlq.document import DlqError, LoadedDocument, Unit, _canonical_xpath, _is_element
+from dclq import __version__
+from dclq.document import DclqError, LoadedDocument, Unit, _canonical_xpath, _is_element
 from docling_core.experimental.serializer.outline import (
     OutlineDocSerializer,
     OutlineFormat,
@@ -41,15 +41,15 @@ HARD_MAX_OUTPUT_CHARS = 10_000_000
 OutputFormat = Literal["text", "json", "jsonl"]
 ContextScope = Literal["auto", "container", "section", "document"]
 
-# dlq is versioned in lockstep with docling-core, so its version number says
+# dclq is versioned in lockstep with docling-core, so its version number says
 # nothing about its own maturity. The help output is the only place we can say so.
 EXPERIMENTAL_NOTICE = (
-    "EXPERIMENTAL: dlq is under active development. Commands, options, output "
+    "EXPERIMENTAL: dclq is under active development. Commands, options, output "
     "formats and exit codes may change incompatibly in any release."
 )
 
 app = typer.Typer(
-    name="dlq",
+    name="dclq",
     no_args_is_help=True,
     add_completion=False,
     pretty_exceptions_enable=False,
@@ -336,16 +336,16 @@ def show_command(
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Run dlq and return its grep-compatible exit status."""
+    """Run dclq and return its grep-compatible exit status."""
     try:
         result = typer.main.get_command(app).main(
             args=list(argv) if argv is not None else None,
-            prog_name="dlq",
+            prog_name="dclq",
             standalone_mode=False,
         )
         return result if isinstance(result, int) else 0
-    except DlqError as exc:
-        print(f"dlq: {exc}", file=sys.stderr)
+    except DclqError as exc:
+        print(f"dclq: {exc}", file=sys.stderr)
         return 2
     except click.exceptions.Exit as exc:
         return exc.exit_code
@@ -385,9 +385,9 @@ def _search(args: SimpleNamespace) -> int:
                 input_hits += 1
                 hits.append((loaded, display, text, None if args.listing else _matches(text, regexes), context_units))
             counts.append((source, input_hits))
-        except DlqError as exc:
+        except DclqError as exc:
             errors = True
-            print(f"dlq: {source}: {exc}", file=sys.stderr)
+            print(f"dclq: {source}: {exc}", file=sys.stderr)
 
     any_match = any(count for _, count in counts)
     if args.quiet:
@@ -439,7 +439,7 @@ def _search(args: SimpleNamespace) -> int:
 
 def _inspect(args: SimpleNamespace) -> int:
     if args.inputs.count("-") > 1:
-        raise DlqError("standard input may be used only once")
+        raise DclqError("standard input may be used only once")
     stdin_bytes = sys.stdin.buffer.read() if "-" in args.inputs else None
     records = [
         LoadedDocument.load(
@@ -503,9 +503,9 @@ def _outline(args: SimpleNamespace) -> int:
 
 def _select(args: SimpleNamespace) -> int:
     if (args.limit is not None and args.limit < 0) or (args.max_chars is not None and args.max_chars < 0):
-        raise DlqError("limits must be non-negative")
+        raise DclqError("limits must be non-negative")
     if args.limit is not None and args.limit > HARD_LIMIT:
-        raise DlqError(f"--limit cannot exceed {HARD_LIMIT}")
+        raise DclqError(f"--limit cannot exceed {HARD_LIMIT}")
     loaded = _load_command_input(args.input, validate=args.validate)
     selected = loaded.evaluate_xpath(args.xpath)
     if not isinstance(selected, list):
@@ -551,7 +551,7 @@ def _select(args: SimpleNamespace) -> int:
             if "xpaths" in record:
                 selected_xpath = record["xpaths"][0]
                 if not isinstance(selected_xpath, str):
-                    raise DlqError("invalid internal XPath result")
+                    raise DclqError("invalid internal XPath result")
                 element = loaded.raw_elements[selected_xpath]
                 text = etree.tostring(element, method="text", encoding="unicode", with_tail=False)
                 print(_truncate(text, max_chars)[0])
@@ -575,24 +575,24 @@ def _select(args: SimpleNamespace) -> int:
 
 def _show(args: SimpleNamespace) -> int:
     if args.max_chars < 0:
-        raise DlqError("--max-chars must be non-negative")
+        raise DclqError("--max-chars must be non-negative")
     loaded = _load_command_input(args.input, validate=args.validate)
     selected = loaded.evaluate_xpath(args.xpath)
     if not isinstance(selected, list) or not selected or not all(_is_element(value) for value in selected):
-        raise DlqError("show XPath must select one or more elements")
+        raise DclqError("show XPath must select one or more elements")
     before_count, after_count = _context_counts(args.context_events)
     context_requested = bool(args.context_events)
     records: list[dict[str, Any]] = []
     seen: set[str] = set()
     if args.section and not args.raw:
         if context_requested:
-            raise DlqError("context flags cannot be combined with --section")
+            raise DclqError("context flags cannot be combined with --section")
         heading_refs: set[str] = set()
         for element in selected:
             target = loaded.source_map.targets_by_xpath.get(_canonical_xpath(element))
             item = loaded.target_item(target) if target is not None else None
             if not isinstance(item, (TitleItem, SectionHeaderItem)):
-                raise DlqError("--section requires a heading XPath")
+                raise DclqError("--section requires a heading XPath")
             heading_refs.add(item.self_ref)
         records = [
             _result_record(loaded, unit, unit.text, None, [], [], max_chars=args.max_chars)
@@ -674,14 +674,14 @@ def _patterns_and_inputs(args: SimpleNamespace) -> tuple[list[str], list[str], b
         inputs = list(args.arguments)
     else:
         if len(args.arguments) < 2:
-            raise DlqError("provide a PATTERN and at least one INPUT")
+            raise DclqError("provide a PATTERN and at least one INPUT")
         patterns = [args.arguments[0]]
         inputs = list(args.arguments[1:])
 
     if inputs.count("-") > 1:
-        raise DlqError("standard input may be used as a document only once")
+        raise DclqError("standard input may be used as a document only once")
     if "-" in args.file and "-" in inputs:
-        raise DlqError("standard input cannot supply both patterns and a document")
+        raise DclqError("standard input cannot supply both patterns and a document")
     if "-" in args.file or "-" in inputs:
         stdin_bytes = sys.stdin.buffer.read()
 
@@ -693,7 +693,7 @@ def _patterns_and_inputs(args: SimpleNamespace) -> tuple[list[str], list[str], b
                 else Path(filename).read_text(encoding="utf-8")
             )
         except (OSError, UnicodeDecodeError) as exc:
-            raise DlqError(f"could not read pattern file {filename!r}: {exc}") from exc
+            raise DclqError(f"could not read pattern file {filename!r}: {exc}") from exc
         patterns.extend(content.splitlines())
     return patterns, inputs, stdin_bytes
 
@@ -716,7 +716,7 @@ def _compile_patterns(patterns: Iterable[str], *, fixed: bool, ignore_case: bool
         try:
             regexes.append(re.compile(expression, flags))
         except re.error as exc:
-            raise DlqError(f"invalid regular expression {pattern!r}: {exc}") from exc
+            raise DclqError(f"invalid regular expression {pattern!r}: {exc}") from exc
     return regexes
 
 
@@ -740,10 +740,10 @@ def _filtered_units(
                 target = loaded.source_map.targets_by_xpath.get(xpath)
                 item = loaded.target_item(target) if target is not None else None
                 if not isinstance(item, (TitleItem, SectionHeaderItem)):
-                    raise DlqError("--section requires --within-xpath to select headings")
+                    raise DclqError("--section requires --within-xpath to select headings")
                 section_refs.add(item.self_ref)
     elif args.section:
-        raise DlqError("--section requires --within-xpath")
+        raise DclqError("--section requires --within-xpath")
 
     def boundary(unit: Unit) -> bool:
         if args.layer != "all" and unit.layer != args.layer:
@@ -812,19 +812,19 @@ def _parse_pages(value: str) -> set[int]:
     pages: set[int] = set()
     for member in value.split(","):
         if not member:
-            raise DlqError("empty member in --page")
+            raise DclqError("empty member in --page")
         if "-" in member:
             start_text, end_text = member.split("-", maxsplit=1)
             if not start_text.isdigit() or not end_text.isdigit():
-                raise DlqError(f"invalid page range: {member!r}")
+                raise DclqError(f"invalid page range: {member!r}")
             start, end = int(start_text), int(end_text)
             if start < 1 or end < start:
-                raise DlqError(f"invalid page range: {member!r}")
+                raise DclqError(f"invalid page range: {member!r}")
             pages.update(range(start, end + 1))
         elif member.isdigit() and int(member) > 0:
             pages.add(int(member))
         else:
-            raise DlqError(f"invalid page number: {member!r}")
+            raise DclqError(f"invalid page number: {member!r}")
     return pages
 
 
@@ -832,7 +832,7 @@ def _context_counts(events: Iterable[tuple[str, int]]) -> tuple[int, int]:
     before = after = 0
     for option, value in events:
         if value < 0:
-            raise DlqError("context counts must be non-negative")
+            raise DclqError("context counts must be non-negative")
         if option in {"-C", "--context"}:
             before = after = value
         elif option in {"-B", "--before-context"}:
@@ -850,11 +850,11 @@ def _validate_search_options(args: SimpleNamespace, before: int, after: int) -> 
         "--max-output-chars": args.max_output_chars,
     }.items():
         if value is not None and value < 0:
-            raise DlqError(f"{name} must be non-negative")
+            raise DclqError(f"{name} must be non-negative")
     if args.limit is not None and args.limit > HARD_LIMIT:
-        raise DlqError(f"--limit cannot exceed {HARD_LIMIT}")
+        raise DclqError(f"--limit cannot exceed {HARD_LIMIT}")
     if sum((args.count, args.files_with_matches, args.quiet)) > 1:
-        raise DlqError("choose only one of --count, --files-with-matches, or --quiet")
+        raise DclqError("choose only one of --count, --files-with-matches, or --quiet")
     if (args.count or args.files_with_matches or args.quiet) and (
         before
         or after
@@ -864,7 +864,7 @@ def _validate_search_options(args: SimpleNamespace, before: int, after: int) -> 
         or args.max_output_chars is not None
         or args.all_results
     ):
-        raise DlqError("summary modes cannot be combined with context, offset, limit, or --all")
+        raise DclqError("summary modes cannot be combined with context, offset, limit, or --all")
 
 
 def _result_record(

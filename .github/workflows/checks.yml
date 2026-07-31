@@ -65,7 +65,7 @@ jobs:
       - name: Build packages
         run: bash .github/scripts/build-packages.sh
       - name: Check content of wheels
-        run: unzip -l dist/docling-core/*.whl && unzip -l dist/dlq/*.whl
+        run: unzip -l dist/docling-core/*.whl && unzip -l dist/dclq/*.whl
       - name: Store the distribution packages
         uses: actions/upload-artifact@v4
         with:
@@ -91,11 +91,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
       # Installing both wheels together, offline for the two local packages, is
-      # what validates the co-release: dlq's exact `docling-core==` pin can
+      # what validates the co-release: dclq's exact `docling-core==` pin can
       # only resolve against the docling-core wheel built from this same commit.
       - name: Install packages
-        run: uv pip install dist/docling-core/*.whl dist/dlq/*.whl
+        run: uv pip install dist/docling-core/*.whl dist/dclq/*.whl
       - name: Load the DoclingDocument package
         run: python -c 'from docling_core.types.doc import DoclingDocument'
-      - name: Run the dlq CLI
-        run: python -m dlq --help
+      - name: Run the dclq CLI
+        run: python -m dclq --help

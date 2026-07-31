@@ -2,8 +2,8 @@ import json
 import zipfile
 from pathlib import Path
 
-from dlq import __version__
-from dlq.cli import main
+from dclq import __version__
+from dclq.cli import main
 
 DOCUMENT = """<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.7">
   <heading level="1">Report</heading>
@@ -265,7 +265,7 @@ def test_text_output_collapses_formatting_and_marks_truncation(tmp_path: Path, c
     assert "XPath:" not in output
 
     monkeypatch.delenv("NO_COLOR", raising=False)
-    monkeypatch.setattr("dlq.cli.sys.stdout.isatty", lambda: True)
+    monkeypatch.setattr("dclq.cli.sys.stdout.isatty", lambda: True)
     assert main(["grep", "Revenue", str(path)]) == 0
     assert "\033[1;31mRevenue\033[0m grew." in capsys.readouterr().out
 
