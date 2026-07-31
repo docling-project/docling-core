@@ -1,3 +1,14 @@
+## [v2.89.0](https://github.com/docling-project/docling-core/releases/tag/v2.89.0) - 2026-07-31
+
+### Feature
+
+* `dclq` tool ([#696](https://github.com/docling-project/docling-core/issues/696)) ([`cf2ac70`](https://github.com/docling-project/docling-core/commit/cf2ac706323f3c467e91f1f55bc77dbe205808e0))
+
+### Fix
+
+* Relax typer upper bound to <0.27.0 ([#697](https://github.com/docling-project/docling-core/issues/697)) ([`6b8d35f`](https://github.com/docling-project/docling-core/commit/6b8d35ff28395155fb68ac1e03e66c4e0097ee31))
+* Preserve literal tag-shaped text in OTSL cells ([#695](https://github.com/docling-project/docling-core/issues/695)) ([`4afc5e6`](https://github.com/docling-project/docling-core/commit/4afc5e67893f8ded99614845612352849adb0b79))
+
 ## [v2.88.0](https://github.com/docling-project/docling-core/releases/tag/v2.88.0) - 2026-07-27
 
 ### Feature
