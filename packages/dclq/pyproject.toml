@@ -1,0 +1,57 @@
+[project]
+name = "dclq"
+version = "2.88.0"  # DO NOT EDIT, updated automatically (lockstep with docling-core)
+description = "Query DocLang documents: grep, list, outline, and XPath over semantic document structure"
+license = "MIT"
+license-files = ["LICENSE"]
+readme = "README.md"
+keywords = ["docling", "doclang", "query", "grep", "search", "xpath", "cli"]
+authors = [
+    { name = "Christoph Auer", email = "cau@zurich.ibm.com" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Text Processing",
+    "Typing :: Typed",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+requires-python = ">=3.10,<4.0"
+dependencies = [
+    # Pinned exactly: dclq rides on docling-core internals and is released from
+    # the same commit, in lockstep. Bumped by .github/scripts/release.sh.
+    "docling-core[dclq]==2.88.0",
+]
+
+[project.urls]
+homepage = "https://github.com/docling-project"
+repository = "https://github.com/docling-project/docling-core"
+issues = "https://github.com/docling-project/docling-core/issues"
+changelog = "https://github.com/docling-project/docling-core/blob/main/CHANGELOG.md"
+
+[project.scripts]
+dclq = "dclq.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+docling-core = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["dclq"]
+
+[tool.hatch.build.targets.sdist]
+only-include = ["dclq", "pyproject.toml", "README.md", "LICENSE"]
+
+# ruff / mypy / pytest configuration is inherited from the repo root.
