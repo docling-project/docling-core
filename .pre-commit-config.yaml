@@ -15,6 +15,14 @@ repos:
         pass_filenames: false
   - repo: local
     hooks:
+      - id: check-compat-projectors
+        name: Compat projector coverage
+        entry: uv run --no-sync python scripts/check_compat_projectors.py
+        pass_filenames: false
+        language: system
+        files: '(docling_core/compat\.py|docling_core/types/doc/common/constants\.py|docling_core/types/doc/.*\.py|docs/DoclingDocument\.json)$'
+  - repo: local
+    hooks:
       - id: mypy
         name: MyPy
         entry: uv run --no-sync mypy docling_core test
