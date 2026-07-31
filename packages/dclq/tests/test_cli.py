@@ -4,6 +4,7 @@ from pathlib import Path
 
 from dclq import __version__
 from dclq.cli import main
+from dclq.document import MAX_XML_BYTES
 
 DOCUMENT = """<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.7">
   <heading level="1">Report</heading>
@@ -366,10 +367,19 @@ def test_text_views_use_core_serializer_modes_without_trimming(tmp_path: Path, c
     assert json.loads(capsys.readouterr().out)[0]["text"] == "Chart caption\n\nChart summary"
 
 
-def test_archive_input_and_grep_exit_codes(tmp_path: Path, capsys) -> None:
+def test_archive_input_and_grep_exit_codes(tmp_path: Path, capsys, monkeypatch) -> None:
     archive = tmp_path / "report.dclx"
     with zipfile.ZipFile(archive, "w") as package:
         package.writestr("document.xml", DOCUMENT)
+
+    read_sizes: list[int] = []
+    read = zipfile.ZipExtFile.read
+
+    def tracked_read(member: zipfile.ZipExtFile, size: int = -1) -> bytes:
+        read_sizes.append(size)
+        return read(member, size)
+
+    monkeypatch.setattr(zipfile.ZipExtFile, "read", tracked_read)
 
     assert main(["grep", "-F", "Termination notice", str(archive), "-q"]) == 0
     assert main(["grep", "Outside", str(archive), "--page", "2", "--format", "json"]) == 0
@@ -377,6 +387,7 @@ def test_archive_input_and_grep_exit_codes(tmp_path: Path, capsys) -> None:
     assert main(["grep", "missing", str(archive), "-q"]) == 1
     assert main(["grep", "[", str(archive)]) == 2
     assert "invalid regular expression" in capsys.readouterr().err
+    assert read_sizes and set(read_sizes) == {MAX_XML_BYTES + 1}
 
     prefixed = tmp_path / "prefixed.xml"
     prefixed.write_text(

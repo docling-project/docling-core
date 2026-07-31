@@ -478,7 +478,11 @@ def _read_source(source: str, *, stdin_bytes: bytes | None) -> tuple[bytes, str,
                     raise DclqError("DocLang archive must contain exactly one document.xml")
                 if documents[0].file_size > MAX_XML_BYTES:
                     raise DclqError(f"document.xml exceeds the {MAX_XML_BYTES}-byte limit")
-                return archive.read(documents[0]), "dclx", tuple(info.filename for info in infos)
+                with archive.open(documents[0]) as document:
+                    raw = document.read(MAX_XML_BYTES + 1)
+                if len(raw) > MAX_XML_BYTES:
+                    raise DclqError(f"document.xml exceeds the {MAX_XML_BYTES}-byte limit")
+                return raw, "dclx", tuple(info.filename for info in infos)
         except (OSError, zipfile.BadZipFile) as exc:
             raise DclqError(f"could not read DocLang archive: {exc}") from exc
 

@@ -550,8 +550,6 @@ def _select(args: SimpleNamespace) -> int:
         for record in records:
             if "xpaths" in record:
                 selected_xpath = record["xpaths"][0]
-                if not isinstance(selected_xpath, str):
-                    raise DclqError("invalid internal XPath result")
                 element = loaded.raw_elements[selected_xpath]
                 text = etree.tostring(element, method="text", encoding="unicode", with_tail=False)
                 print(_truncate(text, max_chars)[0])
