@@ -44,10 +44,10 @@ $ dclq grep 'GPU|CPU' paper.dclg \
 
 ## Quickstart
 
-### 1. Install
+### 1. Install from PyPI
 
 ```bash
-python -m pip install dclq
+pip install dclq
 ```
 
 ### 2. Convert source documents to DocLang
