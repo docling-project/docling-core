@@ -27,6 +27,7 @@ class DocumentOrigin(BaseModel):
     _extra_mimetypes: typing.ClassVar[list[str]] = [
         "application/epub+zip",
         "application/vnd.box.boxnote",
+        "application/vnd.docling.ebcdic",  # accepted alias, see application/x-ebcdic
         "application/vnd.oasis.opendocument.presentation",
         "application/vnd.oasis.opendocument.spreadsheet",
         "application/vnd.oasis.opendocument.text",
@@ -36,6 +37,10 @@ class DocumentOrigin(BaseModel):
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
+        # EBCDIC data files have no IANA-registered media type, so they will never
+        # appear in mimetypes.types_map. "application/x-ebcdic" is the standard
+        # spelling docling emits; the vendor-tree alias above is accepted as well.
+        "application/x-ebcdic",
         "audio/mp3",
         "audio/wav",
         "audio/x-wav",

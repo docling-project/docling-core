@@ -1,7 +1,29 @@
 import pytest
 from pydantic import ValidationError
 
-from docling_core.types.doc import DocItemLabel, DoclingDocument, TrackSource
+from docling_core.types.doc import DocItemLabel, DoclingDocument, DocumentOrigin, TrackSource
+
+
+@pytest.mark.parametrize(
+    "mimetype",
+    [
+        "application/pdf",
+        "application/vnd.box.boxnote",
+        "application/vnd.docling.ebcdic",
+        "application/x-ebcdic",
+        "text/markdown",
+    ],
+)
+def test_document_origin_mimetype(mimetype: str):
+    """Test that DocumentOrigin accepts the supported MIME types."""
+    origin = DocumentOrigin(mimetype=mimetype, binary_hash=42, filename="test")
+    assert origin.mimetype == mimetype
+
+
+def test_document_origin_invalid_mimetype():
+    """Test that DocumentOrigin rejects unknown MIME types."""
+    with pytest.raises(ValidationError, match="is not a valid MIME type"):
+        DocumentOrigin(mimetype="application/x-not-a-mimetype", binary_hash=42, filename="test")
 
 
 def test_track_source():
