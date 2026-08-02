@@ -1,4 +1,4 @@
-name: "Build and publish package"
+name: "Build and publish packages"
 
 on:
   release:
@@ -8,16 +8,11 @@ permissions:
   contents: read
 
 jobs:
-  build-and-publish:
+  build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ['3.12']
-    environment:
-      name: pypi
-      url: https://pypi.org/p/docling-core
-    permissions:
-      id-token: write  # IMPORTANT: mandatory for trusted publishing
     steps:
       - uses: actions/checkout@v4
       - name: Install uv and set the python version
@@ -26,10 +21,63 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
       - name: Install dependencies
-        run: uv sync --all-extras
-      - name: Build package
-        run: uv build
-      - name: Publish distribution 📦 to PyPI
+        run: uv sync --frozen --all-extras --all-packages
+      - name: Build packages
+        run: bash .github/scripts/build-packages.sh
+      # Last gate before anything is public. Installing both wheels in one
+      # command forces the resolver to satisfy dclq's exact `docling-core==`
+      # pin with the core wheel built from this same commit: if the pin named
+      # any other version the two explicit requests conflict and this fails,
+      # rather than shipping a dclq wheel nothing can install.
+      - name: Verify the two packages release together
+        run: |
+          uv venv /tmp/relcheck
+          VIRTUAL_ENV=/tmp/relcheck uv pip install dist/docling-core/*.whl dist/dclq/*.whl
+          /tmp/relcheck/bin/python -c 'from docling_core.types.doc import DoclingDocument'
+          /tmp/relcheck/bin/dclq --version
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish-docling-core:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/docling-core
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Publish docling-core distribution 📦 to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           attestations: true
+          packages-dir: dist/docling-core/
+
+  publish-dclq:
+    # dclq pins docling-core exactly, so publish it second.
+    needs: publish-docling-core
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/dclq
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Publish dclq distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          attestations: true
+          packages-dir: dist/dclq/

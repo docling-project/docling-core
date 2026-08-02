@@ -1,6 +1,6 @@
 [project]
 name = "docling-core"
-version = "2.86.0"  # DO NOT EDIT, updated automatically
+version = "2.89.0"  # DO NOT EDIT, updated automatically
 description = "A python library to define and validate data types in Docling."
 license = "MIT"
 license-files = ["LICENSE"]
@@ -47,7 +47,7 @@ dependencies = [
     'pillow (>=10.0.0,<13.0.0)',
     'pyyaml (>=5.1,<7.0.0)',
     'typing-extensions (>=4.12.2,<5.0.0)',
-    'typer (>=0.12.5,<0.25.0)',
+    'typer (>=0.12.5,<0.27.0)',
     'latex2mathml (>=3.77.0,<4.0.0)',
     "defusedxml (>=0.7.1, <0.8.0)",
     "pydantic-settings>=2.14.0",
@@ -68,6 +68,12 @@ docling-view = "docling_core.cli.view:app"
 docling-serialize = "docling_core.cli.serialize:app"
 
 [project.optional-dependencies]
+dclq = [
+    "doclang>=0.7,<0.8",
+    "typer>=0.15.1,<0.25.0",
+    "click>=8.0.0",
+    "lxml>=6.0.2",
+]
 chunking = [
     # common:
     'semchunk (>=2.2.0,<4.0.0)',
@@ -118,6 +124,8 @@ dev = [
     "opencv-python-headless>=4.6.0.66,<5.0.0.0",
     "universal-pathlib>=0.3.10",
     "doclang[schematron-saxon]>=0.7.1,<0.8",
+    # workspace member, so that `uv sync` gives lint/typecheck/test coverage of it
+    "dclq",
 ]
 constraints = [
     'pandas (>=2.1.4,<3.0.0); python_version < "3.11"',
@@ -127,6 +135,12 @@ constraints = [
 
 [tool.uv]
 package = true
+
+[tool.uv.workspace]
+members = ["packages/dclq"]
+
+[tool.uv.sources]
+dclq = { workspace = true }
 
 [tool.setuptools.packages.find]
 where = [".", "docling_core/resources/schemas"]
@@ -223,6 +237,7 @@ module = [
     "jsondiff.*",
     "jsonref.*",
     "jsonschema.*",
+    "lxml.*",
     "requests.*",
     "semchunk.*",
     "tabulate.*",
@@ -233,7 +248,7 @@ module = [
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["test.*"]
+module = ["test.*", "tests.*"]  # `tests.*` is packages/dclq/tests
 disallow_untyped_defs = false
 
 [tool.semantic_release]

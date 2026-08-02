@@ -7,27 +7,6 @@ from typing import Any, Optional, Union, cast
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
-from docling_core.transforms.chunker.hierarchical_chunker import (
-    ChunkingDocSerializer,
-    ChunkingSerializerProvider,
-)
-from docling_core.transforms.chunker.line_chunker import LineBasedTokenChunker
-from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
-from docling_core.transforms.chunker.tokenizer.huggingface import get_default_tokenizer
-from docling_core.transforms.serializer.base import BaseDocSerializer
-from docling_core.types.doc.document import SectionHeaderItem, TableItem, TitleItem
-
-try:
-    import semchunk
-    from transformers import PreTrainedTokenizerBase
-except ImportError:
-    raise RuntimeError(
-        "Extra required by module: 'chunking' by default (or 'chunking-openai' if "
-        "specifically using OpenAI tokenization); to install, run: "
-        "`pip install 'docling-core[chunking]'` or "
-        "`pip install 'docling-core[chunking-openai]'`"
-    )
-
 from docling_core.transforms.chunker import (
     BaseChunk,
     BaseChunker,
@@ -35,10 +14,42 @@ from docling_core.transforms.chunker import (
     DocMeta,
     HierarchicalChunker,
 )
+from docling_core.transforms.chunker.hierarchical_chunker import (
+    ChunkingDocSerializer,
+    ChunkingSerializerProvider,
+)
+from docling_core.transforms.chunker.line_chunker import LineBasedTokenChunker
+from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.transforms.serializer.base import (
+    BaseDocSerializer,
     BaseSerializerProvider,
 )
-from docling_core.types import DoclingDocument
+from docling_core.types.doc import DoclingDocument, SectionHeaderItem, TableItem, TitleItem
+
+_SEMCHUNK_AVAILABLE: bool = False
+_SEMCHUNK_IMPORT_ERROR: ImportError | None = None
+try:
+    import semchunk
+
+    _SEMCHUNK_AVAILABLE = True
+except ImportError as e:
+    _SEMCHUNK_IMPORT_ERROR = e
+
+_SEMCHUNK_INSTALL_HINT = (
+    "The 'semchunk' package is required by HybridChunker. "
+    "Install it with `pip install 'docling-core[chunking]'` or "
+    "`pip install 'docling-core[chunking-openai]'`."
+)
+
+
+def _get_default_tokenizer():
+    """Get default tokenizer instance.
+
+    Defer import to avoid pulling in transformers at module import time.
+    """
+    from docling_core.transforms.chunker.tokenizer.huggingface import get_default_tokenizer
+
+    return get_default_tokenizer()
 
 
 class HybridChunker(BaseChunker):
@@ -58,7 +69,7 @@ class HybridChunker(BaseChunker):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    tokenizer: BaseTokenizer = Field(default_factory=get_default_tokenizer)
+    tokenizer: BaseTokenizer = Field(default_factory=_get_default_tokenizer)
     repeat_table_header: bool = True
     merge_peers: bool = True
     omit_header_on_overflow: bool = False
@@ -92,8 +103,15 @@ class HybridChunker(BaseChunker):
                         model_name=tokenizer,
                         max_tokens=max_tokens,
                     )
-                elif tokenizer is None or isinstance(tokenizer, PreTrainedTokenizerBase):
-                    kwargs = {"tokenizer": tokenizer or get_default_tokenizer().tokenizer}
+                elif tokenizer is None or (
+                    hasattr(tokenizer, "__module__")
+                    and (tokenizer.__module__.startswith("transformers.") or tokenizer.__module__ == "transformers")
+                ):
+                    from docling_core.transforms.chunker.tokenizer.huggingface import (
+                        HuggingFaceTokenizer,
+                    )
+
+                    kwargs = {"tokenizer": tokenizer or _get_default_tokenizer().tokenizer}
                     if max_tokens is not None:
                         kwargs["max_tokens"] = max_tokens
                     data["tokenizer"] = HuggingFaceTokenizer(**kwargs)
@@ -241,6 +259,32 @@ class HybridChunker(BaseChunker):
             return chunks
 
     def segment(self, doc_chunk: DocChunk, available_length: int, doc_serializer: BaseDocSerializer) -> list[str]:
+        """Split a single doc chunk into a list of text segments.
+
+        Two strategies are applied depending on the chunk's content:
+
+        - Table with header repetition: when ``repeat_table_header`` is
+          enabled and the chunk contains exactly one ``TableItem``, the table is
+          split line-by-line via ``LineBasedTokenChunker``.  The header rows are
+          used as a prefix so they are reproduced at the top of every segment.
+          Any preamble text that precedes the first table row (e.g. a caption) is
+          included in the prefix to account for its token cost, but is stripped
+          from all segments after the first so it does not repeat.
+
+        - Semantic splitting: for all other chunks, ``semchunk`` splits the
+          text at natural semantic boundaries up to ``available_length`` tokens.
+
+        Args:
+            doc_chunk: The chunk to segment.
+            available_length: Maximum token budget for the semantic-splitting
+                path (ignored for the table path, which uses ``self.tokenizer``
+                and ``self.max_tokens`` internally).
+            doc_serializer: Serializer for the current document; must be a
+                ``ChunkingDocSerializer`` for the table path to activate.
+
+        Returns:
+            A list of text segments derived from ``doc_chunk.text``.
+        """
         segments = []
         if (
             self.repeat_table_header
@@ -252,15 +296,26 @@ class HybridChunker(BaseChunker):
                 table_text=doc_chunk.text
             )
 
+            if header_lines:
+                header_start = doc_chunk.text.find(header_lines[0])
+                preamble = doc_chunk.text[:header_start] if header_start > 0 else ""
+            else:
+                preamble = ""
+            table_prefix = "".join(header_lines)
+            full_prefix = preamble + table_prefix
+
             line_chunker = LineBasedTokenChunker(
                 tokenizer=self.tokenizer,
-                max_tokens=available_length,
-                prefix="\n".join(header_lines),
+                prefix=full_prefix,
                 omit_prefix_on_overflow=self.omit_header_on_overflow,
                 serializer_provider=self.serializer_provider,
             )
             segments = line_chunker.chunk_text(lines=body_lines)
+            if preamble:
+                segments = segments[:1] + [s[len(preamble) :] for s in segments[1:]]
         else:
+            if not _SEMCHUNK_AVAILABLE:
+                raise ImportError(_SEMCHUNK_INSTALL_HINT) from _SEMCHUNK_IMPORT_ERROR
             sem_chunker = semchunk.chunkerify(self.tokenizer.get_tokenizer(), chunk_size=available_length)
             sem_segments = sem_chunker(doc_chunk.text)
             segments = cast(list[str], sem_segments)

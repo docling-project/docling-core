@@ -25,7 +25,7 @@ jobs:
         with:
           enable-cache: true
       - name: Install dependencies
-        run: uv sync --only-dev
+        run: uv sync --frozen --only-dev
       - name: Check version of potential release
         id: version_check
         run: |
@@ -55,7 +55,7 @@ jobs:
         with:
           enable-cache: true
       - name: Install dependencies
-        run: uv sync --only-dev
+        run: uv sync --frozen --only-dev
       - name: Run release script
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}

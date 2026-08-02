@@ -38,7 +38,7 @@ jobs:
           path: ~/.cache/pre-commit
           key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
       - name: Install dependencies
-        run: uv sync --frozen --all-extras
+        run: uv sync --frozen --all-extras --all-packages
       - name: Check style and run tests
         run: pre-commit run --all-files
       - name: Upload coverage to Codecov
@@ -61,11 +61,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
       - name: Install dependencies
-        run: uv sync --all-extras
-      - name: Build package
-        run: uv build
-      - name: Check content of wheel
-        run: unzip -l dist/*.whl
+        run: uv sync --frozen --all-extras --all-packages
+      - name: Build packages
+        run: bash .github/scripts/build-packages.sh
+      - name: Check content of wheels
+        run: unzip -l dist/docling-core/*.whl && unzip -l dist/dclq/*.whl
       - name: Store the distribution packages
         uses: actions/upload-artifact@v4
         with:
@@ -90,7 +90,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
-      - name: Install package
-        run: uv pip install dist/*.whl
+      # Installing both wheels together, offline for the two local packages, is
+      # what validates the co-release: dclq's exact `docling-core==` pin can
+      # only resolve against the docling-core wheel built from this same commit.
+      - name: Install packages
+        run: uv pip install dist/docling-core/*.whl dist/dclq/*.whl
       - name: Load the DoclingDocument package
         run: python -c 'from docling_core.types.doc import DoclingDocument'
+      - name: Run the dclq CLI
+        run: python -m dclq --help

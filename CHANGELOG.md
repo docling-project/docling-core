@@ -1,3 +1,55 @@
+## [v2.89.0](https://github.com/docling-project/docling-core/releases/tag/v2.89.0) - 2026-07-31
+
+### Feature
+
+* `dclq` tool ([#696](https://github.com/docling-project/docling-core/issues/696)) ([`cf2ac70`](https://github.com/docling-project/docling-core/commit/cf2ac706323f3c467e91f1f55bc77dbe205808e0))
+
+### Fix
+
+* Relax typer upper bound to <0.27.0 ([#697](https://github.com/docling-project/docling-core/issues/697)) ([`6b8d35f`](https://github.com/docling-project/docling-core/commit/6b8d35ff28395155fb68ac1e03e66c4e0097ee31))
+* Preserve literal tag-shaped text in OTSL cells ([#695](https://github.com/docling-project/docling-core/issues/695)) ([`4afc5e6`](https://github.com/docling-project/docling-core/commit/4afc5e67893f8ded99614845612352849adb0b79))
+
+## [v2.88.0](https://github.com/docling-project/docling-core/releases/tag/v2.88.0) - 2026-07-27
+
+### Feature
+
+* Add enable_chart_tables and traverse_pictures to save_as_markdown ([#662](https://github.com/docling-project/docling-core/issues/662)) ([`fb9ffbd`](https://github.com/docling-project/docling-core/commit/fb9ffbd4370e94e7030b3e0826deef1c62c3d27a))
+
+### Fix
+
+* **doclang:** Clamp deep section headers instead of raising ([#688](https://github.com/docling-project/docling-core/issues/688)) ([`b869c67`](https://github.com/docling-project/docling-core/commit/b869c67cf82790453acc9428963d55eb0c9a0280))
+* **doclang:** Sanitize XML-illegal text characters ([#687](https://github.com/docling-project/docling-core/issues/687)) ([`26a50ab`](https://github.com/docling-project/docling-core/commit/26a50ab1402e96c9cdeca8093b3c104b6c15087b))
+* DocLang deserialization of XML-sensitive OTSL cell content ([#689](https://github.com/docling-project/docling-core/issues/689)) ([`129811f`](https://github.com/docling-project/docling-core/commit/129811fe4959969e4cc91b958c7fc9ba884d288f))
+* Accept application/epub+zip mimetype in DocumentOrigin ([#692](https://github.com/docling-project/docling-core/issues/692)) ([`b7a4298`](https://github.com/docling-project/docling-core/commit/b7a4298b4fe2470a97b2b3383d4e9e373e1727b0))
+* Lazy load transformers in HybridChunker ([#468](https://github.com/docling-project/docling-core/issues/468)) ([`9ceb266`](https://github.com/docling-project/docling-core/commit/9ceb26665fabf07134c25ceef656bbbe0b7b54c5))
+
+### Documentation
+
+* **page:** Add Field descriptions to page primitives ([#681](https://github.com/docling-project/docling-core/issues/681)) ([`2718ade`](https://github.com/docling-project/docling-core/commit/2718adefc2ef258bfeb34853211f3483a9728558))
+
+## [v2.87.1](https://github.com/docling-project/docling-core/releases/tag/v2.87.1) - 2026-07-15
+
+### Fix
+
+* **doclang:** Enforce image size budgets for archive assets and ImageRef ([#684](https://github.com/docling-project/docling-core/issues/684)) ([`224eeea`](https://github.com/docling-project/docling-core/commit/224eeeab60ca7da9a8febb13e20f3e0f2b70635d))
+* **doclang:** Add deserialize size, depth, and element budgets ([#683](https://github.com/docling-project/docling-core/issues/683)) ([`aee0674`](https://github.com/docling-project/docling-core/commit/aee0674a2891ab737cea32c9d412c9d7dd22ee4a))
+* **chunker:** Preserve table structure across chunks in markdown ([#678](https://github.com/docling-project/docling-core/issues/678)) ([`7775df1`](https://github.com/docling-project/docling-core/commit/7775df117647f2cd5050021791d4cbc7998e39bb))
+
+## [v2.87.0](https://github.com/docling-project/docling-core/releases/tag/v2.87.0) - 2026-07-11
+
+### Feature
+
+* Split the monolithic `document.py` into focused modules ([#664](https://github.com/docling-project/docling-core/issues/664)) ([`f8a36e9`](https://github.com/docling-project/docling-core/commit/f8a36e9a106e66ce8efab3d0e51fe9dc82525f9e))
+
+### Fix
+
+* **doclang:** Enforce size limits when extracting .dclx archives ([#682](https://github.com/docling-project/docling-core/issues/682)) ([`994881b`](https://github.com/docling-project/docling-core/commit/994881b8d43b91392faed4e296260ef8e5599cbc))
+* **deps:** Constrain numpy <2.5.0 and add doclang schematron-saxon to dev ([#669](https://github.com/docling-project/docling-core/issues/669)) ([`e71da6b`](https://github.com/docling-project/docling-core/commit/e71da6bf05b7a6564d0f3b5923f991665c64cbb1))
+
+### Documentation
+
+* Fix typos in docstrings and comments ([#677](https://github.com/docling-project/docling-core/issues/677)) ([`500a6e7`](https://github.com/docling-project/docling-core/commit/500a6e7d12e83f01fc278a359bb9e0cec0cd7161))
+
 ## [v2.86.0](https://github.com/docling-project/docling-core/releases/tag/v2.86.0) - 2026-07-03
 
 ### Feature

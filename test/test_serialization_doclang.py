@@ -1,6 +1,7 @@
 """Unit tests for Doclang create_closing_token helper."""
 
 import warnings
+import xml.etree.ElementTree as ET
 from itertools import chain
 from pathlib import Path
 from typing import Optional
@@ -328,6 +329,30 @@ def _create_escape_test_doc(inp_doc: DoclingDocument):
     return doc
 
 
+@pytest.mark.parametrize("pretty_indentation", [None, "  "])
+def test_doclang_replaces_xml_illegal_characters(pretty_indentation: Optional[str]):
+    """DocLang output remains valid when document text contains XML-illegal controls."""
+    doc = DoclingDocument(name="xml_illegal_character")
+    doc.add_text(label=DocItemLabel.TEXT, text="Before break\x0bAfter break")
+
+    result = (
+        DocLangDocSerializer(
+            doc=doc,
+            params=DocLangParams(
+                include_version=False,
+                add_location=False,
+                pretty_indentation=pretty_indentation,
+            ),
+        )
+        .serialize()
+        .text
+    )
+
+    ET.fromstring(result)
+    assert "Before break[U+000B]After break" in result
+    assert "\x0b" not in result
+
+
 def test_cdata_always(sample_doc: DoclingDocument):
     """Test escape_mode=ALWAYS."""
     doc = _create_escape_test_doc(sample_doc)
@@ -361,6 +386,27 @@ def test_cdata_when_needed(sample_doc: DoclingDocument):
     ser_txt = ser_res.text
     exp_file = Path("./test/data/doc/cdata_when_needed.gt.dclg.xml")
     verify_doclang(exp_file=exp_file, actual=ser_txt)
+
+
+def test_deep_section_header_levels_clamp_instead_of_raising():
+    """Section headers deeper than the heading vocabulary allows clamp to level 6.
+
+    ``SectionHeaderItem.level`` accepts up to 100 and docling's own heading
+    hierarchy inference emits level-6 headings by default, but the serializer
+    shifts by one (level 1 is the title), so level 6 used to overflow the
+    ``heading`` token's [1, 6] range and raise. ``html.py`` already clamps the
+    same ``item.level + 1`` computation.
+    """
+    doc = DoclingDocument(name="test")
+    doc.add_heading(text="Top", level=1)
+    doc.add_heading(text="Deep", level=6)
+    doc.add_heading(text="Deeper", level=42)
+
+    result = serialize_doclang(doc, params=DocLangParams(include_version=False, add_location=False))
+
+    assert '<heading level="2">Top</heading>' in result
+    assert '<heading level="6">Deep</heading>' in result
+    assert '<heading level="6">Deeper</heading>' in result
 
 
 def test_strikethrough_formatting():
