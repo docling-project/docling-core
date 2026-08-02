@@ -434,14 +434,26 @@ def _get_delim(*, params: DocLangParams) -> str:
     return "" if params.pretty_indentation is None else "\n"
 
 
+_XML_10_ILLEGAL_CHARACTER_RE = re.compile(r"[\x00-\x08\x0B\x0C\x0E-\x1F\uD800-\uDFFF\uFFFE\uFFFF]")
+
+
+def _replace_xml_illegal_character(match: re.Match[str]) -> str:
+    """Return a visible representation for an XML 1.0-illegal character."""
+    return f"[U+{ord(match.group()):04X}]"
+
+
 def _escape_text(text: str, params: DocLangParams) -> str:
+    """Escape text for DocLang while preserving XML 1.0 validity."""
+    text = _XML_10_ILLEGAL_CHARACTER_RE.sub(_replace_xml_illegal_character, text)
     do_wrap = params.content_wrapping_mode == WrapMode.ALWAYS or (
         params.content_wrapping_mode == WrapMode.AUTO and (text != text.strip() or "\n" in text)
     )
     if params.escape_mode == EscapeMode.ALWAYS or (
         params.escape_mode == EscapeMode.AUTO and any(c in text for c in ['"', "'", "&", "<", ">"])
     ):
-        text = f"<![CDATA[{text}]]>"
+        # A CDATA section cannot contain its closing delimiter. Split such text
+        # across adjacent CDATA sections while preserving the exact characters.
+        text = f"<![CDATA[{text.replace(']]>', ']]]]><![CDATA[>')}]]>"
     if do_wrap:
         # text = f'<{el_str} xml:space="preserve">{text}</{el_str}>'
         text = _wrap(text=text, wrap_tag=DocLangToken.CONTENT.value)
@@ -824,7 +836,10 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
         if isinstance(item, TitleItem):
             wrap_open_token = DocLangVocabulary._create_heading_token(level=1)
         elif isinstance(item, SectionHeaderItem):
-            wrap_open_token = DocLangVocabulary._create_heading_token(level=item.level + 1)
+            # Clamp like the HTML serializer does: SectionHeaderItem.level goes
+            # up to 100 and the +1 shift (level 1 is the title) would otherwise
+            # push legitimate level-6 headings past the heading vocabulary.
+            wrap_open_token = DocLangVocabulary._create_heading_token(level=min(item.level + 1, 6))
         elif isinstance(item, ListItem):
             wrap_open_token, tok = self._determine_list_item_wrapper(
                 item=item, doc=doc, use_virtual_text=params.use_virtual_text

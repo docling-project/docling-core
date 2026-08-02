@@ -15,6 +15,7 @@ from typing_extensions import Self
 from docling_core.types.base import _JSON_POINTER_REGEX
 from docling_core.types.doc.base import BoundingBox, Size
 from docling_core.types.doc.common.scalars import CharSpan
+from docling_core.types.doc.utils import _ensure_within_size_limit
 from docling_core.utils.settings import settings
 
 try:
@@ -98,7 +99,13 @@ class ImageRef(BaseModel):
             if self.uri.scheme == "file":
                 if not settings.allow_image_file_uri:
                     raise ValueError("file:// URI scheme is not enabled.")
-                self._pil = PILImage.open(unquote(str(self.uri.path)))
+                file_path = Path(unquote(str(self.uri.path)))
+                _ensure_within_size_limit(
+                    file_path,
+                    max_size=settings.max_image_decoded_size,
+                    label="Image file",
+                )
+                self._pil = PILImage.open(file_path)
             elif self.uri.scheme == "data":
                 encoded_img = str(self.uri).split(",")[1]
                 decoded_img = base64.b64decode(encoded_img)
@@ -107,8 +114,15 @@ class ImageRef(BaseModel):
                     raise ValueError(f"Decoded image exceeds size limit of {settings.max_image_decoded_size} bytes.")
 
                 self._pil = PILImage.open(BytesIO(decoded_img))
-            # else: Handle http request or other protocols...
+            # else: HTTP(S) and other remote schemes are intentionally not fetched.
+            # If remote fetch is enabled, it must use host allowlists and block
+            # private, link-local, and cloud-metadata addresses (SSRF controls).
         elif isinstance(self.uri, Path):
+            _ensure_within_size_limit(
+                self.uri,
+                max_size=settings.max_image_decoded_size,
+                label="Image file",
+            )
             self._pil = PILImage.open(self.uri)
 
         return self._pil

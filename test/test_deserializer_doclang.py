@@ -8,6 +8,7 @@ from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 from docling_core.transforms.serializer.doclang import (
     DocLangDocSerializer,
     DocLangParams,
+    EscapeMode,
     LabelMode,
 )
 from docling_core.types.doc import (
@@ -1821,6 +1822,84 @@ def test_picture_tabular_chart_content_cdata_cells():
     assert doc.pictures[0].meta.tabular_chart.chart_data.grid[1][1].text == "111"
 
 
+@pytest.mark.parametrize("escape_mode", [EscapeMode.AUTO, EscapeMode.ALWAYS])
+def test_roundtrip_otsl_xml_sensitive_cell_content(escape_mode: EscapeMode):
+    """OTSL cell text remains exact when DOM fragments are reparsed."""
+    cell_texts = [
+        'Parsing (Structure&Semantic) <test> "quoted"',
+        "ampersand & less < greater >",
+        "\"quotes\" and 'apostrophes'",
+        "literal entity-like text: &amp;",
+        "CDATA terminator: ]]>",
+        "multiline code:\nif a < b:\n    return a & b",
+        "Unicode and math: café ∀x ∈ ℝ, x² ≥ 0",  # noqa: RUF001
+    ]
+    doc = DoclingDocument(name="otsl-xml-sensitive")
+    table_data = TableData(num_rows=0, num_cols=1)
+    for text in cell_texts:
+        table_data.add_row([text])
+    doc.add_table(data=table_data)
+
+    serialized = (
+        DocLangDocSerializer(
+            doc=doc,
+            params=DocLangParams(include_version=False, escape_mode=escape_mode),
+        )
+        .serialize()
+        .text
+    )
+    roundtripped = _deserialize(serialized)
+
+    assert [row[0].text for row in roundtripped.tables[0].data.grid] == cell_texts
+
+
+def test_otsl_xml_sensitive_virtual_and_explicit_text_cells():
+    """Both virtual and explicit rich OTSL cell bodies preserve safe text."""
+    doclang = """\
+<doclang>
+  <table>
+    <fcel/><content><![CDATA[virtual & <cell> "quoted" 'apostrophe']]></content>
+    <fcel/><text><content><![CDATA[nested & <cell>]]></content><bold> bold &amp; styled</bold></text>
+    <nl/>
+  </table>
+</doclang>
+"""
+    doc = _deserialize(doclang)
+
+    assert doc.tables[0].data.grid[0][0].text == "virtual & <cell> \"quoted\" 'apostrophe'"
+    assert doc.tables[0].data.grid[0][1].text == "nested & <cell>bold & styled"
+    assert isinstance(doc.tables[0].data.grid[0][1], RichTableCell)
+
+
+@pytest.mark.parametrize(
+    "literal",
+    [
+        "<none>",
+        "<none/>",
+        "<Month number>",
+        "<text>not literal</text>",
+        "<fcel/>",
+    ],
+)
+def test_otsl_angle_delimited_text_remains_text(literal: str) -> None:
+    xml = f'<doclang version="0.7"><table><fcel/><content><![CDATA[{literal}]]></content><nl/></table></doclang>'
+    assert_valid_dclg_xml(xml)
+
+    cell = DocLangDocDeserializer().deserialize_str(xml).tables[0].data.grid[0][0]
+
+    assert type(cell) is TableCell
+    assert cell.text == literal
+
+
+def test_otsl_real_text_element_remains_rich() -> None:
+    xml = '<doclang version="0.7"><table><fcel/><text>not literal</text><nl/></table></doclang>'
+
+    cell = DocLangDocDeserializer().deserialize_str(xml).tables[0].data.grid[0][0]
+
+    assert isinstance(cell, RichTableCell)
+    assert cell.text == "not literal"
+
+
 def test_picture_body_table_is_semantic_content_not_chart_tabular():
     """``<table>`` after the preamble is nested picture content, not ``meta.tabular_chart``."""
     doclang = (
@@ -2170,3 +2249,40 @@ def test_table_with_class_raises_error():
 
     with pytest.raises(ValueError, match="table element must not have a class attribute"):
         _deserialize(xml_str, validate=False)
+
+
+def test_deserialize_rejects_oversize_xml() -> None:
+    """Huge DocLang markup must fail closed before DOM construction grows unchecked."""
+    xml = "<doclang>" + ("x" * 200) + "</doclang>"
+    with pytest.raises(ValueError, match="exceeds size limit"):
+        DocLangDocDeserializer().deserialize_str(xml, max_xml_bytes=64)
+
+
+def test_deserialize_rejects_over_deep_xml() -> None:
+    """Extreme element nesting must fail closed (defusedxml does not bound depth)."""
+    depth = 20
+    xml = "".join(f"<g{i}>" for i in range(depth)) + "x" + "".join(f"</g{i}>" for i in reversed(range(depth)))
+    xml = f"<doclang>{xml}</doclang>"
+    with pytest.raises(ValueError, match="exceeds nesting depth limit"):
+        DocLangDocDeserializer().deserialize_str(xml, max_xml_depth=8)
+
+
+def test_deserialize_rejects_too_many_elements() -> None:
+    """Element floods must fail closed even when total byte size is modest."""
+    # 30 sibling elements under doclang — over a tight element budget.
+    children = "".join(f"<text>t{i}</text>" for i in range(30))
+    xml = f"<doclang>{children}</doclang>"
+    with pytest.raises(ValueError, match="exceeds element count limit"):
+        DocLangDocDeserializer().deserialize_str(xml, max_xml_elements=10)
+
+
+def test_deserialize_accepts_document_within_budgets() -> None:
+    xml = "<doclang><text>hello</text></doclang>"
+    doc = DocLangDocDeserializer().deserialize_str(
+        xml,
+        max_xml_bytes=1024,
+        max_xml_depth=16,
+        max_xml_elements=100,
+    )
+    assert len(doc.texts) == 1
+    assert doc.texts[0].text == "hello"

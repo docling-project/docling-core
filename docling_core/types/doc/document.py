@@ -155,6 +155,7 @@ from docling_core.types.doc.labels import (
 )
 from docling_core.types.doc.tokens import DocumentToken, TableToken
 from docling_core.types.doc.utils import (
+    _ensure_within_size_limit,
     is_remote_path,
     parse_otsl_table_content,
     relative_path,
@@ -3613,6 +3614,8 @@ class DoclingDocument(BaseModel):
         include_annotations: bool = True,
         compact_tables: bool = False,
         *,
+        enable_chart_tables: bool = True,
+        traverse_pictures: bool = False,
         mark_meta: bool = False,
         use_legacy_annotations: Optional[bool] = None,  # deprecated
     ):
@@ -3635,6 +3638,7 @@ class DoclingDocument(BaseModel):
             escape_html=escape_html,
             escape_underscores=escaping_underscores,
             image_placeholder=image_placeholder,
+            enable_chart_tables=enable_chart_tables,
             image_mode=image_mode,
             indent=indent,
             text_width=text_width,
@@ -3643,6 +3647,7 @@ class DoclingDocument(BaseModel):
             page_break_placeholder=page_break_placeholder,
             include_annotations=include_annotations,
             compact_tables=compact_tables,
+            traverse_pictures=traverse_pictures,
             use_legacy_annotations=use_legacy_annotations,
             mark_meta=mark_meta,
         )
@@ -4854,12 +4859,28 @@ class DoclingDocument(BaseModel):
         *,
         artifacts_dir: Optional[Path] = None,
         validate: bool = False,
+        max_member_size: int = 512 * 1024 * 1024,  # 512 MiB
+        max_total_size: int = 2 * 1024 * 1024 * 1024,  # 2 GiB
     ) -> "DoclingDocument":
         """Load a DoclingDocument from a DocLang OPC archive (``.dclx``).
 
         The archive is extracted to ``artifacts_dir`` (default: ``<name>_artifacts`` next
         to the ``.dclx`` file). Relative ``<src uri=\"...\"/>`` paths and optional
         ``pages/`` images are resolved inside that directory.
+
+        Args:
+            filename: Path to the ``.dclx`` archive.
+            artifacts_dir: Optional extraction directory for package members.
+            validate: When True, run DocLang XSD/Schematron validation on ``document.xml``.
+            max_member_size: Maximum uncompressed size in bytes for any single archive member
+                (default: 512 MiB).
+            max_total_size: Maximum cumulative uncompressed size in bytes for all members
+                (default: 2 GiB).
+
+        Notes:
+            ``document.xml`` is additionally capped by ``settings.max_doclang_xml_bytes`` before
+            parsing. Archive ``assets/`` and ``pages/`` images are capped by
+            ``settings.max_image_decoded_size`` before Pillow opens them.
         """
         from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 
@@ -4867,11 +4888,24 @@ class DoclingDocument(BaseModel):
             filename = Path(filename)
 
         artifacts_dir, _ = cls(name="")._get_output_paths(filename, artifacts_dir)
-        safe_extract_zip_archive(filename, artifacts_dir)
+        safe_extract_zip_archive(
+            filename,
+            artifacts_dir,
+            max_member_size=max_member_size,
+            max_total_size=max_total_size,
+        )
 
         document_xml = artifacts_dir / "document.xml"
         if not document_xml.is_file():
             raise ValueError(f"DocLang archive missing document.xml: {filename}")
+
+        # Fail closed before reading/parsing: zip member caps are far larger than a
+        # safe DocLang DOM budget.
+        _ensure_within_size_limit(
+            document_xml,
+            max_size=settings.max_doclang_xml_bytes,
+            label="DocLang document.xml",
+        )
 
         if validate:
             from doclang.validation import validate as doclang_validate
@@ -4908,6 +4942,11 @@ class DoclingDocument(BaseModel):
             if page_no not in doc.pages:
                 continue
 
+            _ensure_within_size_limit(
+                resolved,
+                max_size=settings.max_image_decoded_size,
+                label="Archive page image",
+            )
             with PILImage.open(resolved) as pil:
                 pil_copy = pil.copy()
             mimetype = mimetypes.guess_type(page_file.name)[0] or "image/png"
