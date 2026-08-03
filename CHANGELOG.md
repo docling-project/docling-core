@@ -1,3 +1,9 @@
+## [v2.90.0](https://github.com/docling-project/docling-core/releases/tag/v2.90.0) - 2026-08-03
+
+### Feature
+
+* Accept EBCDIC MIME types in DocumentOrigin ([#707](https://github.com/docling-project/docling-core/issues/707)) ([`d93e83f`](https://github.com/docling-project/docling-core/commit/d93e83f7f125ac059ecde498e66861c84a0414c0))
+
 ## [v2.89.0](https://github.com/docling-project/docling-core/releases/tag/v2.89.0) - 2026-07-31
 
 ### Feature
