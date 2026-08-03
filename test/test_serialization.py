@@ -944,7 +944,28 @@ def test_html_mixed_list_items_do_not_invent_markers():
     assert "<li style=\"list-style-type: '2. ';\">Operation</li>" in html
 
 
-def test_html_nested_lists():
+def test_html_all_empty_markers_use_browser_default():
+    doc = DoclingDocument(name="all-empty-markers")
+    list_group = doc.add_list_group(name="items")
+
+    doc.add_list_item(text="Alpha", orig="Alpha", enumerated=False, marker="", parent=list_group)
+    doc.add_list_item(text="Beta", orig="Beta", enumerated=False, marker="", parent=list_group)
+    doc.add_list_item(text="Gamma", orig="Gamma", enumerated=False, marker="", parent=list_group)
+
+    html = (
+        HTMLDocSerializer(
+            doc=doc,
+            params=HTMLParams(prettify=False, show_original_list_item_marker=True),
+        )
+        .serialize()
+        .text
+    )
+
+    assert "list-style-type" not in html
+    assert "<li>Alpha</li>" in html
+    assert "<li>Beta</li>" in html
+    assert "<li>Gamma</li>" in html
+
     src = Path("./test/data/doc/polymers.json")
     doc = DoclingDocument.load_from_json(src)
 

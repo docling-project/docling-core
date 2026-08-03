@@ -214,15 +214,21 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             text = "\n".join(text_parts)
             if nested_parts:
                 text = f"\n{text}\n"
+            if params.show_original_list_item_marker:
+                parent_group = item.parent.resolve(doc) if item.parent else None
+                strict = isinstance(parent_group, ListGroup) and parent_group.any_item_has_marker(doc)
+                attrs = (
+                    {"style": (f"list-style-type: '{item.marker} ';" if item.marker else "list-style-type: none;")}
+                    if strict
+                    else {}
+                )
+            else:
+                attrs = {}
             text = (
                 get_html_tag_with_text_direction(
                     html_tag="li",
                     text=text,
-                    attrs=(
-                        {"style": (f"list-style-type: '{item.marker} ';" if item.marker else "list-style-type: none;")}
-                        if params.show_original_list_item_marker
-                        else {}
-                    ),
+                    attrs=attrs,
                 )
                 if text
                 else ""
