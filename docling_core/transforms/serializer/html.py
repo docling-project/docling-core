@@ -216,12 +216,22 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 text = f"\n{text}\n"
             if params.show_original_list_item_marker:
                 parent_group = item.parent.resolve(doc) if item.parent else None
-                strict = isinstance(parent_group, ListGroup) and parent_group.any_item_has_marker(doc)
-                attrs = (
-                    {"style": (f"list-style-type: '{item.marker} ';" if item.marker else "list-style-type: none;")}
-                    if strict
-                    else {}
-                )
+                if (
+                    isinstance(parent_group, ListGroup)
+                    and parent_group.first_item_is_enumerated(doc)
+                    and parent_group.any_item_has_marker(doc)
+                ):
+                    # Ordered list with mixed markers: strict mode — suppress
+                    # browser-invented numbers for items without a detected marker.
+                    attrs = {
+                        "style": (f"list-style-type: '{item.marker} ';" if item.marker else "list-style-type: none;")
+                    }
+                elif item.marker:
+                    # Unordered list (or unmarked ordered list) with a detected
+                    # marker: show it as-is.
+                    attrs = {"style": f"list-style-type: '{item.marker} ';"}
+                else:
+                    attrs = {}
             else:
                 attrs = {}
             text = (
