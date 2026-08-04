@@ -135,10 +135,15 @@ def _iterate_items(
                                 ),
                                 lvl,
                             )
-                            # Advance past the boundary we just emitted, exactly as the
-                            # DocItem branch below does. Without this, the group's first
-                            # child re-emits the same boundary and only the self_ref
-                            # dedup in get_parts() hides the duplicate.
+                            # Advance past the boundary we just emitted, as the DocItem
+                            # branch below does. Without this, the group's first child
+                            # re-emits the same boundary and only the self_ref dedup in
+                            # get_parts() hides the duplicate.
+                            #
+                            # Unlike that branch this does not need to seed prev_page_nr
+                            # when it is still None: the group's children are re-yielded
+                            # at this level anyway, so the DocItem branch seeds it from
+                            # the first one.
                             prev_page_nr = page_no
                         break
             elif isinstance(item, DocItem) and item.prov:
