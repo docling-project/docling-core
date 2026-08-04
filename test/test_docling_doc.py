@@ -1847,6 +1847,67 @@ def test_concatenate_shifts_graph_cell_pages_for_keyvalue_and_form():
     assert form_item_pages == [[1], [2]]
 
 
+def test_concatenate_can_preserve_original_page_numbers():
+    def _make_provenance(page_no: int) -> ProvenanceItem:
+        return ProvenanceItem(
+            page_no=page_no,
+            charspan=(0, 1),
+            bbox=BoundingBox(
+                l=10,
+                t=40,
+                r=30,
+                b=10,
+                coord_origin=CoordOrigin.BOTTOMLEFT,
+            ),
+        )
+
+    def _make_doc(page_no: int) -> DoclingDocument:
+        doc = DoclingDocument(name="source")
+        doc.add_page(page_no=page_no, size=Size(width=100, height=100))
+        doc.add_text(label=DocItemLabel.TEXT, text=str(page_no), prov=_make_provenance(page_no))
+        doc.add_key_values(
+            graph=GraphData(
+                cells=[
+                    GraphCell(
+                        label=GraphCellLabel.KEY,
+                        cell_id=1,
+                        text="k",
+                        orig="k",
+                        prov=_make_provenance(page_no),
+                    )
+                ],
+                links=[],
+            )
+        )
+        return doc
+
+    merged = DoclingDocument.concatenate(
+        docs=[_make_doc(page_no=5), _make_doc(page_no=11)],
+        preserve_page_numbers=True,
+    )
+
+    assert sorted(merged.pages) == [5, 11]
+    assert [merged.pages[page_no].page_no for page_no in sorted(merged.pages)] == [5, 11]
+    assert [item.prov[0].page_no for item in merged.texts] == [5, 11]
+    assert [item.graph.cells[0].prov.page_no for item in merged.key_value_items if item.graph.cells[0].prov] == [
+        5,
+        11,
+    ]
+
+
+def test_concatenate_rejects_overlapping_preserved_page_numbers():
+    def _make_doc(name: str) -> DoclingDocument:
+        doc = DoclingDocument(name=name)
+        doc.add_page(page_no=5, size=Size(width=100, height=100))
+        return doc
+
+    with pytest.raises(ValueError, match=r"Cannot preserve overlapping page numbers: \[5\]"):
+        DoclingDocument.concatenate(
+            docs=[_make_doc("first"), _make_doc("second")],
+            preserve_page_numbers=True,
+        )
+
+
 def test_concatenate_squeezes_successive_duplicate_names():
     def _make_doc(name: str) -> DoclingDocument:
         doc = DoclingDocument(name=name)
