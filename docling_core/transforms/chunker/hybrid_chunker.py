@@ -243,20 +243,23 @@ class HybridChunker(BaseChunker):
             # captions:
             available_length = self.max_tokens - lengths.other_len
 
-            if available_length <= 0:
-                warnings.warn(
-                    "Headers and captions for this chunk are longer than the total "
-                    "available size for the chunk, so they will be ignored: "
-                    f"{doc_chunk.text=}, {doc_chunk.meta=}"
-                )
-                new_chunk = DocChunk(**doc_chunk.export_json_dict())
-                new_chunk.meta.captions = None
-                new_chunk.meta.headings = None
-                return self._split_using_plain_text(doc_chunk=new_chunk, doc_serializer=doc_serializer)
+            while available_length > 0:
+                segments = self.segment(doc_chunk, available_length, doc_serializer)
+                chunks = [DocChunk(text=s, meta=doc_chunk.meta) for s in segments]
+                overflow = max(self._count_chunk_tokens(chunk) - self.max_tokens for chunk in chunks)
+                if overflow <= 0:
+                    return chunks
+                available_length -= overflow
 
-            segments = self.segment(doc_chunk, available_length, doc_serializer)
-            chunks = [DocChunk(text=s, meta=doc_chunk.meta) for s in segments]
-            return chunks
+            warnings.warn(
+                "Headers and captions for this chunk are longer than the total "
+                "available size for the chunk, so they will be ignored: "
+                f"{doc_chunk.text=}, {doc_chunk.meta=}"
+            )
+            new_chunk = DocChunk(**doc_chunk.export_json_dict())
+            new_chunk.meta.captions = None
+            new_chunk.meta.headings = None
+            return self._split_using_plain_text(doc_chunk=new_chunk, doc_serializer=doc_serializer)
 
     def segment(self, doc_chunk: DocChunk, available_length: int, doc_serializer: BaseDocSerializer) -> list[str]:
         """Split a single doc chunk into a list of text segments.

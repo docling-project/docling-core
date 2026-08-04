@@ -59,9 +59,7 @@ class HTMLSerializerProvider(ChunkingSerializerProvider):
         )
 
 
-def _build_wide_header_table(
-    caption_text: str | None = None,
-) -> tuple[DoclingDocument, TableItem]:
+def _build_wide_header_table(caption_text: str | None = None) -> tuple[DoclingDocument, TableItem]:
     doc = DoclingDocument(name="wide_table")
     doc.add_heading(text="Section heading", level=1)
     caption = doc.add_text(label=DocItemLabel.CAPTION, text=caption_text) if caption_text is not None else None
@@ -834,6 +832,26 @@ def test_contextualized_markdown_table_chunks_respect_token_limit():
     assert all(tokenizer.count_tokens(chunker.contextualize(chunk)) <= max_tokens for chunk in chunks)
 
 
+def test_contextualized_markdown_table_chunks_recheck_final_count():
+    max_tokens = 70
+    doc, _ = _build_wide_header_table(caption_text="\nA")
+    tokenizer = OpenAITokenizer(
+        tokenizer=tiktoken.get_encoding("cl100k_base"),
+        max_tokens=max_tokens,
+    )
+    chunker = HybridChunker(
+        tokenizer=tokenizer,
+        merge_peers=False,
+        repeat_table_header=True,
+        serializer_provider=CompactMarkdownSerializerProvider(),
+    )
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+    counts = [tokenizer.count_tokens(chunker.contextualize(chunk)) for chunk in chunks]
+
+    assert max(counts) <= max_tokens
+
+
 @pytest.mark.parametrize(
     ("max_tokens", "cell_prefix", "heading_text"),
     [
@@ -911,4 +929,4 @@ def test_split_markdown_table_prefix_preserves_content():
     ]
 
     assert len(chunks) > 1
-    assert "".join(chunk.text for chunk in chunks).replace("\n", "") == expected_text.replace("\n", "")
+    assert "".join(chunk.text for chunk in chunks) == expected_text

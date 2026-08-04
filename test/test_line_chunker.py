@@ -1,8 +1,10 @@
 import pytest
+import tiktoken
 from transformers import AutoTokenizer
 
 from docling_core.transforms.chunker.line_chunker import LineBasedTokenChunker
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
+from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
 from docling_core.types.doc import DoclingDocument as DLDocument
 from docling_core.types.doc.labels import DocItemLabel
 
@@ -207,6 +209,112 @@ def test_chunk_text_rechecks_concatenated_token_count(default_tokenizer):
     assert "".join(chunk.removeprefix(chunker.prefix) for chunk in chunks) == text
 
 
+def test_chunk_text_flushes_full_chunk_before_splitting_long_line(default_tokenizer):
+    chunker = LineBasedTokenChunker(
+        tokenizer=default_tokenizer,
+        max_tokens_override=4,
+    )
+    lines = ["aColumn", "0 0 0 0 0"]
+
+    assert chunker.tokenizer.count_tokens(lines[0]) == chunker.max_tokens
+    assert chunker.tokenizer.count_tokens(lines[1]) > chunker.max_tokens
+
+    chunks = chunker.chunk_text(lines)
+
+    assert "".join(chunks) == "".join(lines)
+    assert all(chunker.tokenizer.count_tokens(chunk) <= chunker.max_tokens for chunk in chunks)
+
+
+def test_chunk_text_rejects_character_larger_than_budget():
+    tokenizer = OpenAITokenizer(
+        tokenizer=tiktoken.get_encoding("cl100k_base"),
+        max_tokens=8192,
+    )
+    chunker = LineBasedTokenChunker(
+        tokenizer=tokenizer,
+        max_tokens_override=1,
+    )
+
+    with pytest.raises(ValueError, match="cannot fit within the token budget"):
+        chunker.chunk_text(["🙂"])
+
+
+def test_chunk_text_makes_progress_after_standalone_prefix():
+    tokenizer = OpenAITokenizer(
+        tokenizer=tiktoken.get_encoding("cl100k_base"),
+        max_tokens=1,
+    )
+    chunker = LineBasedTokenChunker(
+        tokenizer=tokenizer,
+        prefix="a",
+    )
+
+    chunks = chunker.chunk_text(["tegory"])
+
+    assert chunks[0] == "a"
+    assert "".join(chunks[1:]) == "tegory"
+    assert "" not in chunks
+    assert all(chunker.tokenizer.count_tokens(chunk) <= 1 for chunk in chunks)
+
+
+def test_chunk_text_splits_nonmonotone_token_prefixes():
+    tokenizer = OpenAITokenizer(
+        tokenizer=tiktoken.get_encoding("cl100k_base"),
+        max_tokens=1,
+    )
+    chunker = LineBasedTokenChunker(tokenizer=tokenizer)
+
+    chunks = chunker.chunk_text(["删除a"])
+
+    assert chunks == ["删除", "a"]
+
+
+def test_split_by_token_limit_rechecks_shorter_word_boundary():
+    tokenizer = OpenAITokenizer(
+        tokenizer=tiktoken.get_encoding("cl100k_base"),
+        max_tokens=6,
+    )
+    chunker = LineBasedTokenChunker(tokenizer=tokenizer)
+    text = "\néé\n0\n  \n0a0"
+
+    head, tail = chunker.split_by_token_limit(text, token_limit=6)
+
+    assert head + tail == text
+    assert tokenizer.count_tokens(head) <= 6
+
+
+def test_chunk_text_retains_prefix_when_exact_split_fits():
+    tokenizer = OpenAITokenizer(
+        tokenizer=tiktoken.get_encoding("cl100k_base"),
+        max_tokens=3,
+    )
+    chunker = LineBasedTokenChunker(
+        tokenizer=tokenizer,
+        prefix="¶ ",
+    )
+
+    chunks = chunker.chunk_text(["🙂🙂"])
+
+    assert chunks == ["¶ 🙂", "¶ 🙂"]
+
+
+def test_omit_prefix_uses_concatenated_token_count(default_tokenizer):
+    chunker = LineBasedTokenChunker(
+        tokenizer=default_tokenizer,
+        max_tokens_override=4,
+        prefix="a",
+        omit_prefix_on_overflow=True,
+    )
+    line = "Column Column"
+
+    assert chunker.tokenizer.count_tokens(chunker.prefix) + chunker.tokenizer.count_tokens(line) <= 4
+    assert chunker.tokenizer.count_tokens(chunker.prefix + line) > 4
+
+    chunks = chunker.chunk_text([line])
+
+    assert chunks == ["a", line]
+
+
 def test_chunk_document(default_tokenizer):
     """Test the chunk() method with a DoclingDocument."""
     # Create a simple DoclingDocument
@@ -290,30 +398,16 @@ def test_chunk_document_with_long_content(default_tokenizer):
         assert token_count <= MAX_TOKENS
 
 
-def test_infinite_loop_regression_long_unbreakable_token(default_tokenizer):
-    """Regression test for infinite loop bug when processing text with a long
-    unbreakable token sequence preceded by a space.
-
-    This test reproduces the issue where LineBasedTokenChunker.chunk_text()
-    would enter an infinite loop when the prefer_word_boundary logic in
-    split_by_token_limit() snapped best_idx back to 0, producing an empty
-    head and returning the tail unchanged.
-
-    The fix ensures:
-    1. split_by_token_limit only snaps to word boundary if it produces non-empty head
-    2. chunk_text detects zero-progress and forces character-level splitting as fallback
-    """
+def test_chunk_text_preserves_long_unbreakable_token(default_tokenizer):
     chunker = LineBasedTokenChunker(
         tokenizer=default_tokenizer,
     )
 
-    # Create text with leading space followed by long unbreakable token
     long_word = "a" * 200
     text = "Header " + long_word + " Footer\n"
     token_count = chunker.tokenizer.count_tokens(text)
     assert token_count <= MAX_TOKENS
 
-    # This should complete without hanging
     result = chunker.chunk_text(lines=[text])
 
     assert len(result) == 1
@@ -350,28 +444,14 @@ def test_split_by_token_limit_leading_space_regression(default_tokenizer):
     assert head_tokens <= 10
 
 
-def test_character_level_fallback_on_zero_available(default_tokenizer):
-    """Test that chunk_text uses character-level fallback when available space is 0.
-
-    This test demonstrates a real scenario where the fallback is needed:
-    1. Current chunk is exactly at max_tokens (available = 0)
-    2. Remaining text is too long to fit in a fresh chunk (exceeds max_tokens)
-    3. split_by_token_limit is called with token_limit=0
-    4. It returns ("", text) in split_by_token_limit of line_chunker.py
-    5. The fallback takes 1 character to ensure progress
-    """
-    # Use a very small max_tokens to make it easier to create the scenario
+def test_chunk_text_flushes_when_no_space_remains(default_tokenizer):
     chunker = LineBasedTokenChunker(
         tokenizer=default_tokenizer,
     )
 
-    # First line: 8 tokens (leaves room for 2 more)
     first_line = "word " * (MAX_TOKENS - 2)
-
-    # Second line: more than 10 tokens (so it can't fit in a fresh chunk)
     second_line = "x" * 100
 
-    # Verify second line is indeed > max_tokens
     second_line_tokens = chunker.tokenizer.count_tokens(second_line)
     assert second_line_tokens > MAX_TOKENS, (
         f"Second line must exceed max_tokens for test to work: {second_line_tokens} <= {MAX_TOKENS}"
@@ -380,19 +460,14 @@ def test_character_level_fallback_on_zero_available(default_tokenizer):
     lines = [first_line, second_line]
     result = chunker.chunk_text(lines=lines)
 
-    # Verify we got multiple chunks (the long second line should be split)
     assert len(result) > 1, f"Should have multiple chunks, got {len(result)}"
 
-    # Verify each chunk respects token limit (allow small overflow due to newline addition)
     for i, chunk in enumerate(result):
         token_count = chunker.tokenizer.count_tokens(chunk)
         assert token_count <= MAX_TOKENS, f"Chunk {i} exceeds token limit: {token_count} > {MAX_TOKENS}"
 
-    # Verify all content is preserved
     combined = "".join(result)
-    # First line should be in first chunk
     assert first_line in result[0], "First line should be in first chunk"
-    # Second line should be split across remaining chunks
     combined_without_newlines = combined.replace("\n", "")
     assert second_line in combined_without_newlines, "Second line should be preserved (possibly split)"
 
