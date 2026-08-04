@@ -14,6 +14,7 @@ from docling_core.transforms.serializer.common import (
     _iterate_items,
     _PageBreakNode,
 )
+from docling_core.transforms.serializer.doctags import DocTagsDocSerializer
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
     HTMLMetaSerializer,
@@ -1542,6 +1543,9 @@ def _pb_doc(n_pages: int) -> DoclingDocument:
     return doc
 
 
+_PB = "<!-- page break -->"
+
+
 def _pb_render(doc: DoclingDocument) -> str:
     return (
         MarkdownDocSerializer(
@@ -1551,9 +1555,6 @@ def _pb_render(doc: DoclingDocument) -> str:
         .serialize()
         .text
     )
-
-
-_PB = "<!-- page break -->"
 
 
 def _pb_sections(md: str) -> list[list[str]]:
@@ -1614,6 +1615,11 @@ def test_md_page_break_positions_matrix(with_group: bool, gap_at: str):
     The matrix is what catches position bugs that a placeholder count cannot: a
     document can carry the right number of breaks while attributing content to the
     wrong page.
+
+    Note the gap cases pin today's semantics, where a multi-page gap yields a single
+    boundary rather than one per page: with pages [1, 2, 4] this expects three
+    sections, not a ``pb-3-4`` as well. #466 / #472 would change that, and would need
+    these expectations updated along with them.
     """
     pages = [1, 2, 3, 4]
     if gap_at == "start":
@@ -1681,11 +1687,14 @@ def test_page_break_boundary_emitted_once_per_transition():
     past the boundary it emits, otherwise the group's first child emits the same
     transition again and the output stays correct only by accident.
     """
-    doc = _pb_doc(3)
+    doc = _pb_doc(4)
     doc.add_text(label=DocItemLabel.TEXT, text="Intro", prov=_pb_prov(1))
-    group = doc.add_group(label=GroupLabel.UNSPECIFIED, name="group")
-    doc.add_text(label=DocItemLabel.TEXT, text="A", prov=_pb_prov(2), parent=group)
-    doc.add_text(label=DocItemLabel.TEXT, text="B", prov=_pb_prov(2), parent=group)
+    first = doc.add_group(label=GroupLabel.UNSPECIFIED, name="first")
+    doc.add_text(label=DocItemLabel.TEXT, text="A", prov=_pb_prov(2), parent=first)
+    doc.add_text(label=DocItemLabel.TEXT, text="B", prov=_pb_prov(2), parent=first)
+    doc.add_text(label=DocItemLabel.TEXT, text="Middle", prov=_pb_prov(3))
+    second = doc.add_group(label=GroupLabel.UNSPECIFIED, name="second")
+    doc.add_text(label=DocItemLabel.TEXT, text="C", prov=_pb_prov(4), parent=second)
 
     breaks = [
         node
@@ -1693,5 +1702,43 @@ def test_page_break_boundary_emitted_once_per_transition():
         if isinstance(node, _PageBreakNode)
     ]
 
-    assert [(b.prev_page, b.next_page) for b in breaks] == [(1, 2)]
+    assert [(b.prev_page, b.next_page) for b in breaks] == [(1, 2), (2, 3), (3, 4)]
+    # Distinct transitions must stay distinguishable, or get_parts()'s dedup would
+    # swallow a legitimate break rather than a duplicate one.
     assert len({b.self_ref for b in breaks}) == len(breaks)
+
+
+def test_md_page_break_nested_groups():
+    """A boundary inside a nested group is emitted before the innermost group.
+
+    This is the one shape where the recursion in ``_iterate_items`` and the
+    ``my_visited`` set it shares with its caller actually interact: the outer group's
+    lookahead walks into the inner group, and both scopes see the same transition.
+    """
+    doc = _pb_doc(3)
+    doc.add_text(label=DocItemLabel.TEXT, text="Intro", prov=_pb_prov(1))
+    outer = doc.add_group(label=GroupLabel.UNSPECIFIED, name="outer")
+    doc.add_text(label=DocItemLabel.TEXT, text="Outer child", prov=_pb_prov(1), parent=outer)
+    inner = doc.add_group(label=GroupLabel.UNSPECIFIED, name="inner", parent=outer)
+    doc.add_text(label=DocItemLabel.TEXT, text="Inner child", prov=_pb_prov(2), parent=inner)
+    doc.add_text(label=DocItemLabel.TEXT, text="Outro", prov=_pb_prov(3))
+
+    sections = _pb_sections(_pb_render(doc))
+
+    assert sections == [["Intro", "Outer child"], ["Inner child"], ["Outro"]]
+
+
+def test_page_break_before_group_across_serializers():
+    """The fix lives in the shared iterator, so every serializer benefits.
+
+    ``_iterate_items`` backs markdown, LaTeX, DocTags and DocLang alike; asserting on
+    DocTags too keeps the other consumers from regressing silently.
+    """
+    doc = _pb_doc(2)
+    doc.add_text(label=DocItemLabel.TEXT, text="Page 1 text", prov=_pb_prov(1))
+    group = doc.add_group(label=GroupLabel.KEY_VALUE_AREA, name="kv")
+    doc.add_text(label=DocItemLabel.TEXT, text="KV child", prov=_pb_prov(2), parent=group)
+
+    doctags = DocTagsDocSerializer(doc=doc).serialize().text
+
+    assert doctags.index("<page_break>") < doctags.index("KV child")
