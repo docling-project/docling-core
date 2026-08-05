@@ -1687,12 +1687,22 @@ def test_page_break_boundary_emitted_once_per_transition():
     past the boundary it emits, otherwise the group's first child emits the same
     transition again and the output stays correct only by accident.
 
-    This is also why a document corpus cannot stand in for this test. A corpus is
-    a good net for regressions and a bad net for this particular defect: real
-    documents rarely place a group across an empty page, so a faulty stream never
-    meets an input that would render differently. Reported on #705, where a latent
-    gap-expansion defect passed both the markdown-level assertions and a
-    25-document corpus, and only asserting the property caught it.
+    This is also why a document corpus cannot stand in for this test. Quoting
+    @serboor on #705, who ran one: a corpus is "a good net for regressions and a
+    bad net for this" -- but the two halves of the defect are not equally hidden,
+    and only one of them is the reason this test exists.
+
+    The *misplacement* does reach the rendered output: across 25 documents, one
+    287-page document rendered 7 pairs of consecutive placeholders on the faulty
+    build -- sections left empty because the break came out after the group --
+    where a page-by-page reference had none. A corpus can catch that.
+
+    The *duplicate* underneath it cannot reach the output at all: the same corpus
+    emitted 732 boundaries of which 722 were distinct, and the markdown contained
+    exactly 722 placeholders. ``get_parts()``'s dedup collapses the extra one, so
+    no markdown-level assertion can fail on it by construction -- including on the
+    two documents that were byte-identical to the reference while their stream was
+    wrong. Asserting on the stream is what changes that.
     """
     doc = _pb_doc(4)
     doc.add_text(label=DocItemLabel.TEXT, text="Intro", prov=_pb_prov(1))
