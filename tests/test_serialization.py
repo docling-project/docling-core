@@ -1686,6 +1686,13 @@ def test_page_break_boundary_emitted_once_per_transition():
     iterator level keeps the group branch honest: it must advance ``prev_page_nr``
     past the boundary it emits, otherwise the group's first child emits the same
     transition again and the output stays correct only by accident.
+
+    This is also why a document corpus cannot stand in for this test. A corpus is
+    a good net for regressions and a bad net for this particular defect: real
+    documents rarely place a group across an empty page, so a faulty stream never
+    meets an input that would render differently. Reported on #705, where a latent
+    gap-expansion defect passed both the markdown-level assertions and a
+    25-document corpus, and only asserting the property caught it.
     """
     doc = _pb_doc(4)
     doc.add_text(label=DocItemLabel.TEXT, text="Intro", prov=_pb_prov(1))
