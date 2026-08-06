@@ -24,7 +24,7 @@ from docling_core.transforms.serializer.markdown import (
 )
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
-from docling_core.types.doc import DoclingDocument
+from docling_core.types.doc import DoclingDocument, Formatting, Script
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     BaseMeta,
@@ -202,6 +202,32 @@ def test_md_inline_and_formatting():
     )
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
+
+
+def test_md_subscript_formatting():
+    """Subscript spans are exported as inline <sub> HTML in Markdown."""
+    doc = DoclingDocument(name="test")
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="H2O",
+        formatting=Formatting(script=Script.SUB),
+    )
+
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    assert "<sub>H2O</sub>" in actual
+
+
+def test_md_superscript_formatting():
+    """Superscript spans are exported as inline <sup> HTML in Markdown."""
+    doc = DoclingDocument(name="test")
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="2",
+        formatting=Formatting(script=Script.SUPER),
+    )
+
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    assert "<sup>2</sup>" in actual
 
 
 def test_md_pb_placeholder_and_page_filter():
