@@ -1,6 +1,6 @@
 [project]
 name = "dclq"
-version = "2.90.0"  # DO NOT EDIT, updated automatically (lockstep with docling-core)
+version = "2.91.0"  # DO NOT EDIT, updated automatically (lockstep with docling-core)
 description = "Query DocLang documents: grep, list, outline, and XPath over semantic document structure"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -29,7 +29,7 @@ requires-python = ">=3.10,<4.0"
 dependencies = [
     # Pinned exactly: dclq rides on docling-core internals and is released from
     # the same commit, in lockstep. Bumped by .github/scripts/release.sh.
-    "docling-core[dclq]==2.90.0",
+    "docling-core[dclq]==2.91.0",
 ]
 
 [project.urls]

@@ -1,3 +1,9 @@
+## [v2.91.0](https://github.com/docling-project/docling-core/releases/tag/v2.91.0) - 2026-08-06
+
+### Feature
+
+* Update the add_<...> items with source uniformly ([#711](https://github.com/docling-project/docling-core/issues/711)) ([`f39885b`](https://github.com/docling-project/docling-core/commit/f39885b8c53546eefeb50a8c09fcd30cf9c734d2))
+
 ## [v2.90.0](https://github.com/docling-project/docling-core/releases/tag/v2.90.0) - 2026-08-03
 
 ### Feature
