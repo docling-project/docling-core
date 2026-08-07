@@ -603,6 +603,8 @@ class DocTagsAttachmentSerializer(BaseModel, BaseAttachmentSerializer):
                 reason = item.status.replace("_", " ")
                 parts.append(f"{item.name} (not converted: {reason})")
         text = "".join(parts)
+        if text:
+            text = _wrap(text=text, wrap_tag=DocumentToken.ATTACHMENT.value)
         return create_ser_result(text=text, span_source=item)
 
 

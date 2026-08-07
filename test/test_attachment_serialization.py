@@ -89,10 +89,16 @@ def test_add_item_attachment():
 
 
 def test_attachment_export_to_doctags():
+    from docling_core.types.doc.tokens import DocumentToken
+
     doc = DoclingDocument(name="test")
     att = doc.add_attachment(name="spec.pdf", target="spec.md")
     doctags = att.export_to_doctags(doc=doc)
-    assert "spec.pdf (spec.md)" in doctags
+    assert "<attachment>spec.pdf (spec.md)</attachment>" in doctags
+    assert (
+        DocumentToken.create_token_name_from_doc_item_label(DocItemLabel.ATTACHMENT)
+        == DocumentToken.ATTACHMENT.value
+    )
 
 
 def test_attachment_exclusion_filtering():

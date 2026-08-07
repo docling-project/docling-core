@@ -202,6 +202,7 @@ class DocumentToken(str, Enum):
     PARAGRAPH = "paragraph"
     REFERENCE = "reference"
     HANDWRITTEN_TEXT = "handwritten_text"
+    ATTACHMENT = "attachment"
 
     @classmethod
     def get_special_tokens(
@@ -255,6 +256,7 @@ class DocumentToken(str, Enum):
             DocItemLabel.REFERENCE: DocumentToken.REFERENCE,
             DocItemLabel.CHART: DocumentToken.CHART,
             DocItemLabel.HANDWRITTEN_TEXT: DocumentToken.HANDWRITTEN_TEXT,
+            DocItemLabel.ATTACHMENT: DocumentToken.ATTACHMENT,
         }
 
         res: str
