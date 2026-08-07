@@ -219,7 +219,7 @@ class DoclingDocument(BaseModel):
         dumped = handler(self)
 
         # suppress serializing certain fields when empty:
-        for field in {"field_regions", "field_items"}:
+        for field in {"field_regions", "field_items", "attachments"}:
             if dumped.get(field) == []:
                 del dumped[field]
 
@@ -348,6 +348,7 @@ class DoclingDocument(BaseModel):
             self.form_items,
             self.field_regions,
             self.field_items,
+            self.attachments,
         )
         for item_list in item_lists:
             for item in item_list:
@@ -934,6 +935,17 @@ class DoclingDocument(BaseModel):
             item.parent = parent_ref
 
             self.field_items.append(item)
+
+        elif isinstance(item, AttachmentItem):
+            item_label = "attachments"
+            item_index = len(self.attachments)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.attachments.append(item)
 
         elif isinstance(item, ListGroup | InlineGroup):
             item_label = "groups"
@@ -5267,6 +5279,7 @@ class DoclingDocument(BaseModel):
             self.form_items,
             self.field_regions,
             self.field_items,
+            self.attachments,
         ]
         for item_list in item_lists:
             for item in item_list:
@@ -5364,6 +5377,7 @@ class DoclingDocument(BaseModel):
         form_items: list[FormItem] = []
         field_regions: list[FieldRegionItem] = []
         field_items: list[FieldItem] = []
+        attachments: list[AttachmentItem] = []
 
         pages: dict[int, PageItem] = {}
 
@@ -5396,6 +5410,7 @@ class DoclingDocument(BaseModel):
                 "form_items",
                 "field_regions",
                 "field_items",
+                "attachments",
             ]
             start_indices = {k: len(self.get_item_list(k)) for k in post_processing_keys}
 
@@ -5525,6 +5540,7 @@ class DoclingDocument(BaseModel):
         self.form_items = doc_index.form_items
         self.field_regions = doc_index.field_regions
         self.field_items = doc_index.field_items
+        self.attachments = doc_index.attachments
         self.pages = doc_index.pages
         self.name = doc_index.get_name()
 

@@ -68,3 +68,29 @@ def test_attachment_json_roundtrip():
     assert loaded.attachments[0].name == "report.pdf"
     assert loaded.attachments[0].target == "report.md"
     assert loaded.attachments[0].size == 1234
+
+
+def test_attachment_normalize_references():
+    doc = DoclingDocument(name="test")
+    doc.add_attachment(name="doc.pdf", target="doc.md")
+    doc._normalize_references()
+    assert len(doc.attachments) == 1
+    assert doc.attachments[0].self_ref == "#/attachments/0"
+
+
+def test_add_item_attachment():
+    doc = DoclingDocument(name="test")
+    item = AttachmentItem(name="manual.pdf", target="manual.md", self_ref="#")
+    cref = doc._append_item(item=item, parent_ref=doc.body.get_ref())
+    assert cref.cref == "#/attachments/0"
+    assert len(doc.attachments) == 1
+    assert doc.attachments[0].name == "manual.pdf"
+    assert doc.attachments[0].self_ref == "#/attachments/0"
+
+
+def test_attachment_export_to_doctags():
+    doc = DoclingDocument(name="test")
+    att = doc.add_attachment(name="spec.pdf", target="spec.md")
+    doctags = att.export_to_doctags(doc=doc)
+    assert "spec.pdf (spec.md)" in doctags
+
