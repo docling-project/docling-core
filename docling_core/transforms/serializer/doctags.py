@@ -582,7 +582,10 @@ class DocTagsAttachmentSerializer(BaseModel, BaseAttachmentSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed attachment item."""
-        params = DocTagsParams(**kwargs)
+        if isinstance(doc_serializer, DocTagsDocSerializer):
+            params = doc_serializer.params.merge_with_patch(kwargs)
+        else:
+            params = DocTagsParams(**kwargs)
         parts: list[str] = []
         if params.add_location:
             location = item.get_location_tokens(

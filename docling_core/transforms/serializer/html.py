@@ -916,6 +916,8 @@ class HTMLAttachmentSerializer(BaseModel, BaseAttachmentSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed attachment item."""
+        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
+            return create_ser_result()
         if item.status == "converted" and item.target:
             text = f'<a href="{html.escape(str(item.target))}">{html.escape(item.name)}</a>'
         else:

@@ -94,3 +94,14 @@ def test_attachment_export_to_doctags():
     doctags = att.export_to_doctags(doc=doc)
     assert "spec.pdf (spec.md)" in doctags
 
+
+def test_attachment_exclusion_filtering():
+    doc = DoclingDocument(name="test")
+    doc.add_attachment(name="doc.pdf", target="doc.md")
+    md_all = doc.export_to_markdown()
+    assert "doc.pdf" in md_all
+
+    md_none = doc.export_to_markdown(labels={DocItemLabel.PARAGRAPH})
+    assert "doc.pdf" not in md_none
+
+

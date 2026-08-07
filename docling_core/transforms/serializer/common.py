@@ -482,11 +482,15 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 )
             elif isinstance(my_item, AttachmentItem):
                 if self.attachment_serializer is not None:
-                    part = self.attachment_serializer.serialize(
-                        item=my_item,
-                        doc_serializer=self,
-                        doc=self.doc,
-                        **my_kwargs,
+                    part = (
+                        self.attachment_serializer.serialize(
+                            item=my_item,
+                            doc_serializer=self,
+                            doc=self.doc,
+                            **my_kwargs,
+                        )
+                        if my_item.self_ref not in self.get_excluded_refs(**kwargs)
+                        else empty_res
                     )
                 else:
                     part = self.fallback_serializer.serialize(

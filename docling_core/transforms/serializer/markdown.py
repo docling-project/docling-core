@@ -865,7 +865,7 @@ class MarkdownAttachmentSerializer(BaseModel, BaseAttachmentSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed attachment item."""
-        if item.prov:
+        if item.prov and item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             return create_ser_result(
                 text=_format_attachment_link(item),
                 span_source=item,
@@ -982,7 +982,11 @@ class MarkdownDocSerializer(DocSerializer):
 
         params = self.params.merge_with_patch(patch=kwargs)
         if DocItemLabel.ATTACHMENT in params.labels:
-            unpositioned = [att for att in self.doc.attachments if not att.prov]
+            excluded_refs = self.get_excluded_refs(**kwargs)
+            unpositioned = [
+                att for att in self.doc.attachments
+                if not att.prov and att.self_ref not in excluded_refs
+            ]
             if unpositioned:
                 section_parts = ["## Attachments"]
                 section_parts.extend(_format_attachment_link(att) for att in unpositioned)
