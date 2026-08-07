@@ -495,7 +495,12 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         if meta_part is not None and meta_position == "after":
             parts.append(meta_part)
 
-        return create_ser_result(text=delim.join([p.text for p in parts if p.text]), span_source=parts)
+        text_res = delim.join([p.text for p in parts if p.text])
+        if self.requires_page_break() and not isinstance(my_item, _PageBreakNode):
+            # A page break nested inside a group would otherwise only be resolved by
+            # serialize_doc(), i.e. never when a single node is serialized on its own.
+            text_res = self._replace_page_breaks(text=text_res)
+        return create_ser_result(text=text_res, span_source=parts)
 
     # making some assumptions about the kwargs it can pass
     @override
@@ -711,6 +716,14 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
     def _create_page_break(self, node: _PageBreakNode) -> str:
         return f"#_#_DOCLING_DOC_PAGE_BREAK_{node.prev_page}_{node.next_page}_#_#"
+
+    def _replace_page_breaks(self, text: str) -> str:
+        """Replace the internal page break markers by their serialized form.
+
+        The base implementation leaves the markers untouched, for serializers that
+        can only resolve them once the whole document is available.
+        """
+        return text
 
     def _get_page_breaks(self, text: str) -> Iterable[tuple[str, int, int]]:
         pattern = r"#_#_DOCLING_DOC_PAGE_BREAK_(\d+)_(\d+)_#_#"
