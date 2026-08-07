@@ -14,6 +14,7 @@ from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
     BaseAnnotationSerializer,
+    BaseAttachmentSerializer,
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -34,6 +35,7 @@ from docling_core.transforms.serializer.common import (
     create_ser_result,
 )
 from docling_core.types.doc import (
+    AttachmentItem,
     BaseMeta,
     CodeItem,
     ContentLayer,
@@ -842,6 +844,35 @@ class MarkdownFallbackSerializer(BaseFallbackSerializer):
             )
 
 
+def _format_attachment_link(item: AttachmentItem) -> str:
+    """Return the markdown representation of an attachment item."""
+    if item.status == "converted" and item.target:
+        return f"[{item.name}]({item.target})"
+    reason = item.status.replace("_", " ")
+    return f"{item.name} (not converted: {reason})"
+
+
+class MarkdownAttachmentSerializer(BaseModel, BaseAttachmentSerializer):
+    """Markdown-specific attachment serializer."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: AttachmentItem,
+        doc_serializer: "BaseDocSerializer",
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serializes the passed attachment item."""
+        if item.prov:
+            return create_ser_result(
+                text=_format_attachment_link(item),
+                span_source=item,
+            )
+        return create_ser_result()
+
+
 class MarkdownDocSerializer(DocSerializer):
     """Markdown-specific document serializer."""
 
@@ -857,6 +888,7 @@ class MarkdownDocSerializer(DocSerializer):
 
     meta_serializer: BaseMetaSerializer = MarkdownMetaSerializer()
     annotation_serializer: BaseAnnotationSerializer = MarkdownAnnotationSerializer()
+    attachment_serializer: BaseAttachmentSerializer = MarkdownAttachmentSerializer()
 
     params: MarkdownParams = MarkdownParams()
 
@@ -947,6 +979,18 @@ class MarkdownDocSerializer(DocSerializer):
             page_sep = self.params.page_break_placeholder or ""
             for full_match, _, _ in self._get_page_breaks(text=text_res):
                 text_res = text_res.replace(full_match, page_sep)
+
+        params = self.params.merge_with_patch(patch=kwargs)
+        if DocItemLabel.ATTACHMENT in params.labels:
+            unpositioned = [att for att in self.doc.attachments if not att.prov]
+            if unpositioned:
+                section_parts = ["## Attachments"]
+                section_parts.extend(_format_attachment_link(att) for att in unpositioned)
+                section_text = "\n\n".join(section_parts)
+                if text_res:
+                    text_res = f"{text_res}\n\n{section_text}"
+                else:
+                    text_res = section_text
 
         return create_ser_result(text=text_res, span_source=parts)
 

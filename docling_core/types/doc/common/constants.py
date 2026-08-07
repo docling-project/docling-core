@@ -31,6 +31,7 @@ DEFAULT_EXPORT_LABELS = {
     DocItemLabel.FIELD_HINT,
     DocItemLabel.MARKER,
     DocItemLabel.HANDWRITTEN_TEXT,
+    DocItemLabel.ATTACHMENT,
 }
 
 

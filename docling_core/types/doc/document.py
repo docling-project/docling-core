@@ -143,6 +143,7 @@ from docling_core.types.doc.items.table.table_data import (
     TableCell,
     TableData,
 )
+from docling_core.types.doc.items.attachment import AttachmentItem, AttachmentStatus
 from docling_core.types.doc.items.text import FormulaItem, ListItem, SectionHeaderItem, TextItem, TitleItem
 from docling_core.types.doc.labels import (
     CodeLanguageLabel,
@@ -209,6 +210,7 @@ class DoclingDocument(BaseModel):
     form_items: list[FormItem] = []
     field_regions: list[FieldRegionItem] = []
     field_items: list[FieldItem] = []
+    attachments: list[AttachmentItem] = []
 
     pages: dict[int, PageItem] = {}  # empty as default
 
@@ -1760,6 +1762,53 @@ class DoclingDocument(BaseModel):
         parent.children.append(RefItem(cref=cref))
 
         return fig_item
+
+    def add_attachment(
+        self,
+        name: str,
+        mime_type: Optional[str] = None,
+        size: Optional[int] = None,
+        target: Optional[Union[str, AnyUrl]] = None,
+        status: AttachmentStatus = "converted",
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+    ) -> AttachmentItem:
+        """Add an attachment reference to the document.
+
+        :param name: Original attachment filename.
+        :param mime_type: Optional MIME type.
+        :param size: Optional payload size in bytes.
+        :param target: Optional relative path/URL to converted output.
+        :param status: Conversion status.
+        :param prov: Optional provenance (page + bbox) for inline placement.
+        :param parent: Parent node; defaults to body.
+        :param content_layer: Optional content layer override.
+        """
+        if not parent:
+            parent = self.body
+
+        attachment_index = len(self.attachments)
+        cref = f"#/attachments/{attachment_index}"
+
+        item = AttachmentItem(
+            name=name,
+            mime_type=mime_type,
+            size=size,
+            target=target,
+            status=status,
+            self_ref=cref,
+            parent=parent.get_ref(),
+        )
+        if prov:
+            item.prov.append(prov)
+        if content_layer:
+            item.content_layer = content_layer
+
+        self.attachments.append(item)
+        parent.children.append(RefItem(cref=cref))
+
+        return item
 
     def add_title(
         self,

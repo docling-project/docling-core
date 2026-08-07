@@ -57,6 +57,7 @@ from docling_core.types.doc.doctags import (
     DocTagsPage,
 )
 from docling_core.types.doc.document import DoclingDocument
+from docling_core.types.doc.items.attachment import AttachmentItem, AttachmentStatus
 from docling_core.types.doc.items.code import CodeItem
 from docling_core.types.doc.items.content import ContentItem
 from docling_core.types.doc.items.form import (
