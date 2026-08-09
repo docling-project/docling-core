@@ -1,9 +1,10 @@
 import json
 from pathlib import Path
 
+import pytest
 from PIL import Image as PILImage
 
-from docling_core.types.doc import DoclingDocument
+from docling_core.types.doc import DocItemLabel, DoclingDocument
 from docling_core.types.doc.document import DocTagsDocument
 
 from .test_data_gen_flag import GEN_TEST_DATA
@@ -168,3 +169,40 @@ def test_doctags_inline():
         exp_file=exp,
         actual=deser_doc.export_to_dict(),
     )
+
+
+@pytest.mark.parametrize(
+    "label",
+    [DocItemLabel.PARAGRAPH, DocItemLabel.HANDWRITTEN_TEXT, DocItemLabel.REFERENCE],
+)
+def test_doctags_text_label_roundtrip(label: DocItemLabel):
+    """Text items must survive a DocTags round-trip for every label exported.
+
+    `export_to_doctags` emits `<{label}>` for these labels — PARAGRAPH is produced
+    by the PPTX, JATS, USPTO, AsciiDoc and LaTeX backends, REFERENCE by the LaTeX
+    backend. The tags have to be accepted on load as well, otherwise the content
+    is silently dropped.
+    """
+    doc = DoclingDocument(name="doc")
+    doc.add_text(label=label, text="Labelled content")
+    doc.add_text(label=DocItemLabel.TEXT, text="Text content")
+
+    doctags = doc.export_to_doctags()
+    assert f"<{label.value}>" in doctags
+
+    doctags_doc = DocTagsDocument.from_doctags_and_image_pairs([doctags], None)
+    deser_doc = DoclingDocument.load_from_doctags(doctags_doc, document_name="doc")
+
+    text = deser_doc.export_to_text()
+    assert "Labelled content" in text
+    assert "Text content" in text
+    assert [item.label for item in deser_doc.texts] == [label, DocItemLabel.TEXT]
+
+
+def test_doctags_paragraph_with_location_roundtrip():
+    """The same holds when the paragraph carries `<loc_...>` coordinates."""
+    doctags = "<doctag><paragraph><loc_10><loc_20><loc_30><loc_40>Located paragraph</paragraph></doctag>"
+    doctags_doc = DocTagsDocument.from_doctags_and_image_pairs([doctags], None)
+    deser_doc = DoclingDocument.load_from_doctags(doctags_doc, document_name="para")
+
+    assert "Located paragraph" in deser_doc.export_to_text()
