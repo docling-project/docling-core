@@ -656,11 +656,25 @@ def test_picture_body_children_inline_group_and_formula():
     doc = _doc_picture_body_inline_and_formula()
     ser = DocLangDocSerializer(
         doc=doc,
-        params=DocLangParams(include_version=False),
+        params=DocLangParams(include_version=False, traverse_pictures=True),
     )
     ser_txt = ser.serialize().text
     exp_file = Path("./test/data/doc/picture_body_children.gt.dclg.xml")
     verify_doclang(exp_file=exp_file, actual=ser_txt)
+
+
+def test_picture_body_children_dropped_without_traverse_pictures():
+    """Without ``traverse_pictures`` the picture body omits nested text and formulas."""
+    doc = _doc_picture_body_inline_and_formula()
+    ser = DocLangDocSerializer(
+        doc=doc,
+        params=DocLangParams(include_version=False, traverse_pictures=False),
+    )
+    ser_txt = ser.serialize().text
+    assert "<picture>" in ser_txt
+    assert "Hello" not in ser_txt
+    assert "world" not in ser_txt
+    assert "E=mc^2" not in ser_txt
 
 
 def _create_wrapping_test_doc():

@@ -1224,7 +1224,11 @@ def _append_picture_body_children(
     picture_body_parts: list[str],
     **kwargs: Any,
 ) -> None:
-    """Serialize ``PictureItem`` children into the picture body (after the preamble)."""
+    """Serialize ``PictureItem`` children into the picture body (after the preamble).
+
+    Only reached when ``traverse_pictures`` is set; callers gate on it so that text
+    recognized inside an image is not promoted into the document's doclang.
+    """
     visited: set[str] = kwargs.get("visited") or set()
     visited.add(item.self_ref)
     caption_refs = {c.cref for c in item.captions}
@@ -1372,13 +1376,14 @@ class DocLangPictureSerializer(BasePictureSerializer):
             picture_body_parts.append(_create_src_token(uri=uri))
         if tabular_body:
             picture_body_parts.append(tabular_body)
-        _append_picture_body_children(
-            item=item,
-            doc_serializer=doc_serializer,
-            doc=doc,
-            picture_body_parts=picture_body_parts,
-            **kwargs,
-        )
+        if params.traverse_pictures:
+            _append_picture_body_children(
+                item=item,
+                doc_serializer=doc_serializer,
+                doc=doc,
+                picture_body_parts=picture_body_parts,
+                **kwargs,
+            )
 
         head = _element_head_prefix(
             item=item,
