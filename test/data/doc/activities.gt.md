@@ -23,7 +23,9 @@ Also, don't forget:
 Hmm, what else…
 
 - -Another activity item
+
 <!-- page break -->
+
 - -Yet another one
 - -Stopping it here
 

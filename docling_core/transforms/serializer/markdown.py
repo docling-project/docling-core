@@ -30,6 +30,7 @@ from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
     _get_annotation_text,
+    _PageBreakSerResult,
     _should_use_legacy_annotations,
     create_ser_result,
 )
@@ -781,13 +782,22 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 my_parts.append(p)
 
         indent_str = list_level * params.indent * " "
-        text_res = sep.join(
-            [
-                # avoid additional marker on already evaled sublists
-                (c.text if c.text and c.text[0] == " " else f"{indent_str}{c.text}")
-                for c in my_parts
-            ]
-        )
+        my_texts = [
+            # avoid additional marker on already evaled sublists
+            (c.text if c.text and c.text[0] == " " else f"{indent_str}{c.text}")
+            for c in my_parts
+        ]
+        text_res = ""
+        for i, text in enumerate(my_texts):
+            if i:
+                # a page break is a block-level marker, so it gets the document
+                # scope separator on both sides instead of the list one
+                text_res += (
+                    "\n\n"
+                    if isinstance(my_parts[i], _PageBreakSerResult) or isinstance(my_parts[i - 1], _PageBreakSerResult)
+                    else sep
+                )
+            text_res += text
         return create_ser_result(text=text_res, span_source=my_parts)
 
 
