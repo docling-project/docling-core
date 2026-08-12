@@ -24,12 +24,8 @@ class AttachmentItem(DocItem):
     label: typing.Literal[DocItemLabel.ATTACHMENT] = DocItemLabel.ATTACHMENT  # type: ignore[assignment]
 
     name: str = Field(description="Original attachment filename.")
-    mime_type: Optional[str] = Field(
-        default=None, description="MIME type of the attachment payload."
-    )
-    size: Optional[int] = Field(
-        default=None, description="Attachment payload size in bytes."
-    )
+    mime_type: Optional[str] = Field(default=None, description="MIME type of the attachment payload.")
+    size: Optional[int] = Field(default=None, description="Attachment payload size in bytes.")
     target: Optional[Union[str, AnyUrl]] = Field(
         default=None,
         description="Relative path/URL to the converted attachment output, or None if not converted.",

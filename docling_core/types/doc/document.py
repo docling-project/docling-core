@@ -99,6 +99,7 @@ from docling_core.types.doc.common.reference import (
 from docling_core.types.doc.common.scalars import CharSpan, LevelNumber, Uint64
 from docling_core.types.doc.common.source import BaseSource, SourceType, TrackSource
 from docling_core.types.doc.doctags import DocTagsDocument, DocTagsPage
+from docling_core.types.doc.items.attachment import AttachmentItem, AttachmentStatus
 from docling_core.types.doc.items.code import CodeItem
 from docling_core.types.doc.items.content import ContentItem
 from docling_core.types.doc.items.form import FieldHeadingItem, FieldItem, FieldRegionItem, FieldValueItem
@@ -143,7 +144,6 @@ from docling_core.types.doc.items.table.table_data import (
     TableCell,
     TableData,
 )
-from docling_core.types.doc.items.attachment import AttachmentItem, AttachmentStatus
 from docling_core.types.doc.items.text import FormulaItem, ListItem, SectionHeaderItem, TextItem, TitleItem
 from docling_core.types.doc.labels import (
     CodeLanguageLabel,

@@ -96,8 +96,7 @@ def test_attachment_export_to_doctags():
     doctags = att.export_to_doctags(doc=doc)
     assert "<attachment>spec.pdf (spec.md)</attachment>" in doctags
     assert (
-        DocumentToken.create_token_name_from_doc_item_label(DocItemLabel.ATTACHMENT)
-        == DocumentToken.ATTACHMENT.value
+        DocumentToken.create_token_name_from_doc_item_label(DocItemLabel.ATTACHMENT) == DocumentToken.ATTACHMENT.value
     )
 
 
@@ -109,5 +108,3 @@ def test_attachment_exclusion_filtering():
 
     md_none = doc.export_to_markdown(labels={DocItemLabel.PARAGRAPH})
     assert "doc.pdf" not in md_none
-
-
