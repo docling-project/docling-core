@@ -3750,6 +3750,8 @@ class DoclingDocument(BaseModel):
         allowed_meta_names: Optional[set[str]] = None,
         blocked_meta_names: Optional[set[str]] = None,
         mark_meta: bool = False,
+        image_dir: Optional[Path] = None,
+        image_path_prefix: str = "",
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -3812,6 +3814,15 @@ class DoclingDocument(BaseModel):
         :type allowed_meta_names: Optional[set[str]] = None
         :param blocked_meta_names: Optional[set[str]]: Meta names to block; takes precedence over allowed_meta_names.
         :type blocked_meta_names: Optional[set[str]] = None
+        :param image_dir: When set together with `image_mode=ImageRefMode.REFERENCED`, pictures are
+            saved as PNG files under this directory and referenced from the Markdown output instead
+            of requiring the caller to save images and rewrite URIs manually. The directory is
+            created if it does not already exist. (Default value = None).
+        :type image_dir: Optional[Path] = None
+        :param image_path_prefix: Prefix prepended to each saved image's filename when building the
+            Markdown image reference, e.g. "images/" or a URL prefix. Only used when `image_dir` is
+            set. (Default value = "").
+        :type image_path_prefix: str = ""
         """
         from docling_core.transforms.serializer.markdown import (
             MarkdownDocSerializer,
@@ -3827,8 +3838,16 @@ class DoclingDocument(BaseModel):
                 DeprecationWarning,
             )
 
+        export_doc: DoclingDocument = self
+        if image_dir is not None:
+            export_doc = self._with_pictures_refs(image_dir=image_dir, page_no=page_no)
+            for item, _ in export_doc.iterate_items(page_no=page_no, with_groups=False):
+                if isinstance(item, PictureItem) and item.image is not None and item.image.uri is not None:
+                    filename = Path(str(item.image.uri)).name
+                    item.image.uri = Path(f"{image_path_prefix}{filename}")
+
         serializer = MarkdownDocSerializer(
-            doc=self,
+            doc=export_doc,
             params=MarkdownParams(
                 labels=my_labels,
                 layers=my_layers,
