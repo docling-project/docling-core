@@ -1,5 +1,158 @@
 {
   "$defs": {
+    "AttachmentItem": {
+      "additionalProperties": false,
+      "description": "An embedded file attachment referenced by a document.",
+      "properties": {
+        "self_ref": {
+          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
+          "title": "Self Ref",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RefItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "children": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Children",
+          "type": "array"
+        },
+        "content_layer": {
+          "$ref": "#/$defs/ContentLayer",
+          "default": "body"
+        },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BaseMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "label": {
+          "const": "attachment",
+          "default": "attachment",
+          "title": "Label",
+          "type": "string"
+        },
+        "prov": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProvenanceItem"
+          },
+          "title": "Prov",
+          "type": "array"
+        },
+        "source": {
+          "default": [],
+          "description": "The provenance of this document item. Currently, it is only used for media track provenance.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "track": "#/$defs/TrackSource"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TrackSource"
+              }
+            ]
+          },
+          "title": "Source",
+          "type": "array"
+        },
+        "comments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/FineRef"
+          },
+          "title": "Comments",
+          "type": "array"
+        },
+        "name": {
+          "description": "Original attachment filename.",
+          "title": "Name",
+          "type": "string"
+        },
+        "mime_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "MIME type of the attachment payload.",
+          "title": "Mime Type"
+        },
+        "size": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Attachment payload size in bytes.",
+          "title": "Size"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Relative path/URL to the converted attachment output, or None if not converted.",
+          "title": "Target"
+        },
+        "status": {
+          "default": "converted",
+          "description": "Conversion status of the attachment.",
+          "enum": [
+            "converted",
+            "failed",
+            "unsupported",
+            "depth_limited"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "self_ref",
+        "name"
+      ],
+      "title": "AttachmentItem",
+      "type": "object"
+    },
     "BaseMeta": {
       "additionalProperties": true,
       "description": "Base class for metadata.",
@@ -4636,6 +4789,14 @@
         "$ref": "#/$defs/FieldItem"
       },
       "title": "Field Items",
+      "type": "array"
+    },
+    "attachments": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/AttachmentItem"
+      },
+      "title": "Attachments",
       "type": "array"
     },
     "pages": {
