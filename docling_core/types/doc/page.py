@@ -437,6 +437,7 @@ class PdfAttachment(BaseModel):
         mime_type: MIME subtype if present (e.g., 'text/plain').
         size: Decoded size in bytes (from /Params /Size or /Length).
         annotations: List of FileAttachment annotation positions (empty if unanchored).
+        data: Raw binary payload of the embedded file, if available.
     """
 
     model_config = {"validate_assignment": True}  # type: ignore[dict-item]
@@ -445,6 +446,10 @@ class PdfAttachment(BaseModel):
     mime_type: Optional[str] = None
     size: int = 0
     annotations: list[FileAttachmentAnnotation] = []
+    data: Optional[bytes] = Field(
+        default=None,
+        description="Raw binary payload of the embedded file, if available.",
+    )
 
 
 class BitmapResource(OrderedElement):
@@ -785,6 +790,11 @@ class SegmentedPdfPage(SegmentedPage):
         deprecated="Use `shapes` instead.",
     )
     shapes: list[PdfShape] = []
+
+    attachments: list[PdfAttachment] = Field(
+        default_factory=list,
+        description="File attachments anchored to this page (via FileAttachment annotations).",
+    )
 
     # Redefine typing of elements to include PdfTextCell
     char_cells: list[Union[PdfTextCell, TextCell]]
@@ -1561,6 +1571,11 @@ class ParsedPdfDocument(BaseModel):
     """Model representing a completely parsed PDF document with all components."""
 
     pages: dict[PageNumber, SegmentedPdfPage] = {}
+
+    attachments: list[PdfAttachment] = Field(
+        default_factory=list,
+        description="Embedded file attachments extracted from the PDF document.",
+    )
 
     meta_data: Optional[PdfMetaData] = None
     table_of_contents: Optional[PdfTableOfContents] = None

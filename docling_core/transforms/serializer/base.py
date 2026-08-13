@@ -8,7 +8,6 @@ from pydantic import AnyUrl, BaseModel
 from typing_extensions import deprecated
 
 from docling_core.types.doc.document import (
-    AttachmentItem,
     DocItem,
     DoclingDocument,
     FloatingItem,
@@ -202,22 +201,6 @@ class BaseFallbackSerializer(ABC):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        ...
-
-
-class BaseAttachmentSerializer(ABC):
-    """Base class for attachment item serializers."""
-
-    @abstractmethod
-    def serialize(
-        self,
-        *,
-        item: AttachmentItem,
-        doc_serializer: "BaseDocSerializer",
-        doc: DoclingDocument,
-        **kwargs: Any,
-    ) -> SerializationResult:
-        """Serializes the passed attachment item."""
         ...
 
 

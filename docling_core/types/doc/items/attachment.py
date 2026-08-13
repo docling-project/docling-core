@@ -1,9 +1,10 @@
 """Attachment document item."""
 
 import typing
+import warnings
 from typing import Optional, Union
 
-from pydantic import AnyUrl, Field
+from pydantic import AnyUrl, Field, model_validator
 
 from docling_core.types.doc.common.reference import ProvenanceItem
 from docling_core.types.doc.items.node import DocItem
@@ -32,8 +33,33 @@ class AttachmentItem(DocItem):
     )
     status: AttachmentStatus = Field(
         default="converted",
-        description="Conversion status of the attachment.",
+        description=(
+            "Conversion status of the attachment. Deprecated when `doc_data` is set: "
+            "a present `doc_data` implies successful conversion and `status` is ignored."
+        ),
     )
+    data: Optional[bytes] = Field(
+        default=None,
+        description="Raw binary payload of the attachment. Stored as base64 in JSON.",
+    )
+    doc_data: Optional[bytes] = Field(
+        default=None,
+        description=(
+            "Serialized DoclingDocument (e.g. JSON/DCLG/DCLX) of the recursively parsed attachment. "
+            "When present, the attachment is implicitly considered converted and `status` is ignored."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _validate_status_with_doc_data(self) -> "AttachmentItem":
+        if self.doc_data is not None and self.status != "converted":
+            warnings.warn(
+                f"Attachment '{self.name}' has doc_data set but status='{self.status}'; "
+                "doc_data implies converted, status will be ignored.",
+                UserWarning,
+                stacklevel=2,
+            )
+        return self
 
     def export_to_doctags(
         self,
@@ -45,18 +71,25 @@ class AttachmentItem(DocItem):
         add_content: bool = True,
     ):
         """Export to document tokens format."""
-        from docling_core.transforms.serializer.doctags import (
-            DocTagsDocSerializer,
-            DocTagsParams,
-        )
-
-        serializer = DocTagsDocSerializer(
-            doc=doc,
-            params=DocTagsParams(
-                xsize=xsize,
-                ysize=ysize,
-                add_location=add_location,
-                add_content=add_content,
-            ),
-        )
-        return serializer.serialize(item=self).text
+        # Simple fallback without requiring DocTagsAttachmentSerializer (deferred per #713).
+        # Serializer support will be added in a follow-up PR.
+        parts: list[str] = []
+        if add_location and self.prov:
+            try:
+                loc = self.get_location_tokens(doc=doc, xsize=xsize, ysize=ysize)
+                if loc:
+                    parts.append(loc)
+            except Exception:
+                pass
+        if add_content:
+            if self.status == "converted" and self.target:
+                parts.append(f"{self.name} ({self.target})")
+            elif self.doc_data is not None:
+                parts.append(f"{self.name} (converted, embedded document)")
+            else:
+                reason = self.status.replace("_", " ")
+                parts.append(f"{self.name} (not converted: {reason})")
+        text = "".join(parts)
+        if text:
+            text = f"<attachment>{text}</attachment>"
+        return text

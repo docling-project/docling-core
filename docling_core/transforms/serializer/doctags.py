@@ -8,7 +8,6 @@ from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
     BaseAnnotationSerializer,
-    BaseAttachmentSerializer,
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -28,7 +27,6 @@ from docling_core.transforms.serializer.common import (
     create_ser_result,
 )
 from docling_core.types.doc.document import (
-    AttachmentItem,
     BoundingBox,
     CodeItem,
     DocItem,
@@ -569,45 +567,6 @@ class DocTagsAnnotationSerializer(BaseAnnotationSerializer):
         return create_ser_result()
 
 
-class DocTagsAttachmentSerializer(BaseModel, BaseAttachmentSerializer):
-    """DocTags-specific attachment serializer."""
-
-    @override
-    def serialize(
-        self,
-        *,
-        item: AttachmentItem,
-        doc_serializer: BaseDocSerializer,
-        doc: DoclingDocument,
-        **kwargs: Any,
-    ) -> SerializationResult:
-        """Serializes the passed attachment item."""
-        if isinstance(doc_serializer, DocTagsDocSerializer):
-            params = doc_serializer.params.merge_with_patch(kwargs)
-        else:
-            params = DocTagsParams(**kwargs)
-        parts: list[str] = []
-        if params.add_location:
-            location = item.get_location_tokens(
-                doc=doc,
-                xsize=params.xsize,
-                ysize=params.ysize,
-                self_closing=params.do_self_closing,
-            )
-            if location:
-                parts.append(location)
-        if params.add_content:
-            if item.status == "converted" and item.target:
-                parts.append(f"{item.name} ({item.target})")
-            else:
-                reason = item.status.replace("_", " ")
-                parts.append(f"{item.name} (not converted: {reason})")
-        text = "".join(parts)
-        if text:
-            text = _wrap(text=text, wrap_tag=DocumentToken.ATTACHMENT.value)
-        return create_ser_result(text=text, span_source=item)
-
-
 class DocTagsDocSerializer(DocSerializer):
     """DocTags-specific document serializer."""
 
@@ -622,7 +581,6 @@ class DocTagsDocSerializer(DocSerializer):
     inline_serializer: BaseInlineSerializer = DocTagsInlineSerializer()
 
     annotation_serializer: BaseAnnotationSerializer = DocTagsAnnotationSerializer()
-    attachment_serializer: BaseAttachmentSerializer = DocTagsAttachmentSerializer()
 
     params: DocTagsParams = DocTagsParams()
 

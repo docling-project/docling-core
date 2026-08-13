@@ -19,7 +19,6 @@ from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
     BaseAnnotationSerializer,
-    BaseAttachmentSerializer,
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -46,7 +45,6 @@ from docling_core.transforms.serializer.html_styles import (
 from docling_core.transforms.visualizer.base import BaseVisualizer
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
-    AttachmentItem,
     BaseMeta,
     CodeItem,
     CodeMetaField,
@@ -903,29 +901,6 @@ class HTMLInlineSerializer(BaseInlineSerializer):
         return create_ser_result(text=inline_html, span_source=parts)
 
 
-class HTMLAttachmentSerializer(BaseModel, BaseAttachmentSerializer):
-    """HTML-specific attachment serializer."""
-
-    @override
-    def serialize(
-        self,
-        *,
-        item: AttachmentItem,
-        doc_serializer: "BaseDocSerializer",
-        doc: DoclingDocument,
-        **kwargs: Any,
-    ) -> SerializationResult:
-        """Serializes the passed attachment item."""
-        if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
-            return create_ser_result()
-        if item.status == "converted" and item.target:
-            text = f'<a href="{html.escape(str(item.target))}">{html.escape(item.name)}</a>'
-        else:
-            reason = item.status.replace("_", " ")
-            text = f"{html.escape(item.name)} (not converted: {html.escape(reason)})"
-        return create_ser_result(text=f"<p>{text}</p>", span_source=item)
-
-
 class HTMLFallbackSerializer(BaseFallbackSerializer):
     """HTML-specific fallback serializer."""
 
@@ -1101,7 +1076,6 @@ class HTMLDocSerializer(DocSerializer):
 
     meta_serializer: BaseMetaSerializer = HTMLMetaSerializer()
     annotation_serializer: BaseAnnotationSerializer = HTMLAnnotationSerializer()
-    attachment_serializer: BaseAttachmentSerializer = HTMLAttachmentSerializer()
 
     params: HTMLParams = HTMLParams()
 

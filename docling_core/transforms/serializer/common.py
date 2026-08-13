@@ -22,7 +22,6 @@ from typing_extensions import Self, override
 
 from docling_core.transforms.serializer.base import (
     BaseAnnotationSerializer,
-    BaseAttachmentSerializer,
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -37,7 +36,6 @@ from docling_core.transforms.serializer.base import (
     Span,
 )
 from docling_core.types.doc import (
-    AttachmentItem,
     ContentLayer,
     DescriptionAnnotation,
     DocItem,
@@ -249,7 +247,6 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
     meta_serializer: Optional[BaseMetaSerializer] = None
     annotation_serializer: BaseAnnotationSerializer
-    attachment_serializer: Optional[BaseAttachmentSerializer] = None
 
     params: CommonParams = CommonParams()
 
@@ -480,26 +477,6 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                     doc=self.doc,
                     **my_kwargs,
                 )
-            elif isinstance(my_item, AttachmentItem):
-                if self.attachment_serializer is not None:
-                    part = (
-                        self.attachment_serializer.serialize(
-                            item=my_item,
-                            doc_serializer=self,
-                            doc=self.doc,
-                            **my_kwargs,
-                        )
-                        if my_item.self_ref not in self.get_excluded_refs(**kwargs)
-                        else empty_res
-                    )
-                else:
-                    part = self.fallback_serializer.serialize(
-                        item=my_item,
-                        doc_serializer=self,
-                        doc=self.doc,
-                        visited=my_visited,
-                        **my_kwargs,
-                    )
             elif isinstance(my_item, _PageBreakNode):
                 part = _PageBreakSerResult(
                     text=self._create_page_break(node=my_item),

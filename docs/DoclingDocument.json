@@ -135,7 +135,7 @@
         },
         "status": {
           "default": "converted",
-          "description": "Conversion status of the attachment.",
+          "description": "Conversion status of the attachment. Deprecated when `doc_data` is set: a present `doc_data` implies successful conversion and `status` is ignored.",
           "enum": [
             "converted",
             "failed",
@@ -144,6 +144,34 @@
           ],
           "title": "Status",
           "type": "string"
+        },
+        "data": {
+          "anyOf": [
+            {
+              "format": "binary",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Raw binary payload of the attachment. Stored as base64 in JSON.",
+          "title": "Data"
+        },
+        "doc_data": {
+          "anyOf": [
+            {
+              "format": "binary",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Serialized DoclingDocument (e.g. JSON/DCLG/DCLX) of the recursively parsed attachment. When present, the attachment is implicitly considered converted and `status` is ignored.",
+          "title": "Doc Data"
         }
       },
       "required": [

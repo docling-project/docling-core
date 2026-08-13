@@ -1782,6 +1782,8 @@ class DoclingDocument(BaseModel):
         size: Optional[int] = None,
         target: Optional[Union[str, AnyUrl]] = None,
         status: AttachmentStatus = "converted",
+        data: Optional[bytes] = None,
+        doc_data: Optional[bytes] = None,
         prov: Optional[ProvenanceItem] = None,
         parent: Optional[NodeItem] = None,
         content_layer: Optional[ContentLayer] = None,
@@ -1793,6 +1795,8 @@ class DoclingDocument(BaseModel):
         :param size: Optional payload size in bytes.
         :param target: Optional relative path/URL to converted output.
         :param status: Conversion status.
+        :param data: Optional raw binary payload.
+        :param doc_data: Optional serialized DoclingDocument bytes for the recursively parsed attachment.
         :param prov: Optional provenance (page + bbox) for inline placement.
         :param parent: Parent node; defaults to body.
         :param content_layer: Optional content layer override.
@@ -1809,6 +1813,8 @@ class DoclingDocument(BaseModel):
             size=size,
             target=target,
             status=status,
+            data=data,
+            doc_data=doc_data,
             self_ref=cref,
             parent=parent.get_ref(),
         )
