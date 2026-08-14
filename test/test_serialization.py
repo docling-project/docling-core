@@ -25,7 +25,7 @@ from docling_core.transforms.serializer.markdown import (
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
 from docling_core.types.doc import DoclingDocument
-from docling_core.types.doc.base import ImageRefMode
+from docling_core.types.doc.base import BoundingBox, CoordOrigin, ImageRefMode, Size
 from docling_core.types.doc.document import (
     BaseMeta,
     CharSpan,
@@ -36,6 +36,7 @@ from docling_core.types.doc.document import (
     PictureClassificationMetaField,
     PictureClassificationPrediction,
     PictureMeta,
+    ProvenanceItem,
     RefItem,
     RichTableCell,
     SummaryMetaField,
@@ -174,6 +175,139 @@ def test_md_cross_page_list_page_break_p2():
     )
     actual = ser.serialize().text
     verify(exp_file=src.parent / f"{src.stem}_p2.gt.md", actual=actual)
+
+
+_PAGE_BREAK = "<!-- page break -->"
+
+
+# builds a document whose items carry the given (text, page number) provenance
+def _make_paged_doc(entries: list[tuple[str, int]], *, as_list: bool, num_pages: int) -> DoclingDocument:
+    doc = DoclingDocument(name="paged")
+    for page_no in range(1, num_pages + 1):
+        doc.add_page(page_no=page_no, size=Size(width=595, height=842), image=None)
+    group = doc.add_list_group(name="list") if as_list else None
+    for text, page_no in entries:
+        prov = ProvenanceItem(
+            page_no=page_no,
+            bbox=BoundingBox(l=50, t=700, r=500, b=680, coord_origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, len(text)),
+        )
+        if group is not None:
+            doc.add_list_item(text=text, parent=group, prov=prov)
+        else:
+            doc.add_text(label=DocItemLabel.TEXT, text=text, prov=prov)
+    return doc
+
+
+def test_md_cross_page_list_page_break_matches_per_page_export():
+    doc = _make_paged_doc(
+        [("item one", 1), ("item two", 1), ("item three", 2), ("item four", 2)],
+        as_list=True,
+        num_pages=2,
+    )
+    globally = doc.export_to_markdown(page_break_placeholder=_PAGE_BREAK)
+    per_page = f"\n\n{_PAGE_BREAK}\n\n".join(doc.export_to_markdown(page_no=n) for n in (1, 2))
+    assert globally == per_page
+
+
+def test_md_cross_page_text_page_break_matches_per_page_export():
+    # the control: outside a list scope this already held, and must keep holding
+    doc = _make_paged_doc(
+        [("item one", 1), ("item two", 1), ("item three", 2), ("item four", 2)],
+        as_list=False,
+        num_pages=2,
+    )
+    globally = doc.export_to_markdown(page_break_placeholder=_PAGE_BREAK)
+    per_page = f"\n\n{_PAGE_BREAK}\n\n".join(doc.export_to_markdown(page_no=n) for n in (1, 2))
+    assert globally == per_page
+
+
+def test_md_page_break_spacing_independent_of_scope():
+    entries = [("item one", 1), ("item two", 1), ("item three", 2)]
+    in_list = _make_paged_doc(entries, as_list=True, num_pages=2).export_to_markdown(page_break_placeholder=_PAGE_BREAK)
+    at_doc_scope = _make_paged_doc(entries, as_list=False, num_pages=2).export_to_markdown(
+        page_break_placeholder=_PAGE_BREAK
+    )
+    for actual in (in_list, at_doc_scope):
+        assert f"\n\n{_PAGE_BREAK}\n\n" in actual
+
+
+def test_md_cross_page_list_page_break_empty_placeholder():
+    doc = _make_paged_doc([("item one", 1), ("item two", 2)], as_list=True, num_pages=2)
+    # an empty placeholder still occupies the blank lines the marker would have
+    assert doc.export_to_markdown(page_break_placeholder="") == "- item one\n\n\n\n- item two"
+
+
+def test_md_page_break_at_document_bounds():
+    doc = _make_paged_doc([("item 1", 1), ("item 2", 2), ("item 3", 3)], as_list=True, num_pages=3)
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(page_break_placeholder=_PAGE_BREAK, pages={2}),
+    )
+    # a break opening or closing the export gains no blank line on the outer side
+    assert ser.serialize().text == f"{_PAGE_BREAK}\n\n- item 2\n\n{_PAGE_BREAK}"
+
+
+def test_md_consecutive_page_breaks():
+    doc = _make_paged_doc([(f"item {n}", n) for n in range(1, 7)], as_list=True, num_pages=6)
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(page_break_placeholder=_PAGE_BREAK, pages={3, 4, 6}),
+    )
+    actual = ser.serialize().text
+    assert f"{_PAGE_BREAK}\n\n{_PAGE_BREAK}" in actual
+    assert "\n\n\n" not in actual
+
+
+def test_md_nested_list_page_break_keeps_indent():
+    doc = DoclingDocument(name="nested")
+    for page_no in (1, 2):
+        doc.add_page(page_no=page_no, size=Size(width=595, height=842), image=None)
+
+    def _prov(page_no: int, text: str) -> ProvenanceItem:
+        return ProvenanceItem(
+            page_no=page_no,
+            bbox=BoundingBox(l=50, t=700, r=500, b=680, coord_origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, len(text)),
+        )
+
+    outer = doc.add_list_group(name="outer")
+    doc.add_list_item(text="outer one", parent=outer, prov=_prov(1, "outer one"))
+    inner = doc.add_list_group(name="inner", parent=outer)
+    doc.add_list_item(text="inner a", parent=inner, prov=_prov(1, "inner a"))
+    doc.add_list_item(text="inner b", parent=inner, prov=_prov(2, "inner b"))
+    doc.add_list_item(text="outer two", parent=outer, prov=_prov(2, "outer two"))
+
+    # the marker keeps the indentation that holds it inside the outer item
+    assert f"\n\n    {_PAGE_BREAK}\n\n" in doc.export_to_markdown(page_break_placeholder=_PAGE_BREAK)
+
+
+def test_md_page_break_between_list_and_table():
+    doc = _make_paged_doc([("item one", 1), ("item two", 1)], as_list=True, num_pages=2)
+    doc.add_table(
+        data=TableData(
+            num_rows=1,
+            num_cols=1,
+            table_cells=[
+                TableCell(
+                    text="cell",
+                    row_span=1,
+                    col_span=1,
+                    start_row_offset_idx=0,
+                    end_row_offset_idx=1,
+                    start_col_offset_idx=0,
+                    end_col_offset_idx=1,
+                )
+            ],
+        ),
+        prov=ProvenanceItem(
+            page_no=2,
+            bbox=BoundingBox(l=50, t=700, r=500, b=680, coord_origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, 4),
+        ),
+    )
+    actual = doc.export_to_markdown(page_break_placeholder=_PAGE_BREAK)
+    assert f"- item two\n\n{_PAGE_BREAK}\n\n|" in actual
 
 
 def test_md_charts():
