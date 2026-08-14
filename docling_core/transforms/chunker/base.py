@@ -32,7 +32,7 @@ class BaseMeta(BaseModel):
         Returns:
             Python attribute names to exclude from embedding serialization.
         """
-        alias_to_name = {(field_info.alias or name): name for name, field_info in self.model_fields.items()}
+        alias_to_name = {(field_info.alias or name): name for name, field_info in type(self).model_fields.items()}
         return {alias_to_name.get(key, key) for key in self.excluded_embed}
 
     def export_json_dict(self) -> dict[str, Any]:
