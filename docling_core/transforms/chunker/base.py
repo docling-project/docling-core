@@ -78,7 +78,7 @@ class BaseChunker(BaseModel, ABC):
             mode="json",
             by_alias=True,
             exclude_none=True,
-            exclude={field for field in excluded},
+            exclude=set(excluded),
         )
 
         items = []
