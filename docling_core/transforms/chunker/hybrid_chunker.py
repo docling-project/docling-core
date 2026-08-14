@@ -243,20 +243,23 @@ class HybridChunker(BaseChunker):
             # captions:
             available_length = self.max_tokens - lengths.other_len
 
-            if available_length <= 0:
-                warnings.warn(
-                    "Headers and captions for this chunk are longer than the total "
-                    "available size for the chunk, so they will be ignored: "
-                    f"{doc_chunk.text=}, {doc_chunk.meta=}"
-                )
-                new_chunk = DocChunk(**doc_chunk.export_json_dict())
-                new_chunk.meta.captions = None
-                new_chunk.meta.headings = None
-                return self._split_using_plain_text(doc_chunk=new_chunk, doc_serializer=doc_serializer)
+            while available_length > 0:
+                segments = self.segment(doc_chunk, available_length, doc_serializer)
+                chunks = [DocChunk(text=s, meta=doc_chunk.meta) for s in segments]
+                overflow = max(self._count_chunk_tokens(chunk) - self.max_tokens for chunk in chunks)
+                if overflow <= 0:
+                    return chunks
+                available_length -= overflow
 
-            segments = self.segment(doc_chunk, available_length, doc_serializer)
-            chunks = [DocChunk(text=s, meta=doc_chunk.meta) for s in segments]
-            return chunks
+            warnings.warn(
+                "Headers and captions for this chunk are longer than the total "
+                "available size for the chunk, so they will be ignored: "
+                f"{doc_chunk.text=}, {doc_chunk.meta=}"
+            )
+            new_chunk = DocChunk(**doc_chunk.export_json_dict())
+            new_chunk.meta.captions = None
+            new_chunk.meta.headings = None
+            return self._split_using_plain_text(doc_chunk=new_chunk, doc_serializer=doc_serializer)
 
     def segment(self, doc_chunk: DocChunk, available_length: int, doc_serializer: BaseDocSerializer) -> list[str]:
         """Split a single doc chunk into a list of text segments.
@@ -276,9 +279,6 @@ class HybridChunker(BaseChunker):
 
         Args:
             doc_chunk: The chunk to segment.
-            available_length: Maximum token budget for the semantic-splitting
-                path (ignored for the table path, which uses ``self.tokenizer``
-                and ``self.max_tokens`` internally).
             doc_serializer: Serializer for the current document; must be a
                 ``ChunkingDocSerializer`` for the table path to activate.
 
@@ -306,13 +306,14 @@ class HybridChunker(BaseChunker):
 
             line_chunker = LineBasedTokenChunker(
                 tokenizer=self.tokenizer,
+                max_tokens_override=available_length,
                 prefix=full_prefix,
                 omit_prefix_on_overflow=self.omit_header_on_overflow,
                 serializer_provider=self.serializer_provider,
             )
             segments = line_chunker.chunk_text(lines=body_lines)
             if preamble:
-                segments = segments[:1] + [s[len(preamble) :] for s in segments[1:]]
+                segments = segments[:1] + [s[len(preamble) :] if s.startswith(full_prefix) else s for s in segments[1:]]
         else:
             if not _SEMCHUNK_AVAILABLE:
                 raise ImportError(_SEMCHUNK_INSTALL_HINT) from _SEMCHUNK_IMPORT_ERROR
