@@ -1,6 +1,10 @@
 from pathlib import Path
+from typing import ClassVar
+
+from pydantic import Field
 
 from docling_core.transforms.chunker import HierarchicalChunker
+from docling_core.transforms.chunker.base import BaseChunk, BaseChunker, BaseMeta
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
     ChunkingSerializerProvider,
@@ -293,3 +297,32 @@ def test_chunk_rich_table_custom_serializer(rich_table_doc: DoclingDocument):
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
 
     assert_or_generate_json_ground_truth(act_data, "test/data/chunker/0c_out_chunks.json")
+
+
+def test_contextualize_excludes_fields_when_alias_differs_from_attribute_name():
+    """contextualize() must not leak excluded fields even when alias != attribute name.
+
+    This guards against the assumption that excluded_embed entries are Python
+    attribute names. model_dump(exclude=...) requires attribute names; if a
+    subclass uses an alias that differs, the raw alias would be silently ignored
+    and the field would appear in the embedding context.
+    """
+
+    class AliasedMeta(BaseMeta):
+        visible: str = Field(default="keep me", alias="visibleAlias")
+        hidden: str = Field(default="drop me", alias="hiddenAlias")
+        excluded_embed: ClassVar[list[str]] = ["hiddenAlias"]
+
+    class AliasedChunk(BaseChunk):
+        meta: AliasedMeta
+
+    class _ConcreteChunker(BaseChunker):
+        def chunk(self, dl_doc, **kwargs):
+            return iter([])
+
+    chunk = AliasedChunk(text="body", meta=AliasedMeta())
+    result = _ConcreteChunker().contextualize(chunk)
+
+    assert "drop me" not in result
+    assert "keep me" in result
+    assert "body" in result
