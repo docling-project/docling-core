@@ -31,6 +31,14 @@ class PlainTextTextSerializer(MarkdownTextSerializer):
     """Text serializer that emits headings and titles without ``#`` markers."""
 
     @override
+    def _md_line_breaks(self, text: str) -> str:
+        return text
+
+    @override
+    def _heading_line_breaks(self, text: str) -> str:
+        return text
+
+    @override
     def _format_heading(
         self,
         text: str,
