@@ -541,6 +541,31 @@ def test_md_table_stacked_header_drops_repeated_span_text():
     assert actual.splitlines()[0] == "| human   |   MRCNN R50 |"
 
 
+def test_md_table_with_header_flags_below_row_zero_keeps_every_row_as_data():
+    """No leading header block, so nothing is promoted and no row is dropped."""
+    doc = DoclingDocument(name="")
+    rows = [["title", ""], ["Product", "Price"], ["CAT-001", "10.00"]]
+    table = doc.add_table(data=TableData(num_rows=len(rows), num_cols=2))
+    for row_idx, row in enumerate(rows):
+        for col_idx, text in enumerate(row):
+            doc.add_table_cell(
+                table_item=table,
+                cell=TableCell(
+                    start_row_offset_idx=row_idx,
+                    end_row_offset_idx=row_idx + 1,
+                    start_col_offset_idx=col_idx,
+                    end_col_offset_idx=col_idx + 1,
+                    text=text,
+                    column_header=row_idx == 1,
+                ),
+            )
+
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    assert actual.splitlines()[0] == "|         |       |"
+    assert "| title   |       |" in actual
+    assert "| CAT-001 | 10.00 |" in actual
+
+
 def test_md_table_without_header_flags_keeps_first_row_as_header():
     """Backends that never set column_header keep the pre-existing behavior."""
     doc = _table_with_rows([["foo", "bar"], ["baz", "qux"]], num_header_rows=0)
