@@ -500,6 +500,54 @@ def test_md_field_region():
     verify(exp_file=exp_file, actual=actual)
 
 
+def _table_with_rows(rows: list[list[str]], num_header_rows: int) -> DoclingDocument:
+    doc = DoclingDocument(name="")
+    table = doc.add_table(data=TableData(num_rows=len(rows), num_cols=len(rows[0])))
+    for row_idx, row in enumerate(rows):
+        for col_idx, text in enumerate(row):
+            doc.add_table_cell(
+                table_item=table,
+                cell=TableCell(
+                    start_row_offset_idx=row_idx,
+                    end_row_offset_idx=row_idx + 1,
+                    start_col_offset_idx=col_idx,
+                    end_col_offset_idx=col_idx + 1,
+                    text=text,
+                    column_header=row_idx < num_header_rows,
+                ),
+            )
+    return doc
+
+
+def test_md_table_stacked_header_is_flattened():
+    doc = _table_with_rows(
+        [["Product", "Tier 1", "Tier 2"], ["", "0-99", "100+"], ["CAT-001", "10.00", "9.00"]],
+        num_header_rows=2,
+    )
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    assert actual == (
+        "| Product   |   Tier 1 0-99 |   Tier 2 100+ |\n"
+        "|-----------|---------------|---------------|\n"
+        "| CAT-001   |         10.00 |          9.00 |"
+    )
+
+
+def test_md_table_stacked_header_drops_repeated_span_text():
+    doc = _table_with_rows(
+        [["human", "MRCNN"], ["human", "R50"], ["84-89", "68.4"]],
+        num_header_rows=2,
+    )
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    assert actual.splitlines()[0] == "| human   |   MRCNN R50 |"
+
+
+def test_md_table_without_header_flags_keeps_first_row_as_header():
+    """Backends that never set column_header keep the pre-existing behavior."""
+    doc = _table_with_rows([["foo", "bar"], ["baz", "qux"]], num_header_rows=0)
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    assert actual.splitlines()[0] == "| foo   | bar   |"
+
+
 def test_md_pipe_in_table():
     doc = DoclingDocument(name="Pipe in Table")
     table = doc.add_table(data=TableData(num_rows=1, num_cols=1))

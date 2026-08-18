@@ -461,6 +461,42 @@ class MarkdownAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
         )
 
 
+def _count_header_rows(item: TableItem) -> int:
+    """Number of leading grid rows whose cells are marked as column headers.
+
+    Returns 1 when the table carries no ``column_header`` flags at all, so that
+    tables from backends (or doctags round-trips) that never set the flag keep
+    rendering their first row as the header.
+    """
+    if not any(cell.column_header for row in item.data.grid for cell in row):
+        return 1
+    num_headers = 0
+    for row in item.data.grid:
+        if not any(cell.column_header for cell in row):
+            break
+        num_headers += 1
+    return num_headers
+
+
+def _flatten_header_rows(header_rows: list[list[str]], num_cols: int) -> list[str]:
+    """Collapse stacked header rows into the single header row GFM allows.
+
+    A cell spanning several header rows repeats its text in each of them, so
+    consecutive repeats are dropped rather than doubled up.
+    """
+    if not header_rows:
+        return [""] * num_cols
+    flattened = []
+    for col_idx in range(num_cols):
+        parts: list[str] = []
+        for row in header_rows:
+            text = row[col_idx] if col_idx < len(row) else ""
+            if text and (not parts or parts[-1] != text):
+                parts.append(text)
+        flattened.append(" ".join(parts))
+    return flattened
+
+
 class MarkdownTableSerializer(BaseTableSerializer):
     """Markdown-specific table item serializer."""
 
@@ -594,18 +630,26 @@ class MarkdownTableSerializer(BaseTableSerializer):
                     rendered_row.append(cell_text.replace("\n", " ").replace("|", "&#124;"))
                 rows.append(rendered_row)
             if len(rows) > 0:
+                # GFM allows a single header row, so a stacked header is
+                # flattened into one. Taking the count from the column_header
+                # flags rather than assuming row 0 keeps this export consistent
+                # with export_to_dataframe and the HTML serializer, which both
+                # already honour them.
+                num_headers = _count_header_rows(item)
+                header_row = _flatten_header_rows(rows[:num_headers], len(rows[0]))
+                body_rows = rows[num_headers:]
                 # Always disable numparse to prevent silent precision loss in numeric values
                 # Use tabulate's _column_type to detect numeric columns for right-alignment
                 colalign = []
-                if len(rows) > 1:  # Need at least header + 1 data row
+                if body_rows:
                     num_cols = len(rows[0])
                     for col_idx in range(num_cols):
-                        col_values = [row[col_idx] if col_idx < len(row) else "" for row in rows[1:]]
+                        col_values = [row[col_idx] if col_idx < len(row) else "" for row in body_rows]
                         col_type = _column_type(col_values)
                         colalign.append("right" if col_type in (int, float) else "left")
                 table_text = tabulate(
-                    rows[1:],
-                    headers=rows[0],
+                    body_rows,
+                    headers=header_row,
                     tablefmt="github",
                     disable_numparse=True,
                     colalign=tuple(colalign) if colalign else None,
