@@ -20,7 +20,11 @@ SCHEMA_VERSION_HISTORY: Final[list[dict]] = [
     {"schema": "1.8.0", "library_version": "v2.49.0", "note": "BasePrediction, BaseMeta, meta field"},
     {"schema": "1.9.0", "library_version": "v2.57.0", "note": "FineRef, DocItem.comments"},
     {"schema": "1.10.0", "library_version": "v2.69.0", "note": "FieldItem types, 7 new DocItemLabel values"},
-    {"schema": "1.11.0", "library_version": "v2.86.0", "note": "InlineGroup runs carry their own significant whitespace"},
+    {
+        "schema": "1.11.0",
+        "library_version": "v2.86.0",
+        "note": "InlineGroup runs carry their own significant whitespace",
+    },
 ]
 """Ordered history of DoclingDocument schema versions in docling-core v2.x.
 
