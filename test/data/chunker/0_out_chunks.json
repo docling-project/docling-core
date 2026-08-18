@@ -809,50 +809,6 @@
             }
         },
         {
-            "text": "1 see huggingface.co/ds4sd/docling-models/",
-            "meta": {
-                "schema_name": "docling_core.transforms.chunker.DocMeta",
-                "version": "1.0.0",
-                "doc_items": [
-                    {
-                        "self_ref": "#/texts/29",
-                        "parent": {
-                            "$ref": "#/body"
-                        },
-                        "children": [],
-                        "content_layer": "body",
-                        "label": "footnote",
-                        "prov": [
-                            {
-                                "page_no": 2,
-                                "bbox": {
-                                    "l": 120.65299999999999,
-                                    "t": 79.70000000000005,
-                                    "r": 276.461,
-                                    "b": 70.13999999999999,
-                                    "coord_origin": "BOTTOMLEFT"
-                                },
-                                "charspan": [
-                                    0,
-                                    42
-                                ]
-                            }
-                        ]
-                    }
-                ],
-                "headings": [
-                    "Docling Technical Report",
-                    "3 Processing pipeline",
-                    "3.1 PDF backends"
-                ],
-                "origin": {
-                    "mimetype": "application/pdf",
-                    "binary_hash": 14981478401387673002,
-                    "filename": "2408.09869v3.pdf"
-                }
-            }
-        },
-        {
             "text": "Figure 1: Sketch of Docling's default processing pipeline. The inner part of the model pipeline is easily customizable and extensible.\n\nIn this image, we can see some text and images.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
