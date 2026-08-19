@@ -43,6 +43,8 @@ from docling_core.types.doc import (
     DocItem,
     DocItemLabel,
     DoclingDocument,
+    FieldItem,
+    FieldRegionItem,
     FloatingItem,
     Formatting,
     FormItem,
@@ -876,6 +878,8 @@ class MarkdownFallbackSerializer(BaseFallbackSerializer):
             parts = doc_serializer.get_parts(item=item, **kwargs)
             text_res = "\n\n".join([p.text for p in parts if p.text])
             return create_ser_result(text=text_res, span_source=parts)
+        elif isinstance(item, (FieldRegionItem, FieldItem)):
+            return create_ser_result()
         else:
             return create_ser_result(
                 text="<!-- missing-text -->",
