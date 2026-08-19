@@ -12,9 +12,13 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Annotated, Any, Literal
 
-import click
 import typer
 from lxml import etree
+
+# typer >=0.25 vendors its own copy of click (typer._click) and raises those
+# exceptions rather than the external click package's, so catch the vendored ones.
+from typer._click import Parameter as _ClickParameter
+from typer._click import exceptions as _click_exc
 
 from dclq import __version__
 from dclq.document import DclqError, LoadedDocument, Unit, _canonical_xpath, _is_element
@@ -74,9 +78,9 @@ def _main_callback(
     pass
 
 
-def _record_context(ctx: typer.Context, param: click.Parameter, value: int | None) -> int | None:
+def _record_context(ctx: typer.Context, param: _ClickParameter, value: int | None) -> int | None:
     """Record context flags in command-line order, matching grep semantics."""
-    if value is not None and isinstance(param, click.Option):
+    if value is not None and getattr(param, "param_type_name", None) == "option":
         ctx.meta.setdefault("context_events", []).append((param.opts[0], value))
     return value
 
@@ -347,9 +351,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     except DclqError as exc:
         print(f"dclq: {exc}", file=sys.stderr)
         return 2
-    except click.exceptions.Exit as exc:
+    except _click_exc.Exit as exc:
         return exc.exit_code
-    except click.ClickException as exc:
+    except _click_exc.ClickException as exc:
         exc.show(file=sys.stderr)
         return exc.exit_code
 
