@@ -1,13 +1,15 @@
 """Test EPUB book Markdown serialization."""
 
+import pytest
 import yaml
 
+from docling_core.transforms.serializer.base import SerializationResult
 from docling_core.transforms.serializer.epub import (
     EpubDocSerializer,
     EpubMetadata,
     EpubParams,
 )
-from docling_core.types.doc.base import BoundingBox
+from docling_core.types.doc.base import BoundingBox, ImageRefMode
 from docling_core.types.doc.document import DoclingDocument, ProvenanceItem
 from docling_core.types.doc.labels import DocItemLabel
 
@@ -141,6 +143,33 @@ def test_offsets_stay_correct_as_their_digit_width_grows():
     assert len(digit_widths) > 1, "the body sizes must span several offset digit widths"
 
 
+def test_frontmatter_size_change_is_rejected(monkeypatch):
+    """A frontmatter size change would invalidate every advertised byte offset."""
+    original_render = EpubDocSerializer._render_frontmatter
+    render_count = 0
+
+    def unstable_render(self, chapters):
+        nonlocal render_count
+        render_count += 1
+        rendered = original_render(self, chapters)
+        return f"{rendered} " if render_count == 2 else rendered
+
+    monkeypatch.setattr(EpubDocSerializer, "_render_frontmatter", unstable_render)
+    serializer = EpubDocSerializer(doc=_book_document(), params=EpubParams(metadata=_metadata()))
+
+    with pytest.raises(ValueError, match="frontmatter changed size"):
+        serializer.serialize()
+
+
+def test_empty_serialization_parts_are_ignored():
+    """An empty part must not add body separators or phantom chapters."""
+    serializer = EpubDocSerializer(doc=DoclingDocument(name="empty"))
+
+    result = serializer.serialize_doc(parts=[SerializationResult()])
+
+    assert result.text == "---\nchapters: []\n---\n\n"
+
+
 def test_book_without_headings_has_an_empty_chapter_list():
     """A book with no top-level headings still advertises a parseable empty list."""
     doc = DoclingDocument(name="empty")
@@ -164,10 +193,24 @@ def test_saved_book_offsets_address_the_bytes_on_disk(tmp_path):
     """The advertised offsets index the saved file, so the save must not rewrite
     newlines the way text mode does on Windows."""
     out = tmp_path / "book.md"
-    _book_document().save_as_epub(out, metadata=_metadata())
+    _book_document().save_as_epub(str(out), metadata=_metadata())
 
     saved = out.read_bytes()
     parsed = yaml.safe_load(saved.decode("utf-8").split("---\n", maxsplit=2)[1])
     for chapter in parsed["chapters"]:
         heading = saved[chapter["byte"] :].split(b"\n", maxsplit=1)[0].decode("utf-8")
         assert heading.lstrip("# ") == chapter["title"]
+
+
+def test_save_as_epub_creates_the_referenced_image_directory(tmp_path):
+    """Referenced-image output creates its artifacts directory before serialization."""
+    artifacts_dir = tmp_path / "images"
+
+    _book_document().save_as_epub(
+        tmp_path / "book.md",
+        artifacts_dir=artifacts_dir,
+        metadata=_metadata(),
+        image_mode=ImageRefMode.REFERENCED,
+    )
+
+    assert artifacts_dir.is_dir()
