@@ -478,11 +478,15 @@ def _count_header_rows(item: TableItem) -> int:
     return num_headers
 
 
+HEADER_ROW_SEPARATOR = " - "
+"""Joins the cells of a stacked column header into a single Markdown header row."""
+
+
 def _flatten_header_rows(header_rows: list[list[str]], num_cols: int) -> list[str]:
     """Collapse stacked header rows into the single header row GFM allows.
 
     A cell spanning several header rows repeats its text in each of them, so
-    consecutive repeats are dropped rather than doubled up.
+    consecutive repeats are dropped rather than joined to themselves.
     """
     if not header_rows:
         return [""] * num_cols
@@ -493,12 +497,22 @@ def _flatten_header_rows(header_rows: list[list[str]], num_cols: int) -> list[st
             text = row[col_idx] if col_idx < len(row) else ""
             if text and (not parts or parts[-1] != text):
                 parts.append(text)
-        flattened.append(" ".join(parts))
+        flattened.append(HEADER_ROW_SEPARATOR.join(parts))
     return flattened
 
 
 class MarkdownTableSerializer(BaseTableSerializer):
-    """Markdown-specific table item serializer."""
+    """Markdown-specific table item serializer.
+
+    Markdown pipe tables have exactly one header row and no spans, so a table's
+    column headers are resolved to a single row as follows:
+
+    - a table with no cell marked ``column_header`` keeps row 0 as the header
+    - otherwise the leading run of rows holding ``column_header`` cells is the
+      header, and per column those cells are joined in the order they appear
+      with :data:`HEADER_ROW_SEPARATOR`, so ``native backend`` above ``TTS``
+      becomes ``native backend - TTS``
+    """
 
     _SEPARATOR_ROW_RE: re.Pattern = re.compile(r"^\|(\s*:?-+:?\s*\|)+\s*$")
     """Matches a Markdown table separator row, e.g. ``| - | :---: | --: |``."""
@@ -630,11 +644,11 @@ class MarkdownTableSerializer(BaseTableSerializer):
                     rendered_row.append(cell_text.replace("\n", " ").replace("|", "&#124;"))
                 rows.append(rendered_row)
             if len(rows) > 0:
-                # GFM allows a single header row, so a stacked header is
-                # flattened into one. Taking the count from the column_header
-                # flags rather than assuming row 0 keeps this export consistent
-                # with export_to_dataframe and the HTML serializer, which both
-                # already honour them.
+                # Resolve the column headers to the single row GFM allows; see
+                # the class docstring for the contract. Taking the count from
+                # the column_header flags rather than assuming row 0 keeps this
+                # export consistent with export_to_dataframe and the HTML
+                # serializer, which both already honour them.
                 num_headers = _count_header_rows(item)
                 header_row = _flatten_header_rows(rows[:num_headers], len(rows[0]))
                 body_rows = rows[num_headers:]

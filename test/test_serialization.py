@@ -526,9 +526,9 @@ def test_md_table_stacked_header_is_flattened():
     )
     actual = MarkdownDocSerializer(doc=doc).serialize().text
     assert actual == (
-        "| Product   |   Tier 1 0-99 |   Tier 2 100+ |\n"
-        "|-----------|---------------|---------------|\n"
-        "| CAT-001   |         10.00 |          9.00 |"
+        "| Product   |   Tier 1 - 0-99 |   Tier 2 - 100+ |\n"
+        "|-----------|-----------------|-----------------|\n"
+        "| CAT-001   |           10.00 |            9.00 |"
     )
 
 
@@ -538,7 +538,7 @@ def test_md_table_stacked_header_drops_repeated_span_text():
         num_header_rows=2,
     )
     actual = MarkdownDocSerializer(doc=doc).serialize().text
-    assert actual.splitlines()[0] == "| human   |   MRCNN R50 |"
+    assert actual.splitlines()[0] == "| human   |   MRCNN - R50 |"
 
 
 def test_md_table_with_header_flags_below_row_zero_keeps_every_row_as_data():
