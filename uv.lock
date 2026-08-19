@@ -1048,7 +1048,6 @@ chunking-openai = [
     { name = "tree-sitter-typescript" },
 ]
 dclq = [
-    { name = "click" },
     { name = "doclang" },
     { name = "lxml" },
     { name = "typer" },
@@ -1089,7 +1088,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "click", marker = "extra == 'dclq'", specifier = ">=8.0.0" },
     { name = "datasets", marker = "extra == 'examples'", specifier = ">=4.0.0" },
     { name = "defusedxml", specifier = ">=0.7.1,<0.8.0" },
     { name = "doclang", specifier = ">=0.7,<0.8" },
@@ -1122,7 +1120,7 @@ requires-dist = [
     { name = "tree-sitter-typescript", marker = "extra == 'chunking'", specifier = ">=0.23.2" },
     { name = "tree-sitter-typescript", marker = "extra == 'chunking-openai'", specifier = ">=0.23.2" },
     { name = "typer", specifier = ">=0.12.5,<0.27.0" },
-    { name = "typer", marker = "extra == 'dclq'", specifier = ">=0.15.1,<0.25.0" },
+    { name = "typer", marker = "extra == 'dclq'", specifier = ">=0.25.0,<0.27.0" },
     { name = "typing-extensions", specifier = ">=4.12.2,<5.0.0" },
 ]
 provides-extras = ["dclq", "chunking", "chunking-openai", "examples"]
