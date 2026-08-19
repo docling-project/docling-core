@@ -1,3 +1,19 @@
+## [v2.92.0](https://github.com/docling-project/docling-core/releases/tag/v2.92.0) - 2026-08-19
+
+### Feature
+
+* **compat:** DoclingDocument downgrade projector system ([#703](https://github.com/docling-project/docling-core/issues/703)) ([`f756342`](https://github.com/docling-project/docling-core/commit/f756342105788217a023b5dc21d45c9b67f82533))
+
+### Fix
+
+* **markdown:** Serialize newlines as GFM hard line breaks ([#721](https://github.com/docling-project/docling-core/issues/721)) ([`289c2e5`](https://github.com/docling-project/docling-core/commit/289c2e50fb63af07960dbda595a89fe5da42b534))
+* **chunker:** Forward content layers from serializer params to doc traversal ([#593](https://github.com/docling-project/docling-core/issues/593)) ([`965a6bb`](https://github.com/docling-project/docling-core/commit/965a6bb6a892a7b8d0cbd652e276ac7438d1f0d5))
+* **serializer:** Use block-level spacing for page breaks inside lists ([#717](https://github.com/docling-project/docling-core/issues/717)) ([`4252788`](https://github.com/docling-project/docling-core/commit/4252788e6a3bfb04cd0fe98fd678d09d50c3fd18))
+
+### Performance
+
+* Contextualize function() skip excluded fields ([#581](https://github.com/docling-project/docling-core/issues/581)) ([`ec0069c`](https://github.com/docling-project/docling-core/commit/ec0069c6ecee2faefd36e23801a31e00bf490957))
+
 ## [v2.91.0](https://github.com/docling-project/docling-core/releases/tag/v2.91.0) - 2026-08-06
 
 ### Feature
