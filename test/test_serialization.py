@@ -486,6 +486,20 @@ def test_md_single_row_table():
     verify(exp_file=exp_file, actual=actual)
 
 
+def test_md_field_region():
+    exp_file = Path("./test/data/doc/field_region.gt.md")
+
+    doc = DoclingDocument(name="")
+    field_region = doc.add_field_region()
+    field_item = doc.add_field_item(parent=field_region)
+    doc.add_field_key(text="Name:", parent=field_item)
+    doc.add_field_value(text="John Doe", parent=field_item)
+
+    ser = MarkdownDocSerializer(doc=doc)
+    actual = ser.serialize().text
+    verify(exp_file=exp_file, actual=actual)
+
+
 def test_md_pipe_in_table():
     doc = DoclingDocument(name="Pipe in Table")
     table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
