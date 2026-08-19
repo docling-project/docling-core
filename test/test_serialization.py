@@ -746,6 +746,58 @@ def test_md_traverse_pictures():
     assert "<!-- image -->" in result_with_traverse
 
 
+def test_md_line_breaks():
+    """Newlines inside TextItem and its subclasses are serialized per GFM spec.
+
+    Single `\\n` in body text and list items becomes a hard line break (`  \\n`).
+    Double `\\n\\n` is preserved as a paragraph break.
+    Heading newlines are collapsed to a space (headings cannot span multiple lines).
+    Table cell newlines are replaced with a space (table syntax requires single lines).
+    """
+    # Single \n in a TextItem -> GFM hard line break (two trailing spaces).
+    doc = DoclingDocument(name="lb")
+    doc.add_text(label=DocItemLabel.TEXT, text="Hello\nWorld")
+    assert MarkdownDocSerializer(doc=doc).serialize().text == "Hello  \nWorld"
+
+    # \n\n in a TextItem -> paragraph break, no trailing spaces added.
+    doc = DoclingDocument(name="lb")
+    doc.add_text(label=DocItemLabel.TEXT, text="Para one\n\nPara two")
+    assert MarkdownDocSerializer(doc=doc).serialize().text == "Para one\n\nPara two"
+
+    # Mix of single and double newlines in one TextItem.
+    doc = DoclingDocument(name="lb")
+    doc.add_text(label=DocItemLabel.TEXT, text="A\nB\n\nC\nD")
+    assert MarkdownDocSerializer(doc=doc).serialize().text == "A  \nB\n\nC  \nD"
+
+    # \n in a SectionHeaderItem -> space (headings cannot span multiple lines;
+    # "Hello\nWorld" must become "### Hello World", not "### HelloWorld").
+    doc = DoclingDocument(name="lb")
+    doc.add_heading(text="Hello\nWorld", level=2)
+    assert MarkdownDocSerializer(doc=doc).serialize().text == "### Hello World"
+
+    # \n in a ListItem -> GFM hard line break.
+    doc = DoclingDocument(name="lb")
+    lg = doc.add_group()
+    doc.add_list_item(text="Line one\nLine two", parent=lg)
+    assert MarkdownDocSerializer(doc=doc).serialize().text == "- Line one  \nLine two"
+
+    # \n in a plain table cell -> space (keeps the table row on a single line).
+    doc = DoclingDocument(name="lb")
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
+    doc.add_table_cell(
+        table_item=table,
+        cell=TableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            text="Line one\nLine two",
+        ),
+    )
+    result = MarkdownDocSerializer(doc=doc).serialize().text
+    assert "\n" not in result.split("|")[1].strip()
+
+
 # ===============================
 # HTML tests
 # ===============================

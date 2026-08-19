@@ -2,10 +2,10 @@ item of leading list
 
 # Title of the Document
 
-Author 1
+Author 1  
 Affiliation 1
 
-Author 2
+Author 2  
 Affiliation 2
 
 ## 1. Introduction
