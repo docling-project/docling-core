@@ -3,6 +3,7 @@
 import base64
 import copy
 import hashlib
+import itertools
 import json
 import logging
 import mimetypes
@@ -68,6 +69,7 @@ from docling_core.types.doc.common.constants import (
     CURRENT_VERSION,
     DEFAULT_EXPORT_LABELS,
     DOCUMENT_TOKENS_EXPORT_LABELS,
+    INLINE_WHITESPACE_CONTRACT_VERSION,
 )
 from docling_core.types.doc.common.content_layer import DEFAULT_CONTENT_LAYERS, ContentLayer
 from docling_core.types.doc.common.formatting import Formatting, Script
@@ -169,6 +171,34 @@ from docling_core.utils.settings import settings
 
 
 _logger = logging.getLogger(__name__)
+
+_warned_legacy_inline_separators = False
+
+
+def _predates_inline_whitespace_contract(version: str) -> bool:
+    """Return True when ``version`` is older than the inline whitespace contract."""
+    doc = re.match(VERSION_PATTERN, version)
+    contract = re.match(VERSION_PATTERN, INLINE_WHITESPACE_CONTRACT_VERSION)
+    if doc is None or contract is None:
+        return False
+    return (int(doc["major"]), int(doc["minor"])) < (int(contract["major"]), int(contract["minor"]))
+
+
+def _warn_legacy_inline_separators(version: str) -> None:
+    """Warn once per process that legacy inline separators were injected on load."""
+    global _warned_legacy_inline_separators
+    if _warned_legacy_inline_separators:
+        return
+    _warned_legacy_inline_separators = True
+    warnings.warn(
+        f"Document uses schema version {version}, predating the inline whitespace contract "
+        f"({INLINE_WHITESPACE_CONTRACT_VERSION}). Legacy inline separators were injected to "
+        "preserve the previous rendering; re-convert the source for faithful whitespace. "
+        "Note that inline text differs from a fresh conversion, which affects chunking and "
+        "any persisted embeddings.",
+        UserWarning,
+        stacklevel=2,
+    )
 
 
 class DoclingDocument(BaseModel):
@@ -1376,7 +1406,15 @@ class DoclingDocument(BaseModel):
         parent: Optional[NodeItem] = None,
         content_layer: Optional[ContentLayer] = None,
     ) -> InlineGroup:
-        """add_inline_group."""
+        """Add an inline group, whose children are runs of one visual line of text.
+
+        Whitespace contract: each run carries its own significant whitespace and serializers
+        concatenate the runs faithfully, with no separator of their own. A producer that omits
+        the boundary whitespace gets merged words (``["H", "2", "O"]`` renders as ``H2O``), so
+        put the boundary in the run text: ``["Advanced Topics", " in ", "Machine Learning"]``.
+        Whitespace at the edge of a formatted run is fine -- the serializers move it outside the
+        emphasis markers and hyperlink.
+        """
         _parent = parent or self.body
         cref = f"#/groups/{len(self.groups)}"
         group = InlineGroup(self_ref=cref, parent=_parent.get_ref())
@@ -5197,6 +5235,99 @@ class DoclingDocument(BaseModel):
 
         images = visualizer_obj.get_visualization(doc=self)
         return images
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_legacy_inline_separators(cls, data: Any) -> Any:
+        """Reproduce the legacy inline separator for documents written before the contract.
+
+        Serializers used to join inline runs with a hard ``" "``, so producers of that era did
+        not put boundary whitespace in the run text. Now that the join is faithful, those saved
+        documents would render ``Normalitalicbold``. Re-inject one separator at each boundary
+        the old serializer inserted, preserving the previous *visible* output -- including its
+        extra-space bugs (``["H", "2", "O"]`` stays ``H 2 O``).
+
+        This is compatibility normalization, not semantic repair: the old document does not
+        contain enough information to recover the real whitespace. It must run in ``mode="before"``
+        because ``check_version_is_compatible`` rewrites ``version`` to ``CURRENT_VERSION`` and
+        destroys the evidence. Versionless input is left alone rather than guessed at.
+        """
+        if not isinstance(data, dict):
+            return data
+        raw_version = data.get("version")
+        if not isinstance(raw_version, str) or not _predates_inline_whitespace_contract(raw_version):
+            return data
+
+        # Work on a copy: the caller owns the dict it passed in, and mutating it in place would
+        # make a second `model_validate` of the same value migrate again, compounding separators.
+        data = copy.deepcopy(data)
+        texts = data.get("texts")
+        groups = data.get("groups")
+        if not isinstance(texts, list) or not isinstance(groups, list):
+            return data
+
+        def resolve_run(child: Any) -> Optional[dict]:
+            """Return the text item dict for an inline run reference, else None."""
+            if not isinstance(child, dict):
+                return None
+            ref = child.get("$ref") or child.get("cref")
+            if not isinstance(ref, str) or not ref.startswith("#/texts/"):
+                return None
+            try:
+                item = texts[int(ref.removeprefix("#/texts/"))]
+            except (ValueError, IndexError):
+                return None
+            return item if isinstance(item, dict) and isinstance(item.get("text"), str) else None
+
+        # Code and formula runs are wrapped in delimiters (`` ` ``, ``$``) by the serializers, so a
+        # separator appended to their text would land *inside* the delimiter -- the same defect as
+        # `**bold **`. Put it on the neighbouring plain run instead.
+        delimited = {DocItemLabel.CODE.value, DocItemLabel.FORMULA.value}
+
+        migrated = False
+        for group in groups:
+            if not isinstance(group, dict) or group.get("label") != GroupLabel.INLINE.value:
+                continue
+            children = group.get("children")
+            if not isinstance(children, list):
+                continue
+            # ponytail: only `#/texts/N` children are treated as runs. A picture or table inside
+            # an inline group also received a separator, but whether it serialized to non-empty
+            # text is not knowable from the raw dict. Widen this if such a document shows up.
+            runs = [(idx, run) for idx, child in enumerate(children) if (run := resolve_run(child)) and run["text"]]
+            # Boundaries where the separator fits in neither neighbour; filled in afterwards so
+            # the indices collected here stay valid.
+            standalone: list[int] = []
+            for (_, run), (nxt_idx, nxt) in itertools.pairwise(runs):
+                if run.get("label") not in delimited:
+                    run["text"] += " "
+                elif nxt.get("label") not in delimited:
+                    nxt["text"] = " " + nxt["text"]
+                else:
+                    # Both sides are delimited: the separator would corrupt `` `a``b` `` or
+                    # ``$a$$b$``, so it becomes a plain run of its own between them.
+                    standalone.append(nxt_idx)
+                migrated = True
+
+            for shift, insert_at in enumerate(standalone):
+                ref = f"#/texts/{len(texts)}"
+                texts.append(
+                    {
+                        "self_ref": ref,
+                        "parent": {"$ref": group.get("self_ref")},
+                        "label": DocItemLabel.TEXT.value,
+                        "prov": [],
+                        "orig": " ",
+                        "text": " ",
+                        "children": [],
+                        "content_layer": group.get("content_layer", ContentLayer.BODY.value),
+                    }
+                )
+                children.insert(insert_at + shift, {"$ref": ref})
+
+        if migrated:
+            _warn_legacy_inline_separators(raw_version)
+        return data
 
     @field_validator("version")
     @classmethod

@@ -9,7 +9,7 @@
   <heading level="2">
     Rich heading
     <italic>without</italic>
-other children besides the inline
+    other children besides the inline
   </heading>
   <text>Section content as sibling of the heading.</text>
   <heading level="3">Subheading</heading>
@@ -17,7 +17,7 @@ other children besides the inline
   <heading level="2">
     Rich heading
     <italic>with</italic>
-other children besides the inline
+    other children besides the inline
   </heading>
   <text>Section content as child of the heading.</text>
   <text>Section content as sibling of the heading.</text>

@@ -3,6 +3,7 @@
 Aligned to the DocLang specification version ``_DOCLANG_VERSION``.
 """
 
+import re
 from collections.abc import Callable, Sequence
 from itertools import groupby
 from pathlib import Path
@@ -102,6 +103,22 @@ def _utf8_byte_length(text: str) -> int:
     """Return UTF-8 byte length of ``text`` without retaining the encoded buffer."""
     # encode builds a temporary bytes object; acceptable for a one-shot gate check.
     return len(text.encode("utf-8"))
+
+
+# A whitespace run touching a newline is pretty-print indentation; one without is content.
+_PRETTY_INDENT = re.compile(r"\A\s*\n\s*|\s*\n\s*\Z")
+
+
+def _normalize_bare_text(data: str) -> str:
+    """Drop pretty-print indentation from a bare XML text node, keep significant whitespace.
+
+    Standard XML heuristic: whitespace containing a newline is layout noise, whitespace
+    without one is meaningful. Serialized DocLang uses ``<content>`` for whitespace-bearing
+    runs, so this only governs hand-written and VLM-emitted input.
+    """
+    if not data.strip():
+        return "" if "\n" in data else data
+    return _PRETTY_INDENT.sub("", data)
 
 
 def _enforce_doclang_dom_budgets(
@@ -402,6 +419,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 }:
                     return None
                 elif tmp := self._get_children_simple_text_block(el):
+                    if result is not None:
+                        return None
                     result = tmp
             elif isinstance(el, Text) and el.data.strip():  # TODO should still support whitespace-only
                 if result is None:
@@ -424,7 +443,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
 
         prov_list = self._extract_provenance(doc=doc, el=el)
         content_layer = self._extract_layer(el=el)
-        text, formatting = self._extract_text_with_formatting(el)
+        # A run inside an inline group owns its edge whitespace; a block host does not.
+        text, formatting = self._extract_text_with_formatting(el, trim=not isinstance(parent, InlineGroup))
         if not text:
             if (
                 thread_id
@@ -579,16 +599,12 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     parts.append(node.data)
             elif isinstance(node, Element):
                 nm_child = node.tagName
-                if nm_child in {
-                    DocLangToken.LOCATION.value,
-                    DocLangToken.LAYER.value,
-                    DocLangToken.LABEL.value,
-                }:
+                if self._is_element_head_tag(node):
                     continue
                 elif nm_child == DocLangToken.BR.value:
                     parts.append("\n")
                 else:
-                    parts.append(self._get_text(node))
+                    parts.append(self._collect_text(node))
 
         return "".join(parts), lang_label
 
@@ -1417,8 +1433,11 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 # Recursively dispatch child elements with the inline group as parent
                 self._dispatch_element(doc=doc, el=node, parent=inline_group)
             elif isinstance(node, Text):
-                # Handle direct text content
-                text_content = node.data.strip()
+                # Direct text content: a run of the inline group, carrying its own whitespace.
+                # ponytail: no outer block-edge trim here -- pretty-printed input has newlines at
+                # the edges and loses them to the indentation heuristic anyway. Add edge trimming
+                # if hand-written single-line DocLang turns out to need it.
+                text_content = _normalize_bare_text(node.data)
                 if text_content:
                     doc.add_text(
                         label=DocItemLabel.TEXT,
@@ -2088,20 +2107,23 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             table_cells=table_cells,
         )
 
-    def _extract_text_with_formatting(self, el: Element) -> tuple[str, Optional[Formatting]]:
+    def _extract_text_with_formatting(self, el: Element, *, trim: bool = True) -> tuple[str, Optional[Formatting]]:
         """Extract text content and formatting from an element.
 
         If the element contains a single formatting child (bold, italic, etc.),
         recursively extract the text and build up the Formatting object.
 
+        Args:
+            el: the element to extract from.
+            trim: trim the outer boundary. True for a block-level host, False when ``el`` is a
+                run inside an inline group, whose edge whitespace is significant.
+
         Returns:
             Tuple of (text_content, formatting_object or None)
         """
-        # Get non-whitespace, non-location child elements
+        # Body child elements only -- element-head tags carry metadata, not text.
         child_elements = [
-            node
-            for node in el.childNodes
-            if isinstance(node, Element) and node.tagName not in {DocLangToken.LOCATION.value}
+            node for node in el.childNodes if isinstance(node, Element) and not self._is_element_head_tag(node)
         ]
 
         # Check if we have a single child that is a formatting tag
@@ -2122,7 +2144,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
 
             if tag_name in format_tags:
                 # Recursively extract text and formatting from the child
-                text, child_formatting = self._extract_text_with_formatting(child)
+                text, child_formatting = self._extract_text_with_formatting(child, trim=trim)
 
                 # Build up the formatting object
                 if child_formatting is None:
@@ -2144,25 +2166,57 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
 
                 return text, child_formatting
 
-        # No formatting found, just extract plain text
-        return self._get_text(el), None
+        # No formatting found, just extract plain text.
+        return (self._trimmed_text(el) if trim else self._collect_text(el)), None
 
     def _get_text(self, el: Element) -> str:
-        out: list[str] = []
+        """Extract the text of a block-level element, trimming the block boundary only."""
+        return self._trimmed_text(el)
+
+    def _collect_text(self, el: Element) -> str:
+        """Concatenate descendant text verbatim, per the inline whitespace contract.
+
+        Fragments are joined faithfully -- stripping each one is what collapsed
+        `Advanced <bold>Topics</bold>` into `AdvancedTopics`.
+        """
+        return "".join(text for text, _ in self._collect_fragments(el))
+
+    def _trimmed_text(self, el: Element) -> str:
+        """Concatenate descendant text, trimming the outer block boundary only.
+
+        Whitespace delivered through ``<content>`` is protected: that tag is the format's
+        explicit "this whitespace is significant" marker, so a block edge never strips it.
+        Same shape as docling's ``_normalize_odf_text_runs``.
+        """
+        frags = self._collect_fragments(el)
+        for idx, strip in ((0, str.lstrip), (-1, str.rstrip)):
+            while frags and not frags[idx][1]:
+                if trimmed := strip(frags[idx][0]):
+                    frags[idx] = (trimmed, False)
+                    break
+                frags.pop(idx)
+        return "".join(text for text, _ in frags)
+
+    def _collect_fragments(self, el: Element) -> list[tuple[str, bool]]:
+        """Return ``(text, protected)`` fragments; protected text came from ``<content>``."""
+        out: list[tuple[str, bool]] = []
         for node in el.childNodes:
             if isinstance(node, Text):
-                # Skip pure indentation/pretty-print whitespace
-                if node.data.strip():
-                    out.append(node.data if el.tagName == DocLangToken.CONTENT.value else node.data.strip())
-            elif isinstance(node, Element):
-                nm = node.tagName
-                if nm in {DocLangToken.LOCATION.value}:
-                    continue
-                if nm == DocLangToken.BR.value:
-                    out.append("\n")
+                if el.tagName == DocLangToken.CONTENT.value:
+                    # `<content>` is the lossless whitespace channel: take it verbatim.
+                    out.append((node.data, True))
                 else:
-                    out.append(self._get_text(node))
-        return "".join(out)
+                    out.append((_normalize_bare_text(node.data), False))
+            elif isinstance(node, Element):
+                # Element-head children (<caption>, <description>, <summary>, <custom>, ...) are
+                # metadata; they are modelled in item.meta and must not bleed into body text.
+                if self._is_element_head_tag(node):
+                    continue
+                if node.tagName == DocLangToken.BR.value:
+                    out.append(("\n", False))
+                else:
+                    out.extend(self._collect_fragments(node))
+        return out
 
     # --------- Location helpers ---------
     def _ensure_page_exists(self, *, doc: DoclingDocument, page_no: int, resolution: int) -> None:

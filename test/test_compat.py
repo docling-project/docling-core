@@ -243,6 +243,45 @@ class TestProjectorCoverage:
 # ---------------------------------------------------------------------------
 
 
+class TestProjector_1_11_to_1_10:
+    """Tests for the 1.11 → 1.10 downgrade projector."""
+
+    def _apply(self, data: dict) -> dict:
+        from docling_core.compat import _project_1_11_to_1_10
+
+        return _project_1_11_to_1_10(data)
+
+    def test_version_set_to_1_10(self):
+        result = self._apply(_minimal_doc_dict("1.11.0"))
+        assert result["version"] == "1.10.0"
+
+    def test_inline_run_whitespace_is_preserved_verbatim(self):
+        """The projector must not touch run text: 1.11 runs own their boundary
+        whitespace, and a 1.10 client relies on that text being intact (it adds
+        its own join space on top). Stripping here would re-introduce word-merge.
+        """
+        data = _minimal_doc_dict("1.11.0")
+        data["texts"] = [
+            {
+                "self_ref": "#/texts/0",
+                "parent": None,
+                "children": [],
+                "content_layer": "body",
+                "label": "text",
+                "orig": "bold ",
+                "text": "bold ",
+                "prov": [],
+            }
+        ]
+        result = self._apply(data)
+        assert result["texts"][0]["text"] == "bold "
+
+    def test_does_not_mutate_caller_input(self):
+        data = _minimal_doc_dict("1.11.0")
+        self._apply(data)
+        assert data["version"] == "1.11.0"
+
+
 class TestProjector_1_10_to_1_9:
     """Tests for the 1.10 → 1.9 downgrade projector."""
 

@@ -6,7 +6,7 @@ import re
 import textwrap
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, Optional, Union
+from typing import Annotated, Any, ClassVar, Optional, Union
 
 from pydantic import AnyUrl, BaseModel, Field, PositiveInt
 from tabulate import _column_type, tabulate
@@ -880,7 +880,8 @@ class MarkdownInlineSerializer(BaseInlineSerializer):
             visited=my_visited,
             **kwargs,
         )
-        text_res = " ".join([p.text for p in parts if p.text])
+        # Inline runs carry their own significant whitespace; concatenate faithfully.
+        text_res = "".join([p.text for p in parts if p.text])
         return create_ser_result(text=text_res, span_source=parts)
 
 
@@ -927,6 +928,9 @@ class MarkdownDocSerializer(DocSerializer):
     annotation_serializer: BaseAnnotationSerializer = MarkdownAnnotationSerializer()
 
     params: MarkdownParams = MarkdownParams()
+
+    # `**bold ** tail` renders as literal asterisks in CommonMark.
+    hoist_decoration_whitespace: ClassVar[bool] = True
 
     @override
     def serialize_bold(self, text: str, **kwargs: Any):
