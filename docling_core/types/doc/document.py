@@ -3750,6 +3750,7 @@ class DoclingDocument(BaseModel):
         allowed_meta_names: Optional[set[str]] = None,
         blocked_meta_names: Optional[set[str]] = None,
         mark_meta: bool = False,
+        include_picture_classification: bool = True,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -3812,6 +3813,10 @@ class DoclingDocument(BaseModel):
         :type allowed_meta_names: Optional[set[str]] = None
         :param blocked_meta_names: Optional[set[str]]: Meta names to block; takes precedence over allowed_meta_names.
         :type blocked_meta_names: Optional[set[str]] = None
+        :param include_picture_classification: bool: Whether to include the picture
+            classification prediction (the image's predicted class) in the export.
+            (Default value = True).
+        :type include_picture_classification: bool = True
         """
         from docling_core.transforms.serializer.markdown import (
             MarkdownDocSerializer,
@@ -3850,6 +3855,7 @@ class DoclingDocument(BaseModel):
                 mark_annotations=mark_annotations,
                 compact_tables=compact_tables,
                 traverse_pictures=traverse_pictures,
+                include_picture_classification=include_picture_classification,
             ),
         )
         ser_res = serializer.serialize()
