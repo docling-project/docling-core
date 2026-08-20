@@ -3565,8 +3565,12 @@ class DoclingDocument(BaseModel):
         indent: int = 2,
         coord_precision: Optional[int] = None,
         confid_precision: Optional[int] = None,
+        json_kwargs: Optional[dict[str, Any]] = None,
     ):
-        """Save as json."""
+        """Save as json.
+
+        Any `json_kwargs` are passed through to `json.dumps` and override `indent` if supplied.
+        """
         if isinstance(filename, str):
             filename = Path(filename)
         artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
@@ -3583,7 +3587,10 @@ class DoclingDocument(BaseModel):
         )
 
         out = new_doc.export_to_dict(coord_precision=coord_precision, confid_precision=confid_precision)
-        filename.write_text(json.dumps(out, indent=indent), encoding="utf-8")
+        dump_kwargs: dict[str, Any] = {"indent": indent}
+        if json_kwargs:
+            dump_kwargs.update(json_kwargs)
+        filename.write_text(json.dumps(out, **dump_kwargs), encoding="utf-8")
 
     @classmethod
     def load_from_json(cls, filename: Union[str, Path]) -> "DoclingDocument":

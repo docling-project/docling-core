@@ -1335,6 +1335,25 @@ def test_save_to_disk(sample_doc):
     assert True
 
 
+def test_save_as_json_with_json_kwargs(tmp_path: Path):
+    polish_text = "Należy wówczas zetrzeć warstwę"
+    doc = DoclingDocument(name="non_ascii")
+    doc.add_text(label=DocItemLabel.TEXT, text=polish_text)
+
+    unescaped_file = tmp_path / "unescaped.json"
+    doc.save_as_json(filename=unescaped_file, json_kwargs={"ensure_ascii": False})
+    unescaped = unescaped_file.read_text(encoding="utf-8")
+    assert polish_text in unescaped
+    assert "\\u" not in unescaped
+
+    # Without json_kwargs the stdlib default still applies, so existing callers are unaffected.
+    escaped_file = tmp_path / "escaped.json"
+    doc.save_as_json(filename=escaped_file)
+    escaped = escaped_file.read_text(encoding="utf-8")
+    assert polish_text not in escaped
+    assert "Nale\\u017cy" in escaped
+
+
 def test_document_stack_operations(sample_doc):
     # _print(document=doc)
 
