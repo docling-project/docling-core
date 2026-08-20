@@ -8,12 +8,20 @@ from xml.etree import ElementTree as ET
 import pytest
 
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
+from docling_core.transforms.serializer.doctags import (
+    DocTagsDocSerializer,
+    DocTagsParams,
+)
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
     HTMLMetaSerializer,
     HTMLOutputStyle,
     HTMLParams,
     HTMLTableSerializer,
+)
+from docling_core.transforms.serializer.latex import (
+    LaTeXDocSerializer,
+    LaTeXParams,
 )
 from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
@@ -30,6 +38,7 @@ from docling_core.types.doc.document import (
     BaseMeta,
     CharSpan,
     DescriptionAnnotation,
+    DocumentToken,
     EntitiesMetaField,
     EntityMention,
     LanguageMetaField,
@@ -1303,3 +1312,47 @@ def test_html_meta_emits_xhtml_compatible_attributes():
     assert 'data-meta-name="entities"' in html_out
     # Output must be parseable by a strict XML parser.
     ET.fromstring(html_out)
+
+
+def test_md_page_break_resolved_when_serializing_a_single_group():
+    """A page break inside a group must not leak the internal marker (#/groups/2 spans pages 1-2)."""
+    src = Path("./test/data/doc/activities.json")
+    doc = DoclingDocument.load_from_json(src)
+    group = RefItem(cref="#/groups/2").resolve(doc=doc)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(page_break_placeholder="<!-- page break -->"),
+    )
+    actual = ser.serialize(item=group).text
+
+    assert "DOCLING_DOC_PAGE_BREAK" not in actual
+    assert actual.count("<!-- page break -->") == 1
+    # the whole-document output is unaffected
+    assert "DOCLING_DOC_PAGE_BREAK" not in ser.serialize().text
+
+
+def test_doctags_page_break_resolved_when_serializing_a_single_group():
+    """Same as above for DocTags, which resolves page breaks the same way."""
+    src = Path("./test/data/doc/activities.json")
+    doc = DoclingDocument.load_from_json(src)
+    group = RefItem(cref="#/groups/2").resolve(doc=doc)
+
+    ser = DocTagsDocSerializer(doc=doc, params=DocTagsParams(add_page_break=True))
+    actual = ser.serialize(item=group).text
+
+    assert "DOCLING_DOC_PAGE_BREAK" not in actual
+    assert actual.count(f"<{DocumentToken.PAGE_BREAK.value}>") == 1
+
+
+def test_latex_page_break_resolved_when_serializing_a_single_group():
+    """Same as above for LaTeX, which resolves page breaks the same way."""
+    src = Path("./test/data/doc/activities.json")
+    doc = DoclingDocument.load_from_json(src)
+    group = RefItem(cref="#/groups/2").resolve(doc=doc)
+
+    ser = LaTeXDocSerializer(doc=doc, params=LaTeXParams(page_break_command="\newpage"))
+    actual = ser.serialize(item=group).text
+
+    assert "DOCLING_DOC_PAGE_BREAK" not in actual
+    assert actual.count("\newpage") == 1

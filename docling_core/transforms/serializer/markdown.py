@@ -1012,11 +1012,16 @@ class MarkdownDocSerializer(DocSerializer):
         """Serialize a document out of its parts."""
         text_res = "\n\n".join([p.text for p in parts if p.text])
         if self.requires_page_break():
-            page_sep = self.params.page_break_placeholder or ""
-            for full_match, _, _ in self._get_page_breaks(text=text_res):
-                text_res = text_res.replace(full_match, page_sep)
+            text_res = self._replace_page_breaks(text=text_res)
 
         return create_ser_result(text=text_res, span_source=parts)
+
+    @override
+    def _replace_page_breaks(self, text: str) -> str:
+        page_sep = self.params.page_break_placeholder or ""
+        for full_match, _, _ in self._get_page_breaks(text=text):
+            text = text.replace(full_match, page_sep)
+        return text
 
     @override
     def requires_page_break(self) -> bool:

@@ -671,6 +671,13 @@ class LaTeXDocSerializer(DocSerializer):
         return create_ser_result(text=full_text, span_source=parts)
 
     @override
+    def _replace_page_breaks(self, text: str) -> str:
+        page_sep = self.params.page_break_command or ""
+        for full_match, _, _ in self._get_page_breaks(text=text):
+            text = text.replace(full_match, page_sep)
+        return text
+
+    @override
     def requires_page_break(self) -> bool:
         """Return True if page break replacement is enabled."""
         return self.params.page_break_command is not None

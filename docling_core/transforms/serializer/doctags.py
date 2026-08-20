@@ -596,9 +596,7 @@ class DocTagsDocSerializer(DocSerializer):
         text_res = delim.join([p.text for p in parts if p.text])
 
         if self.params.add_page_break:
-            page_sep = f"<{DocumentToken.PAGE_BREAK.value}>"
-            for full_match, _, _ in self._get_page_breaks(text=text_res):
-                text_res = text_res.replace(full_match, page_sep)
+            text_res = self._replace_page_breaks(text=text_res)
 
         wrap_tag = DocumentToken.DOCUMENT.value
         text_res = f"<{wrap_tag}>{text_res}{delim}</{wrap_tag}>"
@@ -633,6 +631,13 @@ class DocTagsDocSerializer(DocSerializer):
         if text_res:
             text_res = _wrap(text=text_res, wrap_tag=DocumentToken.CAPTION.value)
         return create_ser_result(text=text_res, span_source=results)
+
+    @override
+    def _replace_page_breaks(self, text: str) -> str:
+        page_sep = f"<{DocumentToken.PAGE_BREAK.value}>"
+        for full_match, _, _ in self._get_page_breaks(text=text):
+            text = text.replace(full_match, page_sep)
+        return text
 
     @override
     def requires_page_break(self):
