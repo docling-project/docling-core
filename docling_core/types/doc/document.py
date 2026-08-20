@@ -3688,6 +3688,7 @@ class DoclingDocument(BaseModel):
         traverse_pictures: bool = False,
         mark_meta: bool = False,
         use_legacy_annotations: Optional[bool] = None,  # deprecated
+        include_picture_classification: bool = True,
     ):
         """Save to markdown."""
         if isinstance(filename, str):
@@ -3720,6 +3721,7 @@ class DoclingDocument(BaseModel):
             traverse_pictures=traverse_pictures,
             use_legacy_annotations=use_legacy_annotations,
             mark_meta=mark_meta,
+            include_picture_classification=include_picture_classification,
         )
 
         filename.write_text(md_out, encoding="utf-8")
