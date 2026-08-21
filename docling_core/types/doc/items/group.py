@@ -44,6 +44,10 @@ class ListGroup(GroupItem):
             and first_child.enumerated
         )
 
+    def any_item_has_marker(self, doc: "DoclingDocument") -> bool:
+        """Whether any direct child list item has a non-empty marker."""
+        return any(isinstance(child := ref.resolve(doc), ListItem) and bool(child.marker) for ref in self.children)
+
 
 @deprecated("Use ListGroup instead.")
 class OrderedList(GroupItem):
