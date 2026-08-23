@@ -4177,6 +4177,9 @@ class DoclingDocument(BaseModel):
             "checkbox_selected": DocItemLabel.CHECKBOX_SELECTED,
             "checkbox_unselected": DocItemLabel.CHECKBOX_UNSELECTED,
             "text": DocItemLabel.TEXT,
+            "paragraph": DocItemLabel.PARAGRAPH,
+            "handwritten_text": DocItemLabel.HANDWRITTEN_TEXT,
+            "reference": DocItemLabel.REFERENCE,
             "page_header": DocItemLabel.PAGE_HEADER,
             "page_footer": DocItemLabel.PAGE_FOOTER,
             "formula": DocItemLabel.FORMULA,
@@ -4491,7 +4494,9 @@ class DoclingDocument(BaseModel):
             tag_pattern = (
                 rf"<(?P<tag>{DocItemLabel.TITLE}|{DocItemLabel.DOCUMENT_INDEX}|"
                 rf"{DocItemLabel.CHECKBOX_UNSELECTED}|{DocItemLabel.CHECKBOX_SELECTED}|"
-                rf"{DocItemLabel.TEXT}|{DocItemLabel.PAGE_HEADER}|{GroupLabel.INLINE}|"
+                rf"{DocItemLabel.TEXT}|{DocItemLabel.PARAGRAPH}|"
+                rf"{DocItemLabel.HANDWRITTEN_TEXT}|{DocItemLabel.REFERENCE}|"
+                rf"{DocItemLabel.PAGE_HEADER}|{GroupLabel.INLINE}|"
                 rf"{DocItemLabel.PAGE_FOOTER}|{DocItemLabel.FORMULA}|"
                 rf"{DocItemLabel.CAPTION}|{DocItemLabel.PICTURE}|"
                 rf"{DocItemLabel.FOOTNOTE}|{DocItemLabel.CODE}|"
