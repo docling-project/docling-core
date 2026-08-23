@@ -1303,3 +1303,56 @@ def test_html_meta_emits_xhtml_compatible_attributes():
     assert 'data-meta-name="entities"' in html_out
     # Output must be parseable by a strict XML parser.
     ET.fromstring(html_out)
+
+
+def test_markdown_sheet_group_headings() -> None:
+    """Sheet groups render their sheet name as a Markdown heading (issue 3229)."""
+    from docling_core.transforms.serializer.markdown_excel import (
+        MsExcelMarkdownDocSerializer,
+    )
+    from docling_core.types.doc import GroupLabel
+    from docling_core.types.doc.document import TableCell, TableData
+
+    def _cell(v: str, i: int, j: int) -> TableCell:
+        return TableCell(
+            text=v,
+            row_span=1,
+            col_span=1,
+            start_row_offset_idx=i,
+            end_row_offset_idx=i + 1,
+            start_col_offset_idx=j,
+            end_col_offset_idx=j + 1,
+        )
+
+    doc = DoclingDocument(name="workbook")
+    balance = doc.add_group(label=GroupLabel.SHEET, name="Balance")
+    cells = [_cell(v, i, j) for i, row in enumerate([["item", "amount"], ["cash", "100"]]) for j, v in enumerate(row)]
+    doc.add_table(
+        data=TableData(num_rows=2, num_cols=2, table_cells=cells),
+        parent=balance,
+    )
+    notes = doc.add_group(label=GroupLabel.SHEET, name="Notes")
+    doc.add_text(text="prepared by Ryan", label="paragraph", parent=notes)
+
+    # Default export path (export_to_markdown uses this serializer).
+    out = MarkdownDocSerializer(doc=doc).serialize().text
+    assert "## Balance" in out
+    assert "## Notes" in out
+
+    # The Excel-specific serializer keeps the same behaviour.
+    out_xl = MsExcelMarkdownDocSerializer(doc=doc).serialize().text
+    assert "## Balance" in out_xl and "## Notes" in out_xl
+
+
+def test_markdown_non_sheet_groups_stay_unheaded() -> None:
+    """Only SHEET groups get headings; other groups keep prior behaviour."""
+    from docling_core.types.doc import GroupLabel
+
+    doc = DoclingDocument(name="plain")
+    section = doc.add_group(label=GroupLabel.SECTION, name="intro")
+    doc.add_text(text="hello world", label="paragraph", parent=section)
+
+    out = MarkdownDocSerializer(doc=doc).serialize().text
+    assert "## intro" not in out
+    assert "intro" not in out
+    assert "hello world" in out
