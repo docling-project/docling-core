@@ -50,6 +50,7 @@ from docling_core.types.doc import (
     FormItem,
     FormulaItem,
     GroupItem,
+    GroupLabel,
     ImageRef,
     ImageRefMode,
     InlineGroup,
@@ -900,6 +901,11 @@ class MarkdownFallbackSerializer(BaseFallbackSerializer):
         if isinstance(item, GroupItem):
             parts = doc_serializer.get_parts(item=item, **kwargs)
             text_res = "\n\n".join([p.text for p in parts if p.text])
+            if item.label == GroupLabel.SHEET and item.name:
+                # Worksheet groups (e.g. from the MS Excel backend) render
+                # their sheet name as a heading, mirroring workbook structure.
+                heading = f"## {item.name}"
+                text_res = f"{heading}\n\n{text_res}" if text_res else heading
             return create_ser_result(text=text_res, span_source=parts)
         elif isinstance(item, (FieldRegionItem, FieldItem)):
             return create_ser_result()
