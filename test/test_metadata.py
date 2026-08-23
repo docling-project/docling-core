@@ -15,6 +15,7 @@ from docling_core.transforms.serializer.markdown import (
 )
 from docling_core.types.doc import (
     BaseMeta,
+    DataPointMention,
     DocItem,
     DocItemLabel,
     DoclingDocument,
@@ -420,3 +421,269 @@ def test_keywords_topics_required_values() -> None:
         TopicsMetaField(values=34)
     with pytest.raises(ValidationError, match="valid string"):
         TopicsMetaField(values=[34])
+
+
+# ---------------------------------------------------------------------------
+# Entity mentions tests
+# ---------------------------------------------------------------------------
+
+_META_GT_DIR = Path("test/data/doc/meta")
+
+
+@pytest.fixture(scope="module")
+def doc_with_entity_mentions() -> DoclingDocument:
+    """A document with three paragraphs annotated with mixed entity mentions.
+
+    Paragraph 1 — financial statement:
+        "IBM reported revenue of $16.3B in Q3 2025, up 9% year-over-year."
+        Mentions: ORG, DATE, REVENUE (DataPointMention), GROWTH_RATE (DataPointMention)
+
+    Paragraph 2 — population fact:
+        "The population of Switzerland in 2026 is approximately 9 million people."
+        Mentions: LOC, DATE, HEADCOUNT (DataPointMention)
+
+    Paragraph 3 — range data point:
+        "Operating margins improved to between 18% and 21% during the period."
+        Mentions: OPERATING_MARGIN (DataPointMention, range)
+    """
+    doc = DoclingDocument(name="entity-mentions-example")
+
+    # ── Paragraph 1 ──────────────────────────────────────────────────────────
+    p1 = doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="IBM reported revenue of $16.3B in Q3 2025, up 9% year-over-year.",
+    )
+    p1.meta = BaseMeta(
+        entities=EntitiesMetaField(
+            mentions=[
+                EntityMention(text="IBM", label="ORG", charspan=(0, 3)),
+                EntityMention(text="Q3 2025", label="DATE", charspan=(34, 41)),
+                DataPointMention(
+                    text="16.3 billion USD",
+                    orig="$16.3B",
+                    label="REVENUE",
+                    charspan=(24, 30),
+                    value=16.3,
+                    unit="USD",
+                    scale="billion",
+                    normalized_value=16_300_000_000.0,
+                    display_dp=1,
+                    precision="exact",
+                ),
+                DataPointMention(
+                    text="9 percent",
+                    orig="9%",
+                    label="GROWTH_RATE",
+                    charspan=(46, 48),
+                    value=9.0,
+                    unit="%",
+                    display_dp=0,
+                    precision="exact",
+                    direction="increase",
+                ),
+            ]
+        )
+    )
+
+    # ── Paragraph 2 ──────────────────────────────────────────────────────────
+    p2 = doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="The population of Switzerland in 2026 is approximately 9 million people.",
+    )
+    p2.meta = BaseMeta(
+        entities=EntitiesMetaField(
+            mentions=[
+                EntityMention(text="Switzerland", label="LOC", charspan=(18, 29)),
+                EntityMention(text="2026", label="DATE", charspan=(33, 37)),
+                DataPointMention(
+                    text="9 million",
+                    label="POPULATION",
+                    charspan=(55, 64),
+                    value=9.0,
+                    scale="million",
+                    normalized_value=9_000_000.0,
+                    display_dp=0,
+                    precision="approximate",
+                ),
+            ]
+        )
+    )
+
+    # ── Paragraph 3 ──────────────────────────────────────────────────────────
+    p3 = doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Operating margins improved to between 18% and 21% during the period.",
+    )
+    p3.meta = BaseMeta(
+        entities=EntitiesMetaField(
+            mentions=[
+                DataPointMention(
+                    text="18 to 21 percent",
+                    orig="18%",
+                    label="OPERATING_MARGIN",
+                    charspan=(37, 40),
+                    value=18.0,
+                    unit="%",
+                    display_dp=0,
+                    precision="range_low",
+                    range_end=21.0,
+                    direction="increase",
+                ),
+            ]
+        )
+    )
+
+    return doc
+
+
+def test_data_point_roundtrip_and_html_rendering(
+    doc_with_entity_mentions: DoclingDocument,
+) -> None:
+    doc = doc_with_entity_mentions
+
+    roundtrip = DoclingDocument.model_validate(doc.model_dump(mode="json"))
+    meta_p1 = roundtrip.texts[0].meta
+    assert meta_p1 is not None and meta_p1.entities is not None
+    assert meta_p1.has_content()
+
+    mentions = meta_p1.entities.mentions
+    # plain EntityMention (ORG) has no value field — falls back to base type in Union
+    org = mentions[0]
+    assert isinstance(org, EntityMention)
+    assert not isinstance(org, DataPointMention)
+
+    # DataPointMention (REVENUE) — exact, scaled value
+    revenue = mentions[2]
+    assert isinstance(revenue, DataPointMention)
+    assert revenue.orig == "$16.3B"
+    assert revenue.value == 16.3
+    assert revenue.unit == "USD"
+    assert revenue.scale == "billion"
+    assert revenue.normalized_value == 16_300_000_000.0
+    assert revenue.display_dp == 1
+    assert revenue.precision == "exact"
+    assert revenue.scale_factor == 1e9
+    assert revenue.compute_normalized_value() == revenue.normalized_value
+
+    html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
+    assert 'data-meta-name="entities"' in html
+    assert "IBM (ORG, [0,3])" in html
+    assert "16.3 billion USD (REVENUE, [24,30])" in html
+
+
+def test_data_point_range_and_direction(
+    doc_with_entity_mentions: DoclingDocument,
+) -> None:
+    doc = doc_with_entity_mentions
+
+    roundtrip = DoclingDocument.model_validate(doc.model_dump(mode="json"))
+
+    # GROWTH_RATE from paragraph 1 — direction + exact precision
+    meta_p1 = roundtrip.texts[0].meta
+    assert meta_p1 is not None and meta_p1.entities is not None
+    growth = meta_p1.entities.mentions[3]
+    assert isinstance(growth, DataPointMention)
+    assert growth.value == 9.0
+    assert growth.unit == "%"
+    assert growth.display_dp == 0
+    assert growth.precision == "exact"
+    assert growth.direction == "increase"
+
+    # OPERATING_MARGIN from paragraph 3 — range_low + range_end
+    meta_p3 = roundtrip.texts[2].meta
+    assert meta_p3 is not None and meta_p3.entities is not None
+    margin = meta_p3.entities.mentions[0]
+    assert isinstance(margin, DataPointMention)
+    assert margin.value == 18.0
+    assert margin.range_end == 21.0
+    assert margin.precision == "range_low"
+    assert margin.display_dp == 0
+
+
+def test_data_point_numeric_helpers() -> None:
+    # scale_factor maps canonical scale strings to their multipliers
+    assert DataPointMention(text="4B", value=4.0, scale="billion").scale_factor == 1e9
+    assert DataPointMention(text="5k", value=5.0, scale="k").scale_factor == 1e3
+    assert DataPointMention(text="x", value=0.0).scale_factor is None
+
+    # compute_normalized_value applies the scale factor on demand
+    assert DataPointMention(text="4B", value=4.0, scale="billion").compute_normalized_value() == 4_000_000_000.0
+    assert DataPointMention(text="30", value=30.0).compute_normalized_value() == 30.0
+    # display_dp is independent of the numeric value: "3%" and "3.0%" share value=3.0
+    assert DataPointMention(text="3%", value=3.0, display_dp=0).display_dp == 0
+    assert DataPointMention(text="3.0%", value=3.0, display_dp=1).display_dp == 1
+
+
+def test_data_point_range_end_requires_value() -> None:
+    with pytest.raises(ValidationError, match="range_end requires value"):
+        DataPointMention.model_validate({"text": "x", "value": None, "range_end": 20.0})
+
+
+def test_entity_mentions_json_roundtrip(
+    doc_with_entity_mentions: DoclingDocument,
+) -> None:
+    """Ground truth: JSON serialization and structural round-trip."""
+    import json
+
+    doc = doc_with_entity_mentions
+    gt_path = _META_GT_DIR / "entity_mentions.json"
+
+    result = json.dumps(doc.export_to_dict(), indent=2)
+    assert_or_generate_ground_truth(result, gt_path)
+
+    # Structural round-trip: reload from ground-truth JSON and verify mentions
+    reloaded = DoclingDocument.model_validate_json(gt_path.read_text())
+
+    meta_p1 = reloaded.texts[0].meta
+    assert meta_p1 is not None and meta_p1.entities is not None
+    mentions_p1 = meta_p1.entities.mentions
+    assert isinstance(mentions_p1[0], EntityMention) and not isinstance(mentions_p1[0], DataPointMention)
+    assert isinstance(mentions_p1[2], DataPointMention)
+    assert mentions_p1[2].value == 16.3
+    assert mentions_p1[2].normalized_value == 16_300_000_000.0
+
+    meta_p2 = reloaded.texts[1].meta
+    assert meta_p2 is not None and meta_p2.entities is not None
+    mentions_p2 = meta_p2.entities.mentions
+    assert isinstance(mentions_p2[2], DataPointMention)
+    assert mentions_p2[2].precision == "approximate"
+
+    meta_p3 = reloaded.texts[2].meta
+    assert meta_p3 is not None and meta_p3.entities is not None
+    mentions_p3 = meta_p3.entities.mentions
+    assert isinstance(mentions_p3[0], DataPointMention)
+    assert mentions_p3[0].range_end == 21.0
+    assert mentions_p3[0].precision == "range_low"
+
+
+def test_entity_mentions_markdown_serialization(
+    doc_with_entity_mentions: DoclingDocument,
+) -> None:
+    """Ground truth: Markdown serialization (meta marked)."""
+    doc = doc_with_entity_mentions
+    gt_path = _META_GT_DIR / "entity_mentions.md"
+
+    result = MarkdownDocSerializer(doc=doc, params=MarkdownParams(mark_meta=True)).serialize().text
+    assert_or_generate_ground_truth(result, gt_path)
+
+
+def test_entity_mentions_html_serialization(
+    doc_with_entity_mentions: DoclingDocument,
+) -> None:
+    """Ground truth: HTML serialization."""
+    doc = doc_with_entity_mentions
+    gt_path = _META_GT_DIR / "entity_mentions.html"
+
+    result = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
+    assert_or_generate_ground_truth(result, gt_path)
+
+
+def test_entity_mentions_doctags_serialization(
+    doc_with_entity_mentions: DoclingDocument,
+) -> None:
+    """Ground truth: DocTags (Doclang) serialization."""
+    doc = doc_with_entity_mentions
+    gt_path = _META_GT_DIR / "entity_mentions.dt"
+
+    result = doc.export_to_doctags(add_location=False)
+    assert_or_generate_ground_truth(result, gt_path)
