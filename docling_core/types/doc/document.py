@@ -17,6 +17,7 @@ from enum import Enum
 from io import BytesIO, StringIO
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     Final,
@@ -166,6 +167,10 @@ from docling_core.types.doc.utils import (
 from docling_core.utils.settings import settings
 
 # --- end re-exports ---
+
+if TYPE_CHECKING:
+    # Imported lazily at call time to avoid a circular import through the serializers.
+    from docling_core.transforms.serializer.epub import EpubMetadata
 
 
 _logger = logging.getLogger(__name__)
@@ -4156,6 +4161,98 @@ class DoclingDocument(BaseModel):
         )
 
         filename.write_text(vtt_out, encoding="utf-8")
+
+    def export_to_epub(
+        self,
+        *,
+        metadata: Optional["EpubMetadata"] = None,
+        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        included_content_layers: Optional[set[ContentLayer]] = None,
+        page_break_placeholder: Optional[str] = None,
+        compact_tables: bool = False,
+    ) -> str:
+        """Serializes the Docling document as book Markdown.
+
+        The output is Markdown preceded by a YAML frontmatter block holding the book
+        metadata and a chapter index. Every chapter entry carries the absolute UTF-8
+        byte offset and the 1-based line number of its heading, so a reader can seek
+        straight to a chapter instead of scanning the whole book.
+
+        Args:
+            metadata: The book metadata to render as frontmatter. Unset fields are left out.
+            image_mode: How to reference images in the Markdown body.
+            included_content_layers: The content layers to serialize. If omitted, the `DEFAULT_CONTENT_LAYERS`
+                will be serialized.
+            page_break_placeholder: The placeholder to render in place of a page break. If omitted, no page
+                break is rendered.
+            compact_tables: If True, serialize tables without column padding.
+
+        Returns:
+            A string representation of the Docling document as book Markdown.
+        """
+        from docling_core.transforms.serializer.epub import EpubDocSerializer, EpubParams
+
+        my_layers = included_content_layers if included_content_layers is not None else DEFAULT_CONTENT_LAYERS
+
+        serializer = EpubDocSerializer(
+            doc=self,
+            params=EpubParams(
+                metadata=metadata,
+                layers=my_layers,
+                image_mode=image_mode,
+                page_break_placeholder=page_break_placeholder,
+                compact_tables=compact_tables,
+            ),
+        )
+
+        return serializer.serialize().text
+
+    def save_as_epub(
+        self,
+        filename: Union[str, Path],
+        artifacts_dir: Optional[Path] = None,
+        *,
+        metadata: Optional["EpubMetadata"] = None,
+        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        included_content_layers: Optional[set[ContentLayer]] = None,
+        page_break_placeholder: Optional[str] = None,
+        compact_tables: bool = False,
+    ) -> None:
+        """Saves the Docling document to a file as book Markdown.
+
+        The file is written as raw UTF-8 bytes: the chapter offsets in the frontmatter
+        index the saved file, so they would be invalidated by the newline translation
+        that text mode applies on Windows.
+
+        Args:
+            filename: The path to the book Markdown file.
+            artifacts_dir: The directory to write referenced images to.
+            metadata: The book metadata to render as frontmatter. Unset fields are left out.
+            image_mode: How to reference images in the Markdown body.
+            included_content_layers: The content layers to serialize. If omitted, the `DEFAULT_CONTENT_LAYERS`
+                will be serialized.
+            page_break_placeholder: The placeholder to render in place of a page break. If omitted, no page
+                break is rendered.
+            compact_tables: If True, serialize tables without column padding.
+        """
+        if isinstance(filename, str):
+            filename = Path(filename)
+        artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
+
+        if image_mode == ImageRefMode.REFERENCED:
+            artifacts_dir.mkdir(parents=True, exist_ok=True)
+
+        new_doc = self._make_copy_with_refmode(artifacts_dir, image_mode, page_no=None, reference_path=reference_path)
+
+        epub_out = new_doc.export_to_epub(
+            metadata=metadata,
+            image_mode=image_mode,
+            included_content_layers=included_content_layers,
+            page_break_placeholder=page_break_placeholder,
+            compact_tables=compact_tables,
+        )
+
+        filename.write_bytes(epub_out.encode("utf-8"))
 
     @staticmethod
     def load_from_doctags(  # noqa: C901
