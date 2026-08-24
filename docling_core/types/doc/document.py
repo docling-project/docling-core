@@ -3565,11 +3565,14 @@ class DoclingDocument(BaseModel):
         indent: int = 2,
         coord_precision: Optional[int] = None,
         confid_precision: Optional[int] = None,
-        json_kwargs: Optional[dict[str, Any]] = None,
+        *,
+        ensure_ascii: bool = True,
+        sort_keys: bool = False,
     ):
         """Save as json.
 
-        Any `json_kwargs` are passed through to `json.dumps` and override `indent` if supplied.
+        `ensure_ascii` escapes non-ASCII characters when true, `sort_keys` sorts object
+        keys for deterministic output.
         """
         if isinstance(filename, str):
             filename = Path(filename)
@@ -3587,10 +3590,10 @@ class DoclingDocument(BaseModel):
         )
 
         out = new_doc.export_to_dict(coord_precision=coord_precision, confid_precision=confid_precision)
-        dump_kwargs: dict[str, Any] = {"indent": indent}
-        if json_kwargs:
-            dump_kwargs.update(json_kwargs)
-        filename.write_text(json.dumps(out, **dump_kwargs), encoding="utf-8")
+        filename.write_text(
+            json.dumps(out, indent=indent, ensure_ascii=ensure_ascii, sort_keys=sort_keys),
+            encoding="utf-8",
+        )
 
     @classmethod
     def load_from_json(cls, filename: Union[str, Path]) -> "DoclingDocument":
