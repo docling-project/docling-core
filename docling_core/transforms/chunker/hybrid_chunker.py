@@ -237,7 +237,11 @@ class HybridChunker(BaseChunker):
     ) -> list[DocChunk]:
         lengths = self._doc_chunk_length(doc_chunk)
         if lengths.total_len <= self.max_tokens:
-            return [DocChunk(**doc_chunk.export_json_dict())]
+            # NOTE: copy through the model, not through a JSON round-trip: the
+            # latter revalidates `meta.doc_items` against its declared `DocItem`
+            # type, downcasting every concrete subclass (e.g. `TableItem`) and
+            # dropping the payload that only the subclass carries.
+            return [doc_chunk.model_copy()]
         else:
             # How much room is there for text after subtracting out the headers and
             # captions:

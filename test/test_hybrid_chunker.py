@@ -21,6 +21,8 @@ from docling_core.transforms.serializer.html import HTMLTableSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
 from docling_core.types.doc import DocItemLabel, DoclingDocument
 from docling_core.types.doc.common.content_layer import ContentLayer
+from docling_core.types.doc.common.meta import DescriptionMetaField, FloatingMeta
+from docling_core.types.doc.document import TableItem, TextItem
 from docling_core.types.doc.items.table.table_data import TableCell, TableData
 
 from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_rich_table_doc
@@ -432,6 +434,68 @@ def test_chunk_single_cell_rich_table():
     assert len(chunks) == 1
     assert chunks[0].text == "Important body text inside layout table"
     assert [item.self_ref for item in chunks[0].meta.doc_items] == [doc.tables[0].self_ref]
+
+
+def test_chunk_keeps_concrete_doc_item_types():
+    """HybridChunker must not downcast meta.doc_items to bare DocItem.
+
+    The chunks are copied on the way out; copying them through a JSON
+    round-trip revalidates `doc_items` against its declared `DocItem` type,
+    which replaces each concrete subclass with a bare `DocItem` and drops the
+    payload only the subclass carries. HierarchicalChunker hands back the
+    document's own items, so it is the reference for what the types should be.
+    """
+    doc = DoclingDocument(name="concrete_item_types")
+    doc.add_text(label=DocItemLabel.TEXT, text="Some paragraph.")
+    table = doc.add_table(
+        data=TableData(
+            num_rows=2,
+            num_cols=1,
+            table_cells=[
+                TableCell(
+                    text="Year",
+                    start_row_offset_idx=0,
+                    end_row_offset_idx=1,
+                    start_col_offset_idx=0,
+                    end_col_offset_idx=1,
+                    column_header=True,
+                ),
+                TableCell(
+                    text="2024",
+                    start_row_offset_idx=1,
+                    end_row_offset_idx=2,
+                    start_col_offset_idx=0,
+                    end_col_offset_idx=1,
+                ),
+            ],
+        )
+    )
+    table.meta = FloatingMeta(description=DescriptionMetaField(text="Revenue by year."))
+
+    # Large enough that every chunk fits and no splitting is needed.
+    chunker = HybridChunker(
+        tokenizer=OpenAITokenizer(
+            tokenizer=tiktoken.encoding_for_model("gpt-4o"),
+            max_tokens=128 * 1024,
+        )
+    )
+    ref_chunker = HierarchicalChunker()
+
+    def items_of(chunker_):
+        return [item for chunk in chunker_.chunk(dl_doc=doc) for item in chunk.meta.doc_items]
+
+    exp_items = items_of(ref_chunker)
+    act_items = items_of(chunker)
+
+    assert [type(item) for item in exp_items] == [TextItem, TableItem]
+    assert [type(item) for item in act_items] == [type(item) for item in exp_items]
+    assert [item.self_ref for item in act_items] == [item.self_ref for item in exp_items]
+
+    # The subclass payload has to survive too, not just the class name.
+    act_table = act_items[1]
+    assert act_table.meta is not None
+    assert act_table.meta.description.text == "Revenue by year."
+    assert [cell.text for cell in act_table.data.table_cells] == ["Year", "2024"]
 
 
 def test_chunk_explicit():
