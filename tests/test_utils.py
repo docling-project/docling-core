@@ -231,9 +231,10 @@ def test_is_safe_url_rejects_private_networks(monkeypatch):
     assert _is_safe_url("http://8.8.8.8/file")
     assert _is_safe_url("https://example.com/file")
     assert _is_safe_url("https://github.com/github/file")
-    
+
 def test_ip_in_allowlist():
     import ipaddress
+
     from docling_core.utils.file import _ip_in_allowlist
 
     assert _ip_in_allowlist(ipaddress.ip_address("127.0.0.1"), ["127.0.0.1"])
@@ -252,17 +253,11 @@ def test_ip_in_allowlist():
 
 def test_allowed_private_ips(monkeypatch):
     import pytest
+
     from docling_core.utils.file import resolve_source_to_stream
     from docling_core.utils.settings import settings
-    from requests import Response
 
-    def mock_get(*args, **kwargs):
-        r = Response()
-        r.status_code = 200
-        r._content = b"ok"
-        return r
-
-    monkeypatch.setattr("requests.Session.get", mock_get)
+    monkeypatch.setattr(Session, "get", lambda *args, **kwargs: _closeable_response(content=b"ok"))
 
     monkeypatch.setattr(settings, "allowed_private_ips", [])
     with pytest.raises(ValueError, match="URL is not allowed"):
@@ -279,6 +274,7 @@ def test_allowed_private_ips(monkeypatch):
     assert resolve_source_to_stream("http://192.168.1.42/doc").stream.read() == b"ok"
     with pytest.raises(ValueError, match="URL is not allowed"):
         resolve_source_to_stream("http://192.168.2.1/doc")
+
 
 def test_resolve_remote_filename_sanitizes_content_disposition(monkeypatch):
     """Test filename normalization from Content-Disposition."""

@@ -37,7 +37,8 @@ class FileSizeLimitExceededError(ValueError):
         super().__init__(f"Remote file exceeds the maximum allowed size ({size} > {limit} bytes).")
 
 
-def _ip_in_allowlist(ip: ipaddress.IPv4Address, allowlist: list[str]) -> bool:
+def _ip_in_allowlist(ip: ipaddress.IPv4Address | ipaddress.IPv6Address, allowlist: list[str]) -> bool:
+    """Return whether a ip matches any IP addresss or CIDR entry in allowlist."""
     for entry in allowlist:
         entry = entry.strip()
         if not entry:
@@ -47,7 +48,11 @@ def _ip_in_allowlist(ip: ipaddress.IPv4Address, allowlist: list[str]) -> bool:
             if ip in network:
                 return True
         except ValueError:
-            _logger.warning(f"Skipping malformed entry in DOCLINGCORE_ALLOWED_PRIVATE_IPS: {entry!r}")
+            _logger.warning(
+                f"Skipping malformed entry in DOCLINGCORE_ALLOWED_PRIVATE_IPS: {entry!r} "
+                "(if this is a CIDR range, the network address must have no host bits set, "
+                "e.g. '10.0.0.0/8' rather than '10.0.0.5/8')"
+            )
     return False
 
 
