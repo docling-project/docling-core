@@ -232,6 +232,7 @@ def test_is_safe_url_rejects_private_networks(monkeypatch):
     assert _is_safe_url("https://example.com/file")
     assert _is_safe_url("https://github.com/github/file")
 
+
 def test_ip_in_allowlist():
     import ipaddress
 
@@ -248,7 +249,6 @@ def test_ip_in_allowlist():
 
     assert _ip_in_allowlist(ipaddress.ip_address("127.0.0.1"), ["garbage", "127.0.0.1"])
     assert not _ip_in_allowlist(ipaddress.ip_address("127.0.0.1"), ["garbage", "300.300.300.300"])
-
 
 
 def test_allowed_private_ips(monkeypatch):
