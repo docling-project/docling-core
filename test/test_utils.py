@@ -244,7 +244,7 @@ def test_ip_in_allowlist():
     assert not _ip_in_allowlist(ipaddress.ip_address("10.21.0.1"), ["10.20.0.0/16"])
 
     assert _ip_in_allowlist(ipaddress.ip_address("192.168.1.100"), ["192.168.1.0/24"])
-    assert not _ip_in_allowlist(ipaddress.ip_address("192.168.1.100"), ["192.168.1.5/24"])
+    assert _ip_in_allowlist(ipaddress.ip_address("192.168.1.100"), ["192.168.1.5/24"])
 
     assert _ip_in_allowlist(ipaddress.ip_address("127.0.0.1"), ["garbage", "127.0.0.1"])
     assert not _ip_in_allowlist(ipaddress.ip_address("127.0.0.1"), ["garbage", "300.300.300.300"])

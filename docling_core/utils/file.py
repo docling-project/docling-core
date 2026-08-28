@@ -44,14 +44,18 @@ def _ip_in_allowlist(ip: ipaddress.IPv4Address | ipaddress.IPv6Address, allowlis
         if not entry:
             continue
         try:
-            network = ipaddress.ip_network(entry)
+            network = ipaddress.ip_network(entry, strict=False)
+            normalized = str(network)
+            if normalized != entry:
+                _logger.warning(
+                    f"DOCLINGCORE_ALLOWED_PRIVATE_IPS entry {entry!r} was normalized to "
+                    f"{normalized!r}. Consider using the explicit network address."
+                )
             if ip in network:
                 return True
         except ValueError:
             _logger.warning(
                 f"Skipping malformed entry in DOCLINGCORE_ALLOWED_PRIVATE_IPS: {entry!r} "
-                "(if this is a CIDR range, the network address must have no host bits set, "
-                "e.g. '10.0.0.0/8' rather than '10.0.0.5/8')"
             )
     return False
 
