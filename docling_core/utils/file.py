@@ -54,9 +54,7 @@ def _ip_in_allowlist(ip: ipaddress.IPv4Address | ipaddress.IPv6Address, allowlis
             if ip in network:
                 return True
         except ValueError:
-            _logger.warning(
-                f"Skipping malformed entry in DOCLINGCORE_ALLOWED_PRIVATE_IPS: {entry!r} "
-            )
+            _logger.warning(f"Skipping malformed entry in DOCLINGCORE_ALLOWED_PRIVATE_IPS: {entry!r} ")
     return False
 
 
