@@ -49,6 +49,7 @@ from docling_core.types.doc import (
     Formatting,
     FormItem,
     FormulaItem,
+    FormulaMetaField,
     GroupItem,
     ImageRef,
     ImageRefMode,
@@ -437,6 +438,9 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
                     txt = table_content
                 else:
                     return None
+            elif isinstance(field_val, FormulaMetaField):
+                # The formula is already emitted as the item's own text.
+                return None
             elif tmp := str(field_val or ""):
                 txt = tmp
             else:

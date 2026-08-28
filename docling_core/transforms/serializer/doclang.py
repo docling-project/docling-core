@@ -1087,6 +1087,9 @@ class DocLangMetaSerializer(BaseModel, BaseMetaSerializer):
             elif name == MetaFieldName.TABULAR_CHART and isinstance(field_val, TabularChartMetaField):
                 # suppressing tabular chart serialization
                 return None
+            elif name == MetaFieldName.FORMULA:
+                # The formula is already emitted as the item's own <formula> element.
+                return None
             # elif tmp := str(field_val or ""):
             #     txt = tmp
             elif name not in {v.value for v in MetaFieldName}:
