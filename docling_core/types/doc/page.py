@@ -791,6 +791,11 @@ class SegmentedPdfPage(SegmentedPage):
     )
     shapes: list[PdfShape] = []
 
+    attachments: list[PdfAttachment] = Field(
+        default_factory=list,
+        description="File attachments anchored to this page (via FileAttachment annotations).",
+    )
+
     # Redefine typing of elements to include PdfTextCell
     char_cells: list[Union[PdfTextCell, TextCell]]
     word_cells: list[Union[PdfTextCell, TextCell]]

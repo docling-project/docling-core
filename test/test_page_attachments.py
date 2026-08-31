@@ -8,6 +8,7 @@ from docling_core.types.doc.page import (
     PdfAttachment,
     PdfPageBoundaryType,
     PdfPageGeometry,
+    SegmentedPdfPage,
 )
 
 
@@ -82,3 +83,24 @@ def test_pdf_attachment_defaults():
     assert att.size == 0
     assert att.annotations == []
     assert att.data is None
+
+
+def _page(attachments: list[PdfAttachment] | None = None) -> SegmentedPdfPage:
+    return SegmentedPdfPage(
+        dimension=_geometry(),
+        char_cells=[],
+        word_cells=[],
+        textline_cells=[],
+        attachments=attachments or [],
+    )
+
+
+def test_segmented_pdf_page_carries_attachments():
+    """A SegmentedPdfPage exposes the attachments anchored to it, defaulting to empty."""
+    page = _page(attachments=[_attachment()])
+    assert len(page.attachments) == 1
+    assert page.attachments[0].name == "notes.txt"
+    assert page.attachments[0].data == b"hello world"
+
+    empty = _page()
+    assert empty.attachments == []
