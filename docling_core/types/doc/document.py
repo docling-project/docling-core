@@ -99,6 +99,7 @@ from docling_core.types.doc.common.reference import (
 from docling_core.types.doc.common.scalars import CharSpan, LevelNumber, Uint64
 from docling_core.types.doc.common.source import BaseSource, SourceType, TrackSource
 from docling_core.types.doc.doctags import DocTagsDocument, DocTagsPage
+from docling_core.types.doc.items.attachment import AttachmentItem
 from docling_core.types.doc.items.code import CodeItem
 from docling_core.types.doc.items.content import ContentItem
 from docling_core.types.doc.items.form import FieldHeadingItem, FieldItem, FieldRegionItem, FieldValueItem
@@ -209,6 +210,7 @@ class DoclingDocument(BaseModel):
     form_items: list[FormItem] = []
     field_regions: list[FieldRegionItem] = []
     field_items: list[FieldItem] = []
+    attachments: list[AttachmentItem] = []
 
     pages: dict[int, PageItem] = {}  # empty as default
 
@@ -217,7 +219,7 @@ class DoclingDocument(BaseModel):
         dumped = handler(self)
 
         # suppress serializing certain fields when empty:
-        for field in {"field_regions", "field_items"}:
+        for field in {"field_regions", "field_items", "attachments"}:
             if dumped.get(field) == []:
                 del dumped[field]
 
@@ -346,6 +348,7 @@ class DoclingDocument(BaseModel):
             self.form_items,
             self.field_regions,
             self.field_items,
+            self.attachments,
         )
         for item_list in item_lists:
             for item in item_list:
@@ -932,6 +935,17 @@ class DoclingDocument(BaseModel):
             item.parent = parent_ref
 
             self.field_items.append(item)
+
+        elif isinstance(item, AttachmentItem):
+            item_label = "attachments"
+            item_index = len(self.attachments)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.attachments.append(item)
 
         elif isinstance(item, ListGroup | InlineGroup):
             item_label = "groups"
@@ -1760,6 +1774,61 @@ class DoclingDocument(BaseModel):
         parent.children.append(RefItem(cref=cref))
 
         return fig_item
+
+    def add_attachment(
+        self,
+        name: str,
+        mime_type: Optional[str] = None,
+        size: Optional[int] = None,
+        target: Optional[Union[str, AnyUrl]] = None,
+        data: Optional[bytes] = None,
+        doc_data: Optional[bytes] = None,
+        prov: Optional[ProvenanceItem] = None,
+        parent: Optional[NodeItem] = None,
+        content_layer: Optional[ContentLayer] = None,
+        *,
+        source: Optional[SourceType] = None,
+    ) -> AttachmentItem:
+        """Add an attachment reference to the document.
+
+        :param name: Original attachment filename.
+        :param mime_type: Optional MIME type.
+        :param size: Optional payload size in bytes.
+        :param target: Optional relative path/URL to converted output.
+        :param data: Optional raw binary payload.
+        :param doc_data: Optional serialized DoclingDocument bytes for the recursively parsed attachment.
+        :param prov: Optional provenance (page + bbox) for inline placement.
+        :param parent: Parent node; defaults to body.
+        :param content_layer: Optional content layer override.
+        :param source: Optional source reference.
+        """
+        if not parent:
+            parent = self.body
+
+        attachment_index = len(self.attachments)
+        cref = f"#/attachments/{attachment_index}"
+
+        item = AttachmentItem(
+            name=name,
+            mime_type=mime_type,
+            size=size,
+            target=target,
+            data=data,
+            doc_data=doc_data,
+            self_ref=cref,
+            parent=parent.get_ref(),
+        )
+        if prov:
+            item.prov.append(prov)
+        if source is not None:
+            item.source.append(source)
+        if content_layer:
+            item.content_layer = content_layer
+
+        self.attachments.append(item)
+        parent.children.append(RefItem(cref=cref))
+
+        return item
 
     def add_title(
         self,
@@ -5226,6 +5295,7 @@ class DoclingDocument(BaseModel):
             self.form_items,
             self.field_regions,
             self.field_items,
+            self.attachments,
         ]
         for item_list in item_lists:
             for item in item_list:
@@ -5323,6 +5393,7 @@ class DoclingDocument(BaseModel):
         form_items: list[FormItem] = []
         field_regions: list[FieldRegionItem] = []
         field_items: list[FieldItem] = []
+        attachments: list[AttachmentItem] = []
 
         pages: dict[int, PageItem] = {}
 
@@ -5355,6 +5426,7 @@ class DoclingDocument(BaseModel):
                 "form_items",
                 "field_regions",
                 "field_items",
+                "attachments",
             ]
             start_indices = {k: len(self.get_item_list(k)) for k in post_processing_keys}
 
@@ -5484,6 +5556,7 @@ class DoclingDocument(BaseModel):
         self.form_items = doc_index.form_items
         self.field_regions = doc_index.field_regions
         self.field_items = doc_index.field_items
+        self.attachments = doc_index.attachments
         self.pages = doc_index.pages
         self.name = doc_index.get_name()
 
