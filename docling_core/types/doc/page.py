@@ -415,6 +415,43 @@ class PdfHyperlink(OrderedElement):
             return str(v)
 
 
+class FileAttachmentAnnotation(BaseModel):
+    """Position of a FileAttachment annotation on a page (1-based, PDF convention).
+
+    Attributes:
+        page_no: 1-based page number (1 = first page), translated from 0-based C++ storage.
+        bbox: Bounding rectangle in PDF user space (bottom-left origin).
+    """
+
+    model_config = {"validate_assignment": True}  # type: ignore[dict-item]
+
+    page_no: PageNumber
+    bbox: BoundingRectangle
+
+
+class PdfAttachment(BaseModel):
+    """PDF attachment (embedded file) with optional page annotations.
+
+    Attributes:
+        name: Filename from /UF or /F.
+        mime_type: MIME subtype if present (e.g., 'text/plain').
+        size: Decoded size in bytes (from /Params /Size or /Length).
+        annotations: List of FileAttachment annotation positions (empty if unanchored).
+        data: Raw binary payload of the embedded file, if available.
+    """
+
+    model_config = {"validate_assignment": True}  # type: ignore[dict-item]
+
+    name: str
+    mime_type: Optional[str] = None
+    size: int = 0
+    annotations: list[FileAttachmentAnnotation] = []
+    data: Optional[bytes] = Field(
+        default=None,
+        description="Raw binary payload of the embedded file, if available.",
+    )
+
+
 class BitmapResource(OrderedElement):
     """Model representing a bitmap resource with positioning and URI information."""
 
