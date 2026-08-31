@@ -1572,6 +1572,11 @@ class ParsedPdfDocument(BaseModel):
 
     pages: dict[PageNumber, SegmentedPdfPage] = {}
 
+    attachments: list[PdfAttachment] = Field(
+        default_factory=list,
+        description="Embedded file attachments extracted from the PDF document.",
+    )
+
     meta_data: Optional[PdfMetaData] = None
     table_of_contents: Optional[PdfTableOfContents] = None
 

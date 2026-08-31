@@ -5,6 +5,7 @@ from docling_core.types.doc.base import BoundingBox
 from docling_core.types.doc.page import (
     BoundingRectangle,
     FileAttachmentAnnotation,
+    ParsedPdfDocument,
     PdfAttachment,
     PdfPageBoundaryType,
     PdfPageGeometry,
@@ -104,3 +105,16 @@ def test_segmented_pdf_page_carries_attachments():
 
     empty = _page()
     assert empty.attachments == []
+
+
+def test_parsed_pdf_document_round_trip_with_attachments():
+    """Document-level attachments survive a JSON round-trip alongside page-level ones."""
+    doc = ParsedPdfDocument(pages={1: _page(attachments=[_attachment()])})
+    doc.attachments.append(_attachment(name="archive.zip", data=b"\x00\x01\x02"))
+
+    restored = ParsedPdfDocument.model_validate_json(doc.model_dump_json())
+
+    assert restored.attachments == doc.attachments
+    assert restored.attachments[0].name == "archive.zip"
+    assert restored.attachments[0].data == b"\x00\x01\x02"
+    assert restored.pages[1].attachments[0].name == "notes.txt"
