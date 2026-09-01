@@ -3568,11 +3568,24 @@ class DoclingDocument(BaseModel):
         *,
         ensure_ascii: bool = True,
         sort_keys: bool = False,
-    ):
-        """Save as json.
+    ) -> None:
+        """Save the document to a JSON file.
 
-        `ensure_ascii` escapes non-ASCII characters when true, `sort_keys` sorts object
-        keys for deterministic output.
+        Args:
+            filename: Output file path.
+            artifacts_dir: Directory for referenced image artifacts. Defaults to a
+                subdirectory next to `filename`.
+            image_mode: How to handle embedded images.
+            indent: Indentation level passed to `json.dumps`.
+            coord_precision: Decimal precision for bounding-box coordinates. If
+                `None`, full precision is used.
+            confid_precision: Decimal precision for confidence scores. If `None`,
+                full precision is used.
+            ensure_ascii: When `True` (the default), non-ASCII characters are
+                escaped as `\\uXXXX` sequences. Set to `False` to write literal
+                Unicode characters.
+            sort_keys: When `True`, object keys are sorted alphabetically,
+                producing deterministic output suitable for diffing.
         """
         if isinstance(filename, str):
             filename = Path(filename)
