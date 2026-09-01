@@ -4841,24 +4841,34 @@ class DoclingDocument(BaseModel):
 
     def export_to_doclang(
         self,
+        *,
+        add_named_groups: bool = False,
     ) -> str:
-        """Export to DocLang."""
+        """Export to DocLang.
+
+        Args:
+            add_named_groups: When True, a plain ``GroupItem`` is emitted as a
+                ``<group name="...">`` element instead of being transparent, so
+                the grouping survives a round trip.
+        """
         from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 
         serializer = DocLangDocSerializer(
             doc=self,
-            params=DocLangParams(),
+            params=DocLangParams(add_named_groups=add_named_groups),
         )
         return serializer.serialize().text
 
     def save_as_doclang(
         self,
         filename: Union[str, Path],
+        *,
+        add_named_groups: bool = False,
     ) -> None:
         """Save the document as DocLang."""
         if isinstance(filename, str):
             filename = Path(filename)
-        out = self.export_to_doclang()
+        out = self.export_to_doclang(add_named_groups=add_named_groups)
         filename.write_text(f"{out}\n", encoding="utf-8")
 
     def save_as_doclang_archive(
@@ -4867,11 +4877,15 @@ class DoclingDocument(BaseModel):
         *,
         artifacts_dir: Optional[Path] = None,
         validate: bool = False,
+        add_named_groups: bool = False,
     ) -> None:
         """Save the document as a DocLang OPC archive (``.dclx``).
 
         Picture and page images are always stored outside the markup, under
         ``assets/`` and ``pages/`` in the archive respectively.
+
+        ``add_named_groups`` emits plain ``GroupItem``s as ``<group name="...">``
+        elements so the grouping survives a round trip.
         """
         from doclang import pack
 
@@ -4893,7 +4907,10 @@ class DoclingDocument(BaseModel):
 
             serializer = DocLangDocSerializer(
                 doc=doc,
-                params=DocLangParams(image_mode=ImageRefMode.REFERENCED),
+                params=DocLangParams(
+                    image_mode=ImageRefMode.REFERENCED,
+                    add_named_groups=add_named_groups,
+                ),
             )
             document_path = staging_root / "document.dclg.xml"
             document_path.write_text(f"{serializer.serialize().text}\n", encoding="utf-8")

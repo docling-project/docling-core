@@ -5,6 +5,7 @@ import warnings
 import xml.etree.ElementTree as ET
 from enum import Enum
 from typing import Any, ClassVar, Final, Optional
+from xml.sax.saxutils import escape
 
 from pydantic import BaseModel
 
@@ -366,6 +367,7 @@ class DocLangAttributeKey(str, Enum):
     CLASS = "class"
     THREAD_ID = "thread_id"
     URI = "uri"
+    NAME = "name"
 
 
 class DocLangAttributeValue(str, Enum):
@@ -416,6 +418,7 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.LIST: {DocLangAttributeKey.CLASS},
         DocLangToken.THREAD: {DocLangAttributeKey.THREAD_ID},
         DocLangToken.XREF: {DocLangAttributeKey.THREAD_ID},
+        DocLangToken.GROUP: {DocLangAttributeKey.NAME},
     }
 
     # Allowed values for specific attributes (enumerations)
@@ -666,16 +669,21 @@ class DocLangVocabulary(BaseModel):
         return f'<{token.value} {DocLangAttributeKey.THREAD_ID.value}="{thread_id}"/>'
 
     @classmethod
-    def _create_group_token(cls, *, closing: bool = False) -> str:
+    def _create_group_token(cls, *, name: Optional[str] = None, closing: bool = False) -> str:
         """Create a group tag.
 
         - When `closing` is True, returns the closing tag.
-        - Otherwise returns an opening tag without attributes.
+        - When `name` is given, returns an opening tag carrying it, otherwise an
+          opening tag without attributes.
         """
+        token = DocLangToken.GROUP
         if closing:
-            return f"</{DocLangToken.GROUP.value}>"
-        else:
-            return f"<{DocLangToken.GROUP.value}>"
+            return f"</{token.value}>"
+        if name is None:
+            return f"<{token.value}>"
+        assert DocLangAttributeKey.NAME in cls.ALLOWED_ATTRIBUTES.get(token, set())
+        safe = escape(name, {'"': "&quot;"})
+        return f'<{token.value} {DocLangAttributeKey.NAME.value}="{safe}">'
 
     @classmethod
     def _create_list_token(cls, *, ordered: bool, closing: bool = False) -> str:
