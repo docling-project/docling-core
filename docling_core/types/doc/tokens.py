@@ -303,12 +303,11 @@ class DocumentToken(str, Enum):
         self_closing: bool = False,
     ):
         """Get the location string given bbox and page-dim."""
-        # Normalize potentially inverted coordinates instead of asserting on
-        # them. Near-degenerate elements (e.g. a thin rule whose layout-model
-        # regression produced a slightly inverted bbox) can arrive with
-        # bbox[0] > bbox[2] or bbox[1] > bbox[3]. The min()/max() calls below
-        # already emit correctly-ordered tokens, so sorting here mirrors that
-        # normalization and avoids crashing export_to_doctags on valid output.
+        # Normalize potentially inverted coordinates: near-degenerate elements
+        # (e.g. a thin rule whose layout-model regression produced a slightly
+        # inverted bbox) can arrive with bbox[0] > bbox[2] or bbox[1] > bbox[3].
+        # After sorting, left <= right and top <= bottom is guaranteed, so the
+        # ratios x0 <= x1 and y0 <= y1 follow directly from positive page dims.
         left, right = sorted((bbox[0], bbox[2]))
         top, bottom = sorted((bbox[1], bbox[3]))
 
@@ -317,10 +316,10 @@ class DocumentToken(str, Enum):
         x1 = right / page_w
         y1 = bottom / page_h
 
-        x0_tok = DocumentToken.get_location_token(val=min(x0, x1), rnorm=xsize, self_closing=self_closing)
-        y0_tok = DocumentToken.get_location_token(val=min(y0, y1), rnorm=ysize, self_closing=self_closing)
-        x1_tok = DocumentToken.get_location_token(val=max(x0, x1), rnorm=xsize, self_closing=self_closing)
-        y1_tok = DocumentToken.get_location_token(val=max(y0, y1), rnorm=ysize, self_closing=self_closing)
+        x0_tok = DocumentToken.get_location_token(val=x0, rnorm=xsize, self_closing=self_closing)
+        y0_tok = DocumentToken.get_location_token(val=y0, rnorm=ysize, self_closing=self_closing)
+        x1_tok = DocumentToken.get_location_token(val=x1, rnorm=xsize, self_closing=self_closing)
+        y1_tok = DocumentToken.get_location_token(val=y1, rnorm=ysize, self_closing=self_closing)
 
         loc_str = f"{x0_tok}{y0_tok}{x1_tok}{y1_tok}"
 
