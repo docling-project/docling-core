@@ -263,6 +263,16 @@ class DocLangParams(CommonParams):
         _advanced_field(detail="When True, the <text> wrapper is omitted whenever allowed."),
     ] = True
     label_mode: Annotated[LabelMode, _advanced_field()] = LabelMode.AUTO
+    add_named_groups: Annotated[
+        bool,
+        _advanced_field(
+            detail=(
+                "When True, a plain GroupItem is emitted as a <group> element carrying its "
+                "name and label, so the grouping survives a round trip. When False, the "
+                "group is transparent and only its children are emitted."
+            ),
+        ),
+    ] = False
     interpret_code_unknown_as_other: Annotated[
         bool,
         _advanced_field(
@@ -1668,6 +1678,17 @@ class DocLangFallbackSerializer(BaseFallbackSerializer):
         if isinstance(item, GroupItem):
             parts = doc_serializer.get_parts(item=item, **kwargs)
             text_res = delim.join([p.text for p in parts if p.text])
+            # ListGroup and InlineGroup have their own serializers and never reach
+            # the fallback; guard anyway so they can never be double-wrapped.
+            if params.add_named_groups and not isinstance(item, (ListGroup, InlineGroup)):
+                head = ""
+                if item.label and item.label != GroupLabel.UNSPECIFIED:
+                    head = _create_label_token(value=item.label.value)
+                text_res = (
+                    f"{DocLangVocabulary._create_group_token(name=item.name)}"
+                    f"{head}{text_res}"
+                    f"{DocLangVocabulary._create_group_token(closing=True)}"
+                )
             return create_ser_result(text=text_res, span_source=parts)
         elif isinstance(item, FieldRegionItem | FieldItem):
             parts = []

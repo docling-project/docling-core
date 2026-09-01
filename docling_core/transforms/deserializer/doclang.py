@@ -343,8 +343,13 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         elif name == DocLangToken.LIST.value:
             self._parse_list(doc=doc, el=el, parent=parent)
         elif name == DocLangToken.GROUP.value:
+            # A named group is an explicit GroupItem. The float + footnote wrapper
+            # never carries a name, so it must be checked first: an article group
+            # holding a picture or a table is not a float.
+            if group_name := el.getAttribute(DocLangAttributeKey.NAME.value):
+                self._parse_named_group(doc=doc, el=el, parent=parent, name=group_name)
             # Float + footnote siblings: parse as one unit (not a Docling GroupItem).
-            if self._first_child(el, DocLangToken.TABLE.value) or self._first_child(el, DocLangToken.INDEX.value):
+            elif self._first_child(el, DocLangToken.TABLE.value) or self._first_child(el, DocLangToken.INDEX.value):
                 self._parse_table(doc=doc, el=el, parent=parent)
             elif self._first_child(el, DocLangToken.PICTURE.value):
                 self._parse_picture(doc=doc, el=el, parent=parent)
@@ -356,6 +361,19 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             self._parse_picture(doc=doc, el=el, parent=parent)
         else:
             self._walk_children(doc=doc, el=el, parent=parent)
+
+    def _parse_named_group(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem], name: str) -> None:
+        r"""Rebuild a GroupItem from <group name="..."> and nest its children in it."""
+        head_nodes = [node for node in el.childNodes if isinstance(node, Element) and self._is_element_head_tag(node)]
+        label = GroupLabel.UNSPECIFIED
+        if label_value := self._label_value_from_nodes(head_nodes):
+            try:
+                label = GroupLabel(label_value)
+            except ValueError:
+                pass
+        group = doc.add_group(label=label, name=name, parent=parent)
+        self._source_recorder.bind_item(el, group)
+        self._walk_children(doc=doc, el=el, parent=group)
 
     def _walk_children(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
         for node in el.childNodes:
