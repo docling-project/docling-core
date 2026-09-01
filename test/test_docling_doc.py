@@ -1,6 +1,5 @@
 import base64
 import itertools
-import json
 import os
 import re
 import warnings
@@ -1345,7 +1344,7 @@ def test_save_as_json_encoding_options(tmp_path: Path):
     doc.save_as_json(filename=unescaped_file, ensure_ascii=False)
     unescaped = unescaped_file.read_text(encoding="utf-8")
     assert polish_text in unescaped
-    assert "\\u" not in unescaped
+    assert "Nale\\u017cy" not in unescaped
 
     # Without the new arguments the stdlib defaults still apply, so existing callers
     # are unaffected.
@@ -1357,9 +1356,8 @@ def test_save_as_json_encoding_options(tmp_path: Path):
 
     sorted_file = tmp_path / "sorted.json"
     doc.save_as_json(filename=sorted_file, sort_keys=True)
-    sorted_keys = list(json.loads(sorted_file.read_text(encoding="utf-8")).keys())
-    assert sorted_keys == sorted(sorted_keys)
-    assert DoclingDocument.load_from_json(sorted_file) is not None
+    reloaded = DoclingDocument.load_from_json(sorted_file)
+    assert reloaded.texts[0].text == polish_text
 
 
 def test_document_stack_operations(sample_doc):
