@@ -478,7 +478,9 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                     **my_kwargs,
                 )
             elif isinstance(my_item, _PageBreakNode):
-                part = _PageBreakSerResult(
+                # returned as such, so that the combining scope can tell a page
+                # break apart from ordinary content
+                return _PageBreakSerResult(
                     text=self._create_page_break(node=my_item),
                     node=my_item,
                 )

@@ -27,6 +27,11 @@ from docling_core.types.doc import (
     MetaFieldName,
     MetaUtils,
     NodeItem,
+    PictureClassificationClass,
+    PictureClassificationData,
+    PictureClassificationMetaField,
+    PictureClassificationPrediction,
+    PictureMeta,
     RefItem,
     SummaryMetaField,
     TopicsMetaField,
@@ -214,6 +219,42 @@ def test_md_ser_without_non_meta(doc_with_group_with_metadata: DoclingDocument):
     assert_or_generate_ground_truth(actual, exp_file)
 
 
+def test_md_ser_include_picture_classification_meta_path():
+    doc = DoclingDocument(name="test")
+    pic = doc.add_picture()
+    pic.meta = PictureMeta(
+        classification=PictureClassificationMetaField(
+            predictions=[PictureClassificationPrediction(class_name="chart", confidence=0.9)]
+        )
+    )
+
+    default_text = doc.export_to_markdown()
+    assert "Chart" in default_text
+
+    suppressed_text = doc.export_to_markdown(include_picture_classification=False)
+    assert "Chart" not in suppressed_text
+    assert "<!-- image -->" in suppressed_text
+
+
+def test_md_ser_include_picture_classification_legacy_path():
+    doc = DoclingDocument(name="test")
+    pic = doc.add_picture()
+    with pytest.warns(DeprecationWarning):
+        pic.annotations.append(
+            PictureClassificationData(
+                provenance="test",
+                predicted_classes=[PictureClassificationClass(class_name="chart", confidence=0.9)],
+            )
+        )
+
+    default_text = doc.export_to_markdown()
+    assert "chart" in default_text
+
+    suppressed_text = doc.export_to_markdown(include_picture_classification=False)
+    assert "chart" not in suppressed_text
+    assert "<!-- image -->" in suppressed_text
+
+
 def test_ser_custom_meta_serializer(doc_with_group_with_metadata: DoclingDocument):
     class SummaryMarkdownMetaSerializer(MarkdownMetaSerializer):
         @override
@@ -240,7 +281,7 @@ def test_ser_custom_meta_serializer(doc_with_group_with_metadata: DoclingDocumen
                 span_source=item if isinstance(item, DocItem) else [],
             )
 
-        def _serialize_meta_field(self, meta: BaseMeta, name: str, mark_meta: bool) -> str | None:
+        def _serialize_meta_field(self, meta: BaseMeta, name: str, mark_meta: bool, **kwargs: Any) -> str | None:
             if (field_val := getattr(meta, name)) is not None and isinstance(field_val, SummaryMetaField):
                 txt = field_val.text
                 return f"[{self._humanize_text(name, title=True)}] {txt}" if mark_meta else txt

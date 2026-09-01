@@ -563,7 +563,7 @@ class _OutlineMetaSerializer(MarkdownMetaSerializer):
         return create_ser_result()
 
     @override
-    def _serialize_meta_field(self, meta: BaseMeta, name: str, mark_meta: bool) -> str | None:
+    def _serialize_meta_field(self, meta: BaseMeta, name: str, mark_meta: bool, **kwargs: Any) -> str | None:
         if (field_val := getattr(meta, name)) is not None and isinstance(field_val, SummaryMetaField):
             txt = field_val.text
             return f"[{self._humanize_text(name, title=True)}] {txt}" if mark_meta else txt

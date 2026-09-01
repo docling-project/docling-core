@@ -1446,6 +1446,8 @@ class DoclingDocument(BaseModel):
         content_layer: Optional[ContentLayer] = None,
         formatting: Optional[Formatting] = None,
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        *,
+        source: Optional[SourceType] = None,
     ):
         """add_list_item.
 
@@ -1480,6 +1482,8 @@ class DoclingDocument(BaseModel):
         )
         if prov:
             list_item.prov.append(prov)
+        if source is not None:
+            list_item.source.append(source)
         if content_layer:
             list_item.content_layer = content_layer
 
@@ -1522,6 +1526,7 @@ class DoclingDocument(BaseModel):
                 content_layer=content_layer,
                 formatting=formatting,
                 hyperlink=hyperlink,
+                source=source,
             )
 
         elif label in [DocItemLabel.LIST_ITEM]:
@@ -1533,6 +1538,7 @@ class DoclingDocument(BaseModel):
                 content_layer=content_layer,
                 formatting=formatting,
                 hyperlink=hyperlink,
+                source=source,
             )
 
         elif label in [DocItemLabel.SECTION_HEADER]:
@@ -1544,6 +1550,7 @@ class DoclingDocument(BaseModel):
                 content_layer=content_layer,
                 formatting=formatting,
                 hyperlink=hyperlink,
+                source=source,
                 **kwargs,
             )
 
@@ -1556,6 +1563,7 @@ class DoclingDocument(BaseModel):
                 content_layer=content_layer,
                 formatting=formatting,
                 hyperlink=hyperlink,
+                source=source,
             )
         elif label in [DocItemLabel.FORMULA]:
             return self.add_formula(
@@ -1566,6 +1574,7 @@ class DoclingDocument(BaseModel):
                 content_layer=content_layer,
                 formatting=formatting,
                 hyperlink=hyperlink,
+                source=source,
             )
         elif label in [DocItemLabel.FIELD_HEADING]:
             return self.add_field_heading(
@@ -1576,6 +1585,7 @@ class DoclingDocument(BaseModel):
                 content_layer=content_layer,
                 formatting=formatting,
                 hyperlink=hyperlink,
+                source=source,
                 **kwargs,
             )
         elif label in [DocItemLabel.FIELD_VALUE]:
@@ -1587,6 +1597,7 @@ class DoclingDocument(BaseModel):
                 content_layer=content_layer,
                 formatting=formatting,
                 hyperlink=hyperlink,
+                source=source,
                 **kwargs,
             )
 
@@ -1610,7 +1621,7 @@ class DoclingDocument(BaseModel):
             )
             if prov:
                 text_item.prov.append(prov)
-            if source:
+            if source is not None:
                 text_item.source.append(source)
 
             if content_layer:
@@ -1628,6 +1639,7 @@ class DoclingDocument(BaseModel):
         prov: Optional[ProvenanceItem] = None,
         parent: Optional[NodeItem] = None,
         targets: Optional[list[Union[DocItem, tuple[DocItem, tuple[int, int]]]]] = None,
+        source: Optional[SourceType] = None,
     ):
         """Adds a comment to the document, assigning it to the given targets.
 
@@ -1643,6 +1655,7 @@ class DoclingDocument(BaseModel):
             prov=prov,
             parent=parent,
             content_layer=ContentLayer.NOTES,
+            source=source,
         )
         if targets:
             for target in targets:
@@ -1662,6 +1675,8 @@ class DoclingDocument(BaseModel):
         label: DocItemLabel = DocItemLabel.TABLE,
         content_layer: Optional[ContentLayer] = None,
         annotations: Optional[list[TableAnnotationType]] = None,
+        *,
+        source: Optional[SourceType] = None,
     ):
         """add_table.
 
@@ -1687,6 +1702,8 @@ class DoclingDocument(BaseModel):
         )
         if prov:
             tbl_item.prov.append(prov)
+        if source is not None:
+            tbl_item.source.append(source)
         if content_layer:
             tbl_item.content_layer = content_layer
 
@@ -1706,6 +1723,8 @@ class DoclingDocument(BaseModel):
         prov: Optional[ProvenanceItem] = None,
         parent: Optional[NodeItem] = None,
         content_layer: Optional[ContentLayer] = None,
+        *,
+        source: Optional[SourceType] = None,
     ):
         """add_picture.
 
@@ -1730,6 +1749,8 @@ class DoclingDocument(BaseModel):
         )
         if prov:
             fig_item.prov.append(prov)
+        if source is not None:
+            fig_item.source.append(source)
         if content_layer:
             fig_item.content_layer = content_layer
         if caption:
@@ -1749,6 +1770,8 @@ class DoclingDocument(BaseModel):
         content_layer: Optional[ContentLayer] = None,
         formatting: Optional[Formatting] = None,
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        *,
+        source: Optional[SourceType] = None,
     ):
         """add_title.
 
@@ -1776,6 +1799,8 @@ class DoclingDocument(BaseModel):
         )
         if prov:
             item.prov.append(prov)
+        if source is not None:
+            item.source.append(source)
         if content_layer:
             item.content_layer = content_layer
 
@@ -1795,6 +1820,8 @@ class DoclingDocument(BaseModel):
         content_layer: Optional[ContentLayer] = None,
         formatting: Optional[Formatting] = None,
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        *,
+        source: Optional[SourceType] = None,
     ):
         """add_code.
 
@@ -1829,6 +1856,8 @@ class DoclingDocument(BaseModel):
             code_item.content_layer = content_layer
         if prov:
             code_item.prov.append(prov)
+        if source is not None:
+            code_item.source.append(source)
         if caption:
             code_item.captions.append(caption.get_ref())
 
@@ -1846,6 +1875,8 @@ class DoclingDocument(BaseModel):
         content_layer: Optional[ContentLayer] = None,
         formatting: Optional[Formatting] = None,
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        *,
+        source: Optional[SourceType] = None,
     ):
         """add_formula.
 
@@ -1873,6 +1904,8 @@ class DoclingDocument(BaseModel):
         )
         if prov:
             section_header_item.prov.append(prov)
+        if source is not None:
+            section_header_item.source.append(source)
         if content_layer:
             section_header_item.content_layer = content_layer
 
@@ -1891,6 +1924,8 @@ class DoclingDocument(BaseModel):
         content_layer: Optional[ContentLayer] = None,
         formatting: Optional[Formatting] = None,
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        *,
+        source: Optional[SourceType] = None,
     ):
         """add_heading.
 
@@ -1920,6 +1955,8 @@ class DoclingDocument(BaseModel):
         )
         if prov:
             section_header_item.prov.append(prov)
+        if source is not None:
+            section_header_item.source.append(source)
         if content_layer:
             section_header_item.content_layer = content_layer
 
@@ -1933,6 +1970,8 @@ class DoclingDocument(BaseModel):
         graph: GraphData,
         prov: Optional[ProvenanceItem] = None,
         parent: Optional[NodeItem] = None,
+        *,
+        source: Optional[SourceType] = None,
     ):
         """add_key_values.
 
@@ -1953,6 +1992,8 @@ class DoclingDocument(BaseModel):
         )
         if prov:
             kv_item.prov.append(prov)
+        if source is not None:
+            kv_item.source.append(source)
 
         self.key_value_items.append(kv_item)
         parent.children.append(RefItem(cref=cref))
@@ -1964,6 +2005,8 @@ class DoclingDocument(BaseModel):
         graph: GraphData,
         prov: Optional[ProvenanceItem] = None,
         parent: Optional[NodeItem] = None,
+        *,
+        source: Optional[SourceType] = None,
     ):
         """add_form.
 
@@ -1984,6 +2027,8 @@ class DoclingDocument(BaseModel):
         )
         if prov:
             form_item.prov.append(prov)
+        if source is not None:
+            form_item.source.append(source)
 
         self.form_items.append(form_item)
         parent.children.append(RefItem(cref=cref))
@@ -1994,6 +2039,8 @@ class DoclingDocument(BaseModel):
         self,
         prov: Optional[ProvenanceItem] = None,
         parent: Optional[NodeItem] = None,
+        *,
+        source: Optional[SourceType] = None,
     ) -> FieldRegionItem:
         """add_field_region.
 
@@ -2012,6 +2059,8 @@ class DoclingDocument(BaseModel):
         )
         if prov:
             kv_item.prov.append(prov)
+        if source is not None:
+            kv_item.source.append(source)
 
         self.field_regions.append(kv_item)
         parent.children.append(RefItem(cref=cref))
@@ -2028,6 +2077,8 @@ class DoclingDocument(BaseModel):
         content_layer: Optional[ContentLayer] = None,
         formatting: Optional[Formatting] = None,
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        *,
+        source: Optional[SourceType] = None,
     ):
         """add_kv_heading.
 
@@ -2060,6 +2111,8 @@ class DoclingDocument(BaseModel):
         )
         if prov:
             item.prov.append(prov)
+        if source is not None:
+            item.source.append(source)
         if content_layer:
             item.content_layer = content_layer
 
@@ -2073,6 +2126,8 @@ class DoclingDocument(BaseModel):
         prov: Optional[ProvenanceItem] = None,
         parent: Optional[NodeItem] = None,
         content_layer: Optional[ContentLayer] = None,
+        *,
+        source: Optional[SourceType] = None,
     ) -> FieldItem:
         """add_kv_entry."""
         _parent = parent or self.body
@@ -2083,6 +2138,8 @@ class DoclingDocument(BaseModel):
         )
         if prov:
             item.prov.append(prov)
+        if source is not None:
+            item.source.append(source)
         if content_layer:
             item.content_layer = content_layer
 
@@ -2099,6 +2156,8 @@ class DoclingDocument(BaseModel):
         content_layer: Optional[ContentLayer] = None,
         formatting: Optional[Formatting] = None,
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        *,
+        source: Optional[SourceType] = None,
     ):
         """add_field_key.
 
@@ -2120,6 +2179,7 @@ class DoclingDocument(BaseModel):
             content_layer=content_layer,
             formatting=formatting,
             hyperlink=hyperlink,
+            source=source,
         )
         return item
 
@@ -2133,6 +2193,8 @@ class DoclingDocument(BaseModel):
         formatting: Optional[Formatting] = None,
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
         kind: Optional[typing.Literal["read_only", "fillable"]] = "read_only",
+        *,
+        source: Optional[SourceType] = None,
     ):
         """add_field_value.
 
@@ -2166,6 +2228,8 @@ class DoclingDocument(BaseModel):
         )
         if prov:
             item.prov.append(prov)
+        if source is not None:
+            item.source.append(source)
         if content_layer:
             item.content_layer = content_layer
 
@@ -2183,6 +2247,8 @@ class DoclingDocument(BaseModel):
         content_layer: Optional[ContentLayer] = None,
         formatting: Optional[Formatting] = None,
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        *,
+        source: Optional[SourceType] = None,
     ):
         """add_field_hint.
 
@@ -2203,6 +2269,7 @@ class DoclingDocument(BaseModel):
             content_layer=content_layer,
             formatting=formatting,
             hyperlink=hyperlink,
+            source=source,
         )
         return item
 
@@ -2215,6 +2282,8 @@ class DoclingDocument(BaseModel):
         content_layer: Optional[ContentLayer] = None,
         formatting: Optional[Formatting] = None,
         hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        *,
+        source: Optional[SourceType] = None,
     ):
         """add_marker.
 
@@ -2235,6 +2304,7 @@ class DoclingDocument(BaseModel):
             content_layer=content_layer,
             formatting=formatting,
             hyperlink=hyperlink,
+            source=source,
         )
         return item
 
@@ -3618,6 +3688,7 @@ class DoclingDocument(BaseModel):
         traverse_pictures: bool = False,
         mark_meta: bool = False,
         use_legacy_annotations: Optional[bool] = None,  # deprecated
+        include_picture_classification: bool = True,
     ):
         """Save to markdown."""
         if isinstance(filename, str):
@@ -3650,6 +3721,7 @@ class DoclingDocument(BaseModel):
             traverse_pictures=traverse_pictures,
             use_legacy_annotations=use_legacy_annotations,
             mark_meta=mark_meta,
+            include_picture_classification=include_picture_classification,
         )
 
         filename.write_text(md_out, encoding="utf-8")
@@ -3680,6 +3752,7 @@ class DoclingDocument(BaseModel):
         allowed_meta_names: Optional[set[str]] = None,
         blocked_meta_names: Optional[set[str]] = None,
         mark_meta: bool = False,
+        include_picture_classification: bool = True,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -3742,6 +3815,10 @@ class DoclingDocument(BaseModel):
         :type allowed_meta_names: Optional[set[str]] = None
         :param blocked_meta_names: Optional[set[str]]: Meta names to block; takes precedence over allowed_meta_names.
         :type blocked_meta_names: Optional[set[str]] = None
+        :param include_picture_classification: bool: Whether to include the picture
+            classification prediction (the image's predicted class) in the export.
+            (Default value = True).
+        :type include_picture_classification: bool = True
         """
         from docling_core.transforms.serializer.markdown import (
             MarkdownDocSerializer,
@@ -3780,6 +3857,7 @@ class DoclingDocument(BaseModel):
                 mark_annotations=mark_annotations,
                 compact_tables=compact_tables,
                 traverse_pictures=traverse_pictures,
+                include_picture_classification=include_picture_classification,
             ),
         )
         ser_res = serializer.serialize()
@@ -4763,24 +4841,34 @@ class DoclingDocument(BaseModel):
 
     def export_to_doclang(
         self,
+        *,
+        add_named_groups: bool = False,
     ) -> str:
-        """Export to DocLang."""
+        """Export to DocLang.
+
+        Args:
+            add_named_groups: When True, a plain ``GroupItem`` is emitted as a
+                ``<group name="...">`` element instead of being transparent, so
+                the grouping survives a round trip.
+        """
         from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 
         serializer = DocLangDocSerializer(
             doc=self,
-            params=DocLangParams(),
+            params=DocLangParams(add_named_groups=add_named_groups),
         )
         return serializer.serialize().text
 
     def save_as_doclang(
         self,
         filename: Union[str, Path],
+        *,
+        add_named_groups: bool = False,
     ) -> None:
         """Save the document as DocLang."""
         if isinstance(filename, str):
             filename = Path(filename)
-        out = self.export_to_doclang()
+        out = self.export_to_doclang(add_named_groups=add_named_groups)
         filename.write_text(f"{out}\n", encoding="utf-8")
 
     def save_as_doclang_archive(
@@ -4789,11 +4877,15 @@ class DoclingDocument(BaseModel):
         *,
         artifacts_dir: Optional[Path] = None,
         validate: bool = False,
+        add_named_groups: bool = False,
     ) -> None:
         """Save the document as a DocLang OPC archive (``.dclx``).
 
         Picture and page images are always stored outside the markup, under
         ``assets/`` and ``pages/`` in the archive respectively.
+
+        ``add_named_groups`` emits plain ``GroupItem``s as ``<group name="...">``
+        elements so the grouping survives a round trip.
         """
         from doclang import pack
 
@@ -4815,7 +4907,10 @@ class DoclingDocument(BaseModel):
 
             serializer = DocLangDocSerializer(
                 doc=doc,
-                params=DocLangParams(image_mode=ImageRefMode.REFERENCED),
+                params=DocLangParams(
+                    image_mode=ImageRefMode.REFERENCED,
+                    add_named_groups=add_named_groups,
+                ),
             )
             document_path = staging_root / "document.dclg.xml"
             document_path.write_text(f"{serializer.serialize().text}\n", encoding="utf-8")

@@ -1,0 +1,106 @@
+{
+    "root": [
+        {
+            "text": "Page Header",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "furniture",
+                        "label": "page_header",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 1.0,
+                                    "t": 4.0,
+                                    "r": 3.0,
+                                    "b": 2.0,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    11
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "text": "Main body content",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/1",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 5.0,
+                                    "t": 8.0,
+                                    "r": 7.0,
+                                    "b": 6.0,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    17
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "text": "Page Footer",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/2",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "furniture",
+                        "label": "page_footer",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 9.0,
+                                    "t": 12.0,
+                                    "r": 11.0,
+                                    "b": 10.0,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    11
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

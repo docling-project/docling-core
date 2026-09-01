@@ -1,3 +1,42 @@
+## [v2.93.0](https://github.com/docling-project/docling-core/releases/tag/v2.93.0) - 2026-09-01
+
+### Feature
+
+* **markdown:** Make image class suppressible ([#726](https://github.com/docling-project/docling-core/issues/726)) ([`dedc35d`](https://github.com/docling-project/docling-core/commit/dedc35da4c99e3ae597423358e5648eb29ee3cad))
+
+### Fix
+
+* Updated the doclang serializer for groups ([#736](https://github.com/docling-project/docling-core/issues/736)) ([`a222564`](https://github.com/docling-project/docling-core/commit/a222564ef884add7be7a753ee2f5ff070f302567))
+* **markdown:** Suppress `FieldRegionItem` and `FieldItem` serialization ([#724](https://github.com/docling-project/docling-core/issues/724)) ([`b957d96`](https://github.com/docling-project/docling-core/commit/b957d966d87df51bade148ab1a406b0463a3b92d))
+
+## [v2.92.0](https://github.com/docling-project/docling-core/releases/tag/v2.92.0) - 2026-08-19
+
+### Feature
+
+* **compat:** DoclingDocument downgrade projector system ([#703](https://github.com/docling-project/docling-core/issues/703)) ([`f756342`](https://github.com/docling-project/docling-core/commit/f756342105788217a023b5dc21d45c9b67f82533))
+
+### Fix
+
+* **markdown:** Serialize newlines as GFM hard line breaks ([#721](https://github.com/docling-project/docling-core/issues/721)) ([`289c2e5`](https://github.com/docling-project/docling-core/commit/289c2e50fb63af07960dbda595a89fe5da42b534))
+* **chunker:** Forward content layers from serializer params to doc traversal ([#593](https://github.com/docling-project/docling-core/issues/593)) ([`965a6bb`](https://github.com/docling-project/docling-core/commit/965a6bb6a892a7b8d0cbd652e276ac7438d1f0d5))
+* **serializer:** Use block-level spacing for page breaks inside lists ([#717](https://github.com/docling-project/docling-core/issues/717)) ([`4252788`](https://github.com/docling-project/docling-core/commit/4252788e6a3bfb04cd0fe98fd678d09d50c3fd18))
+
+### Performance
+
+* Contextualize function() skip excluded fields ([#581](https://github.com/docling-project/docling-core/issues/581)) ([`ec0069c`](https://github.com/docling-project/docling-core/commit/ec0069c6ecee2faefd36e23801a31e00bf490957))
+
+## [v2.91.0](https://github.com/docling-project/docling-core/releases/tag/v2.91.0) - 2026-08-06
+
+### Feature
+
+* Update the add_<...> items with source uniformly ([#711](https://github.com/docling-project/docling-core/issues/711)) ([`f39885b`](https://github.com/docling-project/docling-core/commit/f39885b8c53546eefeb50a8c09fcd30cf9c734d2))
+
+## [v2.90.0](https://github.com/docling-project/docling-core/releases/tag/v2.90.0) - 2026-08-03
+
+### Feature
+
+* Accept EBCDIC MIME types in DocumentOrigin ([#707](https://github.com/docling-project/docling-core/issues/707)) ([`d93e83f`](https://github.com/docling-project/docling-core/commit/d93e83f7f125ac059ecde498e66861c84a0414c0))
+
 ## [v2.89.0](https://github.com/docling-project/docling-core/releases/tag/v2.89.0) - 2026-07-31
 
 ### Feature

@@ -1,6 +1,10 @@
 from pathlib import Path
+from typing import ClassVar
+
+from pydantic import Field
 
 from docling_core.transforms.chunker import HierarchicalChunker
+from docling_core.transforms.chunker.base import BaseChunk, BaseChunker, BaseMeta
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
     ChunkingSerializerProvider,
@@ -9,7 +13,7 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
 )
 from docling_core.transforms.serializer.html import HTMLDocSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
-from docling_core.types.doc import DocItemLabel, DoclingDocument, PictureItem, TableData, TextItem
+from docling_core.types.doc import ContentLayer, DocItemLabel, DoclingDocument, PictureItem, TableData, TextItem
 
 from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_rich_table_doc
 
@@ -128,6 +132,38 @@ def test_traverse_pictures():
     assert total_items_traverse > total_items_default, (
         f"With traverse_pictures=True, more doc_items should be included in chunks. "
         f"Got {total_items_traverse} vs {total_items_default}"
+    )
+
+
+def test_chunk_multiple_content_layers(doc_with_layers: DoclingDocument):
+    """Test that chunking can include multiple content layers in the output."""
+
+    default_chunker = HierarchicalChunker()
+    default_text = "\n".join(chunk.text for chunk in default_chunker.chunk(dl_doc=doc_with_layers))
+
+    assert "Main body content" in default_text
+    assert "Page Header" not in default_text
+    assert "Page Footer" not in default_text
+
+    class MultiLayerSerializerProvider(ChunkingSerializerProvider):
+        def get_serializer(self, doc: DoclingDocument):
+            params = MarkdownParams(layers={ContentLayer.BODY, ContentLayer.FURNITURE})
+            return ChunkingDocSerializer(doc=doc, params=params)
+
+    multilayer_chunker = HierarchicalChunker(
+        serializer_provider=MultiLayerSerializerProvider(),
+    )
+    multilayer_chunks = list(multilayer_chunker.chunk(dl_doc=doc_with_layers))
+    multilayer_text = "\n".join(chunk.text for chunk in multilayer_chunks)
+
+    assert "Main body content" in multilayer_text
+    assert "Page Header" in multilayer_text
+    assert "Page Footer" in multilayer_text
+
+    act_data = dict(root=[DocChunk.model_validate(chunk).export_json_dict() for chunk in multilayer_chunks])
+    assert_or_generate_json_ground_truth(
+        act_data,
+        "test/data/chunker/0f_out_chunks_multilayer.json",
     )
 
 
@@ -261,3 +297,32 @@ def test_chunk_rich_table_custom_serializer(rich_table_doc: DoclingDocument):
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
 
     assert_or_generate_json_ground_truth(act_data, "test/data/chunker/0c_out_chunks.json")
+
+
+def test_contextualize_excludes_fields_when_alias_differs_from_attribute_name():
+    """contextualize() must not leak excluded fields even when alias != attribute name.
+
+    This guards against the assumption that excluded_embed entries are Python
+    attribute names. model_dump(exclude=...) requires attribute names; if a
+    subclass uses an alias that differs, the raw alias would be silently ignored
+    and the field would appear in the embedding context.
+    """
+
+    class AliasedMeta(BaseMeta):
+        visible: str = Field(default="keep me", alias="visibleAlias")
+        hidden: str = Field(default="drop me", alias="hiddenAlias")
+        excluded_embed: ClassVar[list[str]] = ["hiddenAlias"]
+
+    class AliasedChunk(BaseChunk):
+        meta: AliasedMeta
+
+    class _ConcreteChunker(BaseChunker):
+        def chunk(self, dl_doc, **kwargs):
+            return iter([])
+
+    chunk = AliasedChunk(text="body", meta=AliasedMeta())
+    result = _ConcreteChunker().contextualize(chunk)
+
+    assert "drop me" not in result
+    assert "keep me" in result
+    assert "body" in result
