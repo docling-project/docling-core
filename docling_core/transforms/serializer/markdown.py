@@ -8,7 +8,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Annotated, Any, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, Field, PositiveInt
+from pydantic import AnyUrl, BaseModel, Field, PositiveInt, model_validator
 from tabulate import _column_type, tabulate
 from typing_extensions import override
 
@@ -147,6 +147,14 @@ class OrigListItemMarkerMode(str, Enum):
     AUTO = "auto"
 
 
+class FurnitureMode(str, Enum):
+    """Display mode for document furniture (headers/footers)."""
+
+    NONE = "none"
+    ALL = "all"
+    DISTINCT = "distinct"
+
+
 class MarkdownParams(CommonParams):
     """Markdown-specific serialization parameters."""
 
@@ -186,12 +194,24 @@ class MarkdownParams(CommonParams):
             )
         ),
     ] = False
+    furniture_mode: FurnitureMode = Field(
+        default=FurnitureMode.NONE,
+        description="Control whether headers and footers are serialized (none, all, or distinct).",
+    )
+      
     include_picture_classification: bool = Field(
         default=True,
         description="Include the picture classification prediction (the image's predicted class).",
     )
 
+    @model_validator(mode="after")
+    def _adjust_layers_for_furniture(self) -> "MarkdownParams":
+        """Automatically include FURNITURE layer if mode is not NONE."""
+        if self.furniture_mode != FurnitureMode.NONE:
+            self.layers.add(ContentLayer.FURNITURE)
+        return self
 
+      
 class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
     """Markdown-specific text item serializer."""
 
@@ -1034,6 +1054,30 @@ class MarkdownDocSerializer(DocSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a given node."""
+
+        if item is not None and getattr(item, "content_layer", None) == ContentLayer.FURNITURE:
+            # 'none' mode: skip completely
+            if self.params.furniture_mode == FurnitureMode.NONE:
+                return create_ser_result()
+
+            # 'distinct' mode: deduplicate based on text
+            if self.params.furniture_mode == FurnitureMode.DISTINCT:
+                # Initialize the tracking set on the serializer instance if it doesn't exist
+                if not hasattr(self, "_seen_furniture"):
+                    self._seen_furniture: set[str] = set()
+
+                # Extract text for comparison (fallback to ref if no text exists)
+                item_text = getattr(item, "text", None)
+                if not item_text:
+                    item_text = item.self_ref
+
+                # If we've seen this exact header/footer text before, skip it
+                if item_text in self._seen_furniture:
+                    return create_ser_result()
+
+                # Otherwise, mark it as seen and proceed
+                self._seen_furniture.add(item_text)
+
         return super().serialize(
             item=item,
             list_level=list_level,
