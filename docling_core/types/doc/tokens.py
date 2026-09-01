@@ -302,12 +302,15 @@ class DocumentToken(str, Enum):
         ysize: int = 500,  # TODO review
         self_closing: bool = False,
     ):
-        """Get the location string given bbox and page-dim."""
-        # Normalize potentially inverted coordinates: near-degenerate elements
-        # (e.g. a thin rule whose layout-model regression produced a slightly
-        # inverted bbox) can arrive with bbox[0] > bbox[2] or bbox[1] > bbox[3].
-        # After sorting, left <= right and top <= bottom is guaranteed, so the
-        # ratios x0 <= x1 and y0 <= y1 follow directly from positive page dims.
+        """Get the location string given bbox and page-dim.
+
+        Inverted coordinates are normalized silently: near-degenerate elements
+        (e.g. a thin rule whose layout-model regression produced a slightly
+        inverted bbox) can arrive with `bbox[0] > bbox[2]` or
+        `bbox[1] > bbox[3]`. After sorting, `left <= right` and
+        `top <= bottom` is guaranteed, so the ratios `x0 <= x1` and
+        `y0 <= y1` follow directly from positive page dimensions.
+        """
         left, right = sorted((bbox[0], bbox[2]))
         top, bottom = sorted((bbox[1], bbox[3]))
 
