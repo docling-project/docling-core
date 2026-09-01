@@ -2361,9 +2361,7 @@ def test_named_group_escapes_its_name() -> None:
     assert "<label" not in text
 
     parsed = _deserialize(text, validate=False)
-    assert [(g.label, g.name) for g in parsed.groups] == [
-        (GroupLabel.UNSPECIFIED, 'a & "b"')
-    ]
+    assert [(g.label, g.name) for g in parsed.groups] == [(GroupLabel.UNSPECIFIED, 'a & "b"')]
 
 
 def test_named_group_keeps_a_picture_and_a_table_inside() -> None:
@@ -2408,10 +2406,7 @@ def test_named_group_keeps_a_picture_and_a_table_inside() -> None:
 
 def test_unnamed_group_markup_still_wraps_floats() -> None:
     """The float+footnote ``<group>`` wrapper keeps parsing as one unit."""
-    xml = (
-        "<doclang><group><picture><caption>cap</caption></picture>"
-        "<footnote>note</footnote></group></doclang>"
-    )
+    xml = "<doclang><group><picture><caption>cap</caption></picture><footnote>note</footnote></group></doclang>"
     doc = _deserialize(xml, validate=False)
     assert doc.groups == []
     assert len(doc.pictures) == 1

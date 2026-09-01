@@ -362,9 +362,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         else:
             self._walk_children(doc=doc, el=el, parent=parent)
 
-    def _parse_named_group(
-        self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem], name: str
-    ) -> None:
+    def _parse_named_group(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem], name: str) -> None:
         r"""Rebuild a GroupItem from <group name="..."> and nest its children in it."""
         head_nodes = [node for node in el.childNodes if isinstance(node, Element) and self._is_element_head_tag(node)]
         label = GroupLabel.UNSPECIFIED
