@@ -6,7 +6,7 @@ import re
 import textwrap
 from enum import Enum
 from pathlib import Path, PurePath
-from typing import Annotated, Any, Optional, Union
+from typing import Annotated, Any, Final, Optional, Union
 from urllib.parse import quote, urlsplit, urlunsplit
 
 from pydantic import AnyUrl, BaseModel, Field, PositiveInt
@@ -650,6 +650,18 @@ class MarkdownTableSerializer(BaseTableSerializer):
 class MarkdownPictureSerializer(BasePictureSerializer):
     """Markdown-specific picture item serializer."""
 
+    _URI_KEEP_CHARS: Final[str] = "/%:@+,;=~$!&'*"
+    """Characters that survive percent-encoding in a Markdown link destination.
+
+    Includes the RFC 3986 reserved characters that carry meaning in a URI, plus
+    `%` so that an already-encoded destination is not encoded a second time.
+    Whitespace and parentheses are deliberately absent: they would end a Markdown
+    inline link.
+    """
+
+    _WINDOWS_DRIVE_RE: Final[re.Pattern[str]] = re.compile(r"[A-Za-z]:/")
+    """Matches the drive prefix of an absolute Windows path, e.g. `C:/`."""
+
     @override
     def serialize(
         self,
@@ -766,8 +778,13 @@ class MarkdownPictureSerializer(BasePictureSerializer):
         scheme is passed through, since dropping it would turn an absolute filesystem
         reference into a root-relative URL.
 
-        Known limitation: behavior is unknown if value is a POSIX filename, containing
-        an actual backslash in the filename.
+        Known limitation: a backslash in a `PosixPath` string is ambiguous.
+        It may be a Windows separator surviving a JSON round-trip (correct to
+        convert) or a literal filename character (where converting it to `/`
+        would split one component into two). The two cases are indistinguishable
+        from `str()`. In practice this is not a concern because `ImageRef.uri`
+        is always populated from native filesystem operations, so a `PosixPath`
+        can only carry a literal backslash if the caller explicitly constructed one.
 
         Args:
             value: The URL or path to encode.
@@ -776,16 +793,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             A percent-encoded Markdown link destination.
         """
 
-        # Characters that survive percent-encoding in a link destination.
-        # The RFC 3986 reserved characters that carry meaning in a URI, plus ``%`` so that an
-        # already-encoded destination is not encoded a second time. Whitespace and parentheses
-        # are deliberately absent: they would end a Markdown inline link.
-        _URI_KEEP_CHARS: str = "/%:@+,;=~$!&'*"
-
-        # Matches the drive prefix of an absolute Windows path, e.g. ``C:/``.
-        _WINDOWS_DRIVE_RE: re.Pattern = re.compile(r"[A-Za-z]:/")
-
-        keep = _URI_KEEP_CHARS
+        keep = MarkdownPictureSerializer._URI_KEEP_CHARS
         # A backslash is both the Windows separator and a Markdown escape character, and
         # is read as a separator whatever flavour the path arrives in: a document authored
         # on Windows keeps its backslashes once it is re-read on POSIX, where the flavour
@@ -797,7 +805,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             host, _, tail = s.lstrip("/").partition("/")  # get the end of the path
             # file://<host>/<path>, with <host> being a possibly empty string.
             return urlunsplit(("file", host, quote(f"/{tail}", safe=keep), "", ""))
-        if _WINDOWS_DRIVE_RE.match(s):  # In case of a Windows filename with drive letter
+        if MarkdownPictureSerializer._WINDOWS_DRIVE_RE.match(s):  # In case of a Windows filename with drive letter
             # file://<full_path_with_filename>
             return urlunsplit(("file", "", quote(f"/{s}", safe=keep), "", ""))
 
