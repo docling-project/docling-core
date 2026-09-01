@@ -1,3 +1,14 @@
+## [v2.93.0](https://github.com/docling-project/docling-core/releases/tag/v2.93.0) - 2026-09-01
+
+### Feature
+
+* **markdown:** Make image class suppressible ([#726](https://github.com/docling-project/docling-core/issues/726)) ([`dedc35d`](https://github.com/docling-project/docling-core/commit/dedc35da4c99e3ae597423358e5648eb29ee3cad))
+
+### Fix
+
+* Updated the doclang serializer for groups ([#736](https://github.com/docling-project/docling-core/issues/736)) ([`a222564`](https://github.com/docling-project/docling-core/commit/a222564ef884add7be7a753ee2f5ff070f302567))
+* **markdown:** Suppress `FieldRegionItem` and `FieldItem` serialization ([#724](https://github.com/docling-project/docling-core/issues/724)) ([`b957d96`](https://github.com/docling-project/docling-core/commit/b957d966d87df51bade148ab1a406b0463a3b92d))
+
 ## [v2.92.0](https://github.com/docling-project/docling-core/releases/tag/v2.92.0) - 2026-08-19
 
 ### Feature
