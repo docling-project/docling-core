@@ -3565,8 +3565,28 @@ class DoclingDocument(BaseModel):
         indent: int = 2,
         coord_precision: Optional[int] = None,
         confid_precision: Optional[int] = None,
-    ):
-        """Save as json."""
+        *,
+        ensure_ascii: bool = True,
+        sort_keys: bool = False,
+    ) -> None:
+        """Save the document to a JSON file.
+
+        Args:
+            filename: Output file path.
+            artifacts_dir: Directory for referenced image artifacts. Defaults to a
+                subdirectory next to `filename`.
+            image_mode: How to handle embedded images.
+            indent: Indentation level passed to `json.dumps`.
+            coord_precision: Decimal precision for bounding-box coordinates. If
+                `None`, full precision is used.
+            confid_precision: Decimal precision for confidence scores. If `None`,
+                full precision is used.
+            ensure_ascii: When `True` (the default), non-ASCII characters are
+                escaped as `\\uXXXX` sequences. Set to `False` to write literal
+                Unicode characters.
+            sort_keys: When `True`, object keys are sorted alphabetically,
+                producing deterministic output suitable for diffing.
+        """
         if isinstance(filename, str):
             filename = Path(filename)
         artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
@@ -3583,7 +3603,10 @@ class DoclingDocument(BaseModel):
         )
 
         out = new_doc.export_to_dict(coord_precision=coord_precision, confid_precision=confid_precision)
-        filename.write_text(json.dumps(out, indent=indent), encoding="utf-8")
+        filename.write_text(
+            json.dumps(out, indent=indent, ensure_ascii=ensure_ascii, sort_keys=sort_keys),
+            encoding="utf-8",
+        )
 
     @classmethod
     def load_from_json(cls, filename: Union[str, Path]) -> "DoclingDocument":

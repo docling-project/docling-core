@@ -1335,6 +1335,31 @@ def test_save_to_disk(sample_doc):
     assert True
 
 
+def test_save_as_json_encoding_options(tmp_path: Path):
+    polish_text = "Należy wówczas zetrzeć warstwę"
+    doc = DoclingDocument(name="non_ascii")
+    doc.add_text(label=DocItemLabel.TEXT, text=polish_text)
+
+    unescaped_file = tmp_path / "unescaped.json"
+    doc.save_as_json(filename=unescaped_file, ensure_ascii=False)
+    unescaped = unescaped_file.read_text(encoding="utf-8")
+    assert polish_text in unescaped
+    assert "Nale\\u017cy" not in unescaped
+
+    # Without the new arguments the stdlib defaults still apply, so existing callers
+    # are unaffected.
+    escaped_file = tmp_path / "escaped.json"
+    doc.save_as_json(filename=escaped_file)
+    escaped = escaped_file.read_text(encoding="utf-8")
+    assert polish_text not in escaped
+    assert "Nale\\u017cy" in escaped
+
+    sorted_file = tmp_path / "sorted.json"
+    doc.save_as_json(filename=sorted_file, sort_keys=True)
+    reloaded = DoclingDocument.load_from_json(sorted_file)
+    assert reloaded.texts[0].text == polish_text
+
+
 def test_document_stack_operations(sample_doc):
     # _print(document=doc)
 
