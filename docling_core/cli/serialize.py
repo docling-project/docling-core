@@ -58,7 +58,7 @@ def serialize(
         ),
     ] = OutputFormat.HTML,
     output: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option(
             "--output",
             "-o",
@@ -81,7 +81,7 @@ def serialize(
         ),
     ] = True,
     version: Annotated[
-        Optional[bool],
+        bool | None,
         typer.Option(
             "--version",
             callback=version_callback,

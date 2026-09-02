@@ -156,8 +156,8 @@ class MarkdownParams(CommonParams):
     image_placeholder: str = "<!-- image -->"
     enable_chart_tables: bool = True
     indent: int = 4
-    wrap_width: Optional[PositiveInt] = None
-    page_break_placeholder: Optional[str] = None  # e.g. "<!-- page break -->"
+    wrap_width: PositiveInt | None = None
+    page_break_placeholder: str | None = None  # e.g. "<!-- page break -->"
     escape_underscores: bool = True
     escape_html: bool = True
     mark_meta: bool = Field(default=False, description="Mark meta sections.")
@@ -227,7 +227,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         doc: DoclingDocument,
         is_inline_scope: bool = False,
         in_table_cell: bool = False,
-        visited: Optional[set[str]] = None,  # refs of visited items
+        visited: set[str] | None = None,  # refs of visited items
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize the passed text item to Markdown.
@@ -383,7 +383,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
     def _format_heading(
         self,
         text: str,
-        item: Union[TitleItem, SectionHeaderItem],
+        item: TitleItem | SectionHeaderItem,
         in_table_cell: bool = False,
     ) -> str:
         """Format a heading or title item as a Markdown heading string.
@@ -453,7 +453,7 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
         *,
         include_picture_classification: bool = True,
         **kwargs: Any,
-    ) -> Optional[str]:
+    ) -> str | None:
         if (field_val := getattr(meta, name)) is not None:
             if isinstance(field_val, SummaryMetaField):
                 txt = field_val.text
@@ -801,7 +801,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
         return create_ser_result(text=text_res, span_source=item)
 
     @staticmethod
-    def _escape_uri_path(value: Union[AnyUrl, PurePath]) -> str:
+    def _escape_uri_path(value: AnyUrl | PurePath) -> str:
         """Encode a URL or filesystem path as a Markdown link destination.
 
         Handles URLs of any scheme (https/s3/ftp/...) as well as POSIX and Windows
@@ -922,7 +922,7 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
         doc: DoclingDocument,
         list_level: int = 0,
         is_inline_scope: bool = False,
-        visited: Optional[set[str]] = None,  # refs of visited items
+        visited: set[str] | None = None,  # refs of visited items
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
@@ -981,7 +981,7 @@ class MarkdownInlineSerializer(BaseInlineSerializer):
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         list_level: int = 0,
-        visited: Optional[set[str]] = None,  # refs of visited items
+        visited: set[str] | None = None,  # refs of visited items
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
@@ -1060,7 +1060,7 @@ class MarkdownDocSerializer(DocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: Union[AnyUrl, Path],
+        hyperlink: AnyUrl | Path,
         **kwargs: Any,
     ):
         """Apply Markdown-specific hyperlink serialization."""
@@ -1097,8 +1097,8 @@ class MarkdownDocSerializer(DocSerializer):
         *,
         escape_html: bool = True,
         escape_underscores: bool = True,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply some text post-processing steps."""
@@ -1140,10 +1140,10 @@ class MarkdownDocSerializer(DocSerializer):
     def serialize(
         self,
         *,
-        item: Optional[NodeItem] = None,
+        item: NodeItem | None = None,
         list_level: int = 0,
         is_inline_scope: bool = False,
-        visited: Optional[set[str]] = None,
+        visited: set[str] | None = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a given node."""

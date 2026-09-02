@@ -81,7 +81,7 @@ def validate_dclg_xml(
 
 
 def validate_dclg_file(
-    path: Union[str, Path],
+    path: str | Path,
     *,
     allow_empty_namespace: bool = True,
 ) -> None:

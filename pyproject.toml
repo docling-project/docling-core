@@ -188,8 +188,6 @@ ignore = [
   "PL",     # Pylint
   "RUF005", # Consider ... instead of concatenation
   "RUF012", # Mutable Class Attributes
-  "UP007",  # Option and Union
-  "UP045",  # Use `X | None` for type annotations
 ]
 
 [tool.ruff.lint.pep8-naming]

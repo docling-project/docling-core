@@ -43,7 +43,7 @@ class StandardCodeChunkingStrategy(BaseCodeChunkingStrategy):
         self.chunker_kwargs = chunker_kwargs
         self._chunker_cache: dict[CodeLanguageLabel, _CodeChunker] = {}
 
-    def _get_chunker(self, language: CodeLanguageLabel) -> Optional[_CodeChunker]:
+    def _get_chunker(self, language: CodeLanguageLabel) -> _CodeChunker | None:
         """Get or create a chunker for the given language."""
         if chunker_instance := self._chunker_cache.get(language):
             return chunker_instance
@@ -59,8 +59,8 @@ class StandardCodeChunkingStrategy(BaseCodeChunkingStrategy):
         *,
         item: CodeItem,
         doc: DoclingDocument,
-        doc_serializer: Optional[BaseDocSerializer] = None,
-        visited: Optional[set[str]] = None,
+        doc_serializer: BaseDocSerializer | None = None,
+        visited: set[str] | None = None,
         **kwargs: Any,
     ) -> Iterator[CodeChunk]:
         """Chunk a single code item using the appropriate language chunker."""

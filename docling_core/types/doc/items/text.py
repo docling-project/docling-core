@@ -39,8 +39,8 @@ class TextItem(DocItem):
     orig: str  # untreated representation
     text: str  # sanitized representation
 
-    formatting: Optional[Formatting] = None
-    hyperlink: Optional[Union[AnyUrl, Path]] = Field(union_mode="left_to_right", default=None)
+    formatting: Formatting | None = None
+    hyperlink: AnyUrl | Path | None = Field(union_mode="left_to_right", default=None)
 
     @deprecated("Use export_to_doctags() instead.")
     def export_to_document_tokens(self, *args, **kwargs):

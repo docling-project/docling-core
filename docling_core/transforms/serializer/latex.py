@@ -70,7 +70,7 @@ class LaTeXParams(CommonParams):
     indent: int = 2  # spaces for nested lists
 
     # If not None, emitted where page breaks occur (e.g., "\\newpage")
-    page_break_command: Optional[str] = None
+    page_break_command: str | None = None
 
     # Escape LaTeX special characters in text
     escape_latex: bool = True
@@ -600,7 +600,7 @@ class LaTeXDocSerializer(DocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: Union[AnyUrl, Path],
+        hyperlink: AnyUrl | Path,
         **kwargs: Any,
     ) -> str:
         """Return LaTeX hyperlink command (requires ``hyperref`` package)."""
@@ -675,7 +675,7 @@ class LaTeXDocSerializer(DocSerializer):
         """Return True if page break replacement is enabled."""
         return self.params.page_break_command is not None
 
-    def _post_process_title(self, body_text: str) -> tuple[Optional[str], str, bool]:
+    def _post_process_title(self, body_text: str) -> tuple[str | None, str, bool]:
         r"""Detect and relocate LaTeX \title{...} commands.
 
         - Extracts the first \title{...} command found in the body.
@@ -703,8 +703,8 @@ class LaTeXDocSerializer(DocSerializer):
         self,
         text: str,
         *,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply LaTeX escaping before formatting/hyperlinks."""

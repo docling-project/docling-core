@@ -46,7 +46,7 @@ class KeyValueVisualizer(BaseVisualizer):
         show_cell_id: bool = False  # annotate each rectangle with its cell_id
         content_layers: set[ContentLayer] = set(ContentLayer)
 
-    base_visualizer: Optional[BaseVisualizer] = None
+    base_visualizer: BaseVisualizer | None = None
     params: Params = Params()
 
     # ---------------------------------------------------------------------
@@ -73,7 +73,7 @@ class KeyValueVisualizer(BaseVisualizer):
         main_draw = ImageDraw.Draw(image)
 
         # Choose a small truetype font if available, otherwise default bitmap font
-        font: Union[ImageFont.ImageFont, FreeTypeFont]
+        font: ImageFont.ImageFont | FreeTypeFont
         try:
             font = ImageFont.truetype("arial.ttf", 12)
         except OSError:
@@ -197,9 +197,9 @@ class KeyValueVisualizer(BaseVisualizer):
         self,
         *,
         doc: DoclingDocument,
-        included_content_layers: Optional[set[ContentLayer]] = None,
+        included_content_layers: set[ContentLayer] | None = None,
         **kwargs,
-    ) -> dict[Optional[int], Image]:
+    ) -> dict[int | None, Image]:
         """Return page-wise images with key/value overlay (incl. base layer)."""
         base_images = (
             self.base_visualizer.get_visualization(doc=doc, included_content_layers=included_content_layers, **kwargs)
@@ -210,7 +210,7 @@ class KeyValueVisualizer(BaseVisualizer):
         if included_content_layers is None:
             included_content_layers = set(ContentLayer)
 
-        images: dict[Optional[int], Image] = {}
+        images: dict[int | None, Image] = {}
 
         # Ensure we have page images to draw on
         for page_nr, page in doc.pages.items():

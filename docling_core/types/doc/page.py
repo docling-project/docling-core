@@ -385,22 +385,22 @@ class PdfTextCell(TextCell):
 class PdfWidget(OrderedElement):
     rect: BoundingRectangle
 
-    widget_text: Optional[str] = None
-    widget_description: Optional[str] = None
-    widget_field_name: Optional[str] = None
-    widget_field_type: Optional[str] = None
+    widget_text: str | None = None
+    widget_description: str | None = None
+    widget_field_name: str | None = None
+    widget_field_type: str | None = None
 
 
 class PdfHyperlink(OrderedElement):
     rect: BoundingRectangle
-    uri: Optional[Union[AnyUrl, str]] = None
+    uri: AnyUrl | str | None = None
 
-    widget_text: Optional[str] = None
-    widget_description: Optional[str] = None
+    widget_text: str | None = None
+    widget_description: str | None = None
 
     @field_validator("uri", mode="before")
     @classmethod
-    def parse_uri(cls, v: Any) -> Union[AnyUrl, str, None]:
+    def parse_uri(cls, v: Any) -> AnyUrl | str | None:
         """Parse URI with AnyUrl for structured metadata, falling back to str.
 
         PDF hyperlinks may contain relative paths, internal bookmarks, or other
@@ -420,8 +420,8 @@ class BitmapResource(OrderedElement):
 
     rect: BoundingRectangle
     mode: ImageRefMode = ImageRefMode.PLACEHOLDER
-    image: Optional[ImageRef] = None
-    uri: Optional[AnyUrl] = Field(default=None, deprecated="Use 'image' field instead.")
+    image: ImageRef | None = None
+    uri: AnyUrl | None = Field(default=None, deprecated="Use 'image' field instead.")
 
     def to_bottom_left_origin(self, page_height: float):
         """Convert the resource's coordinates to use bottom-left origin.
@@ -489,11 +489,11 @@ class PdfShape(OrderedElement):
     rgb_filling: ColorRGBA = ColorRGBA(r=0, g=0, b=0, a=255)
 
     # deprecated — use rgb_stroking / rgb_filling instead
-    rgba: Optional[ColorRGBA] = Field(
+    rgba: ColorRGBA | None = Field(
         default=None,
         deprecated="Use `rgb_stroking` and `rgb_filling` instead.",
     )
-    width: Optional[float] = Field(
+    width: float | None = Field(
         default=None,
         deprecated="Use `line_width` instead.",
     )
@@ -692,7 +692,7 @@ class SegmentedPage(BaseModel):
     ] = False
 
     image: Annotated[
-        Optional[ImageRef],
+        ImageRef | None,
         Field(description="Rendered image of the page, if available."),
     ] = None
 
@@ -755,13 +755,13 @@ class SegmentedPdfPage(SegmentedPage):
     shapes: list[PdfShape] = []
 
     # Redefine typing of elements to include PdfTextCell
-    char_cells: list[Union[PdfTextCell, TextCell]]
-    word_cells: list[Union[PdfTextCell, TextCell]]
-    textline_cells: list[Union[PdfTextCell, TextCell]]
+    char_cells: list[PdfTextCell | TextCell]
+    word_cells: list[PdfTextCell | TextCell]
+    textline_cells: list[PdfTextCell | TextCell]
 
     def get_cells_in_bbox(
         self, cell_unit: TextCellUnit, bbox: BoundingBox, ios: float = 0.8
-    ) -> list[Union[PdfTextCell, TextCell]]:
+    ) -> list[PdfTextCell | TextCell]:
         """Get text cells that are within the specified bounding box.
 
         Args:
@@ -796,7 +796,7 @@ class SegmentedPdfPage(SegmentedPage):
 
     def save_as_json(
         self,
-        filename: Union[str, Path],
+        filename: str | Path,
         indent: int = 2,
     ):
         """Save the page data as a JSON file.
@@ -811,7 +811,7 @@ class SegmentedPdfPage(SegmentedPage):
         filename.write_text(json.dumps(out, indent=indent), encoding="utf-8")
 
     @classmethod
-    def load_from_json(cls, filename: Union[str, Path]) -> "SegmentedPdfPage":
+    def load_from_json(cls, filename: str | Path) -> "SegmentedPdfPage":
         """Load page data from a JSON file.
 
         Args:
@@ -1247,7 +1247,7 @@ class SegmentedPdfPage(SegmentedPage):
         img: PILImage.Image,
         rect: BoundingRectangle,
         text: str,
-        font: Optional[Union[FreeTypeFont, ImageFont.ImageFont]] = None,
+        font: FreeTypeFont | ImageFont.ImageFont | None = None,
         fill: str = "black",
     ) -> PILImage.Image:
         """Draw text within a rectangular boundary with rotation.
@@ -1498,7 +1498,7 @@ class PdfTableOfContents(BaseModel):
         """
         return self.model_dump(mode=mode, by_alias=True, exclude_none=True)
 
-    def save_as_json(self, filename: Union[str, Path], indent: int = 2):
+    def save_as_json(self, filename: str | Path, indent: int = 2):
         """Save the table of contents as a JSON file.
 
         Args:
@@ -1511,7 +1511,7 @@ class PdfTableOfContents(BaseModel):
         filename.write_text(json.dumps(out, indent=indent), encoding="utf-8")
 
     @classmethod
-    def load_from_json(cls, filename: Union[str, Path]) -> "PdfTableOfContents":
+    def load_from_json(cls, filename: str | Path) -> "PdfTableOfContents":
         """Load table of contents from a JSON file.
 
         Args:
@@ -1530,8 +1530,8 @@ class ParsedPdfDocument(BaseModel):
 
     pages: dict[PageNumber, SegmentedPdfPage] = {}
 
-    meta_data: Optional[PdfMetaData] = None
-    table_of_contents: Optional[PdfTableOfContents] = None
+    meta_data: PdfMetaData | None = None
+    table_of_contents: PdfTableOfContents | None = None
 
     def iterate_pages(
         self,
@@ -1557,7 +1557,7 @@ class ParsedPdfDocument(BaseModel):
         """
         return self.model_dump(mode=mode, by_alias=True, exclude_none=True)
 
-    def save_as_json(self, filename: Union[str, Path], indent: int = 2):
+    def save_as_json(self, filename: str | Path, indent: int = 2):
         """Save the document as a JSON file.
 
         Args:
@@ -1570,7 +1570,7 @@ class ParsedPdfDocument(BaseModel):
         filename.write_text(json.dumps(out, indent=indent), encoding="utf-8")
 
     @classmethod
-    def load_from_json(cls, filename: Union[str, Path]) -> "ParsedPdfDocument":
+    def load_from_json(cls, filename: str | Path) -> "ParsedPdfDocument":
         """Load document from a JSON file.
 
         Args:

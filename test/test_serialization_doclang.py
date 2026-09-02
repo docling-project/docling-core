@@ -170,7 +170,7 @@ def add_list_section(doc: DoclingDocument):
 # ===============================
 
 
-def serialize_doclang(doc: DoclingDocument, params: Optional[DocLangParams] = None) -> str:
+def serialize_doclang(doc: DoclingDocument, params: DocLangParams | None = None) -> str:
     ser = DocLangDocSerializer(doc=doc, params=params or DocLangParams(include_version=False))
     text = ser.serialize().text
     if not GEN_TEST_DATA:
@@ -330,7 +330,7 @@ def _create_escape_test_doc(inp_doc: DoclingDocument):
 
 
 @pytest.mark.parametrize("pretty_indentation", [None, "  "])
-def test_doclang_replaces_xml_illegal_characters(pretty_indentation: Optional[str]):
+def test_doclang_replaces_xml_illegal_characters(pretty_indentation: str | None):
     """DocLang output remains valid when document text contains XML-illegal controls."""
     doc = DoclingDocument(name="xml_illegal_character")
     doc.add_text(label=DocItemLabel.TEXT, text="Before break\x0bAfter break")

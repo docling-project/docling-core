@@ -41,7 +41,7 @@ def create_documents_from_repository(
     file_dir: str,
     repo_url: str,
     language: CodeLanguageLabel,
-    commit_id: Optional[str] = None,
+    commit_id: str | None = None,
 ) -> list[DoclingDocument]:
     """Build DoclingDocument objects from a local checkout, one per code file."""
     documents: list[DoclingDocument] = []
