@@ -91,31 +91,31 @@ DATA.mkdir(parents=True, exist_ok=True)
 REPO_SPECS = [
     (
         "Java",
-        "/test/data/chunker_repo/repos/acmeair",
+        "/tests/data/chunker_repo/repos/acmeair",
         "https://github.com/acmeair/acmeair",
         lambda: HierarchicalChunker(code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)),
     ),
     (
         "TypeScript",
-        "/test/data/chunker_repo/repos/outline",
+        "/tests/data/chunker_repo/repos/outline",
         "https://github.com/outline/outline",
         lambda: HierarchicalChunker(code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)),
     ),
     (
         "JavaScript",
-        "/test/data/chunker_repo/repos/jquery",
+        "/tests/data/chunker_repo/repos/jquery",
         "https://github.com/jquery/jquery",
         lambda: HierarchicalChunker(code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)),
     ),
     (
         "Python",
-        "/test/data/chunker_repo/repos/docling",
+        "/tests/data/chunker_repo/repos/docling",
         "https://github.com/docling-project/docling",
         lambda: HierarchicalChunker(code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)),
     ),
     (
         "C",
-        "/test/data/chunker_repo/repos/json-c",
+        "/tests/data/chunker_repo/repos/json-c",
         "https://github.com/json-c/json-c",
         lambda: HierarchicalChunker(code_chunking_strategy=StandardCodeChunkingStrategy(max_tokens=5000)),
     ),

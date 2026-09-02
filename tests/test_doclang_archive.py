@@ -10,9 +10,9 @@ from typing import Any
 import pytest
 
 from docling_core.types.doc import DoclingDocument, ImageRef
-from test.test_data_gen_flag import GEN_TEST_DATA
+from tests.test_data_gen_flag import GEN_TEST_DATA
 
-DOC_LANG_ARCHIVE_DIR = Path("test/data/doc/doclang_archive")
+DOC_LANG_ARCHIVE_DIR = Path("tests/data/doc/doclang_archive")
 SAVE_FIXTURE_JSON = DOC_LANG_ARCHIVE_DIR / "save" / "two_pages.json"
 LOAD_FIXTURE_DCLX = DOC_LANG_ARCHIVE_DIR / "load" / "two_pages.dclx"
 LOAD_FIXTURE_GT_JSON = DOC_LANG_ARCHIVE_DIR / "load" / "two_pages.gt.json"

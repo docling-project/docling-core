@@ -8,7 +8,7 @@ from .test_utils import assert_or_generate_json_ground_truth
 
 
 def test_page_chunks():
-    src = Path("./test/data/doc/cross_page_lists.json")
+    src = Path("./tests/data/doc/cross_page_lists.json")
     doc = DoclingDocument.load_from_json(src)
 
     chunker = PageChunker()

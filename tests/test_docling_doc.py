@@ -395,11 +395,11 @@ def test_docitems():
         return yaml.safe_dump(obj.model_dump(mode="json", by_alias=True))
 
     def write(name: str, serialisation: str):
-        with open(f"./test/data/docling_document/unit/{name}.yaml", "w", encoding="utf-8") as fw:
+        with open(f"./tests/data/docling_document/unit/{name}.yaml", "w", encoding="utf-8") as fw:
             fw.write(serialisation)
 
     def read(name: str):
-        with open(f"./test/data/docling_document/unit/{name}.yaml", encoding="utf-8") as fr:
+        with open(f"./tests/data/docling_document/unit/{name}.yaml", encoding="utf-8") as fr:
             gold = fr.read()
         return yaml.safe_load(gold)
 
@@ -589,7 +589,7 @@ def test_docitems():
 
 
 def test_reference_doc():
-    filename = "test/data/doc/dummy_doc.yaml"
+    filename = "tests/data/doc/dummy_doc.yaml"
 
     # Read YAML file of manual reference doc
     with open(filename, encoding="utf-8") as fp:
@@ -627,7 +627,7 @@ def test_reference_doc():
 
 
 def test_parse_doc():
-    filename = "test/data/doc/2206.01062.yaml"
+    filename = "tests/data/doc/2206.01062.yaml"
 
     with open(filename, encoding="utf-8") as fp:
         dict_from_yaml = yaml.safe_load(fp)
@@ -640,7 +640,7 @@ def test_parse_doc():
 
 
 def test_construct_doc(sample_doc):
-    filename = "test/data/doc/constructed_document.yaml"
+    filename = "tests/data/doc/constructed_document.yaml"
 
     assert sample_doc.validate_tree(sample_doc.body)
 
@@ -653,7 +653,7 @@ def test_construct_doc(sample_doc):
 
 
 def test_construct_bad_doc():
-    filename = "test/data/doc/bad_doc.yaml"
+    filename = "tests/data/doc/bad_doc.yaml"
 
     doc = _construct_bad_doc()
     with pytest.raises(ValueError):
@@ -971,7 +971,7 @@ def test_image_ref_path_rejects_oversize_file(tmp_path: Path):
 
 
 def test_upgrade_content_layer_from_1_0_0() -> None:
-    doc = DoclingDocument.load_from_json("test/data/doc/2206.01062-1.0.0.json")
+    doc = DoclingDocument.load_from_json("tests/data/doc/2206.01062-1.0.0.json")
 
     assert doc.version == CURRENT_VERSION
     assert doc.texts[0].content_layer == ContentLayer.FURNITURE
@@ -990,7 +990,7 @@ def test_version_doc():
     doc = DoclingDocument(name="Untitled 1")
     assert doc.version == CURRENT_VERSION
 
-    with open("test/data/doc/dummy_doc.yaml", encoding="utf-8") as fp:
+    with open("tests/data/doc/dummy_doc.yaml", encoding="utf-8") as fp:
         dict_from_yaml = yaml.safe_load(fp)
     doc = DoclingDocument.model_validate(dict_from_yaml)
     assert doc.version == CURRENT_VERSION
@@ -1027,7 +1027,7 @@ def test_formula_mathml():
 
     doc_html = doc.export_to_html(formula_to_mathml=True, html_head="")
 
-    file = "test/data/docling_document/export/formula_mathml.html"
+    file = "tests/data/docling_document/export/formula_mathml.html"
     if GEN_TEST_DATA:
         with open(file, mode="w", encoding="utf8") as f:
             f.write(f"{doc_html}\n")
@@ -1159,7 +1159,7 @@ def test_floatingitem_get_image():
 
 
 def test_save_pictures(sample_doc):
-    new_doc = sample_doc._with_pictures_refs(image_dir=Path("./test/data/constructed_images/"), page_no=None)
+    new_doc = sample_doc._with_pictures_refs(image_dir=Path("./tests/data/constructed_images/"), page_no=None)
 
     img_paths = new_doc._list_images_on_disk()
     assert len(img_paths) == 1, "len(img_paths)!=1"
@@ -1185,12 +1185,12 @@ def test_save_pictures_with_page():
     )
 
     # When
-    with_ref = doc._with_pictures_refs(image_dir=Path("./test/data/constructed_images/"), page_no=1)
+    with_ref = doc._with_pictures_refs(image_dir=Path("./tests/data/constructed_images/"), page_no=1)
     # Then
     n_images = len(with_ref._list_images_on_disk())
     assert n_images == 0
     # When
-    with_ref = with_ref._with_pictures_refs(image_dir=Path("./test/data/constructed_images/"), page_no=2)
+    with_ref = with_ref._with_pictures_refs(image_dir=Path("./tests/data/constructed_images/"), page_no=2)
     n_images = len(with_ref._list_images_on_disk())
     # Then
     assert n_images == 1
@@ -1237,7 +1237,7 @@ def _verify_loaded_output(filename: Path, pred=None):
 
 
 def test_save_to_disk(sample_doc):
-    test_dir = Path("./test/data/doc")
+    test_dir = Path("./tests/data/doc")
     image_dir = Path("constructed_images/")  # will be relative to test_dir
 
     doc_with_references = sample_doc._with_pictures_refs(
@@ -1400,7 +1400,7 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
         # test if the document is the same as the stored GT
         _verify_loaded_output(filename=filename, pred=DoclingDocument.model_validate(document))
 
-    image_dir = Path("./test/data/doc/constructed_images/")
+    image_dir = Path("./tests/data/doc/constructed_images/")
 
     text_item_1 = ListItem(
         self_ref="#",
@@ -1418,25 +1418,25 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
     sample_doc.insert_item_before_sibling(new_item=text_item_1, sibling=node)
     sample_doc.insert_item_after_sibling(new_item=text_item_2, sibling=node)
 
-    filename = Path("test/data/doc/constructed_doc.inserted_text.json")
+    filename = Path("tests/data/doc/constructed_doc.inserted_text.json")
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
 
     items = [_resolve(document=sample_doc, cref="#/texts/10")]
     sample_doc.delete_items(node_items=items)
 
-    filename = Path("test/data/doc/constructed_doc.deleted_text.json")
+    filename = Path("tests/data/doc/constructed_doc.deleted_text.json")
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
 
     items = [_resolve(document=sample_doc, cref="#/groups/1")]
     sample_doc.delete_items(node_items=items)
 
-    filename = Path("test/data/doc/constructed_doc.deleted_group.json")
+    filename = Path("tests/data/doc/constructed_doc.deleted_group.json")
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
 
     items = [_resolve(document=sample_doc, cref="#/pictures/1")]
     sample_doc.delete_items(node_items=items)
 
-    filename = Path("test/data/doc/constructed_doc.deleted_picture.json")
+    filename = Path("tests/data/doc/constructed_doc.deleted_picture.json")
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
 
     text_item_3 = TextItem(
@@ -1481,7 +1481,7 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
             parent=sample_doc.body,
         )
 
-    filename = Path("test/data/doc/constructed_doc.appended_child.json")
+    filename = Path("tests/data/doc/constructed_doc.appended_child.json")
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
 
     text_item_5 = TextItem(
@@ -1492,7 +1492,7 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
     )
     sample_doc.replace_item(old_item=text_item_3, new_item=text_item_5)
 
-    filename = Path("test/data/doc/constructed_doc.replaced_item.json")
+    filename = Path("tests/data/doc/constructed_doc.replaced_item.json")
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
 
     # Test insert_* methods with mixed insertion before/after sibling
@@ -1612,7 +1612,7 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
     sample_doc.insert_key_values(sibling=node, graph=graph, after=False)
     sample_doc.insert_form(sibling=node, graph=graph, after=True)
 
-    filename = Path("test/data/doc/constructed_doc.inserted_items.json")
+    filename = Path("tests/data/doc/constructed_doc.inserted_items.json")
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
 
     # Test the handling of list items in insert_* methods, both with and without parent groups
@@ -1634,7 +1634,7 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
             after=True,
         )
 
-    filename = Path("test/data/doc/constructed_doc.inserted_list_items.json")
+    filename = Path("tests/data/doc/constructed_doc.inserted_list_items.json")
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
 
     # Test the bulk addition of node items
@@ -1654,7 +1654,7 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
 
     sample_doc.add_node_items(node_items=[text_item_6, text_item_7], doc=sample_doc, parent=group_node)
 
-    filename = Path("test/data/doc/constructed_doc.bulk_item_addition.json")
+    filename = Path("tests/data/doc/constructed_doc.bulk_item_addition.json")
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
 
     # Test the bulk insertion of node items
@@ -1674,7 +1674,7 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
 
     sample_doc.insert_node_items(sibling=node, node_items=[text_item_8, text_item_9], doc=sample_doc, after=False)
 
-    filename = Path("test/data/doc/constructed_doc.bulk_item_insertion.json")
+    filename = Path("tests/data/doc/constructed_doc.bulk_item_insertion.json")
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
 
     # Test table data manipulation methods
@@ -1691,7 +1691,7 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
     with pytest.raises(IndexError):
         table_data.remove_row(100)
 
-    filename = Path("test/data/doc/constructed_doc.manipulated_table.json")
+    filename = Path("tests/data/doc/constructed_doc.manipulated_table.json")
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
 
     # Test range manipulation methods
@@ -1706,27 +1706,27 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
 
     extracted_doc = sample_doc.extract_items_range(start=group_node, end=node, end_inclusive=False, delete=True)
 
-    filename = Path("test/data/doc/constructed_doc.extracted_with_deletion.json")
+    filename = Path("tests/data/doc/constructed_doc.extracted_with_deletion.json")
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
 
     sample_doc.add_document(doc=extracted_doc, parent=last_node)
 
-    filename = Path("test/data/doc/constructed_doc.added_extracted_doc.json")
+    filename = Path("tests/data/doc/constructed_doc.added_extracted_doc.json")
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
 
     sample_doc.insert_document(doc=extracted_doc, sibling=last_node, after=False)
 
-    filename = Path("test/data/doc/constructed_doc.inserted_extracted_doc.json")
+    filename = Path("tests/data/doc/constructed_doc.inserted_extracted_doc.json")
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
 
     sample_doc.delete_items_range(start=node, end=last_node, start_inclusive=False)
 
-    filename = Path("test/data/doc/constructed_doc.deleted_items_range.json")
+    filename = Path("tests/data/doc/constructed_doc.deleted_items_range.json")
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
 
 
 def test_misplaced_list_items():
-    filename = Path("test/data/doc/misplaced_list_items.yaml")
+    filename = Path("tests/data/doc/misplaced_list_items.yaml")
     doc = DoclingDocument.load_from_yaml(filename)
 
     dt_pred = doc.export_to_doctags()
@@ -1758,9 +1758,9 @@ def test_moving_within_same_parent():
 
 
 def test_export_with_precision():
-    doc = DoclingDocument.load_from_yaml(filename="test/data/doc/dummy_doc_2.yaml")
+    doc = DoclingDocument.load_from_yaml(filename="tests/data/doc/dummy_doc_2.yaml")
     act_data = doc.export_to_dict(coord_precision=2, confid_precision=1)
-    exp_file = Path("test/data/doc/dummy_doc_2_prec.yaml")
+    exp_file = Path("tests/data/doc/dummy_doc_2_prec.yaml")
     if GEN_TEST_DATA:
         with open(exp_file, "w", encoding="utf-8") as f:
             yaml.dump(act_data, f, default_flow_style=False)
@@ -1772,16 +1772,16 @@ def test_export_with_precision():
 
 def test_concatenate():
     files = [
-        "test/data/doc/2501.17887v1.json",
-        "test/data/doc/constructed_doc.embedded.json",
-        "test/data/doc/2311.18481v1.json",
+        "tests/data/doc/2501.17887v1.json",
+        "tests/data/doc/constructed_doc.embedded.json",
+        "tests/data/doc/2311.18481v1.json",
     ]
     docs = [DoclingDocument.load_from_json(filename=f) for f in files]
     doc = DoclingDocument.concatenate(docs=docs)
 
     html_data = doc.export_to_html(image_mode=ImageRefMode.EMBEDDED, split_page_view=True)
 
-    exp_json_file = Path("test/data/doc/concatenated.json")
+    exp_json_file = Path("tests/data/doc/concatenated.json")
     exp_html_file = exp_json_file.with_suffix(".html")
 
     if GEN_TEST_DATA:
@@ -2058,7 +2058,7 @@ def test_group_without_children():
 
 
 def test_rich_tables(rich_table_doc):
-    exp_file = Path("test/data/doc/rich_table.out.yaml")
+    exp_file = Path("tests/data/doc/rich_table.out.yaml")
     if GEN_TEST_DATA:
         rich_table_doc.save_as_yaml(exp_file)
 
@@ -2069,7 +2069,7 @@ def test_rich_tables(rich_table_doc):
 def test_doc_manipulation_with_rich_tables(rich_table_doc):
     rich_table_doc.delete_items(node_items=[rich_table_doc.texts[0]])
 
-    exp_file = Path("test/data/doc/rich_table_post_text_del.out.yaml")
+    exp_file = Path("tests/data/doc/rich_table_post_text_del.out.yaml")
     if GEN_TEST_DATA:
         rich_table_doc.save_as_yaml(exp_file)
 
@@ -2191,7 +2191,7 @@ def test_rich_table_item_insertion_normalization():
             doc.add_table_cell(table_item=table_item, cell=cell)
 
     # state before insert:
-    exp_file = Path("test/data/doc/rich_table_item_ins_norm_1.out.yaml")
+    exp_file = Path("tests/data/doc/rich_table_item_ins_norm_1.out.yaml")
     if GEN_TEST_DATA:
         doc.save_as_yaml(exp_file)
     exp_doc = DoclingDocument.load_from_yaml(exp_file)
@@ -2208,7 +2208,7 @@ def test_rich_table_item_insertion_normalization():
     )
 
     # state after insert (prior to normalization):
-    exp_file = Path("test/data/doc/rich_table_item_ins_norm_2.out.yaml")
+    exp_file = Path("tests/data/doc/rich_table_item_ins_norm_2.out.yaml")
     if GEN_TEST_DATA:
         doc.save_as_yaml(exp_file)
     exp_doc = DoclingDocument.load_from_yaml(exp_file)
@@ -2217,7 +2217,7 @@ def test_rich_table_item_insertion_normalization():
     doc._normalize_references()
 
     # state after insert (after normalization):
-    exp_file = Path("test/data/doc/rich_table_item_ins_norm_3.out.yaml")
+    exp_file = Path("tests/data/doc/rich_table_item_ins_norm_3.out.yaml")
     if GEN_TEST_DATA:
         doc.save_as_yaml(exp_file)
     exp_doc = DoclingDocument.load_from_yaml(exp_file)
@@ -2225,7 +2225,7 @@ def test_rich_table_item_insertion_normalization():
 
 
 def test_filter_pages():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     orig_doc = DoclingDocument.load_from_json(src)
     doc = orig_doc.filter(page_nrs={2, 3, 5})
 
@@ -2303,7 +2303,7 @@ def test_meta_migration_warnings():
     # the following should not raise any warnings
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        doc = DoclingDocument.load_from_yaml("test/data/doc/dummy_doc_2.yaml")
+        doc = DoclingDocument.load_from_yaml("tests/data/doc/dummy_doc_2.yaml")
 
     # the following should raise a deprecation warning
     with pytest.warns(DeprecationWarning):
@@ -2318,7 +2318,7 @@ def test_meta_migration_warnings():
 )
 def test_webvtt_export(example_num):
     """Test WebVTT export with example files that contain TrackSource data."""
-    json_file = Path(f"test/data/doc/webvtt_example_{example_num:02d}.json")
+    json_file = Path(f"tests/data/doc/webvtt_example_{example_num:02d}.json")
     gt_vtt_file = json_file.with_suffix(".gt.vtt")
 
     # Load the document
@@ -2366,7 +2366,7 @@ def test_docitem_comments_field():
         targets=[text],
     )
 
-    exp_file = Path("test/data/doc/docitem_comments_field.out.yaml")
+    exp_file = Path("tests/data/doc/docitem_comments_field.out.yaml")
     if GEN_TEST_DATA:
         doc.save_as_yaml(exp_file)
     exp_doc = DoclingDocument.load_from_yaml(exp_file)
@@ -2406,7 +2406,7 @@ def test_docitem_comments_multiple():
         ],
     )
 
-    exp_file = Path("test/data/doc/docitem_comments_multiple.out.yaml")
+    exp_file = Path("tests/data/doc/docitem_comments_multiple.out.yaml")
     if GEN_TEST_DATA:
         doc.save_as_yaml(exp_file)
     exp_doc = DoclingDocument.load_from_yaml(exp_file)

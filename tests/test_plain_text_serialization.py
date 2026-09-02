@@ -13,7 +13,7 @@ from .test_serialization import verify
 
 def test_plain_text_constructed(sample_doc):
     """Serializing the constructed sample doc produces clean plain text."""
-    exp_file = Path("./test/data/doc/constructed.gt.txt")
+    exp_file = Path("./tests/data/doc/constructed.gt.txt")
     ser = PlainTextDocSerializer(doc=sample_doc, params=PlainTextParams())
     verify(exp_file=exp_file, actual=ser.serialize().text)
 
@@ -59,7 +59,7 @@ def test_plain_text_deprecated_delim(sample_doc, caplog):
 
 def test_plain_text_from_json():
     """Serializing a real document from JSON produces clean plain text."""
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
     exp_file = src.parent / f"{src.stem}.gt.txt"
     ser = PlainTextDocSerializer(doc=doc, params=PlainTextParams())

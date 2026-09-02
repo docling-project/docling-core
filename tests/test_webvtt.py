@@ -208,7 +208,7 @@ def test_webvttcueblock_parse() -> None:
 
 def test_webvtt_file() -> None:
     """Test WebVTT files."""
-    with open("./test/data/webvtt/webvtt_example_01.vtt", encoding="utf-8") as f:
+    with open("./tests/data/webvtt/webvtt_example_01.vtt", encoding="utf-8") as f:
         content = f.read()
         vtt = WebVTTFile.parse(content)
     assert len(vtt) == 13
@@ -227,7 +227,7 @@ def test_webvtt_file() -> None:
     assert isinstance(comp2.component, WebVTTCueTextSpan)
     assert comp2.component.text == "Laughs"
 
-    with open("./test/data/webvtt/webvtt_example_02.vtt", encoding="utf-8") as f:
+    with open("./tests/data/webvtt/webvtt_example_02.vtt", encoding="utf-8") as f:
         content = f.read()
         vtt = WebVTTFile.parse(content)
     assert len(vtt) == 4
@@ -235,7 +235,7 @@ def test_webvtt_file() -> None:
     reverse += "\n".join([block.format(omit_hours_if_zero=True, omit_voice_end=True) for block in vtt.cue_blocks])
     assert content == reverse.rstrip()
 
-    with open("./test/data/webvtt/webvtt_example_03.vtt", encoding="utf-8") as f:
+    with open("./tests/data/webvtt/webvtt_example_03.vtt", encoding="utf-8") as f:
         content = f.read()
         vtt = WebVTTFile.parse(content)
     assert len(vtt) == 13
@@ -254,7 +254,7 @@ def test_webvtt_file() -> None:
     assert block.payload[0].component.text == "Good."
     assert not vtt.title
 
-    with open("./test/data/webvtt/webvtt_example_04.vtt", encoding="utf-8") as f:
+    with open("./tests/data/webvtt/webvtt_example_04.vtt", encoding="utf-8") as f:
         content = f.read()
         with warnings.catch_warnings():
             warnings.simplefilter("error")
