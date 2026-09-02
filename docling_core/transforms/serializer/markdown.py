@@ -225,10 +225,30 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
         is_inline_scope: bool = False,
+        in_table_cell: bool = False,
         visited: Optional[set[str]] = None,  # refs of visited items
         **kwargs: Any,
     ) -> SerializationResult:
-        """Serializes the passed item."""
+        """Serialize the passed text item to Markdown.
+
+        Args:
+            item: The text item to serialize.
+            doc_serializer: The parent document serializer.
+            doc: The document the item belongs to.
+            is_inline_scope: Whether serialization happens in an inline context
+                (e.g. inside an InlineGroup). Affects delimiter and code/formula
+                wrapping.
+            in_table_cell: Whether the item is being rendered inside a table
+                cell. When ``True``, heading markers are suppressed because the
+                Markdown spec does not allow headings inside tables.
+            visited: Set of already-visited item refs used to prevent duplicate
+                serialization.
+            **kwargs: Additional keyword arguments forwarded to
+                ``MarkdownParams``.
+
+        Returns:
+            The serialization result containing the rendered Markdown text.
+        """
         my_visited = visited if visited is not None else set()
         params = MarkdownParams(**kwargs)
         res_parts: list[SerializationResult] = []
@@ -313,7 +333,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 pieces.append(text)
                 text_part = " ".join(pieces)
             else:
-                text_part = self._format_heading(text, item)
+                text_part = self._format_heading(text, item, in_table_cell=in_table_cell)
         elif isinstance(item, CodeItem):
             if params.format_code_blocks:
                 # inline items and all hyperlinks: use single backticks
@@ -363,8 +383,25 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         self,
         text: str,
         item: Union[TitleItem, SectionHeaderItem],
+        in_table_cell: bool = False,
     ) -> str:
-        """Format a heading/title item. Override to customize heading representation."""
+        """Format a heading or title item as a Markdown heading string.
+
+        Override this method to customize heading representation in subclasses.
+
+        Args:
+            text: The heading text content, already post-processed.
+            item: The title or section header item being formatted.
+            in_table_cell: When ``True``, returns plain text without ``#``
+                markers because headings are not valid inside Markdown tables
+                per the Markdown spec.
+
+        Returns:
+            The formatted heading string, e.g. ``"## My heading"`` for a
+            level-1 section header, or plain ``text`` when inside a table cell.
+        """
+        if in_table_cell:
+            return text
         num_hashes = 1 if isinstance(item, TitleItem) else item.level + 1
         return f"{num_hashes * '#'} {text}"
 
@@ -605,7 +642,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
                 for col in row:
                     if isinstance(col, RichTableCell):
                         ref_item = col.ref.resolve(doc=doc)
-                        inner_kwargs = {**kwargs, "_nested_in_table": True}
+                        inner_kwargs = {**kwargs, "_nested_in_table": True, "in_table_cell": True}
                         cell_text = doc_serializer.serialize(
                             item=ref_item,
                             **inner_kwargs,

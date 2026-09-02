@@ -518,6 +518,68 @@ def test_md_pipe_in_table():
     assert ser == "| Fruits &#124; Veggies   |\n|-------------------------|"
 
 
+def test_md_heading_in_rich_table_cell_renders_as_plain_text():
+    """Test headings inside RichTableCell must not emit `#` markers.
+
+    According to the Markdown spec, heading syntax is invalid inside tables.
+    A SectionHeaderItem or TitleItem referenced by a RichTableCell must be
+    serialized as plain text, not as `## Heading`.
+    """
+    doc = DoclingDocument(name="heading_in_table")
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=2))
+
+    section_header = doc.add_heading(text="Section Heading", level=1, parent=table)
+    title = doc.add_title(text="Document Title", parent=table)
+
+    doc.add_table_cell(
+        table,
+        RichTableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            ref=section_header.get_ref(),
+        ),
+    )
+    doc.add_table_cell(
+        table,
+        RichTableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            ref=title.get_ref(),
+        ),
+    )
+    doc.add_table_cell(
+        table,
+        TableCell(
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            text="value A",
+        ),
+    )
+    doc.add_table_cell(
+        table,
+        TableCell(
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            text="value B",
+        ),
+    )
+
+    md = doc.export_to_markdown()
+    assert "Section Heading" in md
+    assert "Document Title" in md
+    table_lines = [line for line in md.splitlines() if line.startswith("|")]
+    for line in table_lines:
+        assert "#" not in line, f"Heading marker leaked into table cell: {line!r}\nFull output:\n{md}"
+
+
 def test_cell_content_has_table_detects_descendant_table():
     """Ensure nested tables are detected through non-table parent nodes."""
     doc = DoclingDocument(name="descendant_table")
