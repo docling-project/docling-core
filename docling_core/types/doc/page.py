@@ -383,12 +383,20 @@ class PdfTextCell(TextCell):
 
 
 class PdfWidget(OrderedElement):
+    """One PDF widget annotation with raw AcroForm field state.
+
+    ``widget_field_flags`` is the inherited ``/Ff`` mask and
+    ``widget_appearance_state`` is the local ``/AS`` name, including its slash.
+    """
+
     rect: BoundingRectangle
 
     widget_text: Optional[str] = None
     widget_description: Optional[str] = None
     widget_field_name: Optional[str] = None
     widget_field_type: Optional[str] = None
+    widget_field_flags: int = 0
+    widget_appearance_state: Optional[str] = None
 
 
 class PdfHyperlink(OrderedElement):

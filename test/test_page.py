@@ -5,7 +5,7 @@ import pytest
 from pydantic import AnyUrl
 
 from docling_core.types.doc import CoordOrigin
-from docling_core.types.doc.page import BoundingRectangle, PdfHyperlink
+from docling_core.types.doc.page import BoundingRectangle, PdfHyperlink, PdfWidget
 
 SQRT_2 = math.sqrt(2)
 
@@ -226,6 +226,13 @@ RECT = BoundingRectangle(
     r_y3=1,
     coord_origin=CoordOrigin.TOPLEFT,
 )
+
+
+def test_pdf_widget_loads_legacy_payload():
+    widget = PdfWidget.model_validate({"rect": RECT.model_dump(mode="json")})
+
+    assert widget.widget_field_flags == 0
+    assert widget.widget_appearance_state is None
 
 
 class TestPdfHyperlinkUri:
