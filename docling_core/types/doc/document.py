@@ -5373,12 +5373,23 @@ class DoclingDocument(BaseModel):
         def get_item_list(self, key: str) -> list[NodeItem]:
             return getattr(self, key)
 
-        def index(self, doc: "DoclingDocument", page_nrs: Optional[set[int]] = None) -> None:
+        def index(
+            self,
+            doc: "DoclingDocument",
+            page_nrs: Optional[set[int]] = None,
+            preserve_page_numbers: bool = False,
+        ) -> None:
             if page_nrs is not None and (unavailable_page_nrs := page_nrs - set(doc.pages.keys())):
                 raise ValueError(f"The following page numbers are not present in the document: {unavailable_page_nrs}")
 
             orig_ref_to_new_ref: dict[str, str] = {}
-            page_delta = self._max_page - min(doc.pages.keys()) + 1 if doc.pages else 0
+            indexed_page_nrs = set(doc.pages) if page_nrs is None else page_nrs
+            if preserve_page_numbers:
+                if overlapping_page_nrs := indexed_page_nrs & set(self.pages):
+                    raise ValueError(f"Cannot preserve overlapping page numbers: {sorted(overlapping_page_nrs)}")
+                page_delta = 0
+            else:
+                page_delta = self._max_page - min(doc.pages.keys()) + 1 if doc.pages else 0
 
             if self._body is None:
                 self._body = GroupItem(**doc.body.model_dump(exclude={"children"}))
@@ -5541,11 +5552,27 @@ class DoclingDocument(BaseModel):
         return res_doc
 
     @classmethod
-    def concatenate(cls, docs: Sequence["DoclingDocument"]) -> "DoclingDocument":
-        """Concatenate multiple documents into a single document."""
+    def concatenate(
+        cls,
+        docs: Sequence["DoclingDocument"],
+        *,
+        preserve_page_numbers: bool = False,
+    ) -> "DoclingDocument":
+        """Concatenate multiple documents into a single document.
+
+        Args:
+            docs: Documents to concatenate in order.
+            preserve_page_numbers: Preserve each input document's original page
+                numbers instead of shifting them into a continuous sequence. The
+                input documents must not contain overlapping page numbers.
+
+        Raises:
+            ValueError: If page numbers overlap while ``preserve_page_numbers``
+                is enabled.
+        """
         doc_index = DoclingDocument._DocIndex()
         for doc in docs:
-            doc_index.index(doc=doc)
+            doc_index.index(doc=doc, preserve_page_numbers=preserve_page_numbers)
 
         res_doc = DoclingDocument(name=doc_index.get_name())
         res_doc._update_from_index(doc_index)
