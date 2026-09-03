@@ -84,12 +84,7 @@ chunking = [
     'tree-sitter-typescript >=0.23.2',
 
     # specific:
-    # transformers 5.9.0-5.15.x crash on Apple's MPS backend:
-    # build_2d_sinusoidal_position_embedding allocates float64 tensors on-device,
-    # which MPS cannot represent (RT-DETR, D-FINE, ViT-MAE and friends). Fixed in
-    # 5.16.0, so exclude that window on macOS rather than capping below it.
-    'transformers (>=4.34.0,<6.0.0,!=5.0.*,!=5.1.*,!=5.2.*,!=5.3.*,!=5.9.*,!=5.10.*,!=5.11.*,!=5.12.*,!=5.13.*,!=5.14.*,!=5.15.*) ; sys_platform == "darwin"',
-    'transformers (>=4.34.0,<6.0.0,!=5.0.*,!=5.1.*,!=5.2.*,!=5.3.*) ; sys_platform != "darwin"',
+    'transformers (>=4.42.0,<6.0.0)',
 ]
 chunking-openai = [
     # common:
