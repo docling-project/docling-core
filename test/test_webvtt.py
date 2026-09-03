@@ -198,6 +198,13 @@ def test_webvttcueblock_parse() -> None:
     assert block.payload[2].component.text == ", ici à Montpellier"
     assert raw == str(block)
 
+    # Cue timestamps must be stripped so that the surrounding text is preserved.
+    raw = "00:00:00.030 --> 00:00:02.669\nthe<00:00:00.389> quick<00:00:00.750> brown\n"
+    block = WebVTTCueBlock.parse(raw)
+    assert len(block.payload) == 1
+    assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
+    assert block.payload[0].component.text == "the quick brown"
+
 
 def test_webvtt_file() -> None:
     """Test WebVTT files."""
@@ -252,7 +259,7 @@ def test_webvtt_file() -> None:
         with warnings.catch_warnings():
             warnings.simplefilter("error")
             vtt = WebVTTFile.parse(content)
-    assert len(vtt) == 2
+    assert len(vtt) == 3
     block = vtt.cue_blocks[1]
     assert len(block.payload) == 5
     assert str(block) == (
@@ -261,6 +268,10 @@ def test_webvtt_file() -> None:
         "— You could <b.loud>die</b>.\n"
         "<v John>This is true.</v>\n"
     )
+    block = vtt.cue_blocks[2]
+    assert len(block.payload) == 1
+    assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
+    assert block.payload[0].component.text == "the quick brown fox"
     assert vtt.title == "Danger of Nitrogen"
 
 
