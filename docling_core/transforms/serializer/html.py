@@ -108,7 +108,13 @@ class HTMLParams(CommonParams):
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
 
     # HTML document properties
-    html_lang: str = "en"
+    html_lang: str = Field(
+        default="en",
+        description=(
+            "Language declared on the <html> root (BCP 47). Text items whose "
+            "meta.language differs get their own lang attribute."
+        ),
+    )
     html_head: Optional[str] = None
 
     css_styles: Optional[str] = None
@@ -132,6 +138,19 @@ class HTMLParams(CommonParams):
     )
 
     show_original_list_item_marker: bool = True
+
+
+def _lang_attrs(item: NodeItem, html_lang: str) -> Optional[dict[str, str]]:
+    """`lang` attribute for an item whose meta.language differs from the document's.
+
+    WCAG 3.1.2 (Language of Parts): the root <html lang> covers the document
+    language, so only a differing element language needs its own attribute.
+    """
+    language = item.meta.language if item.meta is not None else None
+    if language is None:
+        return None
+    code = language.code.value
+    return {"lang": code} if code != html_lang else None
 
 
 class HTMLTextSerializer(BaseModel, BaseTextSerializer):
@@ -169,9 +188,10 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 text = text.replace("\n", "<br>")
 
         # Prepare the HTML based on item type
+        lang_attrs = _lang_attrs(item=item, html_lang=params.html_lang)
         if isinstance(item, TitleItem | SectionHeaderItem):
             section_level = min(item.level + 1, 6) if isinstance(item, SectionHeaderItem) else 1
-            text = get_html_tag_with_text_direction(html_tag=f"h{section_level}", text=text)
+            text = get_html_tag_with_text_direction(html_tag=f"h{section_level}", text=text, attrs=lang_attrs)
 
         elif isinstance(item, FormulaItem):
             text = self._process_formula(
@@ -230,7 +250,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
 
         elif not is_inline_scope:
             # Regular text item
-            text = get_html_tag_with_text_direction(html_tag="p", text=text)
+            text = get_html_tag_with_text_direction(html_tag="p", text=text, attrs=lang_attrs)
 
         # Apply formatting and hyperlinks to the parent's own text+tag.
         if not post_processed:
@@ -1147,7 +1167,7 @@ class HTMLDocSerializer(DocSerializer):
         # Create HTML structure
         html_parts = [
             "<!DOCTYPE html>",
-            "<html>",
+            f'<html lang="{html.escape(self.params.html_lang)}">',
             self._generate_head(),
             "<body>",
         ]

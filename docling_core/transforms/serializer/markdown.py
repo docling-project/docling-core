@@ -56,6 +56,7 @@ from docling_core.types.doc import (
     InlineGroup,
     KeyValueItem,
     KeywordsMetaField,
+    LanguageMetaField,
     ListGroup,
     ListItem,
     MoleculeMetaField,
@@ -461,6 +462,13 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
                 txt = ", ".join(field_val.values)
             elif isinstance(field_val, DescriptionMetaField):
                 txt = field_val.text
+            elif isinstance(field_val, LanguageMetaField):
+                # A language code is metadata, not prose: a bare "de" paragraph
+                # is indistinguishable from content, so it only renders when
+                # meta sections are marked ("[Language] de").
+                if not mark_meta:
+                    return None
+                txt = field_val.code.value
             elif isinstance(field_val, PictureClassificationMetaField):
                 if not include_picture_classification:
                     return None
