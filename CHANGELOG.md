@@ -1,3 +1,9 @@
+## [v2.94.1](https://github.com/docling-project/docling-core/releases/tag/v2.94.1) - 2026-09-03
+
+### Fix
+
+* Relaxing transformers versions ([#742](https://github.com/docling-project/docling-core/issues/742)) ([`80f6a87`](https://github.com/docling-project/docling-core/commit/80f6a87562ad67b94a26f80ef5d021f2084f0ff8))
+
 ## [v2.94.0](https://github.com/docling-project/docling-core/releases/tag/v2.94.0) - 2026-09-03
 
 ### Feature
