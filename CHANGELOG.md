@@ -1,3 +1,16 @@
+## [v2.94.0](https://github.com/docling-project/docling-core/releases/tag/v2.94.0) - 2026-09-03
+
+### Feature
+
+* Expose json.dumps kwargs in save_as_json ([#725](https://github.com/docling-project/docling-core/issues/725)) ([`c057766`](https://github.com/docling-project/docling-core/commit/c057766c2854b71276ab48d089519acabea3a3e9))
+
+### Fix
+
+* Exclude broken transformers versions ([#741](https://github.com/docling-project/docling-core/issues/741)) ([`9ccdb1e`](https://github.com/docling-project/docling-core/commit/9ccdb1e64427421a4ba1ec0c011fef790563e5dc))
+* **tokens:** Normalize inverted bbox in get_location instead of asserting ([#676](https://github.com/docling-project/docling-core/issues/676)) ([`4210158`](https://github.com/docling-project/docling-core/commit/4210158d492f40e1b52d3d8a5ec2c1b6096d4d19))
+* **markdown:** Escape referenced figures' filepaths and ensure cross-platform path handling (Windows / POSIX) ([#698](https://github.com/docling-project/docling-core/issues/698)) ([`ccdffa7`](https://github.com/docling-project/docling-core/commit/ccdffa784440aaa164880720855a9490e50e20a5))
+* Convert headings to plain text in table cells ([#540](https://github.com/docling-project/docling-core/issues/540)) ([`bdfca5b`](https://github.com/docling-project/docling-core/commit/bdfca5b89eaaf545181d59a2ed55af1804e6ef48))
+
 ## [v2.93.0](https://github.com/docling-project/docling-core/releases/tag/v2.93.0) - 2026-09-01
 
 ### Feature
