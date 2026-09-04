@@ -29,6 +29,7 @@ class DocItemLabel(str, Enum):
     # e.g. ★★☆☆☆
     HANDWRITTEN_TEXT = "handwritten_text"
     EMPTY_VALUE = "empty_value"  # used for empty value fields in fillable forms
+    ATTACHMENT = "attachment"
 
     # Additional labels for markup-based formats (e.g. HTML, Word)
     PARAGRAPH = "paragraph"
@@ -80,6 +81,7 @@ class DocItemLabel(str, Enum):
             DocItemLabel.FIELD_VALUE: (135, 80, 20),
             DocItemLabel.FIELD_HINT: (190, 120, 90),
             DocItemLabel.MARKER: (205, 85, 120),
+            DocItemLabel.ATTACHMENT: (204, 204, 255),
         }
         return color_map.get(label, (0, 0, 0))
 

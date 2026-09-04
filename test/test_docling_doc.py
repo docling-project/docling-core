@@ -16,6 +16,7 @@ from PIL import Image as PILImage
 from pydantic import AnyUrl, BaseModel, ValidationError
 
 from docling_core.types.doc import (
+    AttachmentItem,
     BoundingBox,
     CodeItem,
     ContentLayer,
@@ -582,10 +583,54 @@ def test_docitems():
                 level=2,
             )
             verify(dc, obj)
+        elif dc is AttachmentItem:
+            # No gold fixture here: serializer changes are deferred to a follow-up PR.
+            # Storage + JSON round-trip are covered by test_add_attachment_round_trip.
+            continue
         elif dc is GraphData:  # we skip this on purpose
             continue
         else:
             raise RuntimeError(f"New derived class detected {dc.__name__}")
+
+
+def test_add_attachment_round_trip():
+    doc = DoclingDocument(name="attachments")
+    attachment = doc.add_attachment(
+        name="report.pdf",
+        mime_type="application/pdf",
+        size=1234,
+        target="attachments/report.dclg",
+        data=b"%PDF-1.4 binary payload",
+        doc_data=b'{"document_type": "DCLG", "name": "report"}',
+    )
+
+    assert attachment is doc.attachments[0]
+    assert attachment.label == DocItemLabel.ATTACHMENT
+    assert attachment.self_ref == "#/attachments/0"
+    assert attachment.parent == doc.body.get_ref()
+
+    # Binary payloads survive a JSON round-trip (pydantic base64-encodes bytes).
+    doc_reloaded = DoclingDocument.model_validate_json(doc.model_dump_json())
+
+    assert len(doc_reloaded.attachments) == 1
+    reloaded = doc_reloaded.attachments[0]
+    assert reloaded.name == "report.pdf"
+    assert reloaded.mime_type == "application/pdf"
+    assert reloaded.size == 1234
+    assert reloaded.target == "attachments/report.dclg"
+    assert reloaded.data == b"%PDF-1.4 binary payload"
+    assert reloaded.doc_data == b'{"document_type": "DCLG", "name": "report"}'
+    assert reloaded.parent == doc_reloaded.body.get_ref()
+
+    # Storage wiring: attachments are reachable via iteration and survive
+    # _normalize_references / filter / concatenate.
+    assert any(item.self_ref.startswith("#/attachments/") for item, _ in doc.iterate_items())
+    assert reloaded.data == doc.filter().attachments[0].data
+    merged = DoclingDocument.concatenate([doc, DoclingDocument(name="other")])
+    assert [a.name for a in merged.attachments] == ["report.pdf"]
+
+    # Empty attachments are suppressed in dumps.
+    assert "attachments" not in DoclingDocument(name="empty").model_dump()
 
 
 def test_reference_doc():
