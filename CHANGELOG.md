@@ -1,3 +1,14 @@
+## [v2.95.0](https://github.com/docling-project/docling-core/releases/tag/v2.95.0) - 2026-09-04
+
+### Feature
+
+* Added PdfDestination to PdfTableOfContents ([#747](https://github.com/docling-project/docling-core/issues/747)) ([`4631492`](https://github.com/docling-project/docling-core/commit/4631492b6755b93ac88d9a5da2121941c5f7b4c4))
+
+### Fix
+
+* **latex:** Prevent inline-group content from being serialized twice ([#743](https://github.com/docling-project/docling-core/issues/743)) ([`7a6c5a4`](https://github.com/docling-project/docling-core/commit/7a6c5a4114d48b6e945727f4ecd2968bd506e629))
+* Strip cue timestamp tags when parsing WebVTT cue text ([#744](https://github.com/docling-project/docling-core/issues/744)) ([`506acea`](https://github.com/docling-project/docling-core/commit/506acea868a8a91f57da73ad06dc93c07fcc92f5))
+
 ## [v2.94.1](https://github.com/docling-project/docling-core/releases/tag/v2.94.1) - 2026-09-03
 
 ### Fix
