@@ -697,7 +697,7 @@ def _verify_regression_test(pred: str, filename: str, ext: str):
             fw.write(f"{pred}\n")
 
 
-def _test_export_methods(doc: DoclingDocument, filename: str, page_break_placeholder: Optional[str] = None):
+def _test_export_methods(doc: DoclingDocument, filename: str, page_break_placeholder: str | None = None):
     # Iterate all elements
     et_pred = doc.export_to_element_tree()
     _verify_regression_test(et_pred, filename=filename, ext="et")
@@ -978,7 +978,7 @@ def test_upgrade_content_layer_from_1_0_0() -> None:
 
     # test that transform_to_content_layer model validator can handle any data type
     class ContentOutput(BaseModel):
-        content: Union[str, DoclingDocument]
+        content: str | DoclingDocument
 
     co = ContentOutput.model_validate_json('{"content": "Random string with version"}')
     assert co
@@ -1203,7 +1203,7 @@ def _normalise_string_wrt_filepaths(instr: str, paths: list[Path]):
     return instr
 
 
-def _verify_saved_output(filename: Union[str, Path], paths: list[Path]):
+def _verify_saved_output(filename: str | Path, paths: list[Path]):
     pred = ""
     with open(filename, encoding="utf-8") as fr:
         pred = fr.read()
@@ -1994,13 +1994,13 @@ def test_list_item_outside_list_group():
         doc: DoclingDocument,
         text: str,
         enumerated: bool = False,
-        marker: Optional[str] = None,
-        orig: Optional[str] = None,
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        marker: str | None = None,
+        orig: str | None = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
     ):
         if not parent:
             parent = doc.body

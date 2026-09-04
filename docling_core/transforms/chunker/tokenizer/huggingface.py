@@ -69,8 +69,8 @@ class HuggingFaceTokenizer(BaseTokenizer):
     @classmethod
     def from_pretrained(
         cls,
-        model_name: Union[str, PathLike],
-        max_tokens: Optional[int] = None,
+        model_name: str | PathLike,
+        max_tokens: int | None = None,
         **kwargs,
     ) -> Self:
         """Create tokenizer from model name."""

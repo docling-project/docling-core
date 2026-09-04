@@ -99,7 +99,7 @@ class _RangeTracker:
 class _ChunkMetadataBuilder:
     """Builds metadata for code chunks."""
 
-    def __init__(self, origin: Optional[DocumentOrigin] = None):
+    def __init__(self, origin: DocumentOrigin | None = None):
         """Initialize the metadata builder with document origin."""
         self.origin = origin
 
@@ -176,7 +176,7 @@ class _ChunkMetadataBuilder:
 class _ChunkBuilder:
     """Builds code chunks from nodes and content."""
 
-    def __init__(self, *, item: CodeItem, origin: Optional[DocumentOrigin] = None):
+    def __init__(self, *, item: CodeItem, origin: DocumentOrigin | None = None):
         """Initialize the chunk builder with document origin."""
         self.metadata_builder = _ChunkMetadataBuilder(origin)
         self.item = item
@@ -519,7 +519,7 @@ class _CodeChunker(BaseChunker):
         root_node: Node,
         import_nodes: dict[str, Node],
         chunk_builder: _ChunkBuilder,
-        module_variables: Optional[dict[str, Node]] = None,
+        module_variables: dict[str, Node] | None = None,
     ) -> Iterator[tuple[CodeChunk, list[tuple[int, int]]]]:
         docstring = self._get_docstring(node)
         additional_context, additional_context_no_docstring = self._build_additional_context(node, root_node)
@@ -634,7 +634,7 @@ class _CodeChunker(BaseChunker):
     def _file_prefix(self, root_node: Node) -> tuple[str, list]:
         return "", []
 
-    def _get_function_body(self, node: Node) -> Optional[Node]:
+    def _get_function_body(self, node: Node) -> Node | None:
         return next((child for child in node.children if child.type == self.function_body), None)
 
     def _get_docstring(self, node: Node) -> str:
@@ -766,7 +766,7 @@ class _CodeChunker(BaseChunker):
         imports: dict[str, Node],
         function_node: Node,
         additional_context: str = "",
-        module_variables: Optional[dict[str, Node]] = None,
+        module_variables: dict[str, Node] | None = None,
     ) -> set:
         """Find which imports are used in a function and its additional context."""
         used = set()
@@ -924,7 +924,7 @@ class _CodeChunker(BaseChunker):
 
         return with_doc, without_doc
 
-    def _find_constructor(self, body: Node) -> Optional[Node]:
+    def _find_constructor(self, body: Node) -> Node | None:
         for child in body.children:
             definition_field = child.child_by_field_name(self.definition_field)
             if self._is_constructor(child) or (

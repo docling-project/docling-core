@@ -102,18 +102,18 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
         item: TextItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
-        visited: Optional[set[str]] = None,
+        visited: set[str] | None = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
         my_visited = visited if visited is not None else set()
         params = DocTagsParams(**kwargs)
         # Decide wrapping up-front so ListItem never gets wrapped here
-        wrap_tag_token: Optional[str] = DocumentToken.create_token_name_from_doc_item_label(
+        wrap_tag_token: str | None = DocumentToken.create_token_name_from_doc_item_label(
             label=item.label,
             **({"level": item.level} if isinstance(item, SectionHeaderItem) else {}),
         )
-        wrap_tag: Optional[str] = None if isinstance(item, ListItem) else wrap_tag_token
+        wrap_tag: str | None = None if isinstance(item, ListItem) else wrap_tag_token
         parts: list[str] = []
 
         if item.meta:
@@ -182,7 +182,7 @@ class DocTagsTableSerializer(BaseTableSerializer):
         item: TableItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
-        visited: Optional[set[str]] = None,
+        visited: set[str] | None = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
@@ -252,7 +252,7 @@ class DocTagsPictureSerializer(BasePictureSerializer):
                 )
 
             # handle classification data
-            predicted_class: Optional[str] = None
+            predicted_class: str | None = None
             if item.meta:
                 if item.meta.classification:
                     predicted_class = item.meta.classification.get_main_prediction().class_name
@@ -278,7 +278,7 @@ class DocTagsPictureSerializer(BasePictureSerializer):
                     is_chart = True
 
             # handle molecule data
-            smi: Optional[str] = None
+            smi: str | None = None
             if item.meta:
                 if item.meta.molecule:
                     smi = item.meta.molecule.smi
@@ -293,7 +293,7 @@ class DocTagsPictureSerializer(BasePictureSerializer):
                 body += _wrap(text=smi, wrap_tag=DocumentToken.SMILES.value)
 
             # handle tabular chart data
-            chart_data: Optional[TableData] = None
+            chart_data: TableData | None = None
             if item.meta:
                 if item.meta.tabular_chart:
                     chart_data = item.meta.tabular_chart.chart_data
@@ -429,7 +429,7 @@ class DocTagsListSerializer(BaseModel, BaseListSerializer):
         doc: DoclingDocument,
         list_level: int = 0,
         is_inline_scope: bool = False,
-        visited: Optional[set[str]] = None,  # refs of visited items
+        visited: set[str] | None = None,  # refs of visited items
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
@@ -466,7 +466,7 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
     def _get_inline_location_tags(
         self, doc: DoclingDocument, item: InlineGroup, params: DocTagsParams
     ) -> SerializationResult:
-        prov: Optional[ProvenanceItem] = None
+        prov: ProvenanceItem | None = None
         boxes: list[BoundingBox] = []
         doc_items: list[DocItem] = []
         for it, _ in doc.iterate_items(root=item):
@@ -504,7 +504,7 @@ class DocTagsInlineSerializer(BaseInlineSerializer):
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         list_level: int = 0,
-        visited: Optional[set[str]] = None,  # refs of visited items
+        visited: set[str] | None = None,  # refs of visited items
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""

@@ -633,8 +633,8 @@ class DocLangVocabulary(BaseModel):
     def _create_doclang_root(
         cls,
         *,
-        namespace: Optional[str] = None,
-        version: Optional[str] = None,
+        namespace: str | None = None,
+        version: str | None = None,
         closing: bool = False,
     ) -> str:
         """Create the document root tag.
@@ -669,7 +669,7 @@ class DocLangVocabulary(BaseModel):
         return f'<{token.value} {DocLangAttributeKey.THREAD_ID.value}="{thread_id}"/>'
 
     @classmethod
-    def _create_group_token(cls, *, name: Optional[str] = None, closing: bool = False) -> str:
+    def _create_group_token(cls, *, name: str | None = None, closing: bool = False) -> str:
         """Create a group tag.
 
         - When `closing` is True, returns the closing tag.
@@ -839,7 +839,7 @@ class DocLangVocabulary(BaseModel):
         cls,
         *,
         token: DocLangToken,
-        attrs: Optional[dict["DocLangAttributeKey", Any]] = None,
+        attrs: dict["DocLangAttributeKey", Any] | None = None,
     ) -> str:
         """Create a self-closing token with optional attributes (default None).
 
@@ -926,7 +926,7 @@ def _picture_classification_label_to_doclang(class_name: str) -> str:
     return class_name
 
 
-def _picture_classification_label_from_doclang(label_val: str) -> Optional[str]:
+def _picture_classification_label_from_doclang(label_val: str) -> str | None:
     """Map DocLang picture label to Docling picture classification label."""
     if label_val == _DOCLANG_LABEL_UNDEFINED:
         return None
