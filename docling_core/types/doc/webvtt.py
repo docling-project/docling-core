@@ -594,13 +594,18 @@ class WebVTTFile(BaseModel):
 
     @staticmethod
     def verify_signature(content: str) -> bool:
-        """Verify the WebVTT file signature."""
+        """Verify the WebVTT file signature.
+
+        Conforms to the W3C WebVTT specification (https://www.w3.org/TR/webvtt1/),
+        which allows a line terminator (CR, LF, or CRLF) immediately after "WEBVTT"
+        in addition to a space or tab character.
+        """
         if not content:
             return False
         elif len(content) == 6:
             return content == "WEBVTT"
         elif len(content) > 6 and content.startswith("WEBVTT"):
-            return content[6] in (" ", "\t", "\n")
+            return content[6] in (" ", "\t", "\r", "\n")
         else:
             return False
 
