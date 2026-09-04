@@ -38,6 +38,7 @@ from docling_core.types.doc.base import (
     CoordOrigin,
     ImageRefMode,
     PydanticSerCtxKey,
+    Size,
     round_pydantic_float,
 )
 from docling_core.types.doc.document import ImageRef
@@ -1477,6 +1478,69 @@ class PdfMetaData(BaseModel):
                 self.data[tag_open] = content
 
 
+class PdfDestinationKind(str, Enum):
+    """Enumeration of explicit destination syntaxes (ISO 32000-1, 12.3.2.2, Table 151)."""
+
+    XYZ = "XYZ"
+    FIT = "FIT"
+    FIT_H = "FIT_H"
+    FIT_V = "FIT_V"
+    FIT_R = "FIT_R"
+    FIT_B = "FIT_B"
+    FIT_BH = "FIT_BH"
+    FIT_BV = "FIT_BV"
+    UNKNOWN = "UNKNOWN"
+
+    def __str__(self) -> str:
+        """Return string representation of the enum value."""
+        return str(self.value)
+
+
+class PdfDestination(BaseModel):
+    """Model representing a resolved destination in a PDF document (ISO 32000-1, 12.3.2).
+
+    ``point`` is expressed in the target page's own coordinate frame, that is the frame that
+    page's cells are reported in. It is ``None`` when the destination kind carries no position
+    (``FIT``, ``FIT_B``) or when the PDF left the coordinate unspecified -- the specification
+    allows a ``null`` coordinate, meaning "retain the current value".
+
+    ``page_size`` is the target page in that same frame, so the coordinate origin can be
+    changed without loading the page.
+    """
+
+    page_no: PageNumber
+    kind: PdfDestinationKind = PdfDestinationKind.UNKNOWN
+
+    point: Coord2D | None = None
+    coord_origin: CoordOrigin = CoordOrigin.BOTTOMLEFT
+
+    page_size: Size
+
+    def to_top_left_origin(self) -> "PdfDestination":
+        """Return this destination with a top-left coordinate origin."""
+        return self._with_coord_origin(CoordOrigin.TOPLEFT)
+
+    def to_bottom_left_origin(self) -> "PdfDestination":
+        """Return this destination with a bottom-left coordinate origin."""
+        return self._with_coord_origin(CoordOrigin.BOTTOMLEFT)
+
+    def _with_coord_origin(self, coord_origin: CoordOrigin) -> "PdfDestination":
+        if coord_origin == self.coord_origin:
+            return self.model_copy()
+
+        point = self.point
+        if point is not None:
+            point = Coord2D(x=point.x, y=self.page_size.height - point.y)
+
+        return PdfDestination(
+            page_no=self.page_no,
+            kind=self.kind,
+            point=point,
+            coord_origin=coord_origin,
+            page_size=self.page_size,
+        )
+
+
 class PdfTableOfContents(BaseModel):
     """Model representing a PDF table of contents entry with hierarchical structure."""
 
@@ -1485,7 +1549,27 @@ class PdfTableOfContents(BaseModel):
 
     marker: str = ""
 
+    destination: PdfDestination | None = None
+
     children: list["PdfTableOfContents"] = []
+
+    def iterate(self) -> Iterator[tuple[int, "PdfTableOfContents"]]:
+        """Iterate over the descendants of this entry, depth-first in document order.
+
+        This entry itself is not yielded and its direct children are at level 0, matching the
+        convention that a document's outline hangs under a single synthetic root entry.
+
+        An explicit stack is used rather than recursion: outlines nesting hundreds of levels
+        deep occur in real documents, and malformed ones can nest further still.
+
+        Returns:
+            Iterator of (level, entry) tuples.
+        """
+        stack: list[tuple[int, PdfTableOfContents]] = [(0, child) for child in reversed(self.children)]
+        while stack:
+            level, entry = stack.pop()
+            yield level, entry
+            stack.extend((level + 1, child) for child in reversed(entry.children))
 
     def export_to_dict(self, mode: str = "json") -> dict[str, Any]:
         """Export the table of contents to a dictionary.
