@@ -79,7 +79,7 @@ def verify(exp_file: Path, actual: str):
 
 
 def test_md_cross_page_list_page_break():
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
@@ -96,7 +96,7 @@ def test_md_cross_page_list_page_break():
 
 
 def test_md_checkboxes():
-    src = Path("./test/data/doc/checkboxes.json")
+    src = Path("./tests/data/doc/checkboxes.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
@@ -113,7 +113,7 @@ def test_md_checkboxes():
 
 
 def test_md_cross_page_list_page_break_none():
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
@@ -130,7 +130,7 @@ def test_md_cross_page_list_page_break_none():
 
 
 def test_md_cross_page_list_page_break_empty():
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
@@ -147,7 +147,7 @@ def test_md_cross_page_list_page_break_empty():
 
 
 def test_md_cross_page_list_page_break_non_empty():
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
@@ -164,7 +164,7 @@ def test_md_cross_page_list_page_break_non_empty():
 
 
 def test_md_cross_page_list_page_break_p2():
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
@@ -314,7 +314,7 @@ def test_md_page_break_between_list_and_table():
 
 
 def test_md_charts():
-    src = Path("./test/data/doc/barchart.json")
+    src = Path("./tests/data/doc/barchart.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
@@ -328,7 +328,7 @@ def test_md_charts():
 
 
 def test_md_inline_and_formatting():
-    src = Path("./test/data/doc/inline_and_formatting.yaml")
+    src = Path("./tests/data/doc/inline_and_formatting.yaml")
     doc = DoclingDocument.load_from_yaml(src)
 
     ser = MarkdownDocSerializer(
@@ -342,7 +342,7 @@ def test_md_inline_and_formatting():
 
 
 def test_md_pb_placeholder_and_page_filter():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     # NOTE ambiguous case
@@ -358,7 +358,7 @@ def test_md_pb_placeholder_and_page_filter():
 
 
 def test_md_list_item_markers(sample_doc):
-    root_dir = Path("./test/data/doc")
+    root_dir = Path("./tests/data/doc")
     for mode in OrigListItemMarkerMode:
         for valid in [False, True]:
             ser = MarkdownDocSerializer(
@@ -376,7 +376,7 @@ def test_md_list_item_markers(sample_doc):
 
 
 def test_md_mark_meta_true():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
@@ -394,7 +394,7 @@ def test_md_mark_meta_true():
 
 
 def test_md_mark_meta_false():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
@@ -412,7 +412,7 @@ def test_md_mark_meta_false():
 
 
 def test_md_legacy_annotations_mark_true(sample_doc):
-    exp_file = Path("./test/data/doc/constructed_legacy_annot_mark_true.gt.md")
+    exp_file = Path("./tests/data/doc/constructed_legacy_annot_mark_true.gt.md")
     with pytest.warns(DeprecationWarning):
         sample_doc.tables[0].annotations.append(
             DescriptionAnnotation(text="This is a description of table 1.", provenance="foo")
@@ -431,7 +431,7 @@ def test_md_legacy_annotations_mark_true(sample_doc):
 
 
 def test_md_legacy_annotations_mark_false(sample_doc):
-    exp_file = Path("./test/data/doc/constructed_legacy_annot_mark_false.gt.md")
+    exp_file = Path("./tests/data/doc/constructed_legacy_annot_mark_false.gt.md")
     with pytest.warns(DeprecationWarning):
         sample_doc.tables[0].annotations.append(
             DescriptionAnnotation(text="This is a description of table 1.", provenance="foo")
@@ -450,7 +450,7 @@ def test_md_legacy_annotations_mark_false(sample_doc):
 
 
 def test_md_nested_lists():
-    src = Path("./test/data/doc/polymers.json")
+    src = Path("./tests/data/doc/polymers.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(doc=doc)
@@ -459,7 +459,7 @@ def test_md_nested_lists():
 
 
 def test_md_rich_table(rich_table_doc):
-    exp_file = Path("./test/data/doc/rich_table.gt.md")
+    exp_file = Path("./tests/data/doc/rich_table.gt.md")
 
     ser = MarkdownDocSerializer(doc=rich_table_doc)
     actual = ser.serialize().text
@@ -467,7 +467,7 @@ def test_md_rich_table(rich_table_doc):
 
 
 def test_md_single_row_table():
-    exp_file = Path("./test/data/doc/single_row_table.gt.md")
+    exp_file = Path("./tests/data/doc/single_row_table.gt.md")
     words = ["foo", "bar"]
     doc = DoclingDocument(name="")
     row_idx = 0
@@ -490,7 +490,7 @@ def test_md_single_row_table():
 
 
 def test_md_field_region():
-    exp_file = Path("./test/data/doc/field_region.gt.md")
+    exp_file = Path("./tests/data/doc/field_region.gt.md")
 
     doc = DoclingDocument(name="")
     field_region = doc.add_field_region()
@@ -980,7 +980,7 @@ def test_html_table_serializer_get_header_and_body_lines():
 
 
 def test_html_charts():
-    src = Path("./test/data/doc/barchart.json")
+    src = Path("./tests/data/doc/barchart.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -994,7 +994,7 @@ def test_html_charts():
 
 
 def test_html_cross_page_list_page_break():
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -1008,7 +1008,7 @@ def test_html_cross_page_list_page_break():
 
 
 def test_html_cross_page_list_page_break_p1():
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -1023,7 +1023,7 @@ def test_html_cross_page_list_page_break_p1():
 
 
 def test_html_cross_page_list_page_break_p2():
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -1038,7 +1038,7 @@ def test_html_cross_page_list_page_break_p2():
 
 
 def test_html_split_page():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -1053,7 +1053,7 @@ def test_html_split_page():
 
 
 def test_html_split_page_p2():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -1069,7 +1069,7 @@ def test_html_split_page_p2():
 
 
 def test_html_split_page_p2_with_visualizer():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -1095,7 +1095,7 @@ def test_html_split_page_p2_with_visualizer():
 
 
 def test_html_split_page_no_page_breaks():
-    src = Path("./test/data/doc/2408.09869_p1.json")
+    src = Path("./tests/data/doc/2408.09869_p1.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -1110,7 +1110,7 @@ def test_html_split_page_no_page_breaks():
 
 
 def test_html_include_annotations_false():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -1130,7 +1130,7 @@ def test_html_include_annotations_false():
 
 
 def test_html_include_annotations_true():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -1150,7 +1150,7 @@ def test_html_include_annotations_true():
 
 
 def test_html_list_item_markers(sample_doc):
-    root_dir = Path("./test/data/doc")
+    root_dir = Path("./tests/data/doc")
     for orig in [False, True]:
         ser = HTMLDocSerializer(
             doc=sample_doc,
@@ -1166,7 +1166,7 @@ def test_html_list_item_markers(sample_doc):
 
 
 def test_html_nested_lists():
-    src = Path("./test/data/doc/polymers.json")
+    src = Path("./tests/data/doc/polymers.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(doc=doc)
@@ -1175,7 +1175,7 @@ def test_html_nested_lists():
 
 
 def test_html_rich_table(rich_table_doc):
-    exp_file = Path("./test/data/doc/rich_table.gt.html")
+    exp_file = Path("./tests/data/doc/rich_table.gt.html")
 
     ser = HTMLDocSerializer(doc=rich_table_doc)
     actual = ser.serialize().text
@@ -1250,7 +1250,7 @@ def test_html_textitem_with_children_at_document_level():
 
 
 def test_html_inline_and_formatting():
-    src = Path("./test/data/doc/inline_and_formatting.yaml")
+    src = Path("./tests/data/doc/inline_and_formatting.yaml")
     doc = DoclingDocument.load_from_yaml(src)
 
     ser = HTMLDocSerializer(doc=doc)
@@ -1268,7 +1268,7 @@ def test_html_inline_and_formatting():
     [1, 2, 3, 4, 5],
 )
 def test_webvtt(example_num):
-    src = Path(f"test/data/doc/webvtt_example_{example_num:02d}.json")
+    src = Path(f"tests/data/doc/webvtt_example_{example_num:02d}.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = WebVTTDocSerializer(doc=doc)
@@ -1278,7 +1278,7 @@ def test_webvtt(example_num):
 
 def test_webvtt_params():
     """Test WebVTT serialization with WebVTTParams."""
-    src = Path("./test/data/doc/webvtt_example_01.json")
+    src = Path("./tests/data/doc/webvtt_example_01.json")
     doc = DoclingDocument.load_from_json(src)
 
     # Test with omit_hours_if_zero=True

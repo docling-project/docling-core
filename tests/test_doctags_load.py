@@ -39,12 +39,12 @@ def verify(exp_file: Path, actual: dict):
 
 def test_doctags_load_from_files():
     doctags_doc = DocTagsDocument.from_doctags_and_image_pairs(
-        [Path("test/data/doc/page_with_pic.dt")],
-        [Path("test/data/doc/page_with_pic.png")],
+        [Path("tests/data/doc/page_with_pic.dt")],
+        [Path("tests/data/doc/page_with_pic.png")],
     )
 
     doc = DoclingDocument.load_from_doctags(doctags_doc)
-    exp = "test/data/doc/page_with_pic_from_files.dt.json"
+    exp = "tests/data/doc/page_with_pic_from_files.dt.json"
     verify(
         exp_file=exp,
         actual=doc.export_to_dict(),
@@ -52,15 +52,15 @@ def test_doctags_load_from_files():
 
 
 def test_doctags_load_from_memory():
-    with Path("test/data/doc/page_with_pic.dt").open() as file:
+    with Path("tests/data/doc/page_with_pic.dt").open() as file:
         doctags = file.read()
-    image = PILImage.open(Path("test/data/doc/page_with_pic.png"))
+    image = PILImage.open(Path("tests/data/doc/page_with_pic.png"))
 
     doctags_doc = DocTagsDocument.from_doctags_and_image_pairs([doctags], [image])
 
     doc = DoclingDocument.load_from_doctags(doctags_doc)
 
-    exp = "test/data/doc/page_with_pic.dt.json"
+    exp = "tests/data/doc/page_with_pic.dt.json"
     verify(
         exp_file=exp,
         actual=doc.export_to_dict(),
@@ -68,11 +68,11 @@ def test_doctags_load_from_memory():
 
 
 def test_doctags_load_without_image():
-    with Path("test/data/doc/page_with_pic.dt").open() as file:
+    with Path("tests/data/doc/page_with_pic.dt").open() as file:
         doctags = file.read()
     doctags_doc = DocTagsDocument.from_doctags_and_image_pairs([doctags], None)
     doc = DoclingDocument.load_from_doctags(doctags_doc)
-    exp = "test/data/doc/page_without_pic.dt.json"
+    exp = "tests/data/doc/page_without_pic.dt.json"
     verify(
         exp_file=exp,
         actual=doc.export_to_dict(),
@@ -80,12 +80,12 @@ def test_doctags_load_without_image():
 
 
 def test_doctags_load_for_kv_region():
-    with Path("test/data/doc/doc_with_kv.dt").open() as file:
+    with Path("tests/data/doc/doc_with_kv.dt").open() as file:
         doctags = file.read()
-    image = PILImage.open(Path("test/data/doc/doc_with_kv.png"))
+    image = PILImage.open(Path("tests/data/doc/doc_with_kv.png"))
     doctags_doc = DocTagsDocument.from_doctags_and_image_pairs([doctags], [image])
     doc = DoclingDocument.load_from_doctags(doctags_doc)
-    exp = "test/data/doc/doc_with_kv.dt.json"
+    exp = "tests/data/doc/doc_with_kv.dt.json"
     verify(
         exp_file=exp,
         actual=doc.export_to_dict(),
@@ -93,11 +93,11 @@ def test_doctags_load_for_kv_region():
 
 
 def test_multipage_doctags_load():
-    with Path("test/data/doc/2206.01062.yaml.dt").open() as file:
+    with Path("tests/data/doc/2206.01062.yaml.dt").open() as file:
         doctags = file.read()
     doctags_doc = DocTagsDocument.from_multipage_doctags_and_images(doctags, None)
     doc = DoclingDocument.load_from_doctags(doctags_doc)
-    exp = "test/data/doc/2206.01062.yaml.dt.json"
+    exp = "tests/data/doc/2206.01062.yaml.dt.json"
     verify(
         exp_file=exp,
         actual=doc.export_to_dict(),
@@ -106,11 +106,11 @@ def test_multipage_doctags_load():
 
 def test_doctags_chart():
     doctags_doc = DocTagsDocument.from_doctags_and_image_pairs(
-        [Path("test/data/doc/barchart.dt")],
-        [Path("test/data/doc/barchart.png")],
+        [Path("tests/data/doc/barchart.dt")],
+        [Path("tests/data/doc/barchart.png")],
     )
     doc = DoclingDocument.load_from_doctags(doctags_doc)
-    exp = "test/data/doc/barchart.dt.out.json"
+    exp = "tests/data/doc/barchart.dt.out.json"
     verify(
         exp_file=exp,
         actual=doc.export_to_dict(),
@@ -119,8 +119,8 @@ def test_doctags_chart():
 
 def test_doctags_table_provenances_and_captions():
     doctags_doc = DocTagsDocument.from_doctags_and_image_pairs(
-        [Path("test/data/doc/01030000000083.dt")],
-        [Path("test/data/doc/01030000000083.png")],
+        [Path("tests/data/doc/01030000000083.dt")],
+        [Path("tests/data/doc/01030000000083.png")],
     )
     doc = DoclingDocument.load_from_doctags(doctags_doc)
     for table in doc.tables:
@@ -130,8 +130,8 @@ def test_doctags_table_provenances_and_captions():
 
 def test_doctags_picture_provenances_and_captions():
     doctags_doc = DocTagsDocument.from_doctags_and_image_pairs(
-        [Path("test/data/doc/01030000000111.dt")],
-        [Path("test/data/doc/01030000000111.png")],
+        [Path("tests/data/doc/01030000000111.dt")],
+        [Path("tests/data/doc/01030000000111.png")],
     )
     doc = DoclingDocument.load_from_doctags(doctags_doc)
     for picture in doc.pictures:
@@ -153,10 +153,10 @@ def test_doctags_load_preserves_angle_brackets_in_text():
 
 
 def test_doctags_inline():
-    src_path = Path("test/data/doc/2408.09869v3_enriched.dt")
+    src_path = Path("tests/data/doc/2408.09869v3_enriched.dt")
     with open(src_path) as f:
         doctags = f.read()
-    doc = DoclingDocument.load_from_json("test/data/doc/2408.09869v3_enriched.json")
+    doc = DoclingDocument.load_from_json("tests/data/doc/2408.09869v3_enriched.json")
 
     doctags_doc = DocTagsDocument.from_multipage_doctags_and_images(
         doctags=doctags,

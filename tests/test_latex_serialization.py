@@ -29,7 +29,7 @@ def verify_or_update(exp_file: Path, actual: str):
 
 
 def test_latex_basic_activities():
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = LaTeXDocSerializer(
@@ -45,7 +45,7 @@ def test_latex_basic_activities():
 
 
 def test_latex_inline_and_formatting():
-    src = Path("./test/data/doc/inline_and_formatting.yaml")
+    src = Path("./tests/data/doc/inline_and_formatting.yaml")
     doc = DoclingDocument.load_from_yaml(src)
 
     ser = LaTeXDocSerializer(
@@ -60,7 +60,7 @@ def test_latex_inline_and_formatting():
 
 
 def test_dummy_doc():
-    src = Path("test/data/doc/dummy_doc.yaml")
+    src = Path("tests/data/doc/dummy_doc.yaml")
 
     # Read YAML file of manual reference doc
     with open(src, encoding="utf-8") as fp:
@@ -90,7 +90,7 @@ def test_constructed_doc(sample_doc: DoclingDocument):
         ),
     )
     actual = ser.serialize().text
-    src = Path("test/data/doc/construct_doc.yaml")
+    src = Path("tests/data/doc/construct_doc.yaml")
     verify_or_update(exp_file=src.with_suffix(".gt.tex"), actual=actual)
 
 
@@ -105,12 +105,12 @@ def test_constructed_rich_table_doc(rich_table_doc: DoclingDocument):
         ),
     )
     actual = ser.serialize().text
-    src = Path("test/data/doc/construct_rich_table_doc.yaml")
+    src = Path("tests/data/doc/construct_rich_table_doc.yaml")
     verify_or_update(exp_file=src.with_suffix(".gt.tex"), actual=actual)
 
 
 def test_latex_paper():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = LaTeXDocSerializer(
@@ -125,7 +125,7 @@ def test_latex_paper():
 
 
 def test_latex_nested_lists():
-    src = Path("./test/data/doc/polymers.json")
+    src = Path("./tests/data/doc/polymers.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = LaTeXDocSerializer(

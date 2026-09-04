@@ -35,9 +35,9 @@ from docling_core.types.doc import (
 )
 from docling_core.types.doc.document import GroupLabel
 from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
-from test.doclang_validation import assert_valid_dclg_xml, doclang_validator
-from test.test_data_gen_flag import GEN_TEST_DATA
-from test.test_serialization_doclang import (
+from tests.doclang_validation import assert_valid_dclg_xml, doclang_validator
+from tests.test_data_gen_flag import GEN_TEST_DATA
+from tests.test_serialization_doclang import (
     _doc_cross_column_list,
     _doc_cross_page_list,
     _doc_cross_page_paragraph,
@@ -48,7 +48,7 @@ from test.test_serialization_doclang import (
     add_texts_section,
     verify_doclang,
 )
-from test.test_serialization_doctag import verify
+from tests.test_serialization_doctag import verify
 
 DO_PRINT: bool = False
 
@@ -139,7 +139,7 @@ def test_roundtrip_text():
 
 def test_deserialize_include_namespace_and_version():
     """Deserialize DocLang XML with namespace and version, then roundtrip."""
-    exp_file = Path("./test/data/doc/deserialize_include_namespace_and_version.gt.dclg.xml")
+    exp_file = Path("./tests/data/doc/deserialize_include_namespace_and_version.gt.dclg.xml")
     xml = exp_file.read_text(encoding="utf-8")
 
     doc = _deserialize(xml)
@@ -1918,7 +1918,7 @@ def test_picture_body_table_is_semantic_content_not_chart_tabular():
     assert nested.data.grid[0][0].text == "Nested"
 
 
-# SMILES from test/data/doc/dummy_doc_with_meta.yaml (molecule_data annotation)
+# SMILES from tests/data/doc/dummy_doc_with_meta.yaml (molecule_data annotation)
 _EXAMPLE_MOLECULE_SMILES = "CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1"
 _PICTURE_META_SUMMARY = "Picture meta summary"
 _PICTURE_META_DESCRIPTION = "Picture meta description"
@@ -1993,7 +1993,7 @@ def _serialize_kv_annot_fixture(doc: DoclingDocument) -> str:
     ids=[p.name for p in _kv_annot_fixture_dirs()],
 )
 def test_kv_annot_doclang_roundtrip(fixture_dir: Path):
-    """Round-trip migrated KV annot fixtures through DocLang (see ``test/data/doc/kv/``)."""
+    """Round-trip migrated KV annot fixtures through DocLang (see ``tests/data/doc/kv/``)."""
     output_json = fixture_dir / "output.json"
     serialized_dclg = fixture_dir / "output.dclg.xml"
     deserialized_json = fixture_dir / "deserialized.json"
