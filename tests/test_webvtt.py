@@ -206,6 +206,51 @@ def test_webvttcueblock_parse() -> None:
     assert block.payload[0].component.text == "the quick brown"
 
 
+def test_webvtt_verify_signature() -> None:
+    """Test WebVTTFile.verify_signature conforms to the W3C WebVTT specification.
+
+    Per https://www.w3.org/TR/webvtt1/ the magic string is "WEBVTT" optionally
+    followed by a space (U+0020), a tab (U+0009), or any line terminator
+    (CR U+000D, LF U+000A, or CRLF).
+    """
+    # Exact 6-character "WEBVTT" with nothing after it
+    assert WebVTTFile.verify_signature("WEBVTT") is True
+
+    # Valid: space or tab after "WEBVTT"
+    assert WebVTTFile.verify_signature("WEBVTT some title") is True
+    assert WebVTTFile.verify_signature("WEBVTT\t") is True
+
+    # Valid: LF line terminator (already worked before this fix)
+    assert WebVTTFile.verify_signature("WEBVTT\ncue block") is True
+
+    # Valid: CR line terminator (CR-only files — fixed by this patch)
+    assert WebVTTFile.verify_signature("WEBVTT\rcue block") is True
+
+    # Valid: CRLF — the \r at position 6 is now accepted; the \n at 7 is fine too
+    assert WebVTTFile.verify_signature("WEBVTT\r\ncue block") is True
+
+    # Invalid: empty string
+    assert WebVTTFile.verify_signature("") is False
+
+    # Invalid: wrong magic bytes
+    assert WebVTTFile.verify_signature("WEBVT") is False
+    assert WebVTTFile.verify_signature("webvtt") is False
+
+    # Invalid: character other than space/tab/CR/LF after "WEBVTT"
+    assert WebVTTFile.verify_signature("WEBVTT!") is False
+
+
+def test_webvtt_parse_cr_separator() -> None:
+    """WebVTTFile.parse must handle files that use bare CR as line separator."""
+    # Bare CR (U+000D) as line terminator — per the W3C WebVTT spec this is valid.
+    cr_vtt = "WEBVTT\r\r00:00:00.000 --> 00:00:01.000\rHello world\r"
+    vtt = WebVTTFile.parse(cr_vtt)
+    assert len(vtt) == 1
+    component = vtt[0].payload[0].component
+    assert isinstance(component, WebVTTCueTextSpan)
+    assert component.text == "Hello world"
+
+
 def test_webvtt_file() -> None:
     """Test WebVTT files."""
     with open("./tests/data/webvtt/webvtt_example_01.vtt", encoding="utf-8") as f:
