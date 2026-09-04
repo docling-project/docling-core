@@ -5,7 +5,16 @@ import pytest
 from pydantic import AnyUrl
 
 from docling_core.types.doc import CoordOrigin
-from docling_core.types.doc.page import BoundingRectangle, PdfHyperlink
+from docling_core.types.doc.base import BoundingBox
+from docling_core.types.doc.page import (
+    BoundingRectangle,
+    PdfHyperlink,
+    PdfPageBoundaryType,
+    PdfPageGeometry,
+    SegmentedPdfPage,
+    TextCell,
+    TextCellUnit,
+)
 
 SQRT_2 = math.sqrt(2)
 
@@ -267,3 +276,72 @@ class TestPdfHyperlinkUri:
     def test_omitted_uri(self):
         h = PdfHyperlink(rect=RECT)
         assert h.uri is None
+
+
+def _one_cell_pdf_page() -> SegmentedPdfPage:
+    """Build a minimal one-word page that render_as_image() can draw."""
+    page_bbox = BoundingBox(l=0, t=100, r=200, b=0, coord_origin=CoordOrigin.BOTTOMLEFT)
+    page_rect = BoundingRectangle(
+        r_x0=0,
+        r_y0=0,
+        r_x1=200,
+        r_y1=0,
+        r_x2=200,
+        r_y2=100,
+        r_x3=0,
+        r_y3=100,
+        coord_origin=CoordOrigin.BOTTOMLEFT,
+    )
+    cell_rect = BoundingRectangle(
+        r_x0=10,
+        r_y0=10,
+        r_x1=90,
+        r_y1=10,
+        r_x2=90,
+        r_y2=40,
+        r_x3=10,
+        r_y3=40,
+        coord_origin=CoordOrigin.BOTTOMLEFT,
+    )
+    return SegmentedPdfPage(
+        dimension=PdfPageGeometry(
+            angle=0.0,
+            rect=page_rect,
+            boundary_type=PdfPageBoundaryType.CROP_BOX,
+            art_bbox=page_bbox,
+            bleed_bbox=page_bbox,
+            crop_bbox=page_bbox,
+            media_bbox=page_bbox,
+            trim_bbox=page_bbox,
+        ),
+        char_cells=[],
+        word_cells=[TextCell(index=0, rect=cell_rect, text="word", orig="word", from_ocr=False)],
+        textline_cells=[],
+        has_words=True,
+    )
+
+
+def _render_with_cell_alpha(page: SegmentedPdfPage, alpha: float):
+    return page.render_as_image(
+        cell_unit=TextCellUnit.WORD,
+        draw_cells_bbox=True,
+        draw_cells_text=False,
+        draw_bitmap_resources=False,
+        draw_shapes=False,
+        draw_widgets=False,
+        draw_hyperlinks=False,
+        cell_alpha=alpha,
+    )
+
+
+class TestRenderAsImageAlpha:
+    """Out-of-range alpha values are clamped into [0, 1] instead of raising."""
+
+    @pytest.mark.parametrize("alpha, clamped", [(1.5, 1.0), (-0.2, 0.0)])
+    def test_out_of_range_alpha_is_clamped(self, alpha: float, clamped: float):
+        page = _one_cell_pdf_page()
+        assert _render_with_cell_alpha(page, alpha).tobytes() == _render_with_cell_alpha(page, clamped).tobytes()
+
+    def test_in_range_alpha_is_untouched(self):
+        page = _one_cell_pdf_page()
+        assert _render_with_cell_alpha(page, 0.5).tobytes() != _render_with_cell_alpha(page, 1.0).tobytes()

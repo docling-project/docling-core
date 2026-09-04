@@ -991,20 +991,15 @@ class SegmentedPdfPage(SegmentedPage):
         Returns:
             PIL Image of the rendered page
         """
-        for _ in [
-            cell_alpha,
-            cell_bl_alpha,
-            cell_tr_alpha,
-            bitmap_resources_alpha,
-            shape_alpha,
-            annotations_alpha,
-            widgets_alpha,
-            hyperlinks_alpha,
-            cropbox_alpha,
-        ]:
-            if _ < 0 or 1.0 < _:
-                logging.error(f"alpha value {_} needs to be in [0, 1]")
-                _ = max(0, min(1.0, _))
+        cell_alpha = self._clamp_alpha(cell_alpha)
+        cell_bl_alpha = self._clamp_alpha(cell_bl_alpha)
+        cell_tr_alpha = self._clamp_alpha(cell_tr_alpha)
+        bitmap_resources_alpha = self._clamp_alpha(bitmap_resources_alpha)
+        shape_alpha = self._clamp_alpha(shape_alpha)
+        annotations_alpha = self._clamp_alpha(annotations_alpha)
+        widgets_alpha = self._clamp_alpha(widgets_alpha)
+        hyperlinks_alpha = self._clamp_alpha(hyperlinks_alpha)
+        cropbox_alpha = self._clamp_alpha(cropbox_alpha)
 
         page_bbox = self.dimension.crop_bbox
 
@@ -1089,6 +1084,20 @@ class SegmentedPdfPage(SegmentedPage):
             )
 
         return result
+
+    def _clamp_alpha(self, alpha: float) -> float:
+        """Clamp an alpha value into [0, 1].
+
+        Args:
+            alpha: Alpha value to check
+
+        Returns:
+            The alpha value, clamped into [0, 1]
+        """
+        if alpha < 0.0 or 1.0 < alpha:
+            logging.error(f"alpha value {alpha} needs to be in [0, 1]")
+            return max(0.0, min(1.0, alpha))
+        return alpha
 
     def _get_rgba(self, name: str, alpha: float):
         """Get RGBA tuple from color name and alpha value.
