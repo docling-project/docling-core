@@ -11,7 +11,7 @@ import yaml
 
 from docling_core.transforms.serializer.latex import LaTeXDocSerializer, LaTeXParams
 from docling_core.types.doc.base import ImageRefMode
-from docling_core.types.doc.document import DoclingDocument
+from docling_core.types.doc.document import DoclingDocument, Formatting
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -137,3 +137,43 @@ def test_latex_nested_lists():
     )
     actual = ser.serialize().text
     verify_or_update(exp_file=src.with_suffix(".gt.tex"), actual=actual)
+
+
+def test_inline_group_no_duplication():
+    r"""Regression test: inline-group content must not appear twice.
+
+    When a SectionHeaderItem, TitleItem or ListItem delegates its text to a
+    child InlineGroup (the shape produced by Markdown/DOCX/HTML import for any
+    formatted heading or list item), the serialized text must appear exactly
+    once — inside the LaTeX command (\section{}, \item, …) and *not* again
+    as a standalone paragraph immediately after it.
+    """
+    doc = DoclingDocument(name="t")
+
+    # Formatted section heading via InlineGroup
+    heading = doc.add_heading(text="", level=1)
+    ig = doc.add_inline_group(parent=heading)
+    doc.add_text(
+        label="text",
+        text="Partially formatted",
+        formatting=Formatting(italic=True),
+        parent=ig,
+    )
+    doc.add_text(label="text", text="heading", parent=ig)
+
+    # Formatted list item via InlineGroup
+    lg = doc.add_list_group()
+    li = doc.add_list_item(text="", parent=lg)
+    ig2 = doc.add_inline_group(parent=li)
+    doc.add_text(label="text", text="Term", formatting=Formatting(bold=True), parent=ig2)
+    doc.add_text(label="text", text=": definition", parent=ig2)
+
+    body = LaTeXDocSerializer(doc=doc).serialize().text.split("\\begin{document}")[1]
+
+    # Each piece of content must appear exactly once in the body
+    assert body.count("\\textit{Partially formatted} heading") == 1
+    assert body.count("\\textbf{Term} : definition") == 1
+
+    # The content must be inside the LaTeX command, not on a standalone line
+    assert "\\section{\\textit{Partially formatted} heading}" in body
+    assert "\\item \\textbf{Term} : definition" in body
