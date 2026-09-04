@@ -157,6 +157,8 @@ from docling_core.types.doc.page import (
     PageNumber,
     ParsedPdfDocument,
     PdfCellRenderingMode,
+    PdfDestination,
+    PdfDestinationKind,
     PdfHyperlink,
     PdfLine,
     PdfMetaData,
