@@ -9,7 +9,12 @@ from xml.etree import ElementTree as ET
 import pytest
 from pydantic import AnyUrl
 
-from docling_core.transforms.serializer.common import _DEFAULT_LABELS
+from docling_core.transforms.serializer.common import (
+    _DEFAULT_LABELS,
+    _iterate_items,
+    _PageBreakNode,
+)
+from docling_core.transforms.serializer.doctags import DocTagsDocSerializer
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
     HTMLMetaSerializer,
@@ -35,6 +40,7 @@ from docling_core.types.doc.document import (
     DescriptionAnnotation,
     EntitiesMetaField,
     EntityMention,
+    GroupLabel,
     LanguageMetaField,
     PictureClassificationMetaField,
     PictureClassificationPrediction,
@@ -1514,3 +1520,242 @@ def test_referenced_image_data_uri_is_not_encoded():
     doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=uri))
 
     assert doc.export_to_markdown(image_mode=ImageRefMode.REFERENCED) == "<!-- image -->"
+
+
+# ===============================
+# Page break positioning (#705)
+# ===============================
+
+
+def _pb_prov(page_no: int) -> ProvenanceItem:
+    """Provenance on a given page; the bbox/charspan are irrelevant here."""
+    return ProvenanceItem(
+        page_no=page_no,
+        bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 1),
+    )
+
+
+def _pb_doc(n_pages: int) -> DoclingDocument:
+    doc = DoclingDocument(name="page-breaks")
+    for page_no in range(1, n_pages + 1):
+        doc.add_page(page_no=page_no, size=Size(width=100, height=100))
+    return doc
+
+
+_PB = "<!-- page break -->"
+
+
+def _pb_render(doc: DoclingDocument) -> str:
+    return (
+        MarkdownDocSerializer(
+            doc=doc,
+            params=MarkdownParams(page_break_placeholder=_PB),
+        )
+        .serialize()
+        .text
+    )
+
+
+def _pb_sections(md: str) -> list[list[str]]:
+    """Split rendered markdown into per-page sections of non-empty lines."""
+    return [[line for line in section.splitlines() if line.strip()] for section in md.split(_PB)]
+
+
+def test_md_page_break_precedes_group_starting_on_new_page():
+    """A group whose children start on a new page gets the break *before* it.
+
+    Regression test for #705: the break used to be emitted after the group, so the
+    group's content was attributed to the previous page.
+    """
+    doc = _pb_doc(2)
+    doc.add_text(label=DocItemLabel.TEXT, text="Page 1 text", prov=_pb_prov(1))
+    group = doc.add_group(label=GroupLabel.KEY_VALUE_AREA, name="kv")
+    doc.add_text(label=DocItemLabel.TEXT, text="KV child", prov=_pb_prov(2), parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text="Page 2 tail", prov=_pb_prov(2))
+
+    sections = _pb_sections(_pb_render(doc))
+
+    assert len(sections) == 2
+    assert sections[0] == ["Page 1 text"]
+    assert sections[1] == ["KV child", "Page 2 tail"]
+
+
+def test_md_page_break_per_slide_groups():
+    """Each slide-like group lands in its own section, with no trailing break.
+
+    Mirrors the PowerPoint backend shape reported in #705, where every slide's
+    content is wrapped in its own group. The placeholder *count* was already
+    correct before the fix (N-1); only the positions were wrong, so this asserts
+    positions rather than a count alone.
+    """
+    n_slides = 5
+    doc = _pb_doc(n_slides)
+    for page_no in range(1, n_slides + 1):
+        group = doc.add_group(label=GroupLabel.UNSPECIFIED, name=f"slide-{page_no}")
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text=f"Slide {page_no}",
+            prov=_pb_prov(page_no),
+            parent=group,
+        )
+
+    md = _pb_render(doc)
+    sections = _pb_sections(md)
+
+    assert md.count(_PB) == n_slides - 1
+    assert sections == [[f"Slide {page_no}"] for page_no in range(1, n_slides + 1)]
+
+
+@pytest.mark.parametrize("with_group", [False, True])
+@pytest.mark.parametrize("gap_at", ["none", "start", "middle", "end"])
+def test_md_page_break_positions_matrix(with_group: bool, gap_at: str):
+    """Every page's text must land in its own section, group or not, gap or not.
+
+    The matrix is what catches position bugs that a placeholder count cannot: a
+    document can carry the right number of breaks while attributing content to the
+    wrong page.
+
+    Note the gap cases pin today's semantics, where a multi-page gap yields a single
+    boundary rather than one per page: with pages [1, 2, 4] this expects three
+    sections, not a ``pb-3-4`` as well. #466 / #472 would change that, and would need
+    these expectations updated along with them.
+    """
+    pages = [1, 2, 3, 4]
+    if gap_at == "start":
+        pages = [2, 3, 4]
+    elif gap_at == "middle":
+        pages = [1, 2, 4]
+    elif gap_at == "end":
+        pages = [1, 2, 3]
+
+    doc = _pb_doc(4)
+    for page_no in pages:
+        if with_group:
+            group = doc.add_group(label=GroupLabel.UNSPECIFIED, name=f"group-{page_no}")
+            doc.add_text(
+                label=DocItemLabel.TEXT,
+                text=f"Text {page_no}",
+                prov=_pb_prov(page_no),
+                parent=group,
+            )
+        else:
+            doc.add_text(label=DocItemLabel.TEXT, text=f"Text {page_no}", prov=_pb_prov(page_no))
+
+    sections = _pb_sections(_pb_render(doc))
+
+    # One section per page that carries content, in order, each holding only its
+    # own text -- no page's content bleeds into a neighbouring section.
+    assert sections == [[f"Text {page_no}"] for page_no in pages]
+
+
+@pytest.mark.parametrize("empty_pages", [1, 2])
+def test_md_page_break_group_straddling_empty_pages(empty_pages: int):
+    """A group whose children straddle empty pages keeps each child in its section."""
+    first, second = 1, 2 + empty_pages
+    doc = _pb_doc(second + 1)
+    doc.add_text(label=DocItemLabel.TEXT, text="Intro", prov=_pb_prov(first))
+    group = doc.add_group(label=GroupLabel.UNSPECIFIED, name="straddler")
+    doc.add_text(label=DocItemLabel.TEXT, text="Child A", prov=_pb_prov(first + 1), parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text="Child B", prov=_pb_prov(second), parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text="Outro", prov=_pb_prov(second + 1))
+
+    sections = _pb_sections(_pb_render(doc))
+
+    assert sections == [["Intro"], ["Child A"], ["Child B"], ["Outro"]]
+
+
+def test_md_page_break_adjacent_groups_with_gap():
+    """Two adjacent groups separated by an empty page stay in their own sections."""
+    doc = _pb_doc(4)
+    first = doc.add_group(label=GroupLabel.UNSPECIFIED, name="first")
+    doc.add_text(label=DocItemLabel.TEXT, text="First group", prov=_pb_prov(1), parent=first)
+    second = doc.add_group(label=GroupLabel.UNSPECIFIED, name="second")
+    doc.add_text(label=DocItemLabel.TEXT, text="Second group", prov=_pb_prov(3), parent=second)
+
+    sections = _pb_sections(_pb_render(doc))
+
+    assert sections == [["First group"], ["Second group"]]
+
+
+def test_page_break_boundary_emitted_once_per_transition():
+    """No boundary is emitted twice by the iterator, before any dedup can hide it.
+
+    ``get_parts()`` drops nodes whose ``self_ref`` it has already seen, so a
+    duplicated boundary is invisible in the rendered output. Asserting at the
+    iterator level keeps the group branch honest: it must advance ``prev_page_nr``
+    past the boundary it emits, otherwise the group's first child emits the same
+    transition again and the output stays correct only by accident.
+
+    This is also why a document corpus cannot stand in for this test. Quoting
+    @serboor on #705, who ran one: a corpus is "a good net for regressions and a
+    bad net for this" -- but the two halves of the defect are not equally hidden,
+    and only one of them is the reason this test exists.
+
+    The *misplacement* does reach the rendered output: across 25 documents, one
+    287-page document rendered 7 pairs of consecutive placeholders on the faulty
+    build -- sections left empty because the break came out after the group --
+    where a page-by-page reference had none. A corpus can catch that.
+
+    The *duplicate* underneath it cannot reach the output at all: the same corpus
+    emitted 732 boundaries of which 722 were distinct, and the markdown contained
+    exactly 722 placeholders. ``get_parts()``'s dedup collapses the extra one, so
+    no markdown-level assertion can fail on it by construction -- including on the
+    two documents that were byte-identical to the reference while their stream was
+    wrong. Asserting on the stream is what changes that.
+    """
+    doc = _pb_doc(4)
+    doc.add_text(label=DocItemLabel.TEXT, text="Intro", prov=_pb_prov(1))
+    first = doc.add_group(label=GroupLabel.UNSPECIFIED, name="first")
+    doc.add_text(label=DocItemLabel.TEXT, text="A", prov=_pb_prov(2), parent=first)
+    doc.add_text(label=DocItemLabel.TEXT, text="B", prov=_pb_prov(2), parent=first)
+    doc.add_text(label=DocItemLabel.TEXT, text="Middle", prov=_pb_prov(3))
+    second = doc.add_group(label=GroupLabel.UNSPECIFIED, name="second")
+    doc.add_text(label=DocItemLabel.TEXT, text="C", prov=_pb_prov(4), parent=second)
+
+    breaks = [
+        node
+        for node, _ in _iterate_items(doc=doc, layers=None, add_page_breaks=True)
+        if isinstance(node, _PageBreakNode)
+    ]
+
+    assert [(b.prev_page, b.next_page) for b in breaks] == [(1, 2), (2, 3), (3, 4)]
+    # Distinct transitions must stay distinguishable, or get_parts()'s dedup would
+    # swallow a legitimate break rather than a duplicate one.
+    assert len({b.self_ref for b in breaks}) == len(breaks)
+
+
+def test_md_page_break_nested_groups():
+    """A boundary inside a nested group is emitted before the innermost group.
+
+    This is the one shape where the recursion in ``_iterate_items`` and the
+    ``my_visited`` set it shares with its caller actually interact: the outer group's
+    lookahead walks into the inner group, and both scopes see the same transition.
+    """
+    doc = _pb_doc(3)
+    doc.add_text(label=DocItemLabel.TEXT, text="Intro", prov=_pb_prov(1))
+    outer = doc.add_group(label=GroupLabel.UNSPECIFIED, name="outer")
+    doc.add_text(label=DocItemLabel.TEXT, text="Outer child", prov=_pb_prov(1), parent=outer)
+    inner = doc.add_group(label=GroupLabel.UNSPECIFIED, name="inner", parent=outer)
+    doc.add_text(label=DocItemLabel.TEXT, text="Inner child", prov=_pb_prov(2), parent=inner)
+    doc.add_text(label=DocItemLabel.TEXT, text="Outro", prov=_pb_prov(3))
+
+    sections = _pb_sections(_pb_render(doc))
+
+    assert sections == [["Intro", "Outer child"], ["Inner child"], ["Outro"]]
+
+
+def test_page_break_before_group_across_serializers():
+    """The fix lives in the shared iterator, so every serializer benefits.
+
+    ``_iterate_items`` backs markdown, LaTeX, DocTags and DocLang alike; asserting on
+    DocTags too keeps the other consumers from regressing silently.
+    """
+    doc = _pb_doc(2)
+    doc.add_text(label=DocItemLabel.TEXT, text="Page 1 text", prov=_pb_prov(1))
+    group = doc.add_group(label=GroupLabel.KEY_VALUE_AREA, name="kv")
+    doc.add_text(label=DocItemLabel.TEXT, text="KV child", prov=_pb_prov(2), parent=group)
+
+    doctags = DocTagsDocSerializer(doc=doc).serialize().text
+
+    assert doctags.index("<page_break>") < doctags.index("KV child")
