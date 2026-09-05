@@ -13,6 +13,7 @@ from typing_extensions import Self, override
 
 _VALID_ENTITIES: set = {"amp", "lt", "gt", "lrm", "rlm", "nbsp"}
 _ENTITY_PATTERN: re.Pattern = re.compile(r"&([a-zA-Z0-9]+);")
+_TIMESTAMP_PATTERN_STR: str = r"(?:(\d{2,}):)?([0-5]\d):([0-5]\d)\.(\d{3})"
 START_TAG_NAMES = Literal["c", "b", "i", "u", "v", "lang"]
 
 
@@ -51,7 +52,7 @@ class WebVTTTimestamp(BaseModel):
         Field(description="A representation of the WebVTT Timestamp as a single string"),
     ]
 
-    _pattern: ClassVar[re.Pattern] = re.compile(r"^(?:(\d{2,}):)?([0-5]\d):([0-5]\d)\.(\d{3})$")
+    _pattern: ClassVar[re.Pattern] = re.compile(r"^" + _TIMESTAMP_PATTERN_STR + r"$")
     _hours: int
     _minutes: int
     _seconds: int
@@ -419,6 +420,9 @@ class WebVTTCueBlock(BaseModel):
         r"(?:[ \t](?P<annotation>[^\n\r&>]*))?>"
     )
 
+    # pattern of a WebVTT cue timestamp tag (e.g. <00:00:01.500> or <00:01.500>)
+    _pattern_cue_timestamp: ClassVar[re.Pattern] = re.compile(r"<" + _TIMESTAMP_PATTERN_STR + r">")
+
     @field_validator("payload", mode="after")
     @classmethod
     def validate_payload(cls, payload):
@@ -475,6 +479,9 @@ class WebVTTCueBlock(BaseModel):
             if cue_text.startswith(f"<{omm}") and f"</{omm}>" not in cue_text:
                 cue_text += f"</{omm}>"
                 break
+
+        # Strip cue timestamp tags (e.g. <00:00:01.500>) — they carry no text content.
+        cue_text = cls._pattern_cue_timestamp.sub("", cue_text)
 
         stack: list[list[WebVTTCueComponentWithTerminator]] = [[]]
         tag_stack: list[dict] = []

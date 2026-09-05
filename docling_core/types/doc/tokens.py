@@ -302,19 +302,27 @@ class DocumentToken(str, Enum):
         ysize: int = 500,  # TODO review
         self_closing: bool = False,
     ):
-        """Get the location string give bbox and page-dim."""
-        assert bbox[0] <= bbox[2], f"bbox[0]<=bbox[2] => {bbox[0]}<={bbox[2]}"
-        assert bbox[1] <= bbox[3], f"bbox[1]<=bbox[3] => {bbox[1]}<={bbox[3]}"
+        """Get the location string given bbox and page-dim.
 
-        x0 = bbox[0] / page_w
-        y0 = bbox[1] / page_h
-        x1 = bbox[2] / page_w
-        y1 = bbox[3] / page_h
+        Inverted coordinates are normalized silently: near-degenerate elements
+        (e.g. a thin rule whose layout-model regression produced a slightly
+        inverted bbox) can arrive with `bbox[0] > bbox[2]` or
+        `bbox[1] > bbox[3]`. After sorting, `left <= right` and
+        `top <= bottom` is guaranteed, so the ratios `x0 <= x1` and
+        `y0 <= y1` follow directly from positive page dimensions.
+        """
+        left, right = sorted((bbox[0], bbox[2]))
+        top, bottom = sorted((bbox[1], bbox[3]))
 
-        x0_tok = DocumentToken.get_location_token(val=min(x0, x1), rnorm=xsize, self_closing=self_closing)
-        y0_tok = DocumentToken.get_location_token(val=min(y0, y1), rnorm=ysize, self_closing=self_closing)
-        x1_tok = DocumentToken.get_location_token(val=max(x0, x1), rnorm=xsize, self_closing=self_closing)
-        y1_tok = DocumentToken.get_location_token(val=max(y0, y1), rnorm=ysize, self_closing=self_closing)
+        x0 = left / page_w
+        y0 = top / page_h
+        x1 = right / page_w
+        y1 = bottom / page_h
+
+        x0_tok = DocumentToken.get_location_token(val=x0, rnorm=xsize, self_closing=self_closing)
+        y0_tok = DocumentToken.get_location_token(val=y0, rnorm=ysize, self_closing=self_closing)
+        x1_tok = DocumentToken.get_location_token(val=x1, rnorm=xsize, self_closing=self_closing)
+        y1_tok = DocumentToken.get_location_token(val=y1, rnorm=ysize, self_closing=self_closing)
 
         loc_str = f"{x0_tok}{y0_tok}{x1_tok}{y1_tok}"
 

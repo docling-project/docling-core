@@ -79,7 +79,7 @@ def _verify_json(exp_file: Path, actual_json: str) -> None:
 
 def test_azure_serialize_activities_doc():
     """Serialize a GT document (activities.json) and verify Azure JSON output."""
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = AzureDocSerializer(doc=doc, params=AzureParams(indent=2))
@@ -144,5 +144,5 @@ def test_azure_serialize_construct_doc_minimal_prov(sample_doc: DoclingDocument)
     assert "pages" in data and isinstance(data["pages"], list) and len(data["pages"]) >= 1
     assert "paragraphs" in data and isinstance(data["paragraphs"], list)
 
-    exp_file = Path("./test/data/doc/constructed.gt.azure.json")
+    exp_file = Path("./tests/data/doc/constructed.gt.azure.json")
     _verify_json(exp_file=exp_file, actual_json=actual_json)

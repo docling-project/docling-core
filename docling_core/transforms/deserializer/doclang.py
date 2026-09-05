@@ -138,7 +138,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
     _page_no: int = PrivateAttr(default=1)
     _default_resolution: int = PrivateAttr(default=DOCLANG_DFLT_RESOLUTION)
     _thread_registry: dict[tuple[str, str], NodeItem] = PrivateAttr(default_factory=dict)
-    _media_root: Optional[Path] = PrivateAttr(default=None)
+    _media_root: Path | None = PrivateAttr(default=None)
     _max_xml_bytes: int = PrivateAttr(default=settings.max_doclang_xml_bytes)
     _max_xml_depth: int = PrivateAttr(default=settings.max_doclang_xml_depth)
     _max_xml_elements: int = PrivateAttr(default=settings.max_doclang_xml_elements)
@@ -210,7 +210,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         self._parse_document_root(doc=doc, root=root)
         return doc
 
-    def _extract_thread_id_from_nodes(self, nodes: Sequence[Node]) -> Optional[str]:
+    def _extract_thread_id_from_nodes(self, nodes: Sequence[Node]) -> str | None:
         """Read ``thread_id`` from a ``<thread/>`` element in a node sequence."""
         for node in nodes:
             if isinstance(node, Element) and node.tagName == DocLangToken.THREAD.value:
@@ -219,7 +219,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     return thread_id
         return None
 
-    def _extract_thread_id(self, el: Element) -> Optional[str]:
+    def _extract_thread_id(self, el: Element) -> str | None:
         """Read ``thread_id`` from an element head."""
         head_nodes, _ = self._split_element_children_head_body(el)
         return self._extract_thread_id_from_nodes(head_nodes)
@@ -227,7 +227,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
     def _register_thread(self, *, thread_id: str, host: str, item: NodeItem) -> None:
         self._thread_registry[self._thread_registry_key(thread_id=thread_id, host=host)] = item
 
-    def _get_thread_item(self, thread_id: str, *, host: str) -> Optional[NodeItem]:
+    def _get_thread_item(self, thread_id: str, *, host: str) -> NodeItem | None:
         return self._thread_registry.get(self._thread_registry_key(thread_id=thread_id, host=host))
 
     def _advance_page_break(self, *, doc: DoclingDocument) -> None:
@@ -299,7 +299,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             if isinstance(node, Element):
                 self._dispatch_element(doc=doc, el=node, parent=None)
 
-    def _dispatch_element(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+    def _dispatch_element(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         name = el.tagName
         if name in {
             DocLangToken.TEXT.value,
@@ -343,8 +343,13 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         elif name == DocLangToken.LIST.value:
             self._parse_list(doc=doc, el=el, parent=parent)
         elif name == DocLangToken.GROUP.value:
+            # A named group is an explicit GroupItem. The float + footnote wrapper
+            # never carries a name, so it must be checked first: an article group
+            # holding a picture or a table is not a float.
+            if group_name := el.getAttribute(DocLangAttributeKey.NAME.value):
+                self._parse_named_group(doc=doc, el=el, parent=parent, name=group_name)
             # Float + footnote siblings: parse as one unit (not a Docling GroupItem).
-            if self._first_child(el, DocLangToken.TABLE.value) or self._first_child(el, DocLangToken.INDEX.value):
+            elif self._first_child(el, DocLangToken.TABLE.value) or self._first_child(el, DocLangToken.INDEX.value):
                 self._parse_table(doc=doc, el=el, parent=parent)
             elif self._first_child(el, DocLangToken.PICTURE.value):
                 self._parse_picture(doc=doc, el=el, parent=parent)
@@ -357,7 +362,20 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         else:
             self._walk_children(doc=doc, el=el, parent=parent)
 
-    def _walk_children(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+    def _parse_named_group(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None, name: str) -> None:
+        r"""Rebuild a GroupItem from <group name="..."> and nest its children in it."""
+        head_nodes = [node for node in el.childNodes if isinstance(node, Element) and self._is_element_head_tag(node)]
+        label = GroupLabel.UNSPECIFIED
+        if label_value := self._label_value_from_nodes(head_nodes):
+            try:
+                label = GroupLabel(label_value)
+            except ValueError:
+                pass
+        group = doc.add_group(label=label, name=name, parent=parent)
+        self._source_recorder.bind_item(el, group)
+        self._walk_children(doc=doc, el=el, parent=group)
+
+    def _walk_children(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         for node in el.childNodes:
             if isinstance(node, Element):
                 # Ignore geometry/meta containers at this level; pass through page breaks
@@ -378,7 +396,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
     def _should_preserve_space(self, el: Element) -> bool:
         return el.tagName == DocLangToken.CONTENT.value  # and el.getAttribute("xml:space") == "preserve"
 
-    def _get_children_simple_text_block(self, element: Element) -> Optional[str]:
+    def _get_children_simple_text_block(self, element: Element) -> str | None:
         result = None
         for el in element.childNodes:
             if isinstance(el, Element):
@@ -410,7 +428,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     return None
         return result
 
-    def _parse_text_like(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+    def _parse_text_like(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         """Parse text-like tokens (text, caption, footnotes, code, formula)."""
         element_children = [
             node for node in el.childNodes if isinstance(node, Element) and not self._is_element_head_tag(node)
@@ -592,7 +610,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
 
         return "".join(parts), lang_label
 
-    def _parse_heading(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+    def _parse_heading(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         lvl_txt = el.getAttribute(DocLangAttributeKey.LEVEL.value) or "1"
         try:
             level = int(lvl_txt)
@@ -635,7 +653,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             self._apply_custom_meta_from_element(item=item, el=el)
             self._source_recorder.bind_item(el, item)
 
-    def _parse_field_heading(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+    def _parse_field_heading(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         lvl_txt = el.getAttribute(DocLangAttributeKey.LEVEL.value) or "1"
         try:
             level = int(lvl_txt)
@@ -757,7 +775,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             return "fillable"
         return "read_only"
 
-    def _parse_field_region(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+    def _parse_field_region(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         prov_list = self._extract_provenance(doc=doc, el=el)
         fri = doc.add_field_region(
             parent=parent,
@@ -769,7 +787,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         _, body_nodes = self._split_element_children_head_body(el)
         self._dispatch_body_nodes(doc=doc, body_nodes=body_nodes, parent=fri)
 
-    def _parse_field_item(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+    def _parse_field_item(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         prov_list = self._extract_provenance(doc=doc, el=el)
         content_layer = self._extract_layer(el=el)
         fi = doc.add_field_item(
@@ -783,13 +801,13 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         _, body_nodes = self._split_element_children_head_body(el)
         self._dispatch_body_nodes(doc=doc, body_nodes=body_nodes, parent=fi)
 
-    def _parse_field_key(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+    def _parse_field_key(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         self._parse_field_kv(doc=doc, el=el, parent=parent, is_value=False)
 
-    def _parse_field_value(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+    def _parse_field_value(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         self._parse_field_kv(doc=doc, el=el, parent=parent, is_value=True)
 
-    def _parse_checkbox(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+    def _parse_checkbox(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         checkbox_class = el.getAttribute(DocLangAttributeKey.CLASS.value)
         if checkbox_class == DocLangAttributeValue.SELECTED.value:
             label = DocItemLabel.CHECKBOX_SELECTED
@@ -798,7 +816,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         item = doc.add_text(label=label, text="", parent=parent)
         self._source_recorder.bind_item(el, item)
 
-    def _parse_field_hint(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+    def _parse_field_hint(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         prov_list = self._extract_provenance(doc=doc, el=el)
         content_layer = self._extract_layer(el=el)
         text, formatting = self._extract_text_with_formatting(el)
@@ -834,7 +852,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         *,
         doc: DoclingDocument,
         el: Element,
-        parent: Optional[NodeItem],
+        parent: NodeItem | None,
         is_value: bool,
     ) -> None:
         """Parse ``<key>`` / ``<value>`` into field key or value items."""
@@ -920,7 +938,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         self._apply_custom_meta_from_element(item=item, el=el)
         self._source_recorder.bind_item(el, item)
 
-    def _first_non_whitespace_node(self, nodes: Sequence[Node]) -> Optional[Node]:
+    def _first_non_whitespace_node(self, nodes: Sequence[Node]) -> Node | None:
         """Return the first node that is not whitespace-only text."""
         for node in nodes:
             if isinstance(node, Text) and not node.data.strip():
@@ -928,7 +946,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             return node
         return None
 
-    def _token_category(self, tag: str) -> Optional[DocLangCategory]:
+    def _token_category(self, tag: str) -> DocLangCategory | None:
         try:
             return DocLangVocabulary._get_category(DocLangToken(tag))
         except ValueError:
@@ -945,7 +963,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         self,
         el: Element,
         *,
-        body_starts_at: Optional[Callable[[Node], bool]] = None,
+        body_starts_at: Callable[[Node], bool] | None = None,
     ) -> tuple[list[Node], list[Node]]:
         """Split immediate children into element-head prefix and body."""
         head_nodes: list[Node] = []
@@ -1151,7 +1169,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
     def _provenance_from_location_nodes(self, *, doc: DoclingDocument, nodes: Sequence[Node]) -> list[ProvenanceItem]:
         """Collect ``<location>`` quartets from a flat node sequence (element head)."""
         values: list[int] = []
-        res_for_group: Optional[int] = None
+        res_for_group: int | None = None
         provs: list[ProvenanceItem] = []
 
         for node in nodes:
@@ -1204,7 +1222,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         self._apply_initial_text_provenance(item, text=text, prov_list=prov_list)
         return item
 
-    def _parse_list(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+    def _parse_list(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         ordered = el.getAttribute(DocLangAttributeKey.CLASS.value) == DocLangAttributeValue.ORDERED.value
         list_head_nodes = [node for node in el.childNodes if isinstance(node, Element)]
         thread_id = self._extract_thread_id_from_nodes(list_head_nodes)
@@ -1401,8 +1419,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         *,
         doc: DoclingDocument,
         el: Element,
-        parent: Optional[NodeItem],
-        nodes: Optional[Sequence[Node]] = None,
+        parent: NodeItem | None,
+        nodes: Sequence[Node] | None = None,
     ) -> None:
         """Parse <inline> elements into InlineGroup objects."""
         # Create the inline group
@@ -1439,9 +1457,9 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             raise ValueError("table element must not have a class attribute.")
         return DocItemLabel.TABLE
 
-    def _parse_table(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+    def _parse_table(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         """Parse ``<table>``, ``<index>``, or a ``<group>`` wrapping them (with footnotes)."""
-        otsl_el: Optional[Element]
+        otsl_el: Element | None
         footnotes: list[TextItem] = []
         if el.tagName in {DocLangToken.TABLE.value, DocLangToken.INDEX.value}:
             caption = self._extract_caption(doc=doc, el=el)
@@ -1523,9 +1541,9 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         for ftn in footnotes:
             tbl.footnotes.append(ftn.get_ref())
 
-    def _parse_picture(self, *, doc: DoclingDocument, el: Element, parent: Optional[NodeItem]) -> None:
+    def _parse_picture(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         """Parse ``<picture>`` or a ``<group>`` wrapping it (with footnotes)."""
-        picture_el: Optional[Element]
+        picture_el: Element | None
         footnotes: list[TextItem] = []
         if el.tagName == DocLangToken.PICTURE.value:
             caption = self._extract_caption(doc=doc, el=el)
@@ -1538,7 +1556,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 caption = self._extract_caption(doc=doc, el=picture_el)
 
         prov_list: list[ProvenanceItem] = []
-        content_layer: Optional[ContentLayer] = None
+        content_layer: ContentLayer | None = None
         if picture_el is not None:
             prov_list = self._extract_provenance(doc=doc, el=picture_el)
             content_layer = self._extract_layer(el=picture_el)
@@ -1671,7 +1689,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         return item.meta
 
     @staticmethod
-    def _split_namespace_field_tag(tag: str) -> Optional[tuple[str, str]]:
+    def _split_namespace_field_tag(tag: str) -> tuple[str, str] | None:
         """Parse a ``namespace__field`` custom-vocabulary tag."""
         if MetaUtils._META_FIELD_NAMESPACE_DELIMITER not in tag:
             return None
@@ -1721,7 +1739,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                         self._apply_custom_meta_field_element(item=item, field_el=child)
 
     # ------------- Helpers -------------
-    def _extract_caption(self, *, doc: DoclingDocument, el: Element) -> Optional[TextItem]:
+    def _extract_caption(self, *, doc: DoclingDocument, el: Element) -> TextItem | None:
         """Extract caption from element head or from a ``<group>`` wrapper around a float."""
         cap_el = self._first_child(el, DocLangToken.CAPTION.value)
         if cap_el is None:
@@ -1758,13 +1776,13 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     footnotes.append(item)
         return footnotes
 
-    def _first_child(self, el: Element, tag_name: str) -> Optional[Element]:
+    def _first_child(self, el: Element, tag_name: str) -> Element | None:
         for node in el.childNodes:
             if isinstance(node, Element) and node.tagName == tag_name:
                 return node
         return None
 
-    def _inner_xml(self, el: Element, exclude_tags: Optional[set[str]] = None) -> str:
+    def _inner_xml(self, el: Element, exclude_tags: set[str] | None = None) -> str:
         """Extract inner XML content, optionally excluding specific element tags.
 
         Args:
@@ -1784,7 +1802,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     parts.append(node.toxml())
         return "".join(parts)
 
-    def _layer_from_nodes(self, nodes: Sequence[Node]) -> Optional[ContentLayer]:
+    def _layer_from_nodes(self, nodes: Sequence[Node]) -> ContentLayer | None:
         r"""Extract content layer from ``<layer value=\"...\"/>`` in element head nodes."""
         for node in nodes:
             if isinstance(node, Element) and node.tagName == DocLangToken.LAYER.value:
@@ -1795,7 +1813,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                         pass
         return None
 
-    def _label_value_from_nodes(self, nodes: Sequence[Node]) -> Optional[str]:
+    def _label_value_from_nodes(self, nodes: Sequence[Node]) -> str | None:
         r"""Extract ``<label value=\"...\"/>`` from element head nodes."""
         for node in nodes:
             if isinstance(node, Element) and node.tagName == DocLangToken.LABEL.value:
@@ -1819,12 +1837,12 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         }
     )
 
-    def _bbox_from_location_elements(self, *, doc: DoclingDocument, locations: list[Element]) -> Optional[BoundingBox]:
+    def _bbox_from_location_elements(self, *, doc: DoclingDocument, locations: list[Element]) -> BoundingBox | None:
         """Build a TOPLEFT bbox from four location elements."""
         if len(locations) != 4:
             return None
         values: list[int] = []
-        res_for_group: Optional[int] = None
+        res_for_group: int | None = None
         for loc_el in locations:
             if loc_el.tagName != DocLangToken.LOCATION.value:
                 return None
@@ -1852,10 +1870,10 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
     def _consume_leading_location_fragments(
         self,
         *,
-        doc: Optional[DoclingDocument],
+        doc: DoclingDocument | None,
         texts: list[str | Element],
         start: int,
-    ) -> tuple[int, Optional[BoundingBox]]:
+    ) -> tuple[int, BoundingBox | None]:
         """Consume a leading quartet of location elements; return next index and bbox."""
         locations: list[Element] = []
         idx = start
@@ -1870,7 +1888,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 return idx, bbox
         return start, None
 
-    def _otsl_structural_token(self, item: str | Element) -> Optional[str]:
+    def _otsl_structural_token(self, item: str | Element) -> str | None:
         if isinstance(item, Element) and item.tagName in self._OTSL_STRUCTURAL_TAGS:
             return f"<{item.tagName}/>"
         return None
@@ -1928,7 +1946,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         texts: list[str | Element],
         tokens: list[str],
         doc: Optional["DoclingDocument"] = None,
-        parent: Optional[NodeItem] = None,
+        parent: NodeItem | None = None,
         row_offset: int = 0,
         col_offset: int = 0,
     ) -> tuple[list[TableCell], list[list[str]]]:
@@ -1985,7 +2003,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             if t in origin_tokens + continuation_origin_tokens:
                 row_span = 1
                 col_span = 1
-                cell_bbox: Optional[BoundingBox] = None
+                cell_bbox: BoundingBox | None = None
                 content_idx = i + 1
                 cell_parts: list[str | Element] = []
                 if t != ecel and content_idx < len(texts):
@@ -2068,7 +2086,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         self,
         otsl_content: str,
         doc: Optional["DoclingDocument"] = None,
-        parent: Optional[NodeItem] = None,
+        parent: NodeItem | None = None,
         row_offset: int = 0,
         col_offset: int = 0,
     ) -> TableData:
@@ -2088,7 +2106,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             table_cells=table_cells,
         )
 
-    def _extract_text_with_formatting(self, el: Element) -> tuple[str, Optional[Formatting]]:
+    def _extract_text_with_formatting(self, el: Element) -> tuple[str, Formatting | None]:
         """Extract text content and formatting from an element.
 
         If the element contains a single formatting child (bold, italic, etc.),
@@ -2174,12 +2192,12 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         head_nodes, _ = self._split_element_children_head_body(el)
         return self._provenance_from_location_nodes(doc=doc, nodes=head_nodes)
 
-    def _extract_layer(self, *, el: Element) -> Optional[ContentLayer]:
+    def _extract_layer(self, *, el: Element) -> ContentLayer | None:
         r"""Extract content layer from element-head ``<layer value=\"...\"/>``."""
         head_nodes, _ = self._split_element_children_head_body(el)
         return self._layer_from_nodes(head_nodes)
 
-    def _extract_label_value(self, *, el: Element) -> Optional[str]:
+    def _extract_label_value(self, *, el: Element) -> str | None:
         r"""Extract ``<label value=\"...\"/>`` from element head."""
         head_nodes, _ = self._split_element_children_head_body(el)
         return self._label_value_from_nodes(head_nodes)

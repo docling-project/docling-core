@@ -130,7 +130,7 @@ class HybridChunker(BaseChunker):
             always_emit_headings=self.always_emit_headings,
         )
 
-    def _count_text_tokens(self, text: Optional[Union[str, list[str]]]):
+    def _count_text_tokens(self, text: str | list[str] | None):
         if text is None:
             return 0
         elif isinstance(text, list):

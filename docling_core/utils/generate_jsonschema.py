@@ -22,7 +22,7 @@ def _import_class(class_reference: str) -> Any:
     return class_type
 
 
-def generate_json_schema(class_reference: str) -> Union[dict, None]:
+def generate_json_schema(class_reference: str) -> dict | None:
     """Generate a jsonable dict of a model's schema from a data type.
 
     Args:

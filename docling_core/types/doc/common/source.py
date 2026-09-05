@@ -55,7 +55,7 @@ class TrackSource(BaseSource):
         return self
 
 
-SourceType = Annotated[Union[TrackSource], Field(discriminator="kind")]
+SourceType = Annotated[TrackSource, Field(discriminator="kind")]
 """Union type for all source types.
 
 This type alias represents a discriminated union of all available source types that can be associated with

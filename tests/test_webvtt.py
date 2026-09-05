@@ -198,10 +198,17 @@ def test_webvttcueblock_parse() -> None:
     assert block.payload[2].component.text == ", ici à Montpellier"
     assert raw == str(block)
 
+    # Cue timestamps must be stripped so that the surrounding text is preserved.
+    raw = "00:00:00.030 --> 00:00:02.669\nthe<00:00:00.389> quick<00:00:00.750> brown\n"
+    block = WebVTTCueBlock.parse(raw)
+    assert len(block.payload) == 1
+    assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
+    assert block.payload[0].component.text == "the quick brown"
+
 
 def test_webvtt_file() -> None:
     """Test WebVTT files."""
-    with open("./test/data/webvtt/webvtt_example_01.vtt", encoding="utf-8") as f:
+    with open("./tests/data/webvtt/webvtt_example_01.vtt", encoding="utf-8") as f:
         content = f.read()
         vtt = WebVTTFile.parse(content)
     assert len(vtt) == 13
@@ -220,7 +227,7 @@ def test_webvtt_file() -> None:
     assert isinstance(comp2.component, WebVTTCueTextSpan)
     assert comp2.component.text == "Laughs"
 
-    with open("./test/data/webvtt/webvtt_example_02.vtt", encoding="utf-8") as f:
+    with open("./tests/data/webvtt/webvtt_example_02.vtt", encoding="utf-8") as f:
         content = f.read()
         vtt = WebVTTFile.parse(content)
     assert len(vtt) == 4
@@ -228,7 +235,7 @@ def test_webvtt_file() -> None:
     reverse += "\n".join([block.format(omit_hours_if_zero=True, omit_voice_end=True) for block in vtt.cue_blocks])
     assert content == reverse.rstrip()
 
-    with open("./test/data/webvtt/webvtt_example_03.vtt", encoding="utf-8") as f:
+    with open("./tests/data/webvtt/webvtt_example_03.vtt", encoding="utf-8") as f:
         content = f.read()
         vtt = WebVTTFile.parse(content)
     assert len(vtt) == 13
@@ -247,12 +254,12 @@ def test_webvtt_file() -> None:
     assert block.payload[0].component.text == "Good."
     assert not vtt.title
 
-    with open("./test/data/webvtt/webvtt_example_04.vtt", encoding="utf-8") as f:
+    with open("./tests/data/webvtt/webvtt_example_04.vtt", encoding="utf-8") as f:
         content = f.read()
         with warnings.catch_warnings():
             warnings.simplefilter("error")
             vtt = WebVTTFile.parse(content)
-    assert len(vtt) == 2
+    assert len(vtt) == 3
     block = vtt.cue_blocks[1]
     assert len(block.payload) == 5
     assert str(block) == (
@@ -261,6 +268,10 @@ def test_webvtt_file() -> None:
         "— You could <b.loud>die</b>.\n"
         "<v John>This is true.</v>\n"
     )
+    block = vtt.cue_blocks[2]
+    assert len(block.payload) == 1
+    assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
+    assert block.payload[0].component.text == "the quick brown fox"
     assert vtt.title == "Danger of Nitrogen"
 
 

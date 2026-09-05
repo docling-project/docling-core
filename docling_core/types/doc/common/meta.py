@@ -67,14 +67,14 @@ class _ExtraAllowingModel(BaseModel):
 class BasePrediction(_ExtraAllowingModel):
     """Prediction field."""
 
-    confidence: Optional[float] = Field(
+    confidence: float | None = Field(
         default=None,
         ge=0,
         le=1,
         description="The confidence of the prediction.",
         examples=[0.9, 0.42],
     )
-    created_by: Optional[str] = Field(
+    created_by: str | None = Field(
         default=None,
         description="The origin of the prediction.",
         examples=["ibm-granite/granite-docling-258M"],
@@ -143,7 +143,7 @@ class EntityMention(BasePrediction):
         Field(description="Normalized text of the entity mention."),
     ]
     orig: Annotated[
-        Optional[str],
+        str | None,
         Field(
             description=(
                 "Exact source text extracted from the original charspan, "
@@ -153,11 +153,11 @@ class EntityMention(BasePrediction):
         ),
     ] = None
     label: Annotated[
-        Optional[str],
+        str | None,
         Field(description="Entity type or category."),
     ] = None
     charspan: Annotated[
-        Optional[CharSpan],
+        CharSpan | None,
         Field(description="Character span (0-indexed) of the entity mention in the source text."),
     ] = None
 
@@ -184,21 +184,21 @@ class BaseMeta(_ExtraAllowingModel):
     """Base class for metadata."""
 
     summary: Annotated[
-        Optional[SummaryMetaField],
+        SummaryMetaField | None,
         Field(
             description="A condensed natural-language summary of the content rooted at this node.",
             examples=[{"text": "A short company/location statement."}],
         ),
     ] = None
     language: Annotated[
-        Optional[LanguageMetaField],
+        LanguageMetaField | None,
         Field(
             description="The detected human language of the node content, expressed as a BCP 47 code.",
             examples=[{"code": "en"}],
         ),
     ] = None
     entities: Annotated[
-        Optional[EntitiesMetaField],
+        EntitiesMetaField | None,
         Field(
             description=(
                 "Named entities extracted from the node text (persons, organisations, locations, etc.). "
@@ -208,7 +208,7 @@ class BaseMeta(_ExtraAllowingModel):
         ),
     ] = None
     keywords: Annotated[
-        Optional[KeywordsMetaField],
+        KeywordsMetaField | None,
         Field(
             description=(
                 "Salient terms or short keyphrases that characterise the node content. "
@@ -220,7 +220,7 @@ class BaseMeta(_ExtraAllowingModel):
         ),
     ] = None
     topics: Annotated[
-        Optional[TopicsMetaField],
+        TopicsMetaField | None,
         Field(
             description=(
                 "Higher-level subject categories or thematic labels inferred for the node content. "
@@ -258,14 +258,14 @@ class DescriptionMetaField(BasePrediction):
 class FloatingMeta(BaseMeta):
     """Metadata model for floating."""
 
-    description: Optional[DescriptionMetaField] = None
+    description: DescriptionMetaField | None = None
 
 
 class CodeMetaField(BasePrediction):
     """Code representation for the respective item."""
 
     text: str  # the actual code
-    language: Optional[CodeLanguageLabel] = None
+    language: CodeLanguageLabel | None = None
 
 
 class FormulaMetaField(BasePrediction):
@@ -277,14 +277,14 @@ class FormulaMetaField(BasePrediction):
     of the two a value came from.
     """
 
-    mathml: Optional[str] = None
-    latex: Optional[str] = None
+    mathml: str | None = None
+    latex: str | None = None
 
 
 class FormulaMeta(BaseMeta):
     """Metadata model for formulas."""
 
-    formula: Optional[FormulaMetaField] = None
+    formula: FormulaMetaField | None = None
 
 
 class MetaUtils:

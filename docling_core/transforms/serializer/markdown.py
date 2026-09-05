@@ -5,8 +5,9 @@ import logging
 import re
 import textwrap
 from enum import Enum
-from pathlib import Path
-from typing import Annotated, Any, Optional, Union
+from pathlib import Path, PurePath
+from typing import Annotated, Any, Final, Optional, Union
+from urllib.parse import quote, urlsplit, urlunsplit
 
 from pydantic import AnyUrl, BaseModel, Field, PositiveInt
 from tabulate import _column_type, tabulate
@@ -156,8 +157,8 @@ class MarkdownParams(CommonParams):
     image_placeholder: str = "<!-- image -->"
     enable_chart_tables: bool = True
     indent: int = 4
-    wrap_width: Optional[PositiveInt] = None
-    page_break_placeholder: Optional[str] = None  # e.g. "<!-- page break -->"
+    wrap_width: PositiveInt | None = None
+    page_break_placeholder: str | None = None  # e.g. "<!-- page break -->"
     escape_underscores: bool = True
     escape_html: bool = True
     mark_meta: bool = Field(default=False, description="Mark meta sections.")
@@ -226,10 +227,30 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
         is_inline_scope: bool = False,
-        visited: Optional[set[str]] = None,  # refs of visited items
+        in_table_cell: bool = False,
+        visited: set[str] | None = None,  # refs of visited items
         **kwargs: Any,
     ) -> SerializationResult:
-        """Serializes the passed item."""
+        """Serialize the passed text item to Markdown.
+
+        Args:
+            item: The text item to serialize.
+            doc_serializer: The parent document serializer.
+            doc: The document the item belongs to.
+            is_inline_scope: Whether serialization happens in an inline context
+                (e.g. inside an InlineGroup). Affects delimiter and code/formula
+                wrapping.
+            in_table_cell: Whether the item is being rendered inside a table
+                cell. When ``True``, heading markers are suppressed because the
+                Markdown spec does not allow headings inside tables.
+            visited: Set of already-visited item refs used to prevent duplicate
+                serialization.
+            **kwargs: Additional keyword arguments forwarded to
+                ``MarkdownParams``.
+
+        Returns:
+            The serialization result containing the rendered Markdown text.
+        """
         my_visited = visited if visited is not None else set()
         params = MarkdownParams(**kwargs)
         res_parts: list[SerializationResult] = []
@@ -314,7 +335,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 pieces.append(text)
                 text_part = " ".join(pieces)
             else:
-                text_part = self._format_heading(text, item)
+                text_part = self._format_heading(text, item, in_table_cell=in_table_cell)
         elif isinstance(item, CodeItem):
             if params.format_code_blocks:
                 # inline items and all hyperlinks: use single backticks
@@ -363,9 +384,26 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
     def _format_heading(
         self,
         text: str,
-        item: Union[TitleItem, SectionHeaderItem],
+        item: TitleItem | SectionHeaderItem,
+        in_table_cell: bool = False,
     ) -> str:
-        """Format a heading/title item. Override to customize heading representation."""
+        """Format a heading or title item as a Markdown heading string.
+
+        Override this method to customize heading representation in subclasses.
+
+        Args:
+            text: The heading text content, already post-processed.
+            item: The title or section header item being formatted.
+            in_table_cell: When ``True``, returns plain text without ``#``
+                markers because headings are not valid inside Markdown tables
+                per the Markdown spec.
+
+        Returns:
+            The formatted heading string, e.g. ``"## My heading"`` for a
+            level-1 section header, or plain ``text`` when inside a table cell.
+        """
+        if in_table_cell:
+            return text
         num_hashes = 1 if isinstance(item, TitleItem) else item.level + 1
         return f"{num_hashes * '#'} {text}"
 
@@ -416,7 +454,7 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
         *,
         include_picture_classification: bool = True,
         **kwargs: Any,
-    ) -> Optional[str]:
+    ) -> str | None:
         if (field_val := getattr(meta, name)) is not None:
             if isinstance(field_val, SummaryMetaField):
                 txt = field_val.text
@@ -609,7 +647,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
                 for col in row:
                     if isinstance(col, RichTableCell):
                         ref_item = col.ref.resolve(doc=doc)
-                        inner_kwargs = {**kwargs, "_nested_in_table": True}
+                        inner_kwargs = {**kwargs, "_nested_in_table": True, "in_table_cell": True}
                         cell_text = doc_serializer.serialize(
                             item=ref_item,
                             **inner_kwargs,
@@ -652,6 +690,18 @@ class MarkdownTableSerializer(BaseTableSerializer):
 
 class MarkdownPictureSerializer(BasePictureSerializer):
     """Markdown-specific picture item serializer."""
+
+    _URI_KEEP_CHARS: Final[str] = "/%:@+,;=~$!&'*"
+    """Characters that survive percent-encoding in a Markdown link destination.
+
+    Includes the RFC 3986 reserved characters that carry meaning in a URI, plus
+    `%` so that an already-encoded destination is not encoded a second time.
+    Whitespace and parentheses are deliberately absent: they would end a Markdown
+    inline link.
+    """
+
+    _WINDOWS_DRIVE_RE: Final[re.Pattern[str]] = re.compile(r"[A-Za-z]:/")
+    """Matches the drive prefix of an absolute Windows path, e.g. `C:/`."""
 
     @override
     def serialize(
@@ -748,11 +798,74 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             ):
                 text_res = image_placeholder
             else:
-                text_res = f"![Image]({item.image.uri!s})"
+                text_res = f"![Image]({self._escape_uri_path(item.image.uri)})"
         else:
             text_res = image_placeholder
 
         return create_ser_result(text=text_res, span_source=item)
+
+    @staticmethod
+    def _escape_uri_path(value: AnyUrl | PurePath) -> str:
+        """Encode a URL or filesystem path as a Markdown link destination.
+
+        Handles URLs of any scheme (https/s3/ftp/...) as well as POSIX and Windows
+        paths, keeps relative paths relative, and never double-encodes. A Windows path
+        is recognized by either flavour, so a document authored on Windows still
+        resolves when it is exported on POSIX.
+
+        The only destination this gives a ``file://`` scheme to is an absolute Windows
+        path, where it is the sole spelling a renderer cannot misread as a URL scheme
+        (``C:``) or as an authority (``//server``). A URL that already carries the
+        scheme is passed through, since dropping it would turn an absolute filesystem
+        reference into a root-relative URL.
+
+        Known limitation: a backslash in a `PosixPath` string is ambiguous.
+        It may be a Windows separator surviving a JSON round-trip (correct to
+        convert) or a literal filename character (where converting it to `/`
+        would split one component into two). The two cases are indistinguishable
+        from `str()`. In practice this is not a concern because `ImageRef.uri`
+        is always populated from native filesystem operations, so a `PosixPath`
+        can only carry a literal backslash if the caller explicitly constructed one.
+
+        Args:
+            value: The URL or path to encode.
+
+        Returns:
+            A percent-encoded Markdown link destination.
+        """
+
+        keep = MarkdownPictureSerializer._URI_KEEP_CHARS
+        # A backslash is both the Windows separator and a Markdown escape character, and
+        # is read as a separator whatever flavour the path arrives in: a document authored
+        # on Windows keeps its backslashes once it is re-read on POSIX, where the flavour
+        # can no longer tell. A URL is unaffected, as pydantic normalizes backslashes away
+        # when parsing.
+        s = str(value).replace("\\", "/")
+
+        if s.startswith("//"):  # In case of a fileshare (//someserver/somefolder)
+            host, _, tail = s.lstrip("/").partition("/")  # get the end of the path
+            # file://<host>/<path>, with <host> being a possibly empty string.
+            return urlunsplit(("file", host, quote(f"/{tail}", safe=keep), "", ""))
+        if MarkdownPictureSerializer._WINDOWS_DRIVE_RE.match(s):  # In case of a Windows filename with drive letter
+            # file://<full_path_with_filename>
+            return urlunsplit(("file", "", quote(f"/{s}", safe=keep), "", ""))
+
+        # A URL keeps its scheme, authority and delimiters; only its components are
+        # encoded. A single-character scheme cannot be real, so it is read as a path.
+        parts = urlsplit(s)
+        if len(parts.scheme) > 1:
+            return urlunsplit(
+                (
+                    parts.scheme,
+                    parts.netloc,
+                    quote(parts.path, safe=keep),
+                    quote(parts.query, safe=keep + "="),
+                    quote(parts.fragment, safe=keep),
+                )
+            )
+
+        # A relative or root-relative local path.
+        return quote(s, safe=keep)
 
 
 class MarkdownKeyValueSerializer(BaseKeyValueSerializer):
@@ -813,7 +926,7 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
         doc: DoclingDocument,
         list_level: int = 0,
         is_inline_scope: bool = False,
-        visited: Optional[set[str]] = None,  # refs of visited items
+        visited: set[str] | None = None,  # refs of visited items
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
@@ -872,7 +985,7 @@ class MarkdownInlineSerializer(BaseInlineSerializer):
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         list_level: int = 0,
-        visited: Optional[set[str]] = None,  # refs of visited items
+        visited: set[str] | None = None,  # refs of visited items
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
@@ -951,7 +1064,7 @@ class MarkdownDocSerializer(DocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: Union[AnyUrl, Path],
+        hyperlink: AnyUrl | Path,
         **kwargs: Any,
     ):
         """Apply Markdown-specific hyperlink serialization."""
@@ -988,8 +1101,8 @@ class MarkdownDocSerializer(DocSerializer):
         *,
         escape_html: bool = True,
         escape_underscores: bool = True,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply some text post-processing steps."""
@@ -1031,10 +1144,10 @@ class MarkdownDocSerializer(DocSerializer):
     def serialize(
         self,
         *,
-        item: Optional[NodeItem] = None,
+        item: NodeItem | None = None,
         list_level: int = 0,
         is_inline_scope: bool = False,
-        visited: Optional[set[str]] = None,
+        visited: set[str] | None = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a given node."""

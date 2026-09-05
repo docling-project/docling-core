@@ -5,6 +5,7 @@ import warnings
 import xml.etree.ElementTree as ET
 from enum import Enum
 from typing import Any, ClassVar, Final, Optional
+from xml.sax.saxutils import escape
 
 from pydantic import BaseModel
 
@@ -366,6 +367,7 @@ class DocLangAttributeKey(str, Enum):
     CLASS = "class"
     THREAD_ID = "thread_id"
     URI = "uri"
+    NAME = "name"
 
 
 class DocLangAttributeValue(str, Enum):
@@ -416,6 +418,7 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.LIST: {DocLangAttributeKey.CLASS},
         DocLangToken.THREAD: {DocLangAttributeKey.THREAD_ID},
         DocLangToken.XREF: {DocLangAttributeKey.THREAD_ID},
+        DocLangToken.GROUP: {DocLangAttributeKey.NAME},
     }
 
     # Allowed values for specific attributes (enumerations)
@@ -630,8 +633,8 @@ class DocLangVocabulary(BaseModel):
     def _create_doclang_root(
         cls,
         *,
-        namespace: Optional[str] = None,
-        version: Optional[str] = None,
+        namespace: str | None = None,
+        version: str | None = None,
         closing: bool = False,
     ) -> str:
         """Create the document root tag.
@@ -666,16 +669,21 @@ class DocLangVocabulary(BaseModel):
         return f'<{token.value} {DocLangAttributeKey.THREAD_ID.value}="{thread_id}"/>'
 
     @classmethod
-    def _create_group_token(cls, *, closing: bool = False) -> str:
+    def _create_group_token(cls, *, name: str | None = None, closing: bool = False) -> str:
         """Create a group tag.
 
         - When `closing` is True, returns the closing tag.
-        - Otherwise returns an opening tag without attributes.
+        - When `name` is given, returns an opening tag carrying it, otherwise an
+          opening tag without attributes.
         """
+        token = DocLangToken.GROUP
         if closing:
-            return f"</{DocLangToken.GROUP.value}>"
-        else:
-            return f"<{DocLangToken.GROUP.value}>"
+            return f"</{token.value}>"
+        if name is None:
+            return f"<{token.value}>"
+        assert DocLangAttributeKey.NAME in cls.ALLOWED_ATTRIBUTES.get(token, set())
+        safe = escape(name, {'"': "&quot;"})
+        return f'<{token.value} {DocLangAttributeKey.NAME.value}="{safe}">'
 
     @classmethod
     def _create_list_token(cls, *, ordered: bool, closing: bool = False) -> str:
@@ -831,7 +839,7 @@ class DocLangVocabulary(BaseModel):
         cls,
         *,
         token: DocLangToken,
-        attrs: Optional[dict["DocLangAttributeKey", Any]] = None,
+        attrs: dict["DocLangAttributeKey", Any] | None = None,
     ) -> str:
         """Create a self-closing token with optional attributes (default None).
 
@@ -918,7 +926,7 @@ def _picture_classification_label_to_doclang(class_name: str) -> str:
     return class_name
 
 
-def _picture_classification_label_from_doclang(label_val: str) -> Optional[str]:
+def _picture_classification_label_from_doclang(label_val: str) -> str | None:
     """Map DocLang picture label to Docling picture classification label."""
     if label_val == _DOCLANG_LABEL_UNDEFINED:
         return None

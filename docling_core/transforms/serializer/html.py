@@ -110,9 +110,9 @@ class HTMLParams(CommonParams):
 
     # HTML document properties
     html_lang: str = "en"
-    html_head: Optional[str] = None
+    html_head: str | None = None
 
-    css_styles: Optional[str] = None
+    css_styles: str | None = None
 
     add_document_metadata: bool = True
     prettify: bool = True  # Add indentation and line breaks
@@ -146,7 +146,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
         is_inline_scope: bool = False,
-        visited: Optional[set[str]] = None,
+        visited: set[str] | None = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed text item to HTML."""
@@ -341,7 +341,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
 
         return '<div class="formula-not-decoded">Formula not decoded</div>'
 
-    def _get_formula_image_fallback(self, *, item: DocItem, orig: str, doc: DoclingDocument) -> Optional[str]:
+    def _get_formula_image_fallback(self, *, item: DocItem, orig: str, doc: DoclingDocument) -> str | None:
         """Try to get an image fallback for a formula."""
         item_image = item.get_image(doc=doc)
         if item_image is not None:
@@ -406,7 +406,7 @@ class HTMLTableSerializer(BaseTableSerializer):
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
             body = ""
-            span_source: Union[DocItem, list[SerializationResult]] = []
+            span_source: DocItem | list[SerializationResult] = []
 
             for i, row in enumerate(item.data.grid):
                 body += "<tr>"
@@ -658,7 +658,7 @@ class _HTMLGraphDataSerializer:
     def serialize(
         self,
         *,
-        item: Union[FormItem, KeyValueItem],
+        item: FormItem | KeyValueItem,
         graph_data: GraphData,
         class_name: str,
     ) -> SerializationResult:
@@ -856,7 +856,7 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
         doc: DoclingDocument,
         list_level: int = 0,
         is_inline_scope: bool = False,
-        visited: Optional[set[str]] = None,  # refs of visited items
+        visited: set[str] | None = None,  # refs of visited items
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes a list to HTML."""
@@ -890,7 +890,7 @@ class HTMLInlineSerializer(BaseInlineSerializer):
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         list_level: int = 0,
-        visited: Optional[set[str]] = None,  # refs of visited items
+        visited: set[str] | None = None,  # refs of visited items
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes an inline group to HTML."""
@@ -976,7 +976,7 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
             # NOTE for now using an empty span source for GroupItems
         )
 
-    def _serialize_meta_field(self, meta: BaseMeta, name: str) -> Optional[str]:
+    def _serialize_meta_field(self, meta: BaseMeta, name: str) -> str | None:
         if (field_val := getattr(meta, name)) is not None:
             is_html_markup = False
 
@@ -1135,7 +1135,7 @@ class HTMLDocSerializer(DocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: Union[AnyUrl, Path],
+        hyperlink: AnyUrl | Path,
         **kwargs: Any,
     ) -> str:
         """Apply HTML-specific hyperlink serialization."""
@@ -1145,7 +1145,7 @@ class HTMLDocSerializer(DocSerializer):
     def serialize_doc(
         self,
         parts: list[SerializationResult],
-        visualizer: Optional[BaseVisualizer] = None,
+        visualizer: BaseVisualizer | None = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a document out of its pages."""
@@ -1173,7 +1173,7 @@ class HTMLDocSerializer(DocSerializer):
             applicable_pages = self._get_applicable_pages()
 
             html_content = "\n".join([p.text for p in parts if p.text])
-            next_page: Optional[int] = None
+            next_page: int | None = None
             prev_full_match_end = 0
             pages = {}
             for full_match, prev_page, next_page in self._get_page_breaks(html_content):
@@ -1190,7 +1190,7 @@ class HTMLDocSerializer(DocSerializer):
             html_parts.append("<table>")
             html_parts.append("<tbody>")
 
-            vized_pages_dict: dict[Optional[int], Image] = {}
+            vized_pages_dict: dict[int | None, Image] = {}
             if visualizer:
                 vized_pages_dict = visualizer.get_visualization(doc=self.doc)
 

@@ -46,18 +46,16 @@ _logger = logging.getLogger(__name__)
 
 
 PictureDataType = Annotated[
-    Union[
-        DescriptionAnnotation,
-        MiscAnnotation,
-        PictureClassificationData,
-        PictureMoleculeData,
-        PictureTabularChartData,
-        PictureLineChartData,
-        PictureBarChartData,
-        PictureStackedBarChartData,
-        PicturePieChartData,
-        PictureScatterChartData,
-    ],
+    DescriptionAnnotation
+    | MiscAnnotation
+    | PictureClassificationData
+    | PictureMoleculeData
+    | PictureTabularChartData
+    | PictureLineChartData
+    | PictureBarChartData
+    | PictureStackedBarChartData
+    | PicturePieChartData
+    | PictureScatterChartData,
     Field(discriminator="kind"),
 ]
 
@@ -67,7 +65,7 @@ class PictureItem(FloatingItem):
 
     label: typing.Literal[DocItemLabel.PICTURE, DocItemLabel.CHART] = DocItemLabel.PICTURE
 
-    meta: Optional[PictureMeta] = None
+    meta: PictureMeta | None = None
     annotations: Annotated[
         list[PictureDataType],
         deprecated("Field `annotations` is deprecated; use `meta` instead."),
@@ -153,7 +151,7 @@ class PictureItem(FloatingItem):
         return img_base64
 
     @staticmethod
-    def _image_to_hexhash(img: Optional[PILImage.Image]) -> Optional[str]:
+    def _image_to_hexhash(img: PILImage.Image | None) -> str | None:
         """Hexash from the image."""
         if img is not None:
             # Convert the image to raw bytes

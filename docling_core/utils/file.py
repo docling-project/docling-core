@@ -65,7 +65,7 @@ def _is_safe_url(url: str) -> bool:
         return False
 
 
-def _sanitize_filename(filename: str) -> Optional[str]:
+def _sanitize_filename(filename: str) -> str | None:
     """Return a basename-safe filename, or None if no usable basename remains."""
     normalized = filename.replace("\\", "/")
     basename = Path(normalized).name
@@ -111,9 +111,9 @@ def resolve_remote_filename(
 
 
 def resolve_source_to_stream(
-    source: Union[Path, AnyHttpUrl, str],
-    headers: Optional[dict[str, str]] = None,
-    max_file_size: Optional[int] = None,
+    source: Path | AnyHttpUrl | str,
+    headers: dict[str, str] | None = None,
+    max_file_size: int | None = None,
 ) -> DocumentStream:
     """Resolves the source (URL, path) of a file to a binary stream.
 
@@ -247,9 +247,9 @@ def resolve_source_to_stream(
 
 
 def _resolve_source_to_path(
-    source: Union[Path, AnyHttpUrl, str],
-    headers: Optional[dict[str, str]] = None,
-    workdir: Optional[Path] = None,
+    source: Path | AnyHttpUrl | str,
+    headers: dict[str, str] | None = None,
+    workdir: Path | None = None,
 ) -> Path:
     doc_stream = resolve_source_to_stream(source=source, headers=headers)
 
@@ -269,9 +269,9 @@ def _resolve_source_to_path(
 
 
 def resolve_source_to_path(
-    source: Union[Path, AnyHttpUrl, str],
-    headers: Optional[dict[str, str]] = None,
-    workdir: Optional[Path] = None,
+    source: Path | AnyHttpUrl | str,
+    headers: dict[str, str] | None = None,
+    workdir: Path | None = None,
 ) -> Path:
     """Resolves the source (URL, path) of a file to a local file path.
 
@@ -300,8 +300,8 @@ def resolve_source_to_path(
 
 @deprecated("Use `resolve_source_to_path()` or `resolve_source_to_stream()`  instead")
 def resolve_file_source(
-    source: Union[Path, AnyHttpUrl, str],
-    headers: Optional[dict[str, str]] = None,
+    source: Path | AnyHttpUrl | str,
+    headers: dict[str, str] | None = None,
 ) -> Path:
     """Resolves the source (URL, path) of a file to a local file path.
 

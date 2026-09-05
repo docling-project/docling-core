@@ -19,7 +19,7 @@ from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_
 
 
 def test_chunk():
-    with open("test/data/chunker/0_inp_dl_doc.json", encoding="utf-8") as f:
+    with open("tests/data/chunker/0_inp_dl_doc.json", encoding="utf-8") as f:
         data_json = f.read()
     dl_doc = DoclingDocument.model_validate_json(data_json)
     chunker = HierarchicalChunker(
@@ -27,11 +27,11 @@ def test_chunk():
     )
     chunks = chunker.chunk(dl_doc=dl_doc)
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
-    assert_or_generate_json_ground_truth(act_data, "test/data/chunker/0_out_chunks.json")
+    assert_or_generate_json_ground_truth(act_data, "tests/data/chunker/0_out_chunks.json")
 
 
 def test_chunk_custom_serializer():
-    with open("test/data/chunker/0_inp_dl_doc.json", encoding="utf-8") as f:
+    with open("tests/data/chunker/0_inp_dl_doc.json", encoding="utf-8") as f:
         data_json = f.read()
     dl_doc = DoclingDocument.model_validate_json(data_json)
 
@@ -49,13 +49,13 @@ def test_chunk_custom_serializer():
 
     chunks = chunker.chunk(dl_doc=dl_doc)
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
-    assert_or_generate_json_ground_truth(act_data, "test/data/chunker/0b_out_chunks.json")
+    assert_or_generate_json_ground_truth(act_data, "tests/data/chunker/0b_out_chunks.json")
 
 
 def test_traverse_pictures():
     """Test that traverse_pictures parameter works correctly with HierarchicalChunker."""
     # Load a document that has TextItem children of PictureItem
-    INPUT_FILE = "test/data/doc/concatenated.json"
+    INPUT_FILE = "tests/data/doc/concatenated.json"
     dl_doc = DoclingDocument.load_from_json(Path(INPUT_FILE))
 
     # Verify the document has non-caption TextItem children of PictureItem
@@ -163,7 +163,7 @@ def test_chunk_multiple_content_layers(doc_with_layers: DoclingDocument):
     act_data = dict(root=[DocChunk.model_validate(chunk).export_json_dict() for chunk in multilayer_chunks])
     assert_or_generate_json_ground_truth(
         act_data,
-        "test/data/chunker/0f_out_chunks_multilayer.json",
+        "tests/data/chunker/0f_out_chunks_multilayer.json",
     )
 
 
@@ -296,7 +296,7 @@ def test_chunk_rich_table_custom_serializer(rich_table_doc: DoclingDocument):
     chunks = chunker.chunk(dl_doc=doc)
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
 
-    assert_or_generate_json_ground_truth(act_data, "test/data/chunker/0c_out_chunks.json")
+    assert_or_generate_json_ground_truth(act_data, "tests/data/chunker/0c_out_chunks.json")
 
 
 def test_contextualize_excludes_fields_when_alias_differs_from_attribute_name():
