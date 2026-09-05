@@ -57,6 +57,7 @@ from docling_core.types.doc.document import (
     FloatingItem,
     FormItem,
     FormulaItem,
+    FormulaMetaField,
     GraphData,
     GroupItem,
     ImageRef,
@@ -280,6 +281,19 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         is_inline_scope: bool,
     ) -> str:
         """Process a formula item to HTML/MathML."""
+        # MathML carried by the item itself is the most faithful representation available --
+        # typically read from the source document rather than reconstructed from the rendered
+        # glyphs -- so it wins over both the image fallback and the LaTeX conversion below.
+        if (
+            formula_to_mathml
+            and isinstance(item, FormulaItem)
+            and item.meta is not None
+            and item.meta.formula is not None
+            and item.meta.formula.mathml
+        ):
+            native_mathml = item.meta.formula.mathml
+            return native_mathml if is_inline_scope else f"<div>{native_mathml}</div>"
+
         # If formula is empty, try to use an image fallback
         if (
             text == ""
@@ -1007,6 +1021,9 @@ class HTMLMetaSerializer(BaseModel, BaseMetaSerializer):
                 code_class = f' class="language-{escaped_lang}"' if lang else ""
                 txt = f'<pre class="docling-meta-code"><code{code_class}>{escaped_code}</code></pre>'
                 is_html_markup = True
+            elif isinstance(field_val, FormulaMetaField):
+                # The formula is already rendered as MathML in the item body.
+                return None
             elif tmp := str(field_val or ""):
                 txt = tmp
             else:

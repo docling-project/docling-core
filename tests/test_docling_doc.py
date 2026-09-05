@@ -28,6 +28,8 @@ from docling_core.types.doc import (
     Formatting,
     FormItem,
     FormulaItem,
+    FormulaMeta,
+    FormulaMetaField,
     GraphCell,
     GraphCellLabel,
     GraphData,
@@ -1035,6 +1037,80 @@ def test_formula_mathml():
         with open(file, encoding="utf8") as f:
             gt_html = f.read().rstrip()
         assert doc_html == gt_html
+
+
+_NATIVE_MATHML = (
+    '<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mfrac><mn>1</mn><mi>x</mi></mfrac></math>'
+)
+
+
+def _formula_with_native_mathml(text: str = "") -> DoclingDocument:
+    doc = DoclingDocument(name="Dummy")
+    item = doc.add_formula(text=text, orig="1/x")
+    item.meta = FormulaMeta(formula=FormulaMetaField(mathml=_NATIVE_MATHML, created_by="pdf_struct_tree"))
+    return doc
+
+
+def test_formula_native_mathml_is_preferred_over_latex_conversion():
+    """MathML carried on the item wins over the latex2mathml reconstruction."""
+    doc = _formula_with_native_mathml(text="\\frac{1}{x}")
+
+    doc_html = doc.export_to_html(formula_to_mathml=True, html_head="")
+
+    assert _NATIVE_MATHML in doc_html
+    # latex2mathml appends a TeX <annotation> element; its absence proves the native
+    # MathML was emitted verbatim rather than regenerated from the LaTeX.
+    assert 'encoding="TeX"' not in doc_html
+
+
+def test_formula_native_mathml_used_when_text_is_empty():
+    """The formula understanding model is skipped when native MathML is available.
+
+    That leaves ``text`` empty, which previously fell through to "Formula not decoded".
+    """
+    doc = _formula_with_native_mathml(text="")
+
+    doc_html = doc.export_to_html(formula_to_mathml=True, html_head="")
+
+    assert _NATIVE_MATHML in doc_html
+    assert "Formula not decoded" not in doc_html
+
+
+def test_formula_native_mathml_respects_formula_to_mathml_flag():
+    """``formula_to_mathml=False`` opts out of MathML output entirely."""
+    doc = _formula_with_native_mathml(text="\\frac{1}{x}")
+
+    doc_html = doc.export_to_html(formula_to_mathml=False, html_head="")
+
+    assert _NATIVE_MATHML not in doc_html
+
+
+def test_formula_native_mathml_roundtrips():
+    doc = _formula_with_native_mathml(text="\\frac{1}{x}")
+
+    reloaded = DoclingDocument.model_validate_json(doc.model_dump_json())
+
+    item = reloaded.texts[0]
+    assert isinstance(item, FormulaItem)
+    assert item.meta is not None and item.meta.formula is not None
+    assert item.meta.formula.mathml == _NATIVE_MATHML
+    assert item.meta.formula.created_by == "pdf_struct_tree"
+
+
+@pytest.mark.parametrize("export", ["export_to_doclang", "export_to_html", "export_to_markdown", "export_to_doctags"])
+def test_formula_meta_does_not_break_exports(export: str):
+    """Every exporter must handle the formula meta field.
+
+    The generic meta-field serializers dispatch on the known ``MetaFieldName`` members, so
+    a new member that none of them handle explicitly either crashes (DocLang) or dumps the
+    Pydantic repr into the output (Markdown).
+    """
+    doc = _formula_with_native_mathml(text="\\frac{1}{x}")
+
+    out = getattr(doc, export)()
+
+    assert "created_by=" not in out
+    assert "confidence=" not in out
 
 
 def test_formula_with_missing_fallback():
