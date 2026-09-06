@@ -2561,3 +2561,44 @@ def test_create_threading_token_emits_thread_id():
     assert DocLangVocabulary._create_threading_token(thread_id="42") == '<thread thread_id="42"/>'
     with pytest.raises(ValueError, match="thread_id length"):
         DocLangVocabulary._create_threading_token(thread_id="")
+
+
+def test_inline_group_nested_when_parent_text_item_has_text():
+    """Runs of an InlineGroup stay inside the parent element even if it has text.
+
+    Regression test for #750: when the parent ``TextItem`` carries text of its
+    own, the inline runs used to be emitted bare at the parent's sibling level,
+    which is invalid against the DocLang XSD (``group`` is not mixed) and drops
+    the plain-text run on deserialization.
+    """
+    doc = DoclingDocument(name="t")
+    heading = doc.add_heading(text="Heading text", level=2)
+    inline = doc.add_inline_group(parent=heading)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="bold",
+        parent=inline,
+        formatting=Formatting(bold=True),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text=" plain ", parent=inline)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="italic",
+        parent=inline,
+        formatting=Formatting(italic=True),
+    )
+
+    txt = serialize_doclang(doc)
+
+    root = ET.fromstring(txt)
+    assert [child.tag for child in root] == ["heading"]
+    heading_el = root[0]
+    assert [child.tag for child in heading_el] == ["bold", "content", "italic"]
+    assert "".join(heading_el.itertext()).replace("\n", " ").split() == [
+        "Heading",
+        "text",
+        "bold",
+        "plain",
+        "italic",
+    ]
+    assert " plain " in txt
