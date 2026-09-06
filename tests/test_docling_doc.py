@@ -1926,6 +1926,43 @@ def test_export_markdown_compact_tables():
     assert len(md_compact) < len(md_padded)
 
 
+def test_export_dataframe_with_row_spanning_column_header():
+    def cell(
+        text: str,
+        row: int,
+        column: int,
+        row_span: int = 1,
+        column_header: bool = False,
+    ) -> TableCell:
+        return TableCell(
+            text=text,
+            start_row_offset_idx=row,
+            end_row_offset_idx=row + row_span,
+            start_col_offset_idx=column,
+            end_col_offset_idx=column + 1,
+            row_span=row_span,
+            column_header=column_header,
+        )
+
+    doc = DoclingDocument(name="test")
+    table = doc.add_table(
+        data=TableData(
+            num_rows=2,
+            num_cols=2,
+            table_cells=[
+                cell("Name", 0, 0, column_header=True),
+                cell("", 0, 1, row_span=2, column_header=True),
+                cell("Alpha", 1, 0),
+            ],
+        )
+    )
+
+    dataframe = table.export_to_dataframe(doc)
+
+    assert list(dataframe.columns) == ["Name", ""]
+    assert dataframe.values.tolist() == [["Alpha", ""]]
+
+
 def test_export_traverse_pictures_ocr_scanned_pdf():
     """Test that OCR text nested under a PictureItem is included when traverse_pictures=True."""
     doc = DoclingDocument(name="Scanned Doc")

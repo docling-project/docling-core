@@ -98,15 +98,11 @@ class TableItem(FloatingItem):
 
         # Count how many rows are column headers
         num_headers = 0
-        for i, row in enumerate(self.data.grid):
+        for row_idx, row in enumerate(self.data.grid):
             if len(row) == 0:
                 raise RuntimeError(f"Invalid table. {len(row)=} but {self.data.num_cols=}.")
 
-            any_header = False
-            for cell in row:
-                if cell.column_header:
-                    any_header = True
-                    break
+            any_header = any(cell.column_header and cell.start_row_offset_idx == row_idx for cell in row)
 
             if any_header:
                 num_headers += 1
