@@ -20,7 +20,7 @@ from .test_utils import assert_or_generate_ground_truth
 
 def test_outline_serializer_mode_toc():
     """Test TABLE_OF_CONTENTS mode only includes titles and section headers."""
-    doc_path = Path("test/data/doc/2408.09869v5_enriched_summary.json")
+    doc_path = Path("tests/data/doc/2408.09869v5_enriched_summary.json")
     exp_path = doc_path.with_suffix(".toc.gt.md")
 
     doc = DoclingDocument.load_from_json(filename=doc_path)
@@ -39,7 +39,7 @@ def test_outline_serializer_mode_toc():
     assert_or_generate_ground_truth(result.text, exp_path, "Unexpected TOC serialization")
 
     # with heading hierachy
-    doc_path = Path("test/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
+    doc_path = Path("tests/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
     exp_path = doc_path.with_suffix(".toc.gt.md")
 
     doc = DoclingDocument.load_from_json(filename=doc_path)
@@ -51,7 +51,7 @@ def test_outline_serializer_mode_toc():
 
 def test_outline_serializer_mode_toc_custom():
     """Test TABLE_OF_CONTENTS mode with custom item labels."""
-    doc_path = Path("test/data/doc/2408.09869v5_enriched_summary.json")
+    doc_path = Path("tests/data/doc/2408.09869v5_enriched_summary.json")
     exp_path = doc_path.with_suffix(".custom.gt.md")
 
     doc = DoclingDocument.load_from_json(filename=doc_path)
@@ -71,7 +71,7 @@ def test_outline_serializer_mode_toc_custom():
 
 def test_outline_serializer_mode_outline():
     """Test OUTLINE mode includes all document items."""
-    doc_path = Path("test/data/doc/2408.09869v5_enriched_summary.json")
+    doc_path = Path("tests/data/doc/2408.09869v5_enriched_summary.json")
     exp_path = doc_path.with_suffix(".outline.gt.md")
 
     doc = DoclingDocument.load_from_json(filename=doc_path)
@@ -105,7 +105,7 @@ def test_outline_serializer_include_non_meta_false():
     - Summaries (metadata)
     But exclude the actual text content (prepend).
     """
-    doc_path = Path("test/data/doc/2408.09869v5_enriched_summary.json")
+    doc_path = Path("tests/data/doc/2408.09869v5_enriched_summary.json")
     exp_path = doc_path.with_suffix(".mtoc.gt.md")
 
     doc = DoclingDocument.load_from_json(filename=doc_path)
@@ -138,7 +138,7 @@ def test_outline_serializer_empty_document():
 
 def test_outline_serializer_json_format():
     """Test JSON format output for TABLE_OF_CONTENTS mode."""
-    doc_path = Path("test/data/doc/2408.09869v5_enriched_summary.json")
+    doc_path = Path("tests/data/doc/2408.09869v5_enriched_summary.json")
     exp_path = doc_path.with_suffix(".mtoc.gt.json")
 
     doc = DoclingDocument.load_from_json(filename=doc_path)
@@ -182,7 +182,7 @@ def test_outline_serializer_json_format():
     assert_or_generate_ground_truth(result.text, exp_path, is_json=True)
 
     # Hierarchical document with extra fields
-    doc_path = Path("test/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
+    doc_path = Path("tests/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
     exp_path_hier = doc_path.with_suffix(".mtoc.gt.json")
 
     doc = DoclingDocument.load_from_json(filename=doc_path)
@@ -199,7 +199,7 @@ def test_outline_serializer_json_format():
     assert_or_generate_ground_truth(result.text, exp_path_hier, is_json=True)
 
     # Outline mode with title
-    doc_path = Path("test/data/doc/2408.09869v5_enriched_summary.json")
+    doc_path = Path("tests/data/doc/2408.09869v5_enriched_summary.json")
     exp_path_hier = doc_path.with_suffix(".outline.gt.json")
     doc = DoclingDocument.load_from_json(filename=doc_path)
     params = OutlineParams(include_non_meta=True, mode=OutlineMode.OUTLINE, format=OutlineFormat.JSON)
@@ -229,7 +229,7 @@ def test_outline_serializer_json_format():
 
 def test_outline_serializer_json_format_without_non_meta():
     """Test JSON format output without non-meta content."""
-    doc_path = Path("test/data/doc/2408.09869v5_enriched_summary.json")
+    doc_path = Path("tests/data/doc/2408.09869v5_enriched_summary.json")
 
     doc = DoclingDocument.load_from_json(filename=doc_path)
 
@@ -257,7 +257,7 @@ def test_outline_serializer_json_format_without_non_meta():
 
 def test_outline_serializer_itxt_format():
     """Test ITXT format output for TABLE_OF_CONTENTS mode."""
-    doc_path = Path("test/data/doc/2408.09869v5_enriched_summary.json")
+    doc_path = Path("tests/data/doc/2408.09869v5_enriched_summary.json")
     exp_path = doc_path.with_suffix(".mtoc.gt.itxt")
 
     doc = DoclingDocument.load_from_json(filename=doc_path)
@@ -283,8 +283,8 @@ def test_outline_serializer_itxt_format():
     assert_or_generate_ground_truth(result.text, exp_path, "Serialized ITXT should match expected output")
 
     # Hierarchical document with extra fields
-    doc_path = Path("test/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
-    exp_path_hier = Path("test/data/doc/2408.09869v5_hierarchical_enriched_summary.toc.gt.itxt")
+    doc_path = Path("tests/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
+    exp_path_hier = Path("tests/data/doc/2408.09869v5_hierarchical_enriched_summary.toc.gt.itxt")
 
     doc = DoclingDocument.load_from_json(filename=doc_path)
     ser = OutlineDocSerializer(doc=doc, params=params)
@@ -303,7 +303,7 @@ def test_outline_serializer_itxt_format():
 
 def test_outline_serializer_itxt_format_without_non_meta():
     """Test ITXT format output without non-meta content."""
-    doc_path = Path("test/data/doc/2408.09869v5_enriched_summary.json")
+    doc_path = Path("tests/data/doc/2408.09869v5_enriched_summary.json")
 
     doc = DoclingDocument.load_from_json(filename=doc_path)
 
@@ -375,7 +375,7 @@ def test_format_indented_text_line():
 @pytest.mark.filterwarnings("ignore:Pydantic serializer warnings:UserWarning")
 def test_outline_serialization_from_item():
     """Test the outline serialization starting from different node item."""
-    doc_path = Path("test/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
+    doc_path = Path("tests/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
     doc = DoclingDocument.load_from_json(filename=doc_path)
     params = OutlineParams(include_non_meta=True, mode=OutlineMode.TABLE_OF_CONTENTS, format=OutlineFormat.JSON)
 
@@ -532,7 +532,7 @@ def test_outline_serialization_from_item():
 @pytest.mark.filterwarnings("ignore:Pydantic serializer warnings:UserWarning")
 def test_outline_serialization_spans():
     """Test that serialization results preserve spans for get_unique_doc_items()."""
-    doc_path = Path("test/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
+    doc_path = Path("tests/data/doc/2408.09869v5_hierarchical_enriched_summary.json")
     doc = DoclingDocument.load_from_json(filename=doc_path)
 
     # Get a nested item to use as start_item

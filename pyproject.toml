@@ -1,6 +1,6 @@
 [project]
 name = "docling-core"
-version = "2.92.0"  # DO NOT EDIT, updated automatically
+version = "2.95.0"  # DO NOT EDIT, updated automatically
 description = "A python library to define and validate data types in Docling."
 license = "MIT"
 license-files = ["LICENSE"]
@@ -84,9 +84,7 @@ chunking = [
     'tree-sitter-typescript >=0.23.2',
 
     # specific:
-    # temporary solution until huggingface/transformers#46159 is resolved
-    'transformers (>=4.34.0,<5.9.0,!=5.0.*,!=5.1.*,!=5.2.*,!=5.3.*) ; sys_platform == "darwin"',
-    'transformers (>=4.34.0,<6.0.0,!=5.0.*,!=5.1.*,!=5.2.*,!=5.3.*) ; sys_platform != "darwin"',
+    'transformers (>=4.42.0,<6.0.0)',
 ]
 chunking-openai = [
     # common:
@@ -155,7 +153,7 @@ target-version = "py310"
 line-length = 120
 respect-gitignore = true
 exclude = [
-    "test/data/**"
+    "tests/data/**"
 ]
 
 [tool.ruff.format]
@@ -188,8 +186,6 @@ ignore = [
   "PL",     # Pylint
   "RUF005", # Consider ... instead of concatenation
   "RUF012", # Mutable Class Attributes
-  "UP007",  # Option and Union
-  "UP045",  # Use `X | None` for type annotations
 ]
 
 [tool.ruff.lint.pep8-naming]
@@ -204,7 +200,7 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402", "F401"]
-"test/*.py" = ["ASYNC"] # Disable ASYNC check for tests
+"tests/*.py" = ["ASYNC"] # Disable ASYNC check for tests
 "*.ipynb" = ["I"]  # Disable import sorting for notebooks
 
 [tool.ruff.lint.mccabe]
@@ -229,7 +225,7 @@ namespace_packages = true
 show_error_codes = true
 python_version = "3.10"
 plugins = ["pydantic.mypy"]
-exclude = "(^|/)test/data/.*"
+exclude = "(^|/)tests/data/.*"
 
 [[tool.mypy.overrides]]
 module = [
@@ -248,7 +244,7 @@ module = [
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["test.*", "tests.*"]  # `tests.*` is packages/dclq/tests
+module = ["tests.*"]
 disallow_untyped_defs = false
 
 [tool.semantic_release]

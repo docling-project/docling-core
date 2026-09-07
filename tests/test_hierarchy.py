@@ -6,8 +6,8 @@ from pydantic import ValidationError
 
 from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 from docling_core.types.doc import DocItemLabel, DoclingDocument, RichTableCell, TableData
-from test.test_serialization import verify
-from test.test_serialization_doclang import _verify_doc
+from tests.test_serialization import verify
+from tests.test_serialization_doclang import _verify_doc
 
 
 @pytest.fixture
@@ -33,10 +33,10 @@ def test_flatten(mixed_hierarchy_doc: DoclingDocument):
 
     doc._normalize_references()
 
-    exp_json = Path("./test/data/doc/flattened.json")
+    exp_json = Path("./tests/data/doc/flattened.json")
     _verify_doc(doc=doc, exp_json=exp_json)
 
-    exp_dclg = Path("./test/data/doc/flattened.dclg.xml")
+    exp_dclg = Path("./tests/data/doc/flattened.dclg.xml")
     actual = DocLangDocSerializer(doc=doc, params=DocLangParams(include_version=False)).serialize().text
     verify(actual=actual, exp_file=exp_dclg)
 
@@ -47,10 +47,10 @@ def test_hierarchize(mixed_hierarchy_doc):
 
     doc._normalize_references()
 
-    exp_json = Path("./test/data/doc/hierarchized.json")
+    exp_json = Path("./tests/data/doc/hierarchized.json")
     _verify_doc(doc=doc, exp_json=exp_json)
 
-    exp_dclg = Path("./test/data/doc/hierarchized.dclg.xml")
+    exp_dclg = Path("./tests/data/doc/hierarchized.dclg.xml")
     actual = DocLangDocSerializer(doc=doc, params=DocLangParams(include_version=False)).serialize().text
     verify(actual=actual, exp_file=exp_dclg)
 
@@ -135,7 +135,7 @@ def test_hierarchize_preserves_floating_item_descendants(simple_doc: DoclingDocu
 
 @pytest.mark.parametrize(
     "json_file",
-    list(Path("test/data/doc").glob("*.json")),
+    list(Path("tests/data/doc").glob("*.json")),
 )
 def test_hierarchize_all_docs(json_file: Path) -> None:
     """Test _hierarchize with real documents to ensure it preserves structural integrity."""

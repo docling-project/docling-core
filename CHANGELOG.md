@@ -1,3 +1,44 @@
+## [v2.95.0](https://github.com/docling-project/docling-core/releases/tag/v2.95.0) - 2026-09-04
+
+### Feature
+
+* Added PdfDestination to PdfTableOfContents ([#747](https://github.com/docling-project/docling-core/issues/747)) ([`4631492`](https://github.com/docling-project/docling-core/commit/4631492b6755b93ac88d9a5da2121941c5f7b4c4))
+
+### Fix
+
+* **latex:** Prevent inline-group content from being serialized twice ([#743](https://github.com/docling-project/docling-core/issues/743)) ([`7a6c5a4`](https://github.com/docling-project/docling-core/commit/7a6c5a4114d48b6e945727f4ecd2968bd506e629))
+* Strip cue timestamp tags when parsing WebVTT cue text ([#744](https://github.com/docling-project/docling-core/issues/744)) ([`506acea`](https://github.com/docling-project/docling-core/commit/506acea868a8a91f57da73ad06dc93c07fcc92f5))
+
+## [v2.94.1](https://github.com/docling-project/docling-core/releases/tag/v2.94.1) - 2026-09-03
+
+### Fix
+
+* Relaxing transformers versions ([#742](https://github.com/docling-project/docling-core/issues/742)) ([`80f6a87`](https://github.com/docling-project/docling-core/commit/80f6a87562ad67b94a26f80ef5d021f2084f0ff8))
+
+## [v2.94.0](https://github.com/docling-project/docling-core/releases/tag/v2.94.0) - 2026-09-03
+
+### Feature
+
+* Expose json.dumps kwargs in save_as_json ([#725](https://github.com/docling-project/docling-core/issues/725)) ([`c057766`](https://github.com/docling-project/docling-core/commit/c057766c2854b71276ab48d089519acabea3a3e9))
+
+### Fix
+
+* Exclude broken transformers versions ([#741](https://github.com/docling-project/docling-core/issues/741)) ([`9ccdb1e`](https://github.com/docling-project/docling-core/commit/9ccdb1e64427421a4ba1ec0c011fef790563e5dc))
+* **tokens:** Normalize inverted bbox in get_location instead of asserting ([#676](https://github.com/docling-project/docling-core/issues/676)) ([`4210158`](https://github.com/docling-project/docling-core/commit/4210158d492f40e1b52d3d8a5ec2c1b6096d4d19))
+* **markdown:** Escape referenced figures' filepaths and ensure cross-platform path handling (Windows / POSIX) ([#698](https://github.com/docling-project/docling-core/issues/698)) ([`ccdffa7`](https://github.com/docling-project/docling-core/commit/ccdffa784440aaa164880720855a9490e50e20a5))
+* Convert headings to plain text in table cells ([#540](https://github.com/docling-project/docling-core/issues/540)) ([`bdfca5b`](https://github.com/docling-project/docling-core/commit/bdfca5b89eaaf545181d59a2ed55af1804e6ef48))
+
+## [v2.93.0](https://github.com/docling-project/docling-core/releases/tag/v2.93.0) - 2026-09-01
+
+### Feature
+
+* **markdown:** Make image class suppressible ([#726](https://github.com/docling-project/docling-core/issues/726)) ([`dedc35d`](https://github.com/docling-project/docling-core/commit/dedc35da4c99e3ae597423358e5648eb29ee3cad))
+
+### Fix
+
+* Updated the doclang serializer for groups ([#736](https://github.com/docling-project/docling-core/issues/736)) ([`a222564`](https://github.com/docling-project/docling-core/commit/a222564ef884add7be7a753ee2f5ff070f302567))
+* **markdown:** Suppress `FieldRegionItem` and `FieldItem` serialization ([#724](https://github.com/docling-project/docling-core/issues/724)) ([`b957d96`](https://github.com/docling-project/docling-core/commit/b957d966d87df51bade148ab1a406b0463a3b92d))
+
 ## [v2.92.0](https://github.com/docling-project/docling-core/releases/tag/v2.92.0) - 2026-08-19
 
 ### Feature

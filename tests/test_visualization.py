@@ -7,7 +7,7 @@ from docling_core.types.doc.document import DoclingDocument
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
-VIZ_TEST_DATA_PATH = Path("./test/data/viz")
+VIZ_TEST_DATA_PATH = Path("./tests/data/viz")
 
 
 def verify(exp_file: Path, actual: PIL.Image.Image):
@@ -25,7 +25,7 @@ def verify(exp_file: Path, actual: PIL.Image.Image):
 
 
 def test_doc_visualization():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
     viz_pages = doc.get_visualization()
     for k in viz_pages:
@@ -37,7 +37,7 @@ def test_doc_visualization():
 
 
 def test_doc_visualization_inline_circumscribed_bbox():
-    src = Path("./test/data/doc/2408.09869v3_enriched.dt.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.dt.json")
     doc = DoclingDocument.load_from_json(src)
     viz_pages = doc.get_visualization()
     for k in viz_pages:
@@ -49,7 +49,7 @@ def test_doc_visualization_inline_circumscribed_bbox():
 
 
 def test_doc_visualization_no_label():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
     viz_pages = doc.get_visualization(show_label=False)
     for k in viz_pages:
@@ -61,7 +61,7 @@ def test_doc_visualization_no_label():
 
 
 def test_table_visualization_for_cells():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     visualizer = TableVisualizer()
@@ -74,7 +74,7 @@ def test_table_visualization_for_cells():
 
 
 def test_table_visualization_for_rows_and_cols():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     visualizer = TableVisualizer(params=TableVisualizer.Params(show_cells=False, show_rows=True, show_cols=True))
@@ -87,7 +87,7 @@ def test_table_visualization_for_rows_and_cols():
 
 
 def test_cross_page_lists_with_branch_nums():
-    src = Path("./test/data/doc/cross_page_lists.json")
+    src = Path("./tests/data/doc/cross_page_lists.json")
     doc = DoclingDocument.load_from_json(src)
 
     viz_pages = doc.get_visualization(show_branch_numbering=True)

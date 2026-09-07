@@ -49,7 +49,7 @@ class CustomCoordinates(BaseModel):
 @pytest.fixture(scope="module")
 def dummy_doc_with_meta() -> DoclingDocument:
     """Fixture that loads dummy_doc_with_meta.yaml once per module."""
-    src = Path("test/data/doc/dummy_doc_with_meta.yaml")
+    src = Path("tests/data/doc/dummy_doc_with_meta.yaml")
     return DoclingDocument.load_from_yaml(filename=src)
 
 
@@ -98,7 +98,7 @@ def test_metadata_usage(dummy_doc_with_meta: DoclingDocument) -> None:
     assert target_name == "my_corp__coords"
 
     # save the document
-    exp_file = Path("test/data/doc/dummy_doc_with_meta_modified.yaml")
+    exp_file = Path("tests/data/doc/dummy_doc_with_meta_modified.yaml")
     if GEN_TEST_DATA:
         doc.save_as_yaml(filename=exp_file)
     else:
@@ -118,7 +118,7 @@ def test_metadata_usage(dummy_doc_with_meta: DoclingDocument) -> None:
 
 
 def test_metadata_relaxed_migration() -> None:
-    src = Path("test/data/doc/dummy_doc_with_meta_2.yaml")
+    src = Path("tests/data/doc/dummy_doc_with_meta_2.yaml")
     doc = DoclingDocument.load_from_yaml(filename=src)
 
     first_pic = doc.pictures[0]
@@ -140,7 +140,7 @@ def test_ser_deser(doc_with_group_with_metadata: DoclingDocument):
     doc = doc_with_group_with_metadata
 
     # test dumping to and loading from YAML
-    exp_file = Path("test/data/doc/group_with_metadata.yaml")
+    exp_file = Path("tests/data/doc/group_with_metadata.yaml")
     if GEN_TEST_DATA:
         doc.save_as_yaml(filename=exp_file)
     else:
@@ -155,7 +155,7 @@ def test_md_ser_default(doc_with_group_with_metadata: DoclingDocument):
     ser = MarkdownDocSerializer(doc=doc, params=params)
     ser_res = ser.serialize()
     actual = ser_res.text
-    exp_file = Path("test/data/doc/group_with_metadata_default.md")
+    exp_file = Path("tests/data/doc/group_with_metadata_default.md")
     assert_or_generate_ground_truth(actual, exp_file)
 
 
@@ -168,7 +168,7 @@ def test_md_ser_marked(doc_with_group_with_metadata: DoclingDocument):
     ser = MarkdownDocSerializer(doc=doc, params=params)
     ser_res = ser.serialize()
     actual = ser_res.text
-    exp_file = Path("test/data/doc/group_with_metadata_marked.md")
+    exp_file = Path("tests/data/doc/group_with_metadata_marked.md")
     if GEN_TEST_DATA:
         with open(exp_file, "w", encoding="utf-8") as f:
             f.write(actual)
@@ -188,7 +188,7 @@ def test_md_ser_allowed_meta_names(doc_with_group_with_metadata: DoclingDocument
     ser = MarkdownDocSerializer(doc=doc_with_group_with_metadata, params=params)
     ser_res = ser.serialize()
     actual = ser_res.text
-    exp_file = Path("test/data/doc/group_with_metadata_allowed_meta_names.md")
+    exp_file = Path("tests/data/doc/group_with_metadata_allowed_meta_names.md")
     assert_or_generate_ground_truth(actual, exp_file)
 
 
@@ -203,7 +203,7 @@ def test_md_ser_blocked_meta_names(doc_with_group_with_metadata: DoclingDocument
     ser = MarkdownDocSerializer(doc=doc_with_group_with_metadata, params=params)
     ser_res = ser.serialize()
     actual = ser_res.text
-    exp_file = Path("test/data/doc/group_with_metadata_blocked_meta_names.md")
+    exp_file = Path("tests/data/doc/group_with_metadata_blocked_meta_names.md")
     assert_or_generate_ground_truth(actual, exp_file)
 
 
@@ -215,7 +215,7 @@ def test_md_ser_without_non_meta(doc_with_group_with_metadata: DoclingDocument):
     ser = MarkdownDocSerializer(doc=doc_with_group_with_metadata, params=params)
     ser_res = ser.serialize()
     actual = ser_res.text
-    exp_file = Path("test/data/doc/group_with_metadata_without_non_meta.md")
+    exp_file = Path("tests/data/doc/group_with_metadata_without_non_meta.md")
     assert_or_generate_ground_truth(actual, exp_file)
 
 
@@ -297,7 +297,7 @@ def test_ser_custom_meta_serializer(doc_with_group_with_metadata: DoclingDocumen
     )
     ser_res = ser.serialize()
     actual = ser_res.text
-    exp_file = Path("test/data/doc/group_with_metadata_summaries.md")
+    exp_file = Path("tests/data/doc/group_with_metadata_summaries.md")
     assert_or_generate_ground_truth(actual, exp_file)
 
 

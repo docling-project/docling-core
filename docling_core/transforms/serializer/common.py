@@ -81,14 +81,14 @@ class _PageBreakSerResult(SerializationResult):
 
 def _iterate_items(
     doc: DoclingDocument,
-    layers: Optional[set[ContentLayer]],
-    node: Optional[NodeItem] = None,
+    layers: set[ContentLayer] | None,
+    node: NodeItem | None = None,
     traverse_pictures: bool = False,
     add_page_breaks: bool = False,
-    visited: Optional[set[str]] = None,
+    visited: set[str] | None = None,
 ) -> Iterable[tuple[NodeItem, int]]:
     my_visited: set[str] = visited if visited is not None else set()
-    prev_page_nr: Optional[int] = None
+    prev_page_nr: int | None = None
     page_break_i = 0
     for item, lvl in doc.iterate_items(
         root=node,
@@ -138,8 +138,8 @@ def _iterate_items(
 
 
 def _get_annotation_text(
-    annotation: Union[PictureDataType, TableAnnotationType],
-) -> Optional[str]:
+    annotation: PictureDataType | TableAnnotationType,
+) -> str | None:
     result = None
     if isinstance(annotation, PictureClassificationData):
         predicted_class = annotation.predicted_classes[0].class_name if annotation.predicted_classes else None
@@ -155,7 +155,7 @@ def _get_annotation_text(
 def create_ser_result(
     *,
     text: str = "",
-    span_source: Union[DocItem, list[SerializationResult]] = [],
+    span_source: DocItem | list[SerializationResult] = [],
 ) -> SerializationResult:
     """Function for creating `SerializationResult` instances.
 
@@ -191,7 +191,7 @@ class CommonParams(BaseModel):
     # range and some of its children items are within, they will be serialized
     labels: set[DocItemLabel] = _DEFAULT_LABELS
     layers: set[ContentLayer] = _DEFAULT_LAYERS
-    pages: Optional[set[int]] = None  # None means all pages are allowed
+    pages: set[int] | None = None  # None means all pages are allowed
 
     # slice-like semantics: start is included, stop is excluded
     start_idx: NonNegativeInt = 0
@@ -207,7 +207,7 @@ class CommonParams(BaseModel):
         description="Use legacy annotation serialization.",
         deprecated="Ignored field; legacy annotations considered only when meta not present.",
     )
-    allowed_meta_names: Optional[set[str]] = Field(
+    allowed_meta_names: set[str] | None = Field(
         default=None,
         description="Meta name to allow; None means all meta names are allowed.",
     )
@@ -245,7 +245,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     list_serializer: BaseListSerializer
     inline_serializer: BaseInlineSerializer
 
-    meta_serializer: Optional[BaseMetaSerializer] = None
+    meta_serializer: BaseMetaSerializer | None = None
     annotation_serializer: BaseAnnotationSerializer
 
     params: CommonParams = CommonParams()
@@ -350,10 +350,10 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     def serialize(
         self,
         *,
-        item: Optional[NodeItem] = None,
+        item: NodeItem | None = None,
         list_level: int = 0,
         is_inline_scope: bool = False,
-        visited: Optional[set[str]] = None,  # refs of visited items
+        visited: set[str] | None = None,  # refs of visited items
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a given node."""
@@ -369,7 +369,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         meta_position = self._meta_position()
 
         if my_item == self.doc.body:
-            body_meta_part: Optional[SerializationResult] = None
+            body_meta_part: SerializationResult | None = None
             if my_item.meta and not self._meta_is_wrapped():
                 candidate = self.serialize_meta(item=my_item, **my_kwargs)
                 if candidate.text:
@@ -393,7 +393,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
         my_visited.add(my_item.self_ref)
 
-        meta_part: Optional[SerializationResult] = None
+        meta_part: SerializationResult | None = None
         if my_item.meta and not self._meta_is_wrapped() and not self._item_wraps_meta(my_item):
             candidate = self.serialize_meta(item=my_item, **my_kwargs)
             if candidate.text:
@@ -503,12 +503,12 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     @override
     def get_parts(
         self,
-        item: Optional[NodeItem] = None,
+        item: NodeItem | None = None,
         *,
         traverse_pictures: bool = False,
         list_level: int = 0,
         is_inline_scope: bool = False,
-        visited: Optional[set[str]] = None,  # refs of visited items
+        visited: set[str] | None = None,  # refs of visited items
         **kwargs: Any,
     ) -> list[SerializationResult]:
         """Get the components to be combined for serializing this node."""
@@ -549,8 +549,8 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         self,
         text: str,
         *,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply some text post-processing steps."""
@@ -607,7 +607,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: Union[AnyUrl, Path],
+        hyperlink: AnyUrl | Path,
         **kwargs: Any,
     ) -> str:
         """Hook for hyperlink serialization."""
@@ -691,7 +691,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             **kwargs,
         )
 
-    def _get_applicable_pages(self) -> Optional[list[int]]:
+    def _get_applicable_pages(self) -> list[int] | None:
         pages = {
             item.prov[0].page_no: ...
             for ix, (item, _) in enumerate(
@@ -727,8 +727,8 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 def _should_use_legacy_annotations(
     *,
     params: CommonParams,
-    item: Union[PictureItem, TableItem],
-    kind: Optional[str] = None,
+    item: PictureItem | TableItem,
+    kind: str | None = None,
 ) -> bool:
     if item.meta:
         return False

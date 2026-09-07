@@ -1,11 +1,13 @@
 """Test serialization."""
 
 import threading
-from pathlib import Path
+from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
+from typing import TypeAlias, Union
 from unittest.mock import MagicMock, patch
 from xml.etree import ElementTree as ET
 
 import pytest
+from pydantic import AnyUrl
 
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
 from docling_core.transforms.serializer.html import (
@@ -18,13 +20,14 @@ from docling_core.transforms.serializer.html import (
 from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownParams,
+    MarkdownPictureSerializer,
     MarkdownTableSerializer,
     OrigListItemMarkerMode,
     _cell_content_has_table,
 )
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
-from docling_core.types.doc import DoclingDocument
+from docling_core.types.doc import DoclingDocument, ImageRef
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, ImageRefMode, Size
 from docling_core.types.doc.document import (
     BaseMeta,
@@ -76,7 +79,7 @@ def verify(exp_file: Path, actual: str):
 
 
 def test_md_cross_page_list_page_break():
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
@@ -93,7 +96,7 @@ def test_md_cross_page_list_page_break():
 
 
 def test_md_checkboxes():
-    src = Path("./test/data/doc/checkboxes.json")
+    src = Path("./tests/data/doc/checkboxes.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
@@ -110,7 +113,7 @@ def test_md_checkboxes():
 
 
 def test_md_cross_page_list_page_break_none():
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
@@ -127,7 +130,7 @@ def test_md_cross_page_list_page_break_none():
 
 
 def test_md_cross_page_list_page_break_empty():
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
@@ -144,7 +147,7 @@ def test_md_cross_page_list_page_break_empty():
 
 
 def test_md_cross_page_list_page_break_non_empty():
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
@@ -161,7 +164,7 @@ def test_md_cross_page_list_page_break_non_empty():
 
 
 def test_md_cross_page_list_page_break_p2():
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
@@ -311,7 +314,7 @@ def test_md_page_break_between_list_and_table():
 
 
 def test_md_charts():
-    src = Path("./test/data/doc/barchart.json")
+    src = Path("./tests/data/doc/barchart.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
@@ -325,7 +328,7 @@ def test_md_charts():
 
 
 def test_md_inline_and_formatting():
-    src = Path("./test/data/doc/inline_and_formatting.yaml")
+    src = Path("./tests/data/doc/inline_and_formatting.yaml")
     doc = DoclingDocument.load_from_yaml(src)
 
     ser = MarkdownDocSerializer(
@@ -339,7 +342,7 @@ def test_md_inline_and_formatting():
 
 
 def test_md_pb_placeholder_and_page_filter():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     # NOTE ambiguous case
@@ -355,7 +358,7 @@ def test_md_pb_placeholder_and_page_filter():
 
 
 def test_md_list_item_markers(sample_doc):
-    root_dir = Path("./test/data/doc")
+    root_dir = Path("./tests/data/doc")
     for mode in OrigListItemMarkerMode:
         for valid in [False, True]:
             ser = MarkdownDocSerializer(
@@ -373,7 +376,7 @@ def test_md_list_item_markers(sample_doc):
 
 
 def test_md_mark_meta_true():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
@@ -391,7 +394,7 @@ def test_md_mark_meta_true():
 
 
 def test_md_mark_meta_false():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(
@@ -409,7 +412,7 @@ def test_md_mark_meta_false():
 
 
 def test_md_legacy_annotations_mark_true(sample_doc):
-    exp_file = Path("./test/data/doc/constructed_legacy_annot_mark_true.gt.md")
+    exp_file = Path("./tests/data/doc/constructed_legacy_annot_mark_true.gt.md")
     with pytest.warns(DeprecationWarning):
         sample_doc.tables[0].annotations.append(
             DescriptionAnnotation(text="This is a description of table 1.", provenance="foo")
@@ -428,7 +431,7 @@ def test_md_legacy_annotations_mark_true(sample_doc):
 
 
 def test_md_legacy_annotations_mark_false(sample_doc):
-    exp_file = Path("./test/data/doc/constructed_legacy_annot_mark_false.gt.md")
+    exp_file = Path("./tests/data/doc/constructed_legacy_annot_mark_false.gt.md")
     with pytest.warns(DeprecationWarning):
         sample_doc.tables[0].annotations.append(
             DescriptionAnnotation(text="This is a description of table 1.", provenance="foo")
@@ -447,7 +450,7 @@ def test_md_legacy_annotations_mark_false(sample_doc):
 
 
 def test_md_nested_lists():
-    src = Path("./test/data/doc/polymers.json")
+    src = Path("./tests/data/doc/polymers.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = MarkdownDocSerializer(doc=doc)
@@ -456,7 +459,7 @@ def test_md_nested_lists():
 
 
 def test_md_rich_table(rich_table_doc):
-    exp_file = Path("./test/data/doc/rich_table.gt.md")
+    exp_file = Path("./tests/data/doc/rich_table.gt.md")
 
     ser = MarkdownDocSerializer(doc=rich_table_doc)
     actual = ser.serialize().text
@@ -464,7 +467,7 @@ def test_md_rich_table(rich_table_doc):
 
 
 def test_md_single_row_table():
-    exp_file = Path("./test/data/doc/single_row_table.gt.md")
+    exp_file = Path("./tests/data/doc/single_row_table.gt.md")
     words = ["foo", "bar"]
     doc = DoclingDocument(name="")
     row_idx = 0
@@ -487,7 +490,7 @@ def test_md_single_row_table():
 
 
 def test_md_field_region():
-    exp_file = Path("./test/data/doc/field_region.gt.md")
+    exp_file = Path("./tests/data/doc/field_region.gt.md")
 
     doc = DoclingDocument(name="")
     field_region = doc.add_field_region()
@@ -516,6 +519,68 @@ def test_md_pipe_in_table():
     )
     ser = doc.export_to_markdown()
     assert ser == "| Fruits &#124; Veggies   |\n|-------------------------|"
+
+
+def test_md_heading_in_rich_table_cell_renders_as_plain_text():
+    """Test headings inside RichTableCell must not emit `#` markers.
+
+    According to the Markdown spec, heading syntax is invalid inside tables.
+    A SectionHeaderItem or TitleItem referenced by a RichTableCell must be
+    serialized as plain text, not as `## Heading`.
+    """
+    doc = DoclingDocument(name="heading_in_table")
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=2))
+
+    section_header = doc.add_heading(text="Section Heading", level=1, parent=table)
+    title = doc.add_title(text="Document Title", parent=table)
+
+    doc.add_table_cell(
+        table,
+        RichTableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            ref=section_header.get_ref(),
+        ),
+    )
+    doc.add_table_cell(
+        table,
+        RichTableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            ref=title.get_ref(),
+        ),
+    )
+    doc.add_table_cell(
+        table,
+        TableCell(
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            text="value A",
+        ),
+    )
+    doc.add_table_cell(
+        table,
+        TableCell(
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            text="value B",
+        ),
+    )
+
+    md = doc.export_to_markdown()
+    assert "Section Heading" in md
+    assert "Document Title" in md
+    table_lines = [line for line in md.splitlines() if line.startswith("|")]
+    for line in table_lines:
+        assert "#" not in line, f"Heading marker leaked into table cell: {line!r}\nFull output:\n{md}"
 
 
 def test_cell_content_has_table_detects_descendant_table():
@@ -915,7 +980,7 @@ def test_html_table_serializer_get_header_and_body_lines():
 
 
 def test_html_charts():
-    src = Path("./test/data/doc/barchart.json")
+    src = Path("./tests/data/doc/barchart.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -929,7 +994,7 @@ def test_html_charts():
 
 
 def test_html_cross_page_list_page_break():
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -943,7 +1008,7 @@ def test_html_cross_page_list_page_break():
 
 
 def test_html_cross_page_list_page_break_p1():
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -958,7 +1023,7 @@ def test_html_cross_page_list_page_break_p1():
 
 
 def test_html_cross_page_list_page_break_p2():
-    src = Path("./test/data/doc/activities.json")
+    src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -973,7 +1038,7 @@ def test_html_cross_page_list_page_break_p2():
 
 
 def test_html_split_page():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -988,7 +1053,7 @@ def test_html_split_page():
 
 
 def test_html_split_page_p2():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -1004,7 +1069,7 @@ def test_html_split_page_p2():
 
 
 def test_html_split_page_p2_with_visualizer():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -1030,7 +1095,7 @@ def test_html_split_page_p2_with_visualizer():
 
 
 def test_html_split_page_no_page_breaks():
-    src = Path("./test/data/doc/2408.09869_p1.json")
+    src = Path("./tests/data/doc/2408.09869_p1.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -1045,7 +1110,7 @@ def test_html_split_page_no_page_breaks():
 
 
 def test_html_include_annotations_false():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -1065,7 +1130,7 @@ def test_html_include_annotations_false():
 
 
 def test_html_include_annotations_true():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(
@@ -1085,7 +1150,7 @@ def test_html_include_annotations_true():
 
 
 def test_html_list_item_markers(sample_doc):
-    root_dir = Path("./test/data/doc")
+    root_dir = Path("./tests/data/doc")
     for orig in [False, True]:
         ser = HTMLDocSerializer(
             doc=sample_doc,
@@ -1101,7 +1166,7 @@ def test_html_list_item_markers(sample_doc):
 
 
 def test_html_nested_lists():
-    src = Path("./test/data/doc/polymers.json")
+    src = Path("./tests/data/doc/polymers.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = HTMLDocSerializer(doc=doc)
@@ -1110,7 +1175,7 @@ def test_html_nested_lists():
 
 
 def test_html_rich_table(rich_table_doc):
-    exp_file = Path("./test/data/doc/rich_table.gt.html")
+    exp_file = Path("./tests/data/doc/rich_table.gt.html")
 
     ser = HTMLDocSerializer(doc=rich_table_doc)
     actual = ser.serialize().text
@@ -1185,7 +1250,7 @@ def test_html_textitem_with_children_at_document_level():
 
 
 def test_html_inline_and_formatting():
-    src = Path("./test/data/doc/inline_and_formatting.yaml")
+    src = Path("./tests/data/doc/inline_and_formatting.yaml")
     doc = DoclingDocument.load_from_yaml(src)
 
     ser = HTMLDocSerializer(doc=doc)
@@ -1203,7 +1268,7 @@ def test_html_inline_and_formatting():
     [1, 2, 3, 4, 5],
 )
 def test_webvtt(example_num):
-    src = Path(f"test/data/doc/webvtt_example_{example_num:02d}.json")
+    src = Path(f"tests/data/doc/webvtt_example_{example_num:02d}.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = WebVTTDocSerializer(doc=doc)
@@ -1213,7 +1278,7 @@ def test_webvtt(example_num):
 
 def test_webvtt_params():
     """Test WebVTT serialization with WebVTTParams."""
-    src = Path("./test/data/doc/webvtt_example_01.json")
+    src = Path("./tests/data/doc/webvtt_example_01.json")
     doc = DoclingDocument.load_from_json(src)
 
     # Test with omit_hours_if_zero=True
@@ -1303,3 +1368,149 @@ def test_html_meta_emits_xhtml_compatible_attributes():
     assert 'data-meta-name="entities"' in html_out
     # Output must be parseable by a strict XML parser.
     ET.fromstring(html_out)
+
+
+# A link destination to encode, paired with its expected encoding.
+_EscapeCase: TypeAlias = tuple[AnyUrl | PurePath, str]
+
+_ESCAPE_PATH_CASES: list[_EscapeCase] = [
+    # A relative path with nothing to encode: the hash-based names generated by
+    # `_with_pictures_refs` must pass through untouched.
+    (PurePosixPath("doc_artifacts/image_000001_ab12.png"), "doc_artifacts/image_000001_ab12.png"),
+    # A relative artifacts dir is derived from the output filename, so it can hold
+    # spaces. An unencoded space ends the link destination.
+    (PurePosixPath("My Report_artifacts/img.png"), "My%20Report_artifacts/img.png"),
+    # Parentheses are only valid in a destination while balanced; encoding them keeps
+    # an odd one in a filename from ending the link early.
+    (PurePosixPath("artifacts/img (1).png"), "artifacts/img%20%281%29.png"),
+    # In a path these are literal characters, not URI delimiters. "%" is kept as-is so
+    # that an already-encoded URI is not encoded twice.
+    (PurePosixPath("100%_scale/a#b?c.png"), "100%_scale/a%23b%3Fc.png"),
+    # A root-relative POSIX path stays root-relative.
+    (PurePosixPath("/home/a b/img.png"), "/home/a%20b/img.png"),
+    # Backslash separators must become forward slashes: "\" is an escape character in
+    # Markdown, so "dir\img.png" would render as "dirimg.png".
+    (PureWindowsPath("My Report_artifacts/img.png"), "My%20Report_artifacts/img.png"),
+    # An absolute Windows path becomes an RFC 8089 file:// URL, so that "C:" cannot be
+    # read as a URL scheme.
+    (PureWindowsPath("C:/Users/me/My Docs/img.png"), "file:///C:/Users/me/My%20Docs/img.png"),
+    # A UNC share becomes the authority of the file:// URL, so that the leading "//"
+    # cannot be read as a scheme-relative URL.
+    (PureWindowsPath("//server/share/My Docs/img.png"), "file://server/share/My%20Docs/img.png"),
+]
+
+_ESCAPE_URL_CASES: list[_EscapeCase] = [
+    # A URL keeps its scheme, authority, and delimiters; only the components get
+    # encoded. Escapes pydantic already applied must not become "%2520".
+    (AnyUrl("file:///home/a b/img.png"), "file:///home/a%20b/img.png"),
+    (AnyUrl("s3://bucket/My Report_artifacts/img.png"), "s3://bucket/My%20Report_artifacts/img.png"),
+    (AnyUrl("https://example.com:8080/a b.png?w=1&h=2#frag"), "https://example.com:8080/a%20b.png?w=1&h=2#frag"),
+    # pydantic leaves parentheses as-is, so the encoding still has work to do here.
+    (AnyUrl("https://example.com/img (1).png"), "https://example.com/img%20%281%29.png"),
+]
+
+
+def _as_destination(dest: str) -> AnyUrl | PurePath:
+    """Re-read an encoded destination the way a caller would supply it."""
+    return AnyUrl(dest) if "://" in dest else PurePosixPath(dest)
+
+
+@pytest.mark.parametrize(("value", "expected"), _ESCAPE_PATH_CASES + _ESCAPE_URL_CASES)
+def test_escape_uri_path(value: AnyUrl | PurePath, expected: str):
+    """Test encoding of link destinations for both URLs and local paths."""
+    assert MarkdownPictureSerializer._escape_uri_path(value) == expected
+
+
+@pytest.mark.parametrize(("value", "expected"), _ESCAPE_PATH_CASES + _ESCAPE_URL_CASES)
+def test_escape_uri_path_is_idempotent(value: AnyUrl | PurePath, expected: str):
+    """Test that re-encoding an encoded destination is a no-op (no double-encoding)."""
+    assert MarkdownPictureSerializer._escape_uri_path(_as_destination(expected)) == expected
+
+
+@pytest.mark.parametrize(
+    "posix_spelling",
+    [
+        "doc_artifacts/image_000001_ab12.png",
+        "My Report_artifacts/img.png",
+        "C:/Users/me/My Docs/img.png",
+        "//server/share/My Docs/img.png",
+    ],
+)
+def test_escape_uri_path_is_flavour_independent(posix_spelling: str):
+    """Test that a path encodes the same way however its separators arrive.
+
+    A document authored on Windows is re-read as a POSIX path on another host, and PRs
+    #641 and #663 make `_with_pictures_refs` store the POSIX spelling on Windows. Neither
+    may change the destination.
+    """
+    escape = MarkdownPictureSerializer._escape_uri_path
+    windows = PureWindowsPath(posix_spelling)
+    assert "\\" in str(windows)  # guard: the fixture really has separators to convert
+
+    assert escape(PurePosixPath(posix_spelling)) == escape(windows)
+    assert escape(PurePosixPath(str(windows))) == escape(windows)
+
+
+def test_escape_uri_path_file_scheme_is_only_for_absolute_windows_paths():
+    """Test that only an absolute Windows path is given a file:// scheme."""
+    escape = MarkdownPictureSerializer._escape_uri_path
+
+    # A drive letter and a UNC host are the two absolute Windows forms.
+    assert escape(PureWindowsPath("C:/Users/me/img.png")) == "file:///C:/Users/me/img.png"
+    assert escape(PureWindowsPath("//server/share/img.png")) == "file://server/share/img.png"
+
+    # Nothing else acquires the scheme, a root-relative POSIX path included.
+    for value in (
+        PurePosixPath("artifacts/img.png"),
+        PurePosixPath("/home/me/img.png"),
+        PureWindowsPath("artifacts/img.png"),
+        AnyUrl("https://example.com/img.png"),
+        AnyUrl("s3://bucket/img.png"),
+    ):
+        assert not escape(value).startswith("file:")
+
+    # A URL that already carries the scheme keeps it: dropping it would turn an absolute
+    # filesystem reference into a root-relative URL.
+    assert escape(AnyUrl("file:///home/me/img.png")) == "file:///home/me/img.png"
+
+
+@pytest.mark.parametrize(
+    ("uri", "expected"),
+    [
+        (Path("doc_artifacts/image_000001_ab12.png"), "doc_artifacts/image_000001_ab12.png"),
+        (Path("My Report (final)_artifacts/img.png"), "My%20Report%20%28final%29_artifacts/img.png"),
+        # A Windows-authored separator resolves the same way on either exporting host.
+        (Path("My Report_artifacts\\img.png"), "My%20Report_artifacts/img.png"),
+        # An AnyUrl was already percent-encoded by pydantic on parse: its escapes must
+        # not be encoded a second time, nor its scheme mangled into "file%3A".
+        (AnyUrl("file:///home/a b/img.png"), "file:///home/a%20b/img.png"),
+        # `_save_image_and_resolve_uri` returns an AnyUrl for remote artifact dirs.
+        (AnyUrl("s3://bucket/My Report_artifacts/img.png"), "s3://bucket/My%20Report_artifacts/img.png"),
+        # Query delimiters must stay functional.
+        (AnyUrl("https://example.com/img.png?w=1&h=2"), "https://example.com/img.png?w=1&h=2"),
+    ],
+)
+def test_referenced_image_uri_is_encoded(uri, expected: str):
+    """Test that `_serialize_image_part` encodes the URI it emits."""
+    doc = DoclingDocument(name="x")
+    doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=uri))
+
+    assert doc.export_to_markdown(image_mode=ImageRefMode.REFERENCED) == f"![Image]({expected})"
+
+
+def test_referenced_image_uri_encoding_only_applies_to_referenced_mode():
+    """Test that PLACEHOLDER mode still emits the placeholder, not an encoded URI."""
+    doc = DoclingDocument(name="x")
+    uri = Path("My Report_artifacts/img.png")
+    doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=uri))
+
+    assert doc.export_to_markdown(image_mode=ImageRefMode.PLACEHOLDER) == "<!-- image -->"
+
+
+def test_referenced_image_data_uri_is_not_encoded():
+    """Test that a data URI still falls back to the placeholder in REFERENCED mode."""
+    doc = DoclingDocument(name="x")
+    uri = AnyUrl("data:image/png;base64,iVBORw0KGgo=")
+    doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=uri))
+
+    assert doc.export_to_markdown(image_mode=ImageRefMode.REFERENCED) == "<!-- image -->"

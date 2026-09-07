@@ -76,7 +76,7 @@ def test_list_items_not_double_wrapped_when_no_content():
 
 
 def test_doctags_inline_loc_tags():
-    src = Path("./test/data/doc/2408.09869v3_enriched.json")
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
 
     ser = DocTagsDocSerializer(doc=doc)
@@ -85,7 +85,7 @@ def test_doctags_inline_loc_tags():
 
 
 def test_doctags_rich_table(rich_table_doc):
-    exp_file = Path("./test/data/doc/rich_table.out.dt")
+    exp_file = Path("./tests/data/doc/rich_table.out.dt")
 
     ser = DocTagsDocSerializer(doc=rich_table_doc)
     actual = ser.serialize().text
@@ -93,7 +93,7 @@ def test_doctags_rich_table(rich_table_doc):
 
 
 def test_doctags_inline_and_formatting():
-    src = Path("./test/data/doc/inline_and_formatting.yaml")
+    src = Path("./tests/data/doc/inline_and_formatting.yaml")
     doc = DoclingDocument.load_from_yaml(src)
 
     ser = DocTagsDocSerializer(doc=doc)
@@ -102,7 +102,7 @@ def test_doctags_inline_and_formatting():
 
 
 def test_doctags_meta():
-    src = Path("./test/data/doc/dummy_doc_with_meta.yaml")
+    src = Path("./tests/data/doc/dummy_doc_with_meta.yaml")
     doc = DoclingDocument.load_from_yaml(src)
 
     ser = DocTagsDocSerializer(doc=doc)

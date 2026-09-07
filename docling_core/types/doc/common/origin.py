@@ -19,7 +19,7 @@ class DocumentOrigin(BaseModel):
     filename: str  # The name of the original file, including extension, without path.
     # Could stem from filesystem, source URI, Content-Disposition header, ...
 
-    uri: Optional[AnyUrl] = (
+    uri: AnyUrl | None = (
         None  # any possible reference to a source file,
         # from any file handler protocol (e.g. https://, file://, s3://)
     )

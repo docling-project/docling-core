@@ -77,7 +77,7 @@ class RefItem(BaseModel):
 class FineRef(RefItem):
     """Fine-granular reference item that can capture span range info."""
 
-    range: Optional[tuple[int, int]] = None  # start_inclusive, end_exclusive
+    range: tuple[int, int] | None = None  # start_inclusive, end_exclusive
 
 
 class ImageRef(BaseModel):
@@ -86,11 +86,11 @@ class ImageRef(BaseModel):
     mimetype: str
     dpi: int
     size: Size
-    uri: Union[AnyUrl, Path] = Field(union_mode="left_to_right")
-    _pil: Optional[PILImage.Image] = None
+    uri: AnyUrl | Path = Field(union_mode="left_to_right")
+    _pil: PILImage.Image | None = None
 
     @property
-    def pil_image(self) -> Optional[PILImage.Image]:
+    def pil_image(self) -> PILImage.Image | None:
         """Return the PIL Image."""
         if self._pil is not None:
             return self._pil
@@ -198,5 +198,5 @@ class PageItem(BaseModel):
     # A page carries separate root items for furniture and body,
     # only referencing items on the page
     size: Size
-    image: Optional[ImageRef] = None
+    image: ImageRef | None = None
     page_no: int

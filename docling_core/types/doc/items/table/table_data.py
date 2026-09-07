@@ -20,7 +20,7 @@ _logger = logging.getLogger(__name__)
 class TableCell(BaseModel):
     """TableCell."""
 
-    bbox: Optional[BoundingBox] = None
+    bbox: BoundingBox | None = None
     row_span: int = 1
     col_span: int = 1
     start_row_offset_idx: int
@@ -78,7 +78,7 @@ class RichTableCell(TableCell):
 
 
 AnyTableCell = Annotated[
-    Union[RichTableCell, TableCell],
+    RichTableCell | TableCell,
     Field(union_mode="left_to_right"),
 ]
 
@@ -531,7 +531,7 @@ class TableData(BaseModel):  # TBD
 
         def span_from_merge(
             m: BoundingBox, lines: list[BoundingBox], axis: str, frac_threshold: float
-        ) -> Optional[tuple[int, int]]:
+        ) -> tuple[int, int] | None:
             """Map a merge bbox to an inclusive index span over rows or columns.
 
             axis='row' uses vertical overlap vs row height; axis='col' uses horizontal overlap vs col width.

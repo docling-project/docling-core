@@ -25,10 +25,7 @@ _logger = logging.getLogger(__name__)
 
 
 TableAnnotationType = Annotated[
-    Union[
-        DescriptionAnnotation,
-        MiscAnnotation,
-    ],
+    DescriptionAnnotation | MiscAnnotation,
     Field(discriminator="kind"),
 ]
 
@@ -117,7 +114,7 @@ class TableItem(FloatingItem):
                 break
 
         # Create the column names from all col_headers
-        columns: Optional[list[str]] = None
+        columns: list[str] | None = None
         if num_headers > 0:
             columns = ["" for _ in range(self.data.num_cols)]
             for i in range(num_headers):

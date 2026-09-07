@@ -32,10 +32,10 @@ class ReadingOrderVisualizer(BaseVisualizer):
         show_branch_numbering: bool = False
         content_layers: set[ContentLayer] = {cl for cl in ContentLayer if cl != ContentLayer.BACKGROUND}
 
-    base_visualizer: Optional[BaseVisualizer] = None
+    base_visualizer: BaseVisualizer | None = None
     params: Params = Params()
 
-    def _get_picture_context(self, elem: DocItem, doc: DoclingDocument) -> Optional[str]:
+    def _get_picture_context(self, elem: DocItem, doc: DoclingDocument) -> str | None:
         """Get the picture self_ref if element is nested inside a PictureItem, None otherwise."""
         current = elem
         while current.parent is not None:
@@ -94,10 +94,10 @@ class ReadingOrderVisualizer(BaseVisualizer):
     def _draw_doc_reading_order(
         self,
         doc: DoclingDocument,
-        images: Optional[dict[Optional[int], Image]] = None,
+        images: dict[int | None, Image] | None = None,
     ):
         """Draw the reading order."""
-        font: Union[ImageFont.ImageFont, FreeTypeFont]
+        font: ImageFont.ImageFont | FreeTypeFont
         try:
             font = ImageFont.truetype("arial.ttf", 12)
         except OSError:
@@ -107,11 +107,11 @@ class ReadingOrderVisualizer(BaseVisualizer):
         # Separate reading order paths for outside vs inside pictures
         # Key: (page_no, picture_ref_or_None) -> (x0, y0, element_index)
         # picture_ref is None for elements outside any picture, otherwise the picture's self_ref
-        reading_order_state: dict[tuple[int, Optional[str]], tuple[float, float, int]] = {}
+        reading_order_state: dict[tuple[int, str | None], tuple[float, float, int]] = {}
         number_data_to_draw: dict[int, list[_NumberDrawingData]] = {}
         # Only int keys are used (from prov.page_no), even if input images has Optional[int] keys
         my_images: dict[int, Image] = {k: v for k, v in (images or {}).items() if k is not None}
-        prev_page: Optional[int] = None
+        prev_page: int | None = None
         element_index = 0
 
         for elem, _ in doc.iterate_items(
@@ -228,7 +228,7 @@ class ReadingOrderVisualizer(BaseVisualizer):
         *,
         doc: DoclingDocument,
         **kwargs,
-    ) -> dict[Optional[int], Image]:
+    ) -> dict[int | None, Image]:
         """Get visualization of the document as images by page."""
         base_images = self.base_visualizer.get_visualization(doc=doc, **kwargs) if self.base_visualizer else None
         return self._draw_doc_reading_order(

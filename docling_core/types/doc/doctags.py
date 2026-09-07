@@ -16,7 +16,7 @@ class DocTagsPage(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     tokens: str
-    image: Optional[PILImage.Image] = None
+    image: PILImage.Image | None = None
 
 
 class DocTagsDocument(BaseModel):
@@ -27,8 +27,8 @@ class DocTagsDocument(BaseModel):
     @classmethod
     def from_doctags_and_image_pairs(
         cls,
-        doctags: typing.Sequence[Union[Path, str]],
-        images: Optional[list[Union[Path, PILImage.Image]]],
+        doctags: typing.Sequence[Path | str],
+        images: list[Path | PILImage.Image] | None,
     ):
         """from_doctags_and_image_pairs."""
         if images is not None and len(doctags) != len(images):
@@ -62,8 +62,8 @@ class DocTagsDocument(BaseModel):
     @classmethod
     def from_multipage_doctags_and_images(
         cls,
-        doctags: Union[Path, str],
-        images: Optional[list[Union[Path, PILImage.Image]]],
+        doctags: Path | str,
+        images: list[Path | PILImage.Image] | None,
     ):
         """From doctags with `<page_break>` and corresponding list of page images."""
         if isinstance(doctags, Path):

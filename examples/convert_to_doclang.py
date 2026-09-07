@@ -103,7 +103,7 @@ def run_dump(cfg: dict[str, Any]) -> int:  # noqa: C901
 
     # Effective processing limit
     raw_limit = cfg.get("limit") or cfg.get("max_items") or cfg.get("max_samples")
-    limit: Optional[int] = None
+    limit: int | None = None
     if isinstance(raw_limit, int) and raw_limit > 0:
         limit = raw_limit
     processed_total = min(total, limit) if limit else total
@@ -485,7 +485,7 @@ def run_analyse(cfg: dict[str, Any]) -> int:
         with open(filename, encoding="utf-8") as fr:
             text_h = fr.read()
 
-        paired_name: Optional[str] = None
+        paired_name: str | None = None
         if isinstance(pair_replace, dict) and pair_replace.get("from") is not None:
             paired_name = filename.replace(str(pair_replace.get("from")), str(pair_replace.get("to", "")))
 
@@ -670,7 +670,7 @@ def default_config(mode: str) -> dict[str, Any]:
         raise ValueError(f"Unknown mode for default config: {mode}")
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Convert and analyse DocLang data")
     parser.add_argument(
         "--mode",
@@ -697,7 +697,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     )
     args = parser.parse_args(list(argv) if argv is not None else None)
 
-    cfg_path: Optional[Path] = args.config
+    cfg_path: Path | None = args.config
     cfg: dict[str, Any]
 
     if cfg_path is None:

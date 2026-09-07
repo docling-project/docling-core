@@ -314,7 +314,7 @@ def test_statistics_serialization():
 
 def test_profile_real_document():
     """Test profiling a real document from test data."""
-    test_file = Path("./test/data/doc/2408.09869v3_enriched.json")
+    test_file = Path("./tests/data/doc/2408.09869v3_enriched.json")
     if not test_file.exists():
         pytest.skip("Test file not found")
 

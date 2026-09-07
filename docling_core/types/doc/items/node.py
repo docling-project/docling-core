@@ -23,20 +23,20 @@ class NodeItem(BaseModel):
     """NodeItem."""
 
     self_ref: str = Field(pattern=_JSON_POINTER_REGEX)
-    parent: Optional[RefItem] = None
+    parent: RefItem | None = None
     children: list[RefItem] = []
 
     content_layer: ContentLayer = ContentLayer.BODY
 
     model_config = ConfigDict(extra="forbid")
 
-    meta: Optional[BaseMeta] = None
+    meta: BaseMeta | None = None
 
     def get_ref(self) -> RefItem:
         """get_ref."""
         return RefItem(cref=self.self_ref)
 
-    def _get_parent_ref(self, doc: "DoclingDocument", stack: list[int]) -> Optional[RefItem]:
+    def _get_parent_ref(self, doc: "DoclingDocument", stack: list[int]) -> RefItem | None:
         """get_parent_ref."""
         if len(stack) == 0:
             return self.parent
@@ -168,7 +168,7 @@ class DocItem(NodeItem):
 
         return location
 
-    def get_image(self, doc: "DoclingDocument", prov_index: int = 0) -> Optional[PILImage.Image]:
+    def get_image(self, doc: "DoclingDocument", prov_index: int = 0) -> PILImage.Image | None:
         """Returns the image of this DocItem.
 
         The function returns None if this DocItem has no valid provenance or
@@ -204,12 +204,12 @@ class DocItem(NodeItem):
 class FloatingItem(DocItem):
     """FloatingItem."""
 
-    meta: Optional[FloatingMeta] = None
+    meta: FloatingMeta | None = None
 
     captions: list[RefItem] = []
     references: list[RefItem] = []
     footnotes: list[RefItem] = []
-    image: Optional[ImageRef] = None
+    image: ImageRef | None = None
 
     def caption_text(self, doc: "DoclingDocument") -> str:
         """Computes the caption as a single text."""
@@ -218,7 +218,7 @@ class FloatingItem(DocItem):
             text += cap.resolve(doc).text
         return text
 
-    def get_image(self, doc: "DoclingDocument", prov_index: int = 0) -> Optional[PILImage.Image]:
+    def get_image(self, doc: "DoclingDocument", prov_index: int = 0) -> PILImage.Image | None:
         """Returns the image corresponding to this FloatingItem.
 
         This function returns the PIL image from self.image if one is available.

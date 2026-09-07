@@ -35,9 +35,9 @@ from docling_core.types.doc import (
 )
 from docling_core.types.doc.document import GroupLabel
 from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
-from test.doclang_validation import assert_valid_dclg_xml, doclang_validator
-from test.test_data_gen_flag import GEN_TEST_DATA
-from test.test_serialization_doclang import (
+from tests.doclang_validation import assert_valid_dclg_xml, doclang_validator
+from tests.test_data_gen_flag import GEN_TEST_DATA
+from tests.test_serialization_doclang import (
     _doc_cross_column_list,
     _doc_cross_page_list,
     _doc_cross_page_paragraph,
@@ -48,7 +48,7 @@ from test.test_serialization_doclang import (
     add_texts_section,
     verify_doclang,
 )
-from test.test_serialization_doctag import verify
+from tests.test_serialization_doctag import verify
 
 DO_PRINT: bool = False
 
@@ -139,7 +139,7 @@ def test_roundtrip_text():
 
 def test_deserialize_include_namespace_and_version():
     """Deserialize DocLang XML with namespace and version, then roundtrip."""
-    exp_file = Path("./test/data/doc/deserialize_include_namespace_and_version.gt.dclg.xml")
+    exp_file = Path("./tests/data/doc/deserialize_include_namespace_and_version.gt.dclg.xml")
     xml = exp_file.read_text(encoding="utf-8")
 
     doc = _deserialize(xml)
@@ -1918,7 +1918,7 @@ def test_picture_body_table_is_semantic_content_not_chart_tabular():
     assert nested.data.grid[0][0].text == "Nested"
 
 
-# SMILES from test/data/doc/dummy_doc_with_meta.yaml (molecule_data annotation)
+# SMILES from tests/data/doc/dummy_doc_with_meta.yaml (molecule_data annotation)
 _EXAMPLE_MOLECULE_SMILES = "CC1=NNC(C2=CN3C=CN=C3C(CC3=CC(F)=CC(F)=C3)=N2)=N1"
 _PICTURE_META_SUMMARY = "Picture meta summary"
 _PICTURE_META_DESCRIPTION = "Picture meta description"
@@ -1993,7 +1993,7 @@ def _serialize_kv_annot_fixture(doc: DoclingDocument) -> str:
     ids=[p.name for p in _kv_annot_fixture_dirs()],
 )
 def test_kv_annot_doclang_roundtrip(fixture_dir: Path):
-    """Round-trip migrated KV annot fixtures through DocLang (see ``test/data/doc/kv/``)."""
+    """Round-trip migrated KV annot fixtures through DocLang (see ``tests/data/doc/kv/``)."""
     output_json = fixture_dir / "output.json"
     serialized_dclg = fixture_dir / "output.dclg.xml"
     deserialized_json = fixture_dir / "deserialized.json"
@@ -2286,3 +2286,127 @@ def test_deserialize_accepts_document_within_budgets() -> None:
     )
     assert len(doc.texts) == 1
     assert doc.texts[0].text == "hello"
+
+
+def _doc_with_named_groups() -> DoclingDocument:
+    doc = DoclingDocument(name="t")
+    _add_default_page(doc)
+    doc.add_text(label=DocItemLabel.TITLE, text="Masthead")
+    for index in (1, 2):
+        group = doc.add_group(label=GroupLabel.SECTION, name="article")
+        doc.add_heading(text=f"Headline {index}", level=2, parent=group)
+        doc.add_text(label=DocItemLabel.TEXT, text=f"Body {index}", parent=group)
+    return doc
+
+
+def _serialize_named_groups(doc: DoclingDocument, *, add_named_groups: bool) -> str:
+    ser = DocLangDocSerializer(
+        doc=doc,
+        params=DocLangParams(include_version=False, add_named_groups=add_named_groups),
+    )
+    return ser.serialize().text
+
+
+def test_named_groups_are_off_by_default() -> None:
+    """A plain group stays transparent unless ``add_named_groups`` is set."""
+    text = _serialize_named_groups(_doc_with_named_groups(), add_named_groups=False)
+    assert "<group" not in text
+    assert_valid_dclg_xml(text)
+
+    doc = _deserialize(text)
+    assert doc.groups == []
+    assert [item.text for item in doc.texts] == [
+        "Masthead",
+        "Headline 1",
+        "Body 1",
+        "Headline 2",
+        "Body 2",
+    ]
+
+
+def test_named_group_roundtrip() -> None:
+    """``add_named_groups`` keeps the group, its name and its label across a roundtrip."""
+    text = _serialize_named_groups(_doc_with_named_groups(), add_named_groups=True)
+    assert text.count('<group name="article">') == 2
+    assert text.count('<label value="section"/>') == 2
+
+    # Not validated against the DocLang XSD: the schema has no `name` attribute
+    # on <group> yet.
+    doc = _deserialize(text, validate=False)
+    assert [(group.label, group.name) for group in doc.groups] == [
+        (GroupLabel.SECTION, "article"),
+        (GroupLabel.SECTION, "article"),
+    ]
+    assert [child.cref for child in doc.body.children] == [
+        "#/texts/0",
+        "#/groups/0",
+        "#/groups/1",
+    ]
+    for group in doc.groups:
+        children = [child.resolve(doc) for child in group.children]
+        assert [item.label for item in children] == [
+            DocItemLabel.SECTION_HEADER,
+            DocItemLabel.TEXT,
+        ]
+    assert _serialize_named_groups(doc, add_named_groups=True) == text
+
+
+def test_named_group_escapes_its_name() -> None:
+    doc = DoclingDocument(name="t")
+    group = doc.add_group(label=GroupLabel.UNSPECIFIED, name='a & "b"')
+    doc.add_text(label=DocItemLabel.TEXT, text="child", parent=group)
+
+    text = _serialize_named_groups(doc, add_named_groups=True)
+    assert '<group name="a &amp; &quot;b&quot;">' in text
+    assert "<label" not in text
+
+    parsed = _deserialize(text, validate=False)
+    assert [(g.label, g.name) for g in parsed.groups] == [(GroupLabel.UNSPECIFIED, 'a & "b"')]
+
+
+def test_named_group_keeps_a_picture_and_a_table_inside() -> None:
+    """A named group holding a float is a group, not the float+footnote wrapper."""
+    doc = DoclingDocument(name="t")
+    _add_default_page(doc)
+    group = doc.add_group(label=GroupLabel.SECTION, name="article")
+    doc.add_heading(text="Headline", level=2, parent=group)
+    doc.add_picture(parent=group)
+    doc.add_table(
+        data=TableData(
+            num_rows=1,
+            num_cols=1,
+            table_cells=[
+                TableCell(
+                    text="cell",
+                    start_row_offset_idx=0,
+                    end_row_offset_idx=1,
+                    start_col_offset_idx=0,
+                    end_col_offset_idx=1,
+                )
+            ],
+        ),
+        parent=group,
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="Body", parent=group)
+
+    text = _serialize_named_groups(doc, add_named_groups=True)
+    parsed = _deserialize(text, validate=False)
+
+    assert len(parsed.groups) == 1
+    assert len(parsed.pictures) == 1
+    assert len(parsed.tables) == 1
+    children = [child.resolve(parsed) for child in parsed.groups[0].children]
+    assert [item.label for item in children] == [
+        DocItemLabel.SECTION_HEADER,
+        DocItemLabel.PICTURE,
+        DocItemLabel.TABLE,
+        DocItemLabel.TEXT,
+    ]
+
+
+def test_unnamed_group_markup_still_wraps_floats() -> None:
+    """The float+footnote ``<group>`` wrapper keeps parsing as one unit."""
+    xml = "<doclang><group><picture><caption>cap</caption></picture><footnote>note</footnote></group></doclang>"
+    doc = _deserialize(xml, validate=False)
+    assert doc.groups == []
+    assert len(doc.pictures) == 1

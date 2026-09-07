@@ -27,8 +27,8 @@ from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_
 
 EMBED_MODEL_ID = "sentence-transformers/all-MiniLM-L6-v2"
 MAX_TOKENS = 64
-INPUT_FILE_0 = "test/data/chunker/0_inp_dl_doc.json"
-INPUT_FILE_2 = "test/data/chunker/2_inp_dl_doc.json"
+INPUT_FILE_0 = "tests/data/chunker/0_inp_dl_doc.json"
+INPUT_FILE_2 = "tests/data/chunker/2_inp_dl_doc.json"
 
 
 INNER_TOKENIZER = AutoTokenizer.from_pretrained(EMBED_MODEL_ID)
@@ -84,7 +84,7 @@ def markdown_chunker_250() -> HybridChunker:
 
 
 def test_chunk_merge_peers():
-    EXPECTED_OUT_FILE = "test/data/chunker/2a_out_chunks.json"
+    EXPECTED_OUT_FILE = "tests/data/chunker/2a_out_chunks.json"
 
     with open(INPUT_FILE_2, encoding="utf-8") as f:
         data_json = f.read()
@@ -108,7 +108,7 @@ def test_chunk_merge_peers():
 
 
 def test_chunk_with_model_name():
-    EXPECTED_OUT_FILE = "test/data/chunker/2a_out_chunks.json"
+    EXPECTED_OUT_FILE = "tests/data/chunker/2a_out_chunks.json"
 
     with open(INPUT_FILE_2, encoding="utf-8") as f:
         data_json = f.read()
@@ -132,7 +132,7 @@ def test_chunk_with_model_name():
 
 
 def test_chunk_deprecated_max_tokens():
-    EXPECTED_OUT_FILE = "test/data/chunker/2a_out_chunks.json"
+    EXPECTED_OUT_FILE = "tests/data/chunker/2a_out_chunks.json"
 
     with open(INPUT_FILE_2, encoding="utf-8") as f:
         data_json = f.read()
@@ -153,7 +153,7 @@ def test_chunk_deprecated_max_tokens():
 
 
 def test_contextualize():
-    EXPECTED_OUT_FILE = "test/data/chunker/2a_out_ser_chunks.json"
+    EXPECTED_OUT_FILE = "tests/data/chunker/2a_out_ser_chunks.json"
 
     with open(INPUT_FILE_2, encoding="utf-8") as f:
         data_json = f.read()
@@ -186,7 +186,7 @@ def test_contextualize():
 
 
 def test_chunk_no_merge_peers():
-    EXPECTED_OUT_FILE = "test/data/chunker/2b_out_chunks.json"
+    EXPECTED_OUT_FILE = "tests/data/chunker/2b_out_chunks.json"
 
     with open(INPUT_FILE_2, encoding="utf-8") as f:
         data_json = f.read()
@@ -209,7 +209,7 @@ def test_chunk_no_merge_peers():
 
 
 def test_chunk_deprecated_explicit_hf_obj():
-    EXPECTED_OUT_FILE = "test/data/chunker/2c_out_chunks.json"
+    EXPECTED_OUT_FILE = "tests/data/chunker/2c_out_chunks.json"
 
     with open(INPUT_FILE_2, encoding="utf-8") as f:
         data_json = f.read()
@@ -230,7 +230,7 @@ def test_chunk_deprecated_explicit_hf_obj():
 
 
 def test_ignore_deprecated_param_if_new_tokenizer_passed():
-    EXPECTED_OUT_FILE = "test/data/chunker/2c_out_chunks.json"
+    EXPECTED_OUT_FILE = "tests/data/chunker/2c_out_chunks.json"
 
     with open(INPUT_FILE_2, encoding="utf-8") as f:
         data_json = f.read()
@@ -253,7 +253,7 @@ def test_ignore_deprecated_param_if_new_tokenizer_passed():
 
 
 def test_deprecated_no_max_tokens():
-    EXPECTED_OUT_FILE = "test/data/chunker/2c_out_chunks.json"
+    EXPECTED_OUT_FILE = "tests/data/chunker/2c_out_chunks.json"
 
     with open(INPUT_FILE_2, encoding="utf-8") as f:
         data_json = f.read()
@@ -275,7 +275,7 @@ def test_deprecated_no_max_tokens():
 
 
 def test_contextualize_altered_delim():
-    EXPECTED_OUT_FILE = "test/data/chunker/2d_out_ser_chunks.json"
+    EXPECTED_OUT_FILE = "tests/data/chunker/2d_out_ser_chunks.json"
 
     with open(INPUT_FILE_2, encoding="utf-8") as f:
         data_json = f.read()
@@ -339,12 +339,12 @@ def test_chunk_multiple_content_layers(doc_with_layers, markdown_chunker_250):
     act_data = dict(root=[DocChunk.model_validate(chunk).export_json_dict() for chunk in multilayer_chunks])
     assert_or_generate_json_ground_truth(
         act_data,
-        "test/data/chunker/2i_out_chunks_multilayer.json",
+        "tests/data/chunker/2i_out_chunks_multilayer.json",
     )
 
 
 def test_chunk_custom_serializer():
-    EXPECTED_OUT_FILE = "test/data/chunker/2e_out_chunks.json"
+    EXPECTED_OUT_FILE = "tests/data/chunker/2e_out_chunks.json"
 
     with open(INPUT_FILE_2, encoding="utf-8") as f:
         data_json = f.read()
@@ -376,7 +376,7 @@ def test_chunk_custom_serializer():
 
 
 def test_chunk_openai():
-    EXPECTED_OUT_FILE = "test/data/chunker/2f_out_chunks.json"
+    EXPECTED_OUT_FILE = "tests/data/chunker/2f_out_chunks.json"
 
     with open(INPUT_FILE_2, encoding="utf-8") as f:
         data_json = f.read()
@@ -399,7 +399,7 @@ def test_chunk_openai():
 
 
 def test_chunk_default():
-    EXPECTED_OUT_FILE = "test/data/chunker/2g_out_chunks.json"
+    EXPECTED_OUT_FILE = "tests/data/chunker/2g_out_chunks.json"
 
     with open(INPUT_FILE_2, encoding="utf-8") as f:
         data_json = f.read()
@@ -435,7 +435,7 @@ def test_chunk_single_cell_rich_table():
 
 
 def test_chunk_explicit():
-    EXPECTED_OUT_FILE = "test/data/chunker/2g_out_chunks.json"
+    EXPECTED_OUT_FILE = "tests/data/chunker/2g_out_chunks.json"
 
     with open(INPUT_FILE_2, encoding="utf-8") as f:
         data_json = f.read()
@@ -465,19 +465,19 @@ def test_shadowed_headings_wout_content():
 
     setups = [
         Setup(
-            exp="test/data/chunker/2h_out_chunks_hier_emit_false.json",
+            exp="tests/data/chunker/2h_out_chunks_hier_emit_false.json",
             chunker=HierarchicalChunker(always_emit_headings=False),
         ),
         Setup(
-            exp="test/data/chunker/2h_out_chunks_hier_emit_true.json",
+            exp="tests/data/chunker/2h_out_chunks_hier_emit_true.json",
             chunker=HierarchicalChunker(always_emit_headings=True),
         ),
         Setup(
-            exp="test/data/chunker/2h_out_chunks_hybr_emit_false.json",
+            exp="tests/data/chunker/2h_out_chunks_hybr_emit_false.json",
             chunker=HybridChunker(always_emit_headings=False),
         ),
         Setup(
-            exp="test/data/chunker/2h_out_chunks_hybr_emit_true.json",
+            exp="tests/data/chunker/2h_out_chunks_hybr_emit_true.json",
             chunker=HybridChunker(always_emit_headings=True),
         ),
     ]
@@ -509,7 +509,7 @@ def test_shadowed_headings_wout_content():
 
 def test_chunk_with_repeat_table_header(dl_doc_0, markdown_chunker_250):
     """Test that table headers are repeated when a table is split across chunks."""
-    EXPECTED_OUT_FILE = "test/data/chunker/0d_out_chunks.json"
+    EXPECTED_OUT_FILE = "tests/data/chunker/0d_out_chunks.json"
 
     dl_doc = dl_doc_0
     chunker = markdown_chunker_250
@@ -698,7 +698,7 @@ def test_table_caption_not_repeated_in_split_chunks():
 
 def test_chunk_html_table_serializer(dl_doc_0):
     """Test chunking with HTML table serializer."""
-    EXPECTED_OUT_FILE = "test/data/chunker/0e_out_chunks.json"
+    EXPECTED_OUT_FILE = "tests/data/chunker/0e_out_chunks.json"
 
     dl_doc = dl_doc_0
     chunker = HybridChunker(
