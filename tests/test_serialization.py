@@ -544,6 +544,46 @@ def test_md_table_stacked_header_drops_repeated_span_text():
     assert actual.splitlines()[0] == "| human   |   MRCNN - R50 |"
 
 
+def test_md_table_keeps_rows_under_a_vertically_spanning_header():
+    """A row-spanning header is repeated into each row it covers by `grid`.
+
+    Only rows a header starts on are header rows, otherwise the data rows under
+    the span get flattened into the header and disappear from the body.
+    """
+    doc = DoclingDocument(name="")
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=2))
+    for cell in (
+        TableCell(
+            text="Category",
+            start_row_offset_idx=0,
+            end_row_offset_idx=2,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            row_span=2,
+            column_header=True,
+        ),
+        TableCell(
+            text="Price",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            column_header=True,
+        ),
+        TableCell(
+            text="10.00",
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+        ),
+    ):
+        doc.add_table_cell(table_item=table, cell=cell)
+
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    assert actual == ("| Category   |   Price |\n|------------|---------|\n| Category   |   10.00 |")
+
+
 def test_md_table_with_header_flags_below_row_zero_keeps_every_row_as_data():
     """No leading header block, so nothing is promoted and no row is dropped."""
     doc = DoclingDocument(name="")

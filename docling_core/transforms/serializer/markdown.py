@@ -523,7 +523,12 @@ class MarkdownAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
 
 
 def _count_header_rows(item: TableItem) -> int:
-    """Number of leading grid rows whose cells are marked as column headers.
+    """Number of leading grid rows on which a column header starts.
+
+    A header cell spanning several rows is repeated into each row it covers by
+    ``TableData.grid``, so a row only counts when a header cell actually starts
+    on it. Counting every row holding a flagged cell would pull the data rows
+    under a vertically spanning header into the header block.
 
     Returns 1 when the table carries no ``column_header`` flags at all, so that
     tables from backends (or doctags round-trips) that never set the flag keep
@@ -532,8 +537,8 @@ def _count_header_rows(item: TableItem) -> int:
     if not any(cell.column_header for row in item.data.grid for cell in row):
         return 1
     num_headers = 0
-    for row in item.data.grid:
-        if not any(cell.column_header for cell in row):
+    for row_idx, row in enumerate(item.data.grid):
+        if not any(cell.column_header and cell.start_row_offset_idx == row_idx for cell in row):
             break
         num_headers += 1
     return num_headers
