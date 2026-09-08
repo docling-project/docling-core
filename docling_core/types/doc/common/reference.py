@@ -149,7 +149,8 @@ class ImageRef(BaseModel):
         else:
             return ImageRef._to_img_str_pil(image)
 
-        ok, buffered = cv2.imencode(".png", encoded)
+        # OpenCV defaults to compression level 1; 6 matches PIL and keeps files comparable.
+        ok, buffered = cv2.imencode(".png", encoded, [cv2.IMWRITE_PNG_COMPRESSION, 6])
         if not ok:
             return ImageRef._to_img_str_pil(image)
 
