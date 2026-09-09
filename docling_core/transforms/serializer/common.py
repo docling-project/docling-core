@@ -357,6 +357,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a given node."""
+        _internal = kwargs.pop("_internal", False)
         my_visited: set[str] = visited if visited is not None else set()
         parts: list[SerializationResult] = []
         delim: str = kwargs.get("delim", "\n")
@@ -497,7 +498,10 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         if meta_part is not None and meta_position == "after":
             parts.append(meta_part)
 
-        return create_ser_result(text=delim.join([p.text for p in parts if p.text]), span_source=parts)
+        text_res = delim.join([p.text for p in parts if p.text])
+        if not _internal:
+            text_res = self._resolve_page_breaks(text_res, **kwargs)
+        return create_ser_result(text=text_res, span_source=parts)
 
     # making some assumptions about the kwargs it can pass
     @override
@@ -537,7 +541,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 list_level=list_level,
                 is_inline_scope=is_inline_scope,
                 visited=my_visited,
-                **(dict(level=lvl) | kwargs),
+                **(kwargs | dict(level=lvl, _internal=True)),
             )
             if part.text or not add_content:
                 parts.append(part)
@@ -713,6 +717,16 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
     def _create_page_break(self, node: _PageBreakNode) -> str:
         return f"#_#_DOCLING_DOC_PAGE_BREAK_{node.prev_page}_{node.next_page}_#_#"
+
+    def _resolve_page_breaks(self, text: str, **kwargs: Any) -> str:
+        """Resolve internal page-break sentinels in a serialized fragment.
+
+        Full-document rendering resolves sentinels in `serialize_doc`.
+        Single-node `serialize(item=...)` calls (and chunking, which builds
+        on them) never reach `serialize_doc`, so they resolve here instead.
+        Subclasses override to apply their own page-break replacement.
+        """
+        return text
 
     def _get_page_breaks(self, text: str) -> Iterable[tuple[str, int, int]]:
         pattern = r"#_#_DOCLING_DOC_PAGE_BREAK_(\d+)_(\d+)_#_#"

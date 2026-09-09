@@ -630,9 +630,7 @@ class LaTeXDocSerializer(DocSerializer):
 
         # Join body content and handle page break replacement within the body
         body_text = "\n\n".join([p.text for p in parts if p.text])
-        if params.page_break_command is not None:
-            for full_match, _, _ in self._get_page_breaks(text=body_text):
-                body_text = body_text.replace(full_match, params.page_break_command)
+        body_text = self._resolve_page_breaks(body_text, **kwargs)
 
         # Post-process title: move any \title{...} into the preamble
         # and add \maketitle after \begin{document}
@@ -679,6 +677,14 @@ class LaTeXDocSerializer(DocSerializer):
     def requires_page_break(self) -> bool:
         """Return True if page break replacement is enabled."""
         return self.params.page_break_command is not None
+
+    @override
+    def _resolve_page_breaks(self, text: str, **kwargs: Any) -> str:
+        params = self.params.merge_with_patch(patch=kwargs)
+        if params.page_break_command is not None:
+            for full_match, _, _ in self._get_page_breaks(text=text):
+                text = text.replace(full_match, params.page_break_command)
+        return text
 
     def _post_process_title(self, body_text: str) -> tuple[str | None, str, bool]:
         r"""Detect and relocate LaTeX \title{...} commands.
