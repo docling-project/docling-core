@@ -26,6 +26,9 @@ class DocumentOrigin(BaseModel):
 
     _extra_mimetypes: typing.ClassVar[list[str]] = [
         "application/epub+zip",
+        "application/vnd.apple.pages",
+        "application/vnd.apple.numbers",
+        "application/vnd.apple.keynote",
         "application/vnd.box.boxnote",
         "application/vnd.docling.ebcdic",  # accepted alias, see application/x-ebcdic
         "application/vnd.oasis.opendocument.presentation",
@@ -41,6 +44,9 @@ class DocumentOrigin(BaseModel):
         # appear in mimetypes.types_map. "application/x-ebcdic" is the standard
         # spelling docling emits; the vendor-tree alias above is accepted as well.
         "application/x-ebcdic",
+        "application/x-iwork-pages-sffpages",
+        "application/x-iwork-numbers-sffnumbers",
+        "application/x-iwork-keynote-sffkey",
         "audio/mp3",
         "audio/wav",
         "audio/x-wav",
