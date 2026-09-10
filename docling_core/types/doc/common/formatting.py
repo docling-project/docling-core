@@ -21,3 +21,4 @@ class Formatting(BaseModel):
     underline: bool = False
     strikethrough: bool = False
     script: Script = Script.BASELINE
+    handwritten: bool = False
