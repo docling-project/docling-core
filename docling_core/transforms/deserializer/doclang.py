@@ -521,9 +521,15 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 elif is_superscript:
                     formatting.script = Script.SUPER
             label = text_label_map[nm]
-            if nm == DocLangToken.TEXT.value and any(
-                c.tagName == DocLangToken.HANDWRITING.value for c in element_children
+            if (
+                nm == DocLangToken.TEXT.value
+                and not (formatting is not None and formatting.handwritten)
+                and any(c.tagName == DocLangToken.HANDWRITING.value for c in element_children)
             ):
+                # Legacy fallback: a mixed-inline <text> whose handwriting wasn't
+                # captured as a single-child formatting run keeps the block label.
+                # A fully-handwritten single run is carried by formatting.handwritten
+                # (set in _extract_text_with_formatting), so the label stays TEXT.
                 label = DocItemLabel.HANDWRITTEN_TEXT
             elif nm == DocLangToken.TEXT.value:
                 # Check for checkbox elements with class attribute
@@ -619,7 +625,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         # Extract provenance from heading token (if any)
         prov_list = self._extract_provenance(doc=doc, el=el)
         content_layer = self._extract_layer(el=el)
-        text = self._get_text(el)
+        text, formatting = self._extract_text_with_formatting(el)
         text_stripped = text.strip()
         if text_stripped:
             thread_id = self._extract_thread_id(el)
@@ -638,6 +644,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     parent=parent,
                     prov=(prov_list[0] if prov_list else None),
                     content_layer=content_layer,
+                    formatting=formatting,
                 )
             else:
                 item = doc.add_heading(
@@ -646,6 +653,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     parent=parent,
                     prov=(prov_list[0] if prov_list else None),
                     content_layer=content_layer,
+                    formatting=formatting,
                 )
             self._apply_initial_text_provenance(item, text=text_stripped, prov_list=prov_list)
             if thread_id:
@@ -1131,6 +1139,24 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 marker=marker_text,
                 prov_list=prov_list,
             )
+        elif (
+            len(rest_elements) == 1
+            and not leading_text
+            and (wrapped := self._extract_wrapped_formatting(rest_elements[0])) is not None
+        ):
+            # A list item whose body is a single inline formatting wrapper, e.g.
+            # <ldiv/><handwriting>item text</handwriting>. Carry the formatting
+            # (handwritten/bold/...) onto the list item, keeping its LIST_ITEM label.
+            wrapped_text, wrapped_fmt = wrapped
+            self._add_list_item_with_provenance(
+                doc=doc,
+                text=wrapped_text.strip(),
+                parent=li_group,
+                enumerated=ordered,
+                marker=marker_text,
+                prov_list=prov_list,
+                formatting=wrapped_fmt,
+            )
         else:
             li = self._add_list_item_with_provenance(
                 doc=doc,
@@ -1211,6 +1237,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         enumerated: bool,
         marker: str,
         prov_list: list[ProvenanceItem],
+        formatting: Formatting | None = None,
     ) -> ListItem:
         item = doc.add_list_item(
             text=text,
@@ -1218,9 +1245,41 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             enumerated=enumerated,
             marker=marker,
             prov=(prov_list[0] if prov_list else None),
+            formatting=formatting,
         )
         self._apply_initial_text_provenance(item, text=text, prov_list=prov_list)
         return item
+
+    def _extract_wrapped_formatting(self, el: Element) -> tuple[str, Formatting] | None:
+        """If ``el`` is itself an inline formatting wrapper (``<handwriting>``,
+        ``<b>``, ``<i>``, ...), return its inner text plus a Formatting object that
+        includes this wrapper's attribute; otherwise ``None``.
+
+        Complements ``_extract_text_with_formatting`` (which inspects an element's
+        single formatting *child*) for the case where the formatting tag is the
+        node itself, e.g. a list-item body ``<handwriting>text</handwriting>``.
+        """
+        tag = el.tagName
+        attr = {
+            DocLangToken.BOLD.value: "bold",
+            DocLangToken.ITALIC.value: "italic",
+            DocLangToken.UNDERLINE.value: "underline",
+            DocLangToken.STRIKETHROUGH.value: "strikethrough",
+            DocLangToken.HANDWRITING.value: "handwritten",
+        }.get(tag)
+        script = {
+            DocLangToken.SUPERSCRIPT.value: Script.SUPER,
+            DocLangToken.SUBSCRIPT.value: Script.SUB,
+        }.get(tag)
+        if attr is None and script is None:
+            return None
+        inner_text, inner_fmt = self._extract_text_with_formatting(el)
+        fmt = inner_fmt or Formatting()
+        if attr is not None:
+            setattr(fmt, attr, True)
+        elif script is not None:
+            fmt.script = script
+        return inner_text, fmt
 
     def _parse_list(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         ordered = el.getAttribute(DocLangAttributeKey.CLASS.value) == DocLangAttributeValue.ORDERED.value
@@ -2136,6 +2195,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 DocLangToken.SUPERSCRIPT,
                 DocLangToken.SUBSCRIPT,
                 DocLangToken.RTL,
+                DocLangToken.HANDWRITING,
             }
 
             if tag_name in format_tags:
@@ -2159,6 +2219,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     child_formatting.script = Script.SUPER
                 elif tag_name == DocLangToken.SUBSCRIPT.value:
                     child_formatting.script = Script.SUB
+                elif tag_name == DocLangToken.HANDWRITING.value:
+                    child_formatting.handwritten = True
 
                 return text, child_formatting
 

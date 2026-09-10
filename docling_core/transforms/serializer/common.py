@@ -565,6 +565,8 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 res = self.serialize_underline(text=res, **kwargs)
             if formatting.strikethrough:
                 res = self.serialize_strikethrough(text=res, **kwargs)
+            if formatting.handwritten:
+                res = self.serialize_handwriting(text=res, **kwargs)
             if formatting.script == Script.SUB:
                 res = self.serialize_subscript(text=res, **kwargs)
             elif formatting.script == Script.SUPER:
@@ -581,6 +583,11 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     @override
     def serialize_italic(self, text: str, **kwargs: Any) -> str:
         """Hook for italic formatting serialization."""
+        return text
+
+    @override
+    def serialize_handwriting(self, text: str, **kwargs: Any) -> str:
+        """Hook for handwriting formatting serialization."""
         return text
 
     @override

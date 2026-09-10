@@ -225,6 +225,7 @@ texts:
   content_layer: body
   formatting:
     bold: true
+    handwritten: false
     italic: false
     script: baseline
     strikethrough: false
@@ -305,6 +306,7 @@ texts:
   content_layer: body
   formatting:
     bold: true
+    handwritten: false
     italic: true
     script: baseline
     strikethrough: false

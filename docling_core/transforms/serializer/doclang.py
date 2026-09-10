@@ -2217,6 +2217,16 @@ class DocLangDocSerializer(DocSerializer):
         return _wrap(text=text, wrap_tag=DocLangToken.STRIKETHROUGH.value)
 
     @override
+    def serialize_handwriting(self, text: str, **kwargs: Any) -> str:
+        """Apply DocLang-specific handwriting serialization.
+
+        Handwriting is a formatting wrapper (like bold/italic), so it can ride on
+        any item's content — including a formula, list item or heading — while the
+        item keeps its structural label.
+        """
+        return _wrap(text=text, wrap_tag=DocLangToken.HANDWRITING.value)
+
+    @override
     def serialize_subscript(self, text: str, **kwargs: Any) -> str:
         """Apply DocLang-specific subscript serialization."""
         return _wrap(text=text, wrap_tag=DocLangToken.SUBSCRIPT.value)
