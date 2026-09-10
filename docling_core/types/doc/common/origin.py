@@ -30,7 +30,7 @@ class DocumentOrigin(BaseModel):
         "application/vnd.apple.numbers",
         "application/vnd.apple.keynote",
         "application/vnd.box.boxnote",
-        "application/vnd.docling.ebcdic",  # accepted alias, see application/x-ebcdic
+        "application/vnd.docling.ebcdic",
         "application/vnd.ibm.modcap",
         "application/vnd.oasis.opendocument.presentation",
         "application/vnd.oasis.opendocument.spreadsheet",
@@ -41,17 +41,16 @@ class DocumentOrigin(BaseModel):
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
-        # EBCDIC data files have no IANA-registered media type, so they will never
-        # appear in mimetypes.types_map. "application/x-ebcdic" is the standard
-        # spelling docling emits; the vendor-tree alias above is accepted as well.
         "application/x-afp",
         "application/x-ebcdic",
         "application/x-iwork-pages-sffpages",
         "application/x-iwork-numbers-sffnumbers",
         "application/x-iwork-keynote-sffkey",
+        "application/x-mimearchive",
         "audio/mp3",
         "audio/wav",
         "audio/x-wav",
+        "multipart/related",
         "text/asciidoc",
         "text/csv",
         "text/markdown",
