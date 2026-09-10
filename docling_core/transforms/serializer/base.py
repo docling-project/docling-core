@@ -232,6 +232,10 @@ class BaseDocSerializer(ABC):
         """Hook for underline formatting serialization."""
         ...
 
+    def serialize_handwriting(self, text: str, **kwargs: Any) -> str:
+        """Hook for handwriting formatting serialization (default: no-op)."""
+        return text
+
     @abstractmethod
     def serialize_strikethrough(self, text: str, **kwargs: Any) -> str:
         """Hook for strikethrough formatting serialization."""
