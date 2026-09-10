@@ -1232,7 +1232,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.6.0,!=2.10.0,!=2.10.1,!=2.10.2,<3.0.0" },
     { name = "pydantic-settings", specifier = ">=2.14.0" },
     { name = "pyyaml", specifier = ">=5.1,<7.0.0" },
-    { name = "requests", specifier = ">=2.34.2" },
+    { name = "requests", specifier = ">=2.34.2,<3.0.0" },
     { name = "semchunk", marker = "extra == 'chunking'", specifier = ">=2.2.0,<4.0.0" },
     { name = "semchunk", marker = "extra == 'chunking-openai'", specifier = ">=2.2.0,<4.0.0" },
     { name = "tabulate", specifier = ">=0.9.0,<0.11.0" },
