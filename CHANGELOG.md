@@ -1,3 +1,21 @@
+## [v2.96.0](https://github.com/docling-project/docling-core/releases/tag/v2.96.0) - 2026-09-10
+
+### Feature
+
+* Add DOCLINGCORE_ALLOWED_PRIVATE_IPS setting to allow private IPs ([#608](https://github.com/docling-project/docling-core/issues/608)) ([`864036d`](https://github.com/docling-project/docling-core/commit/864036d54541023957e01877a9ef8d50d21003ed))
+
+### Fix
+
+* **serializer:** Derive markdown table header rows from column_header flags ([#723](https://github.com/docling-project/docling-core/issues/723)) ([`9b23d31`](https://github.com/docling-project/docling-core/commit/9b23d315af336269d74d8445958f844abe9ebf9a))
+* Set PNG compression level in OpenCV encoder ([#759](https://github.com/docling-project/docling-core/issues/759)) ([`ee120d4`](https://github.com/docling-project/docling-core/commit/ee120d4834e1b1b6045fd367aabcc3fb40215983))
+* **webvtt:** Accept CR line terminator in verify_signature ([#749](https://github.com/docling-project/docling-core/issues/749)) ([`840aba6`](https://github.com/docling-project/docling-core/commit/840aba6b1a8263c7eb8235b83a10809df5d0840a))
+* Register AFP MIME types ([#761](https://github.com/docling-project/docling-core/issues/761)) ([`17f1a95`](https://github.com/docling-project/docling-core/commit/17f1a958affeed3d42a314681387f02614ccd6bb))
+* Preserve rows under spanning column headers ([#756](https://github.com/docling-project/docling-core/issues/756)) ([`a0949d7`](https://github.com/docling-project/docling-core/commit/a0949d7ded41d4be994bf633ebb949e7767bd41a))
+
+### Performance
+
+* Reuse table grid during dataframe export ([#754](https://github.com/docling-project/docling-core/issues/754)) ([`a1945f7`](https://github.com/docling-project/docling-core/commit/a1945f7d1f7df3e388e5f2d53b00fed428235d43))
+
 ## [v2.95.0](https://github.com/docling-project/docling-core/releases/tag/v2.95.0) - 2026-09-04
 
 ### Feature
