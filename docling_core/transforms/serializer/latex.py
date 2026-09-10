@@ -70,7 +70,7 @@ class LaTeXParams(CommonParams):
     indent: int = 2  # spaces for nested lists
 
     # If not None, emitted where page breaks occur (e.g., "\\newpage")
-    page_break_command: Optional[str] = None
+    page_break_command: str | None = None
 
     # Escape LaTeX special characters in text
     escape_latex: bool = True
@@ -132,6 +132,7 @@ class LaTeXTextSerializer(BaseModel, BaseTextSerializer):
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
         is_inline_scope: bool = False,
+        visited: set[str] | None = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a ``TextItem`` into LaTeX, handling lists, titles, headers, code and formulas.
@@ -139,6 +140,7 @@ class LaTeXTextSerializer(BaseModel, BaseTextSerializer):
         Applies post-processing (escape, formatting, hyperlinks) when appropriate and
         returns a ``SerializationResult`` ready to be joined into the document.
         """
+        my_visited = visited if visited is not None else set()
         LaTeXParams(**kwargs)
         parts: list[SerializationResult] = []
 
@@ -149,7 +151,7 @@ class LaTeXTextSerializer(BaseModel, BaseTextSerializer):
             and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
         )
         if has_inline_repr:
-            text = doc_serializer.serialize(item=child_group, is_inline_scope=True).text
+            text = doc_serializer.serialize(item=child_group, is_inline_scope=True, visited=my_visited).text
             post_process = False
         else:
             text = item.text
@@ -484,14 +486,17 @@ class LaTeXListSerializer(BaseModel, BaseListSerializer):
         doc: DoclingDocument,
         list_level: int = 0,
         is_inline_scope: bool = False,
+        visited: set[str] | None = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a list group into a nested ``itemize``/``enumerate`` environment."""
+        my_visited = visited if visited is not None else set()
         params = LaTeXParams(**kwargs)
         parts = doc_serializer.get_parts(
             item=item,
             list_level=list_level + 1,
             is_inline_scope=is_inline_scope,
+            visited=my_visited,
             **kwargs,
         )
         env = "enumerate" if item.first_item_is_enumerated(doc) else "itemize"
@@ -600,7 +605,7 @@ class LaTeXDocSerializer(DocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: Union[AnyUrl, Path],
+        hyperlink: AnyUrl | Path,
         **kwargs: Any,
     ) -> str:
         """Return LaTeX hyperlink command (requires ``hyperref`` package)."""
@@ -675,7 +680,7 @@ class LaTeXDocSerializer(DocSerializer):
         """Return True if page break replacement is enabled."""
         return self.params.page_break_command is not None
 
-    def _post_process_title(self, body_text: str) -> tuple[Optional[str], str, bool]:
+    def _post_process_title(self, body_text: str) -> tuple[str | None, str, bool]:
         r"""Detect and relocate LaTeX \title{...} commands.
 
         - Extracts the first \title{...} command found in the body.
@@ -703,8 +708,8 @@ class LaTeXDocSerializer(DocSerializer):
         self,
         text: str,
         *,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply LaTeX escaping before formatting/hyperlinks."""

@@ -183,7 +183,7 @@ class HierarchicalChunker(BaseChunker):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     serializer_provider: BaseSerializerProvider = ChunkingSerializerProvider()
-    code_chunking_strategy: Optional[BaseCodeChunkingStrategy] = Field(default=None)
+    code_chunking_strategy: BaseCodeChunkingStrategy | None = Field(default=None)
     always_emit_headings: bool = False
 
     # deprecated:
@@ -203,15 +203,18 @@ class HierarchicalChunker(BaseChunker):
             Iterator[Chunk]: iterator over extracted chunks
         """
         my_doc_ser = self.serializer_provider.get_serializer(doc=dl_doc)
-        heading_by_level: dict[LevelNumber, Union[TitleItem, SectionHeaderItem]] = {}
+        heading_by_level: dict[LevelNumber, TitleItem | SectionHeaderItem] = {}
         heading_emitted: set[str] = set()
         visited: set[str] = set()
         ser_res = create_ser_result()
         excluded_refs = my_doc_ser.get_excluded_refs(**kwargs)
         traverse_pictures = my_doc_ser.params.traverse_pictures if isinstance(my_doc_ser, DocSerializer) else False
+        included_content_layers = my_doc_ser.params.layers if isinstance(my_doc_ser, DocSerializer) else None
+
         for item, level in dl_doc.iterate_items(
             with_groups=True,
             traverse_pictures=traverse_pictures,
+            included_content_layers=included_content_layers,
         ):
             if item.self_ref in excluded_refs:
                 continue

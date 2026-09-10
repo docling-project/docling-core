@@ -113,7 +113,7 @@ class LineBasedTokenChunker(BaseChunker):
 
     @property
     def max_tokens(self) -> int:
-        """Get maximum number of tokens allowed in a chunk. If not set, limit is resolved from the tokenizer."""
+        """Maximum number of tokens allowed in a chunk, as reported by the tokenizer."""
         return self.tokenizer.get_max_tokens()
 
     def model_post_init(self, __context) -> None:

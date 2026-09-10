@@ -2,11 +2,28 @@
 
 from collections.abc import Hashable
 from datetime import datetime
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from pydantic_core import PydanticCustomError
 
 T = TypeVar("T", bound=Hashable)
+
+
+def ensure_unique_list(values: Any) -> Any:
+    """Deduplicate a list while preserving order.
+
+    `BeforeValidator` for list fields that should silently drop repeated values
+    (as opposed to `validate_unique_list`, which raises on duplicates).
+
+    Args:
+        values: the value to validate; must be a list.
+
+    Returns:
+        The list with duplicates removed, keeping first occurrence order.
+    """
+    if not isinstance(values, list):
+        raise ValueError("values must be a list of strings")
+    return list(dict.fromkeys(values))
 
 
 def validate_unique_list(v: list[T]) -> list[T]:

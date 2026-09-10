@@ -31,11 +31,31 @@ class PlainTextTextSerializer(MarkdownTextSerializer):
     """Text serializer that emits headings and titles without ``#`` markers."""
 
     @override
+    def _md_line_breaks(self, text: str) -> str:
+        return text
+
+    @override
+    def _heading_line_breaks(self, text: str) -> str:
+        return text
+
+    @override
     def _format_heading(
         self,
         text: str,
-        item: Union[TitleItem, SectionHeaderItem],
+        item: TitleItem | SectionHeaderItem,
+        in_table_cell: bool = False,
     ) -> str:
+        """Return the heading text without any ``#`` markers.
+
+        Args:
+            text: The heading text content, already post-processed.
+            item: The title or section header item being formatted.
+            in_table_cell: Accepted for interface compatibility; has no effect
+                because this serializer always returns plain text.
+
+        Returns:
+            The undecorated heading text.
+        """
         return text
 
 
@@ -69,7 +89,7 @@ class PlainTextDocSerializer(MarkdownDocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: Union[AnyUrl, Path],
+        hyperlink: AnyUrl | Path,
         **kwargs: Any,
     ) -> str:
         """Return the link label only, discarding the URL."""

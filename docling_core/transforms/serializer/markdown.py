@@ -6,8 +6,9 @@ import re
 import textwrap
 from enum import Enum
 from logging import Logger
-from pathlib import Path
-from typing import Annotated, Any, Optional, Union
+from pathlib import Path, PurePath
+from typing import Annotated, Any, Final, Optional, Union
+from urllib.parse import quote, urlsplit, urlunsplit
 
 from pydantic import AnyUrl, BaseModel, Field, PositiveInt
 from tabulate import _column_type, tabulate
@@ -31,11 +32,11 @@ from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
     _get_annotation_text,
+    _PageBreakSerResult,
     _should_use_legacy_annotations,
     create_ser_result,
 )
-from docling_core.types.doc.base import ImageRefMode
-from docling_core.types.doc.document import (
+from docling_core.types.doc import (
     BaseMeta,
     CodeItem,
     ContentLayer,
@@ -44,12 +45,15 @@ from docling_core.types.doc.document import (
     DocItem,
     DocItemLabel,
     DoclingDocument,
+    FieldItem,
+    FieldRegionItem,
     FloatingItem,
     Formatting,
     FormItem,
     FormulaItem,
     GroupItem,
     ImageRef,
+    ImageRefMode,
     InlineGroup,
     KeyValueItem,
     KeywordsMetaField,
@@ -153,8 +157,8 @@ class MarkdownParams(CommonParams):
     image_placeholder: str = "<!-- image -->"
     enable_chart_tables: bool = True
     indent: int = 4
-    wrap_width: Optional[PositiveInt] = None
-    page_break_placeholder: Optional[str] = None  # e.g. "<!-- page break -->"
+    wrap_width: PositiveInt | None = None
+    page_break_placeholder: str | None = None  # e.g. "<!-- page break -->"
     escape_underscores: bool = True
     escape_html: bool = True
     mark_meta: bool = Field(default=False, description="Mark meta sections.")
@@ -184,10 +188,36 @@ class MarkdownParams(CommonParams):
             )
         ),
     ] = False
+    include_picture_classification: bool = Field(
+        default=True,
+        description="Include the picture classification prediction (the image's predicted class).",
+    )
 
 
 class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
     """Markdown-specific text item serializer."""
+
+    def _md_line_breaks(self, text: str) -> str:
+        """Replace single newlines with GFM hard line breaks (two trailing spaces).
+
+        A single `\\n` becomes `"  \\n"` (two trailing spaces) so Markdown
+        renderers honour the line break.  Double newlines (`\\n\\n`) are left
+        intact because they represent a paragraph break, which is already handled
+        by the document serializer joining parts with `"\\n\\n"`.
+        Override to disable or change this behaviour in subclasses.
+        """
+        paragraphs = text.split("\n\n")
+        processed = [para.replace("\n", "  \n") for para in paragraphs]
+        return "\n\n".join(processed)
+
+    def _heading_line_breaks(self, text: str) -> str:
+        """Replace newlines in heading text with a space.
+
+        GFM headings cannot span multiple lines, so `\\n` is collapsed to a
+        space rather than a hard line break.  Override to change this behaviour
+        in subclasses.
+        """
+        return text.replace("\n", " ")
 
     @staticmethod
     def _validate_and_format_footnote(text: str) -> tuple[str, str]:
@@ -244,10 +274,30 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
         is_inline_scope: bool = False,
-        visited: Optional[set[str]] = None,  # refs of visited items
+        in_table_cell: bool = False,
+        visited: set[str] | None = None,  # refs of visited items
         **kwargs: Any,
     ) -> SerializationResult:
-        """Serializes the passed item."""
+        """Serialize the passed text item to Markdown.
+
+        Args:
+            item: The text item to serialize.
+            doc_serializer: The parent document serializer.
+            doc: The document the item belongs to.
+            is_inline_scope: Whether serialization happens in an inline context
+                (e.g. inside an InlineGroup). Affects delimiter and code/formula
+                wrapping.
+            in_table_cell: Whether the item is being rendered inside a table
+                cell. When ``True``, heading markers are suppressed because the
+                Markdown spec does not allow headings inside tables.
+            visited: Set of already-visited item refs used to prevent duplicate
+                serialization.
+            **kwargs: Additional keyword arguments forwarded to
+                ``MarkdownParams``.
+
+        Returns:
+            The serialization result containing the rendered Markdown text.
+        """
         my_visited = visited if visited is not None else set()
         params = MarkdownParams(**kwargs)
         res_parts: list[SerializationResult] = []
@@ -275,6 +325,14 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         if isinstance(item, ListItem | TitleItem | SectionHeaderItem):
             if not has_inline_repr:
                 # case where processing/formatting should be applied first (in inner scope)
+                if isinstance(item, TitleItem | SectionHeaderItem):
+                    # Headings cannot span multiple lines; replace newlines with a
+                    # space so "Hello\nWorld" becomes "# Hello World", not "# Hello\nWorld".
+                    text = self._heading_line_breaks(text)
+                elif isinstance(item, ListItem):
+                    # Apply GFM hard line breaks inside list item text before
+                    # post_process wraps it in formatting/hyperlink markers.
+                    text = self._md_line_breaks(text)
                 text = doc_serializer.post_process(
                     text=text,
                     escape_html=escape_html,
@@ -326,7 +384,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 pieces.append(text)
                 text_part = " ".join(pieces)
             else:
-                text_part = self._format_heading(text, item)
+                text_part = self._format_heading(text, item, in_table_cell=in_table_cell)
         elif isinstance(item, CodeItem):
             if params.format_code_blocks:
                 # inline items and all hyperlinks: use single backticks
@@ -349,7 +407,8 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             # although wrapping is not guaranteed if post-processing makes changes
             text_part = textwrap.fill(text, width=params.wrap_width)
         else:
-            text_part = text
+            # Apply GFM hard line breaks: single \n -> "  \n", \n\n preserved.
+            text_part = self._md_line_breaks(text)
 
         if text_part:
             text_res = create_ser_result(text=text_part, span_source=item)
@@ -374,9 +433,26 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
     def _format_heading(
         self,
         text: str,
-        item: Union[TitleItem, SectionHeaderItem],
+        item: TitleItem | SectionHeaderItem,
+        in_table_cell: bool = False,
     ) -> str:
-        """Format a heading/title item. Override to customize heading representation."""
+        """Format a heading or title item as a Markdown heading string.
+
+        Override this method to customize heading representation in subclasses.
+
+        Args:
+            text: The heading text content, already post-processed.
+            item: The title or section header item being formatted.
+            in_table_cell: When ``True``, returns plain text without ``#``
+                markers because headings are not valid inside Markdown tables
+                per the Markdown spec.
+
+        Returns:
+            The formatted heading string, e.g. ``"## My heading"`` for a
+            level-1 section header, or plain ``text`` when inside a table cell.
+        """
+        if in_table_cell:
+            return text
         num_hashes = 1 if isinstance(item, TitleItem) else item.level + 1
         return f"{num_hashes * '#'} {text}"
 
@@ -402,7 +478,14 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
                     if (
                         (params.allowed_meta_names is None or key in params.allowed_meta_names)
                         and (key not in params.blocked_meta_names)
-                        and (tmp := self._serialize_meta_field(item.meta, key, params.mark_meta))
+                        and (
+                            tmp := self._serialize_meta_field(
+                                item.meta,
+                                key,
+                                params.mark_meta,
+                                include_picture_classification=params.include_picture_classification,
+                            )
+                        )
                     )
                 ]
                 if item.meta
@@ -412,7 +495,15 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
             # NOTE for now using an empty span source for GroupItems
         )
 
-    def _serialize_meta_field(self, meta: BaseMeta, name: str, mark_meta: bool) -> Optional[str]:
+    def _serialize_meta_field(
+        self,
+        meta: BaseMeta,
+        name: str,
+        mark_meta: bool,
+        *,
+        include_picture_classification: bool = True,
+        **kwargs: Any,
+    ) -> str | None:
         if (field_val := getattr(meta, name)) is not None:
             if isinstance(field_val, SummaryMetaField):
                 txt = field_val.text
@@ -421,6 +512,8 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
             elif isinstance(field_val, DescriptionMetaField):
                 txt = field_val.text
             elif isinstance(field_val, PictureClassificationMetaField):
+                if not include_picture_classification:
+                    return None
                 txt = self._humanize_text(field_val.get_main_prediction().class_name)
             elif isinstance(field_val, MoleculeMetaField):
                 txt = field_val.smi
@@ -457,6 +550,8 @@ class MarkdownAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
 
         res_parts: list[SerializationResult] = []
         for ann in item.get_annotations():
+            if isinstance(ann, PictureClassificationData) and not params.include_picture_classification:
+                continue
             if isinstance(
                 ann,
                 PictureClassificationData | DescriptionAnnotation | PictureMoleculeData,
@@ -477,8 +572,101 @@ class MarkdownAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
         )
 
 
+def _count_header_rows(item: TableItem) -> int:
+    """Count the leading grid rows on which a column header cell starts.
+
+    A header cell spanning several rows is repeated into each row it covers by
+    ``TableData.grid``, so a row is only counted when a header cell actually
+    starts on it. Counting every row that merely holds a flagged cell would
+    pull the data rows beneath a vertically spanning header into the header
+    block.
+
+    Args:
+        item: The table whose header rows are to be counted.
+
+    Returns:
+        The number of leading rows that form the column header, with two
+        special cases:
+
+        - 1 when the table carries no ``column_header`` flags at all, so
+          that tables from backends (or doctags round-trips) that never set the
+          flag keep rendering their first row as the header.
+        - 0 when ``column_header`` flags exist but none starts on row 0
+          (i.e. the flags begin on a later row).  The caller treats this as
+          "no promotable header block", and every row stays in the body.
+    """
+    num_headers = 0
+    for row_idx, row in enumerate(item.data.grid):
+        if any(cell.column_header and cell.start_row_offset_idx == row_idx for cell in row):
+            num_headers += 1
+        else:
+            if row_idx == 0 and not any(cell.column_header for later_row in item.data.grid[1:] for cell in later_row):
+                return 1
+            break
+    return num_headers
+
+
+HEADER_ROW_SEPARATOR = " - "
+"""Joins the cells of a stacked column header into a single Markdown header row."""
+
+
+def _flatten_header_rows(header_rows: list[list[str]], num_cols: int) -> list[str]:
+    """Collapse stacked header rows into the single header row GFM allows.
+
+    Per-column, the texts from each header row are joined with
+    ``HEADER_ROW_SEPARATOR`` after dropping consecutive duplicates.  The
+    duplicate-dropping handles row-spanning cells: ``TableData.grid`` repeats a
+    spanning cell's text into every row it covers, so the repeated occurrences
+    are suppressed rather than joined to themselves.
+
+    Args:
+        header_rows: The rendered cell texts for each header row, in row order.
+            Each inner list has one entry per column.
+        num_cols: The number of columns in the table, used to size the result
+            and to guard against ragged rows.
+
+    Returns:
+        A list of ``num_cols`` strings, one per column, each being the
+        ``HEADER_ROW_SEPARATOR``-joined non-duplicate texts from that column's
+        header rows.  An empty list of ``header_rows`` returns
+        ``[""] * num_cols``.
+
+    Note:
+        The deduplication is position-based, not span-aware: any two adjacent
+        header rows that happen to carry the same text in the same column will
+        have the second occurrence silently dropped, regardless of whether it
+        comes from a spanning cell or from two independent header levels that
+        share a label.  GFM has no way to represent more than one header row,
+        so this is an unavoidable lossy flattening.
+    """
+    if not header_rows:
+        return [""] * num_cols
+    flattened = []
+    for col_idx in range(num_cols):
+        parts: list[str] = []
+        for row in header_rows:
+            text = row[col_idx] if col_idx < len(row) else ""
+            if text and (not parts or parts[-1] != text):
+                parts.append(text)
+        flattened.append(HEADER_ROW_SEPARATOR.join(parts))
+    return flattened
+
+
 class MarkdownTableSerializer(BaseTableSerializer):
-    """Markdown-specific table item serializer."""
+    """Markdown-specific table item serializer.
+
+    Markdown pipe tables have exactly one header row and no spans, so a table's
+    column headers are resolved to a single row as follows:
+
+    - a table with no cell marked ``column_header`` keeps row 0 as the header
+    - otherwise the leading run of rows holding ``column_header`` cells is the
+      header, and per column those cells are joined in the order they appear
+      with ``HEADER_ROW_SEPARATOR``, so ``native backend`` above ``TTS``
+      becomes ``native backend - TTS``
+    """
+
+    _SEPARATOR_ROW_RE: re.Pattern = re.compile(r"^\|(\s*:?-+:?\s*\|)+\s*$")
+    """Matches a Markdown table separator row, e.g. ``| - | :---: | --: |``."""
 
     @override
     def get_header_and_body_lines(
@@ -487,25 +675,30 @@ class MarkdownTableSerializer(BaseTableSerializer):
         table_text: str,
         **kwargs: Any,
     ) -> tuple[list[str], list[str]]:
-        """Get header lines and body lines from the markdown table.
+        """Split a serialized Markdown table into header and body lines.
+
+        Locates the separator row (``| - | - |``) to identify the boundary
+        between preamble, header, and body.  Any content before the header row
+        — including captions that themselves start with ``|`` — is treated as
+        preamble and excluded from the returned header lines.
+        Returns ``([], all_lines)`` when no separator row can be found or the
+        separator is on the first line (no header row above it).
+
+        Args:
+            table_text: A serialized Markdown table, possibly preceded by a
+                caption or blank lines.
 
         Returns:
-            A tuple of (header_lines, body_lines) where header_lines contains
-            the header row and separator row, and body_lines contains the data rows.
+            A tuple ``(header_lines, body_lines)`` where ``header_lines`` holds
+            the header row and its separator row, and ``body_lines`` holds the
+            remaining data rows.
         """
-        lines = [line for line in table_text.splitlines(True) if line.strip()]
-
-        if len(lines) < 2:
-            # Not enough lines for a proper markdown table (need at least header + separator)
-            return [], lines
-
-        # In markdown tables:
-        # Line 0: Header row
-        # Line 1: Separator row (with dashes)
-        # Lines 2+: Body rows
-        header_lines = lines[:2]
-        body_lines = lines[2:]
-
+        all_lines = table_text.splitlines(True)
+        sep_idx = next((i for i, l in enumerate(all_lines) if self._SEPARATOR_ROW_RE.match(l.rstrip("\n"))), None)
+        if sep_idx is None or sep_idx == 0:
+            return [], all_lines
+        header_lines = all_lines[sep_idx - 1 : sep_idx + 1]
+        body_lines = all_lines[sep_idx + 1 :]
         return header_lines, body_lines
 
     @staticmethod
@@ -590,7 +783,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
                 for col in row:
                     if isinstance(col, RichTableCell):
                         ref_item = col.ref.resolve(doc=doc)
-                        inner_kwargs = {**kwargs, "_nested_in_table": True}
+                        inner_kwargs = {**kwargs, "_nested_in_table": True, "in_table_cell": True}
                         cell_text = doc_serializer.serialize(
                             item=ref_item,
                             **inner_kwargs,
@@ -602,18 +795,22 @@ class MarkdownTableSerializer(BaseTableSerializer):
                     rendered_row.append(cell_text.replace("\n", " ").replace("|", "&#124;"))
                 rows.append(rendered_row)
             if len(rows) > 0:
+                # Resolve the column headers to the single row GFM allows
+                num_headers = _count_header_rows(item)
+                header_row = _flatten_header_rows(rows[:num_headers], len(rows[0]))
+                body_rows = rows[num_headers:]
                 # Always disable numparse to prevent silent precision loss in numeric values
                 # Use tabulate's _column_type to detect numeric columns for right-alignment
                 colalign = []
-                if len(rows) > 1:  # Need at least header + 1 data row
+                if body_rows:
                     num_cols = len(rows[0])
                     for col_idx in range(num_cols):
-                        col_values = [row[col_idx] if col_idx < len(row) else "" for row in rows[1:]]
+                        col_values = [row[col_idx] if col_idx < len(row) else "" for row in body_rows]
                         col_type = _column_type(col_values)
                         colalign.append("right" if col_type in (int, float) else "left")
                 table_text = tabulate(
-                    rows[1:],
-                    headers=rows[0],
+                    body_rows,
+                    headers=header_row,
                     tablefmt="github",
                     disable_numparse=True,
                     colalign=tuple(colalign) if colalign else None,
@@ -640,6 +837,18 @@ class MarkdownTableSerializer(BaseTableSerializer):
 
 class MarkdownPictureSerializer(BasePictureSerializer):
     """Markdown-specific picture item serializer."""
+
+    _URI_KEEP_CHARS: Final[str] = "/%:@+,;=~$!&'*"
+    """Characters that survive percent-encoding in a Markdown link destination.
+
+    Includes the RFC 3986 reserved characters that carry meaning in a URI, plus
+    `%` so that an already-encoded destination is not encoded a second time.
+    Whitespace and parentheses are deliberately absent: they would end a Markdown
+    inline link.
+    """
+
+    _WINDOWS_DRIVE_RE: Final[re.Pattern[str]] = re.compile(r"[A-Za-z]:/")
+    """Matches the drive prefix of an absolute Windows path, e.g. `C:/`."""
 
     @override
     def serialize(
@@ -744,11 +953,74 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             ):
                 text_res = image_placeholder
             else:
-                text_res = f"![Image]({item.image.uri!s})"
+                text_res = f"![Image]({self._escape_uri_path(item.image.uri)})"
         else:
             text_res = image_placeholder
 
         return create_ser_result(text=text_res, span_source=item)
+
+    @staticmethod
+    def _escape_uri_path(value: AnyUrl | PurePath) -> str:
+        """Encode a URL or filesystem path as a Markdown link destination.
+
+        Handles URLs of any scheme (https/s3/ftp/...) as well as POSIX and Windows
+        paths, keeps relative paths relative, and never double-encodes. A Windows path
+        is recognized by either flavour, so a document authored on Windows still
+        resolves when it is exported on POSIX.
+
+        The only destination this gives a ``file://`` scheme to is an absolute Windows
+        path, where it is the sole spelling a renderer cannot misread as a URL scheme
+        (``C:``) or as an authority (``//server``). A URL that already carries the
+        scheme is passed through, since dropping it would turn an absolute filesystem
+        reference into a root-relative URL.
+
+        Known limitation: a backslash in a `PosixPath` string is ambiguous.
+        It may be a Windows separator surviving a JSON round-trip (correct to
+        convert) or a literal filename character (where converting it to `/`
+        would split one component into two). The two cases are indistinguishable
+        from `str()`. In practice this is not a concern because `ImageRef.uri`
+        is always populated from native filesystem operations, so a `PosixPath`
+        can only carry a literal backslash if the caller explicitly constructed one.
+
+        Args:
+            value: The URL or path to encode.
+
+        Returns:
+            A percent-encoded Markdown link destination.
+        """
+
+        keep = MarkdownPictureSerializer._URI_KEEP_CHARS
+        # A backslash is both the Windows separator and a Markdown escape character, and
+        # is read as a separator whatever flavour the path arrives in: a document authored
+        # on Windows keeps its backslashes once it is re-read on POSIX, where the flavour
+        # can no longer tell. A URL is unaffected, as pydantic normalizes backslashes away
+        # when parsing.
+        s = str(value).replace("\\", "/")
+
+        if s.startswith("//"):  # In case of a fileshare (//someserver/somefolder)
+            host, _, tail = s.lstrip("/").partition("/")  # get the end of the path
+            # file://<host>/<path>, with <host> being a possibly empty string.
+            return urlunsplit(("file", host, quote(f"/{tail}", safe=keep), "", ""))
+        if MarkdownPictureSerializer._WINDOWS_DRIVE_RE.match(s):  # In case of a Windows filename with drive letter
+            # file://<full_path_with_filename>
+            return urlunsplit(("file", "", quote(f"/{s}", safe=keep), "", ""))
+
+        # A URL keeps its scheme, authority and delimiters; only its components are
+        # encoded. A single-character scheme cannot be real, so it is read as a path.
+        parts = urlsplit(s)
+        if len(parts.scheme) > 1:
+            return urlunsplit(
+                (
+                    parts.scheme,
+                    parts.netloc,
+                    quote(parts.path, safe=keep),
+                    quote(parts.query, safe=keep + "="),
+                    quote(parts.fragment, safe=keep),
+                )
+            )
+
+        # A relative or root-relative local path.
+        return quote(s, safe=keep)
 
 
 class MarkdownKeyValueSerializer(BaseKeyValueSerializer):
@@ -809,7 +1081,7 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
         doc: DoclingDocument,
         list_level: int = 0,
         is_inline_scope: bool = False,
-        visited: Optional[set[str]] = None,  # refs of visited items
+        visited: set[str] | None = None,  # refs of visited items
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
@@ -838,13 +1110,22 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 my_parts.append(p)
 
         indent_str = list_level * params.indent * " "
-        text_res = sep.join(
-            [
-                # avoid additional marker on already evaled sublists
-                (c.text if c.text and c.text[0] == " " else f"{indent_str}{c.text}")
-                for c in my_parts
-            ]
-        )
+        my_texts = [
+            # avoid additional marker on already evaled sublists
+            (c.text if c.text and c.text[0] == " " else f"{indent_str}{c.text}")
+            for c in my_parts
+        ]
+        text_res = ""
+        for i, text in enumerate(my_texts):
+            if i:
+                # a page break is a block-level marker, so it gets the document
+                # scope separator on both sides instead of the list one
+                text_res += (
+                    "\n\n"
+                    if isinstance(my_parts[i], _PageBreakSerResult) or isinstance(my_parts[i - 1], _PageBreakSerResult)
+                    else sep
+                )
+            text_res += text
         return create_ser_result(text=text_res, span_source=my_parts)
 
 
@@ -859,7 +1140,7 @@ class MarkdownInlineSerializer(BaseInlineSerializer):
         doc_serializer: "BaseDocSerializer",
         doc: DoclingDocument,
         list_level: int = 0,
-        visited: Optional[set[str]] = None,  # refs of visited items
+        visited: set[str] | None = None,  # refs of visited items
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
@@ -892,6 +1173,8 @@ class MarkdownFallbackSerializer(BaseFallbackSerializer):
             parts = doc_serializer.get_parts(item=item, **kwargs)
             text_res = "\n\n".join([p.text for p in parts if p.text])
             return create_ser_result(text=text_res, span_source=parts)
+        elif isinstance(item, (FieldRegionItem, FieldItem)):
+            return create_ser_result()
         else:
             return create_ser_result(
                 text="<!-- missing-text -->",
@@ -939,7 +1222,7 @@ class MarkdownDocSerializer(DocSerializer):
                         f"Footnote reference {footnote.cref} resolved to {type(resolved).__name__} instead of TextItem"
                     )
                 elif resolved.self_ref not in excluded:
-                    parsed: Optional[tuple[str, str]] = None
+                    parsed: tuple[str, str] | None = None
                     try:
                         parsed = MarkdownTextSerializer._validate_and_format_footnote(resolved.text)
                     except ValueError as exc:
@@ -974,7 +1257,7 @@ class MarkdownDocSerializer(DocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: Union[AnyUrl, Path],
+        hyperlink: AnyUrl | Path,
         **kwargs: Any,
     ):
         """Apply Markdown-specific hyperlink serialization."""
@@ -1011,8 +1294,8 @@ class MarkdownDocSerializer(DocSerializer):
         *,
         escape_html: bool = True,
         escape_underscores: bool = True,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply some text post-processing steps."""
@@ -1054,10 +1337,10 @@ class MarkdownDocSerializer(DocSerializer):
     def serialize(
         self,
         *,
-        item: Optional[NodeItem] = None,
+        item: NodeItem | None = None,
         list_level: int = 0,
         is_inline_scope: bool = False,
-        visited: Optional[set[str]] = None,
+        visited: set[str] | None = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a given node."""

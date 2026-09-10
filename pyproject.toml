@@ -1,6 +1,6 @@
 [project]
 name = "docling-core"
-version = "2.85.0"  # DO NOT EDIT, updated automatically
+version = "2.96.0"  # DO NOT EDIT, updated automatically
 description = "A python library to define and validate data types in Docling."
 license = "MIT"
 license-files = ["LICENSE"]
@@ -47,11 +47,12 @@ dependencies = [
     'pillow (>=10.0.0,<13.0.0)',
     'pyyaml (>=5.1,<7.0.0)',
     'typing-extensions (>=4.12.2,<5.0.0)',
-    'typer (>=0.12.5,<0.25.0)',
+    'typer (>=0.12.5,<0.27.0)',
     'latex2mathml (>=3.77.0,<4.0.0)',
     "defusedxml (>=0.7.1, <0.8.0)",
     "pydantic-settings>=2.14.0",
     "doclang>=0.7,<0.8",
+    "requests (>=2.34.2,<3.0.0)",
 ]
 
 [project.urls]
@@ -68,6 +69,12 @@ docling-view = "docling_core.cli.view:app"
 docling-serialize = "docling_core.cli.serialize:app"
 
 [project.optional-dependencies]
+dclq = [
+    "doclang>=0.7,<0.8",
+    "typer>=0.15.1,<0.25.0",
+    "click>=8.0.0",
+    "lxml>=6.0.2",
+]
 chunking = [
     # common:
     'semchunk (>=2.2.0,<4.0.0)',
@@ -78,9 +85,7 @@ chunking = [
     'tree-sitter-typescript >=0.23.2',
 
     # specific:
-    # temporary solution until huggingface/transformers#46159 is resolved
-    'transformers (>=4.34.0,<5.9.0,!=5.0.*,!=5.1.*,!=5.2.*,!=5.3.*) ; sys_platform == "darwin"',
-    'transformers (>=4.34.0,<6.0.0,!=5.0.*,!=5.1.*,!=5.2.*,!=5.3.*) ; sys_platform != "darwin"',
+    'transformers (>=4.42.0,<6.0.0)',
 ]
 chunking-openai = [
     # common:
@@ -116,14 +121,25 @@ dev = [
     "ruff>=0.14.11",
     "types-defusedxml (>=0.7.0.20250822, <0.8.0)",
     "opencv-python-headless>=4.6.0.66,<5.0.0.0",
+    "universal-pathlib>=0.3.10",
+    "doclang[schematron-saxon]>=0.7.1,<0.8",
+    # workspace member, so that `uv sync` gives lint/typecheck/test coverage of it
+    "dclq",
 ]
 constraints = [
     'pandas (>=2.1.4,<3.0.0); python_version < "3.11"',
     'pandas (>=2.1.4,<4.0.0); python_version >= "3.11"',
+    'numpy (<2.5.0)',   # numpy 2.5.0+ stubs use PEP 695 syntax, incompatible with mypy python_version < 3.12
 ]
 
 [tool.uv]
 package = true
+
+[tool.uv.workspace]
+members = ["packages/dclq"]
+
+[tool.uv.sources]
+dclq = { workspace = true }
 
 [tool.setuptools.packages.find]
 where = [".", "docling_core/resources/schemas"]
@@ -138,7 +154,7 @@ target-version = "py310"
 line-length = 120
 respect-gitignore = true
 exclude = [
-    "test/data/**"
+    "tests/data/**"
 ]
 
 [tool.ruff.format]
@@ -171,8 +187,6 @@ ignore = [
   "PL",     # Pylint
   "RUF005", # Consider ... instead of concatenation
   "RUF012", # Mutable Class Attributes
-  "UP007",  # Option and Union
-  "UP045",  # Use `X | None` for type annotations
 ]
 
 [tool.ruff.lint.pep8-naming]
@@ -187,7 +201,7 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402", "F401"]
-"test/*.py" = ["ASYNC"] # Disable ASYNC check for tests
+"tests/*.py" = ["ASYNC"] # Disable ASYNC check for tests
 "*.ipynb" = ["I"]  # Disable import sorting for notebooks
 
 [tool.ruff.lint.mccabe]
@@ -212,7 +226,7 @@ namespace_packages = true
 show_error_codes = true
 python_version = "3.10"
 plugins = ["pydantic.mypy"]
-exclude = "(^|/)test/data/.*"
+exclude = "(^|/)tests/data/.*"
 
 [[tool.mypy.overrides]]
 module = [
@@ -220,6 +234,7 @@ module = [
     "jsondiff.*",
     "jsonref.*",
     "jsonschema.*",
+    "lxml.*",
     "requests.*",
     "semchunk.*",
     "tabulate.*",
@@ -230,7 +245,7 @@ module = [
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["test.*"]
+module = ["tests.*"]
 disallow_untyped_defs = false
 
 [tool.semantic_release]

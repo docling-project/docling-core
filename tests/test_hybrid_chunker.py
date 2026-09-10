@@ -1,0 +1,823 @@
+import re
+from collections import Counter
+from dataclasses import dataclass
+
+import pytest
+import tiktoken
+from transformers import AutoTokenizer
+
+import docling_core.transforms.chunker.hybrid_chunker as _hybrid_mod
+from docling_core.transforms.chunker.base import BaseChunker
+from docling_core.transforms.chunker.hierarchical_chunker import (
+    ChunkingDocSerializer,
+    ChunkingSerializerProvider,
+    DocChunk,
+    HierarchicalChunker,
+)
+from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
+from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
+from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
+from docling_core.transforms.serializer.html import HTMLTableSerializer
+from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
+from docling_core.types.doc import DocItemLabel, DoclingDocument
+from docling_core.types.doc.common.content_layer import ContentLayer
+from docling_core.types.doc.items.table.table_data import TableCell, TableData
+
+from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_rich_table_doc
+
+EMBED_MODEL_ID = "sentence-transformers/all-MiniLM-L6-v2"
+MAX_TOKENS = 64
+INPUT_FILE_0 = "tests/data/chunker/0_inp_dl_doc.json"
+INPUT_FILE_2 = "tests/data/chunker/2_inp_dl_doc.json"
+
+
+INNER_TOKENIZER = AutoTokenizer.from_pretrained(EMBED_MODEL_ID)
+
+
+# ---------------------------------------------------------------------------
+# Reusable serializer-provider classes
+# ---------------------------------------------------------------------------
+
+
+class CompactMarkdownSerializerProvider(ChunkingSerializerProvider):
+    """Markdown serializer using compact table format."""
+
+    def get_serializer(self, doc: DoclingDocument):
+        return ChunkingDocSerializer(
+            doc=doc,
+            table_serializer=MarkdownTableSerializer(),
+            params=MarkdownParams(compact_tables=True),
+        )
+
+
+class HTMLSerializerProvider(ChunkingSerializerProvider):
+    """Serializer provider that renders tables as HTML."""
+
+    def get_serializer(self, doc: DoclingDocument):
+        return ChunkingDocSerializer(
+            doc=doc,
+            table_serializer=HTMLTableSerializer(),
+        )
+
+
+# ---------------------------------------------------------------------------
+# Shared fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def dl_doc_0() -> DoclingDocument:
+    """DoclingDocument loaded from INPUT_FILE_0 (the paper with large tables)."""
+    with open(INPUT_FILE_0, encoding="utf-8") as f:
+        return DoclingDocument.model_validate_json(f.read())
+
+
+@pytest.fixture(scope="module")
+def markdown_chunker_250() -> HybridChunker:
+    """HybridChunker(max_tokens=250, merge_peers, repeat_table_header, compact Markdown)."""
+    return HybridChunker(
+        tokenizer=HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=250),
+        merge_peers=True,
+        repeat_table_header=True,
+        serializer_provider=CompactMarkdownSerializerProvider(),
+    )
+
+
+def test_chunk_merge_peers():
+    EXPECTED_OUT_FILE = "tests/data/chunker/2a_out_chunks.json"
+
+    with open(INPUT_FILE_2, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DoclingDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(
+            tokenizer=INNER_TOKENIZER,
+            max_tokens=MAX_TOKENS,
+        ),
+        merge_peers=True,
+    )
+
+    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    chunks = list(chunk_iter)
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
+    assert_or_generate_json_ground_truth(
+        act_data,
+        EXPECTED_OUT_FILE,
+    )
+
+
+def test_chunk_with_model_name():
+    EXPECTED_OUT_FILE = "tests/data/chunker/2a_out_chunks.json"
+
+    with open(INPUT_FILE_2, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DoclingDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer.from_pretrained(
+            model_name=EMBED_MODEL_ID,
+            max_tokens=MAX_TOKENS,
+        ),
+        merge_peers=True,
+    )
+
+    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    chunks = list(chunk_iter)
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
+    assert_or_generate_json_ground_truth(
+        act_data,
+        EXPECTED_OUT_FILE,
+    )
+
+
+def test_chunk_deprecated_max_tokens():
+    EXPECTED_OUT_FILE = "tests/data/chunker/2a_out_chunks.json"
+
+    with open(INPUT_FILE_2, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DoclingDocument.model_validate_json(data_json)
+
+    with pytest.warns(DeprecationWarning, match="Deprecated initialization"):
+        chunker = HybridChunker(
+            max_tokens=MAX_TOKENS,
+        )
+
+    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    chunks = list(chunk_iter)
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
+    assert_or_generate_json_ground_truth(
+        act_data,
+        EXPECTED_OUT_FILE,
+    )
+
+
+def test_contextualize():
+    EXPECTED_OUT_FILE = "tests/data/chunker/2a_out_ser_chunks.json"
+
+    with open(INPUT_FILE_2, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DoclingDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(
+            tokenizer=INNER_TOKENIZER,
+            max_tokens=MAX_TOKENS,
+        ),
+        merge_peers=True,
+    )
+
+    chunks = chunker.chunk(dl_doc=dl_doc)
+
+    act_data = dict(
+        root=[
+            dict(
+                text=chunk.text,
+                ser_text=(ser_text := chunker.contextualize(chunk)),
+                num_tokens=chunker.tokenizer.count_tokens(ser_text),
+            )
+            for chunk in chunks
+        ]
+    )
+    assert_or_generate_json_ground_truth(
+        act_data,
+        EXPECTED_OUT_FILE,
+    )
+
+
+def test_chunk_no_merge_peers():
+    EXPECTED_OUT_FILE = "tests/data/chunker/2b_out_chunks.json"
+
+    with open(INPUT_FILE_2, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DoclingDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(
+            tokenizer=INNER_TOKENIZER,
+            max_tokens=MAX_TOKENS,
+        ),
+        merge_peers=False,
+    )
+
+    chunks = chunker.chunk(dl_doc=dl_doc)
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
+    assert_or_generate_json_ground_truth(
+        act_data,
+        EXPECTED_OUT_FILE,
+    )
+
+
+def test_chunk_deprecated_explicit_hf_obj():
+    EXPECTED_OUT_FILE = "tests/data/chunker/2c_out_chunks.json"
+
+    with open(INPUT_FILE_2, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DoclingDocument.model_validate_json(data_json)
+
+    with pytest.warns(DeprecationWarning, match="Deprecated initialization"):
+        chunker = HybridChunker(
+            tokenizer=INNER_TOKENIZER,
+        )
+
+    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    chunks = list(chunk_iter)
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
+    assert_or_generate_json_ground_truth(
+        act_data,
+        EXPECTED_OUT_FILE,
+    )
+
+
+def test_ignore_deprecated_param_if_new_tokenizer_passed():
+    EXPECTED_OUT_FILE = "tests/data/chunker/2c_out_chunks.json"
+
+    with open(INPUT_FILE_2, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DoclingDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(
+            tokenizer=INNER_TOKENIZER,
+        ),
+        max_tokens=MAX_TOKENS,
+    )
+
+    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    chunks = list(chunk_iter)
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
+    assert_or_generate_json_ground_truth(
+        act_data,
+        EXPECTED_OUT_FILE,
+    )
+
+
+def test_deprecated_no_max_tokens():
+    EXPECTED_OUT_FILE = "tests/data/chunker/2c_out_chunks.json"
+
+    with open(INPUT_FILE_2, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DoclingDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(
+            tokenizer=INNER_TOKENIZER,
+        ),
+    )
+
+    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    chunks = list(chunk_iter)
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
+    assert_or_generate_json_ground_truth(
+        act_data,
+        EXPECTED_OUT_FILE,
+    )
+
+
+def test_contextualize_altered_delim():
+    EXPECTED_OUT_FILE = "tests/data/chunker/2d_out_ser_chunks.json"
+
+    with open(INPUT_FILE_2, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DoclingDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(
+            tokenizer=INNER_TOKENIZER,
+            max_tokens=MAX_TOKENS,
+        ),
+        merge_peers=True,
+        delim="####",
+    )
+
+    chunks = chunker.chunk(dl_doc=dl_doc)
+
+    act_data = dict(
+        root=[
+            dict(
+                text=chunk.text,
+                ser_text=(ser_text := chunker.contextualize(chunk)),
+                num_tokens=chunker.tokenizer.count_tokens(ser_text),
+            )
+            for chunk in chunks
+        ]
+    )
+    assert_or_generate_json_ground_truth(
+        act_data,
+        EXPECTED_OUT_FILE,
+    )
+
+
+def test_chunk_multiple_content_layers(doc_with_layers, markdown_chunker_250):
+    """Test that hybrid chunking can include multiple content layers in the output."""
+
+    default_text = "\n".join(chunk.text for chunk in markdown_chunker_250.chunk(dl_doc=doc_with_layers))
+
+    assert "Main body content" in default_text
+    assert "Page Header" not in default_text
+    assert "Page Footer" not in default_text
+
+    class MultiLayerSerializerProvider(ChunkingSerializerProvider):
+        def get_serializer(self, doc: DoclingDocument):
+            params = MarkdownParams(layers={ContentLayer.BODY, ContentLayer.FURNITURE})
+            return ChunkingDocSerializer(doc=doc, params=params)
+
+    multilayer_chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(
+            tokenizer=INNER_TOKENIZER,
+            max_tokens=MAX_TOKENS,
+        ),
+        serializer_provider=MultiLayerSerializerProvider(),
+    )
+    multilayer_chunks = list(multilayer_chunker.chunk(dl_doc=doc_with_layers))
+    multilayer_text = "\n".join(chunk.text for chunk in multilayer_chunks)
+
+    assert "Main body content" in multilayer_text
+    assert "Page Header" in multilayer_text
+    assert "Page Footer" in multilayer_text
+
+    act_data = dict(root=[DocChunk.model_validate(chunk).export_json_dict() for chunk in multilayer_chunks])
+    assert_or_generate_json_ground_truth(
+        act_data,
+        "tests/data/chunker/2i_out_chunks_multilayer.json",
+    )
+
+
+def test_chunk_custom_serializer():
+    EXPECTED_OUT_FILE = "tests/data/chunker/2e_out_chunks.json"
+
+    with open(INPUT_FILE_2, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DoclingDocument.model_validate_json(data_json)
+
+    class MySerializerProvider(ChunkingSerializerProvider):
+        def get_serializer(self, doc: DoclingDocument):
+            return ChunkingDocSerializer(
+                doc=doc,
+                table_serializer=MarkdownTableSerializer(),
+            )
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(
+            tokenizer=INNER_TOKENIZER,
+            max_tokens=MAX_TOKENS,
+        ),
+        merge_peers=True,
+        serializer_provider=MySerializerProvider(),
+    )
+
+    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    chunks = list(chunk_iter)
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
+    assert_or_generate_json_ground_truth(
+        act_data,
+        EXPECTED_OUT_FILE,
+    )
+
+
+def test_chunk_openai():
+    EXPECTED_OUT_FILE = "tests/data/chunker/2f_out_chunks.json"
+
+    with open(INPUT_FILE_2, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DoclingDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker(
+        tokenizer=OpenAITokenizer(
+            tokenizer=tiktoken.encoding_for_model("gpt-4o"),
+            max_tokens=128 * 1024,
+        )
+    )
+
+    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    chunks = list(chunk_iter)
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
+    assert_or_generate_json_ground_truth(
+        act_data,
+        EXPECTED_OUT_FILE,
+    )
+
+
+def test_chunk_default():
+    EXPECTED_OUT_FILE = "tests/data/chunker/2g_out_chunks.json"
+
+    with open(INPUT_FILE_2, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DoclingDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker()
+
+    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    chunks = list(chunk_iter)
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
+    assert_or_generate_json_ground_truth(
+        act_data,
+        EXPECTED_OUT_FILE,
+    )
+
+
+def test_chunk_single_cell_rich_table():
+    doc = build_single_cell_rich_table_doc("Important body text inside layout table")
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(
+            tokenizer=INNER_TOKENIZER,
+            max_tokens=MAX_TOKENS,
+        ),
+        merge_peers=True,
+    )
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    assert len(chunks) == 1
+    assert chunks[0].text == "Important body text inside layout table"
+    assert [item.self_ref for item in chunks[0].meta.doc_items] == [doc.tables[0].self_ref]
+
+
+def test_chunk_explicit():
+    EXPECTED_OUT_FILE = "tests/data/chunker/2g_out_chunks.json"
+
+    with open(INPUT_FILE_2, encoding="utf-8") as f:
+        data_json = f.read()
+    dl_doc = DoclingDocument.model_validate_json(data_json)
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer.from_pretrained(
+            model_name="sentence-transformers/all-MiniLM-L6-v2",
+            max_tokens=256,
+        ),
+    )
+
+    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    chunks = list(chunk_iter)
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
+    assert_or_generate_json_ground_truth(
+        act_data,
+        EXPECTED_OUT_FILE,
+    )
+
+
+def test_shadowed_headings_wout_content():
+    @dataclass
+    class Setup:
+        exp: str  # expected output file path
+        chunker: BaseChunker
+
+    setups = [
+        Setup(
+            exp="tests/data/chunker/2h_out_chunks_hier_emit_false.json",
+            chunker=HierarchicalChunker(always_emit_headings=False),
+        ),
+        Setup(
+            exp="tests/data/chunker/2h_out_chunks_hier_emit_true.json",
+            chunker=HierarchicalChunker(always_emit_headings=True),
+        ),
+        Setup(
+            exp="tests/data/chunker/2h_out_chunks_hybr_emit_false.json",
+            chunker=HybridChunker(always_emit_headings=False),
+        ),
+        Setup(
+            exp="tests/data/chunker/2h_out_chunks_hybr_emit_true.json",
+            chunker=HybridChunker(always_emit_headings=True),
+        ),
+    ]
+
+    # prepare document with different types of empty "sections" and headings shadowing each other
+    doc = DoclingDocument(name="")
+    doc.add_heading(text="Section 1", level=1)
+    doc.add_heading(text="Section 1.1", level=2)
+    doc.add_heading(text="Section 1.2", level=2)
+    doc.add_heading(text="Section 2", level=1)
+    doc.add_heading(text="Section 2.1", level=2)
+    doc.add_heading(text="Section 2.1.1", level=3)
+    doc.add_heading(text="Section 3", level=1)
+    doc.add_heading(text="Section 3.1", level=2)
+    doc.add_text(text="Foo", label=DocItemLabel.TEXT)
+    doc.add_heading(text="Section 4", level=1)
+    doc.add_heading(text="Section 4.1", level=2)
+
+    for setup in setups:
+        chunker = setup.chunker
+        chunk_iter = chunker.chunk(dl_doc=doc)
+        chunks = list(chunk_iter)
+        act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
+        assert_or_generate_json_ground_truth(
+            act_data,
+            setup.exp,
+        )
+
+
+def test_chunk_with_repeat_table_header(dl_doc_0, markdown_chunker_250):
+    """Test that table headers are repeated when a table is split across chunks."""
+    EXPECTED_OUT_FILE = "tests/data/chunker/0d_out_chunks.json"
+
+    dl_doc = dl_doc_0
+    chunker = markdown_chunker_250
+    serializer = chunker.serializer_provider.get_serializer(dl_doc)
+
+    # Serialize each table item individually to get expected content
+    table_contents = {}
+    for table_item in dl_doc.tables:
+        # Serialize the table
+        ser_result = serializer.serialize(
+            item=table_item,
+        )
+        table_contents[table_item.self_ref] = ser_result.text
+
+    chunks = list(chunker.chunk(dl_doc=dl_doc))
+
+    # Verify we got chunks
+    assert len(chunks) > 0, "Expected at least one chunk from the input document"
+
+    # For each table, verify its content appears in chunks
+    for table_ref, table_text in table_contents.items():
+        # Get header and body lines from the serialized table
+        if table_text:
+            header_lines, body_lines = serializer.table_serializer.get_header_and_body_lines(table_text=table_text)
+
+            # Find all chunks that contain content from this table
+            chunks_with_table = [chunk for chunk in chunks if table_ref in [i.self_ref for i in chunk.meta.doc_items]]
+
+            # Verify table content appears in at least one chunk
+            assert len(chunks_with_table) > 0, f"Table {table_ref} content should appear in at least one chunk"
+
+            # If table is split across multiple chunks, verify header is repeated
+            if len(chunks_with_table) > 1:
+                # Each chunk with table content should have the header
+                for chunk in chunks_with_table:
+                    # Check if header lines are present
+                    has_header = all(header_line.strip() in chunk.text for header_line in header_lines)
+                    assert has_header, (
+                        f"Table {table_ref} split across chunks should have header repeated in each chunk. "
+                        f"Missing header in chunk: {chunk.text[:200]}..."
+                    )
+            # Verify all body lines appear somewhere in the chunks
+            all_chunk_text = "\n".join(chunk.text for chunk in chunks_with_table)
+            for body_line in body_lines:
+                assert body_line.strip() in all_chunk_text, (
+                    f"Table {table_ref} body line '{body_line.strip()}' should appear in chunks"
+                )
+
+    # Save chunks to output file for inspection
+    chunks_data = [
+        {
+            "text": chunk.text,
+            "meta": {
+                "doc_items": [item.self_ref for item in chunk.meta.doc_items] if chunk.meta.doc_items else [],
+                "headings": chunk.meta.headings,
+            },
+        }
+        for chunk in chunks
+    ]
+
+    assert_or_generate_json_ground_truth(chunks_data, EXPECTED_OUT_FILE)
+
+
+def test_repeat_table_header_produces_valid_markdown_in_all_chunks(dl_doc_0, markdown_chunker_250):
+    """Regression test: each chunk of a split table must be valid Markdown.
+
+    When a table is split across multiple chunks with repeat_table_header=True,
+    the separator row (| - | - |) must appear on the line immediately following
+    the header row in every chunk — not separated by a blank line.  A blank line
+    between them breaks Markdown rendering.
+    """
+    dl_doc = dl_doc_0
+    chunks = list(markdown_chunker_250.chunk(dl_doc=dl_doc))
+
+    assert len(chunks) > 0, "Expected at least one chunk from the input document"
+
+    sep_re = re.compile(r"^\|(\s*:?-+:?\s*\|)+\s*$")
+
+    # Collect all table self_refs that appear in more than one chunk (i.e. split tables).
+    table_refs = {t.self_ref for t in dl_doc.tables}
+    ref_chunk_count: Counter = Counter()
+    for chunk in chunks:
+        seen = set()
+        for item in chunk.meta.doc_items:
+            if item.self_ref in table_refs and item.self_ref not in seen:
+                ref_chunk_count[item.self_ref] += 1
+                seen.add(item.self_ref)
+
+    split_table_refs = {ref for ref, count in ref_chunk_count.items() if count > 1}
+    assert split_table_refs, (
+        "Expected at least one table to be split across chunks at max_tokens=250; "
+        "check that the input document still contains a large enough table."
+    )
+
+    # For every chunk that contains part of a split table, the Markdown must be
+    # well-formed: the separator row must immediately follow the header row with
+    # no blank line in between.
+    for i, chunk in enumerate(chunks):
+        chunk_table_refs = {item.self_ref for item in chunk.meta.doc_items} & split_table_refs
+        if not chunk_table_refs:
+            continue  # not a table chunk — skip
+
+        lines = chunk.text.splitlines()
+        sep_indices = [j for j, ln in enumerate(lines) if sep_re.match(ln)]
+        assert sep_indices, f"Chunk {i} has no Markdown separator row: {chunk.text!r}"
+        sep_idx = sep_indices[0]
+        assert sep_idx > 0, f"Chunk {i}: separator is on the first line (no header above it)"
+        assert lines[sep_idx - 1].startswith("|"), (
+            f"Chunk {i}: line before separator is not a table row: {lines[sep_idx - 1]!r}"
+        )
+        # The critical assertion: no blank line between header and separator.
+        assert lines[sep_idx - 1] != "", (
+            f"Chunk {i}: blank line between header row and separator row — invalid Markdown table"
+        )
+
+
+def test_table_caption_not_repeated_in_split_chunks():
+    """Regression test: a caption, even starting with '|', must not be treated as the
+    table header row and must not appear in any chunk after the first."""
+    caption_text = "| Table X: caption starting with pipe |"
+
+    doc = DoclingDocument(name="pipe_caption")
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text=caption_text)
+    num_cols, num_rows = 3, 10
+    cells = []
+    for col in range(num_cols):
+        cells.append(
+            TableCell(
+                text=f"Col{col}",
+                row_span=1,
+                col_span=1,
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=col,
+                end_col_offset_idx=col + 1,
+                column_header=True,
+            )
+        )
+    for row in range(1, num_rows + 1):
+        for col in range(num_cols):
+            cells.append(
+                TableCell(
+                    text=f"r{row}c{col}",
+                    row_span=1,
+                    col_span=1,
+                    start_row_offset_idx=row,
+                    end_row_offset_idx=row + 1,
+                    start_col_offset_idx=col,
+                    end_col_offset_idx=col + 1,
+                    column_header=False,
+                )
+            )
+    doc.add_table(
+        data=TableData(num_rows=num_rows + 1, num_cols=num_cols, table_cells=cells),
+        caption=caption,
+    )
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=MAX_TOKENS),
+        repeat_table_header=True,
+        serializer_provider=CompactMarkdownSerializerProvider(),
+    )
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    assert len(chunks) > 1, "Table should be split into multiple chunks"
+
+    # The caption must appear only in the first chunk.
+    assert caption_text in chunks[0].text, f"Caption should appear in the first chunk: {chunks[0].text!r}"
+    for chunk in chunks[1:]:
+        assert caption_text not in chunk.text, (
+            f"Caption starting with '|' was incorrectly repeated in a non-first chunk: {chunk.text!r}"
+        )
+
+    # Every chunk must contain the real table header row, not the caption.
+    sep_re = re.compile(r"^\|(\s*:?-+:?\s*\|)+\s*$")
+    for i, chunk in enumerate(chunks):
+        lines = chunk.text.splitlines()
+        sep_indices = [j for j, ln in enumerate(lines) if sep_re.match(ln)]
+        assert sep_indices, f"Chunk {i} has no Markdown separator row: {chunk.text!r}"
+        sep_idx = sep_indices[0]
+        assert sep_idx > 0, f"Chunk {i}: separator is on the first line (no header above it)"
+        assert lines[sep_idx - 1].startswith("|"), (
+            f"Chunk {i}: line before separator is not a table row: {lines[sep_idx - 1]!r}"
+        )
+
+
+def test_chunk_html_table_serializer(dl_doc_0):
+    """Test chunking with HTML table serializer."""
+    EXPECTED_OUT_FILE = "tests/data/chunker/0e_out_chunks.json"
+
+    dl_doc = dl_doc_0
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=500),
+        merge_peers=True,
+        repeat_table_header=True,
+        serializer_provider=HTMLSerializerProvider(),
+    )
+
+    serializer = chunker.serializer_provider.get_serializer(dl_doc)
+
+    # Serialize each table item individually to get expected content
+    table_contents = {}
+    for table_item in dl_doc.tables:
+        # Serialize the table
+        ser_result = serializer.serialize(
+            item=table_item,
+        )
+        table_contents[table_item.self_ref] = ser_result.text
+
+    chunks = list(chunker.chunk(dl_doc=dl_doc))
+
+    # Verify we got chunks
+    assert len(chunks) > 0, "Expected at least one chunk from the input document"
+
+    # For each table, verify its content appears in chunks
+    for table_ref, table_text in table_contents.items():
+        # Get header and body lines from the serialized table
+        if table_text:
+            header_lines, body_lines = serializer.table_serializer.get_header_and_body_lines(table_text=table_text)
+
+            # Find all chunks that contain content from this table
+            chunks_with_table = [chunk for chunk in chunks if table_ref in [i.self_ref for i in chunk.meta.doc_items]]
+
+            # Verify table content appears in at least one chunk
+            assert len(chunks_with_table) > 0, f"Table {table_ref} content should appear in at least one chunk"
+
+            # If table is split across multiple chunks, verify header is repeated
+            if len(chunks_with_table) > 1:
+                # Each chunk with table content should have the header
+                for chunk in chunks_with_table:
+                    # Check if header lines are present
+                    has_header = all(header_line.strip() in chunk.text for header_line in header_lines)
+                    assert has_header, (
+                        f"Table {table_ref} split across chunks should have header repeated in each chunk. "
+                        f"Missing header in chunk: {chunk.text[:200]}..."
+                    )
+
+            # Verify all body lines appear somewhere in the chunks
+            all_chunk_text = "\n".join(chunk.text for chunk in chunks_with_table)
+            for body_line in body_lines:
+                assert body_line.strip() in all_chunk_text, (
+                    f"Table {table_ref} body line '{body_line.strip()}' should appear in chunks"
+                )
+
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
+    assert_or_generate_json_ground_truth(
+        act_data,
+        EXPECTED_OUT_FILE,
+    )
+
+
+def test_html_parser_error_handling(dl_doc_0):
+    """Test that HTML parsing errors are caught and handled gracefully."""
+    dl_doc = dl_doc_0
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=MAX_TOKENS),
+        merge_peers=True,
+        repeat_table_header=True,
+        serializer_provider=HTMLSerializerProvider(),
+    )
+
+    # Chunking with HTML serializer should complete without errors
+    chunks = list(chunker.chunk(dl_doc=dl_doc))
+    assert len(chunks) > 0, "Should produce chunks even with potential HTML parsing issues"
+
+    # Verify all chunks have valid structure
+    for chunk in chunks:
+        assert isinstance(chunk.text, str), "Chunk text should be a string"
+        assert chunk.meta is not None, "Chunk should have metadata"
+
+
+@pytest.mark.parametrize(
+    "tokenizer",
+    [
+        pytest.param(
+            lambda: HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=MAX_TOKENS),
+            id="huggingface",
+        ),
+        pytest.param(
+            lambda: OpenAITokenizer(tokenizer=tiktoken.get_encoding("cl100k_base"), max_tokens=MAX_TOKENS),
+            id="openai",
+        ),
+    ],
+)
+def test_chunk_with_tokenizer_backends(sample_doc, tokenizer):
+    """HybridChunker produces chunks with both supported tokenizer backends."""
+    chunker = HybridChunker(tokenizer=tokenizer())
+    chunks = list(chunker.chunk(dl_doc=sample_doc))
+    assert len(chunks) >= 1
+    assert all(isinstance(c.text, str) for c in chunks)
+
+
+def test_chunk_raises_on_missing_semchunk(monkeypatch):
+    """HybridChunker raises ImportError when semchunk is not installed.
+
+    Regression test for lazy-loading: the error must be raised at chunk time,
+    not at import time, so users of chunking-openai or chunking-hf without the
+    other extra can still import the module safely.
+    """
+    with open(INPUT_FILE_2, encoding="utf-8") as f:
+        dl_doc = DoclingDocument.model_validate_json(f.read())
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=MAX_TOKENS),
+    )
+
+    monkeypatch.setattr(_hybrid_mod, "_SEMCHUNK_AVAILABLE", False)
+    monkeypatch.setattr(_hybrid_mod, "_SEMCHUNK_IMPORT_ERROR", ImportError("semchunk not installed"))
+
+    with pytest.raises(ImportError, match="semchunk"):
+        list(chunker.chunk(dl_doc=dl_doc))

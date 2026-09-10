@@ -1,6 +1,7 @@
 """File-related utilities."""
 
 import ipaddress
+import logging
 import re
 import tempfile
 from io import BytesIO
@@ -14,6 +15,9 @@ from typing_extensions import deprecated
 
 from docling_core.types.doc.utils import relative_path
 from docling_core.types.io import DocumentStream
+from docling_core.utils.settings import settings
+
+_logger = logging.getLogger(__name__)
 
 _MAX_REDIRECTS = 5
 
@@ -31,6 +35,27 @@ class FileSizeLimitExceededError(ValueError):
         self.size = size
         self.limit = limit
         super().__init__(f"Remote file exceeds the maximum allowed size ({size} > {limit} bytes).")
+
+
+def _ip_in_allowlist(ip: ipaddress.IPv4Address | ipaddress.IPv6Address, allowlist: list[str]) -> bool:
+    """Return whether a ip matches any IP addresss or CIDR entry in allowlist."""
+    for entry in allowlist:
+        entry = entry.strip()
+        if not entry:
+            continue
+        try:
+            network = ipaddress.ip_network(entry, strict=False)
+            normalized = str(network)
+            if normalized != entry:
+                _logger.warning(
+                    f"DOCLINGCORE_ALLOWED_PRIVATE_IPS entry {entry!r} was normalized to "
+                    f"{normalized!r}. Consider using the explicit network address."
+                )
+            if ip in network:
+                return True
+        except ValueError:
+            _logger.warning(f"Skipping malformed entry in DOCLINGCORE_ALLOWED_PRIVATE_IPS: {entry!r} ")
+    return False
 
 
 def _is_safe_url(url: str) -> bool:
@@ -52,6 +77,8 @@ def _is_safe_url(url: str) -> bool:
                 ip = ipaddress.ip_address(ip_str)
             except (socket.gaierror, socket.herror):
                 return False
+        if settings.allowed_private_ips and _ip_in_allowlist(ip, settings.allowed_private_ips):
+            return True
 
         return ip.is_global and not (
             ip.is_private
@@ -65,7 +92,7 @@ def _is_safe_url(url: str) -> bool:
         return False
 
 
-def _sanitize_filename(filename: str) -> Optional[str]:
+def _sanitize_filename(filename: str) -> str | None:
     """Return a basename-safe filename, or None if no usable basename remains."""
     normalized = filename.replace("\\", "/")
     basename = Path(normalized).name
@@ -111,9 +138,9 @@ def resolve_remote_filename(
 
 
 def resolve_source_to_stream(
-    source: Union[Path, AnyHttpUrl, str],
-    headers: Optional[dict[str, str]] = None,
-    max_file_size: Optional[int] = None,
+    source: Path | AnyHttpUrl | str,
+    headers: dict[str, str] | None = None,
+    max_file_size: int | None = None,
 ) -> DocumentStream:
     """Resolves the source (URL, path) of a file to a binary stream.
 
@@ -247,9 +274,9 @@ def resolve_source_to_stream(
 
 
 def _resolve_source_to_path(
-    source: Union[Path, AnyHttpUrl, str],
-    headers: Optional[dict[str, str]] = None,
-    workdir: Optional[Path] = None,
+    source: Path | AnyHttpUrl | str,
+    headers: dict[str, str] | None = None,
+    workdir: Path | None = None,
 ) -> Path:
     doc_stream = resolve_source_to_stream(source=source, headers=headers)
 
@@ -269,9 +296,9 @@ def _resolve_source_to_path(
 
 
 def resolve_source_to_path(
-    source: Union[Path, AnyHttpUrl, str],
-    headers: Optional[dict[str, str]] = None,
-    workdir: Optional[Path] = None,
+    source: Path | AnyHttpUrl | str,
+    headers: dict[str, str] | None = None,
+    workdir: Path | None = None,
 ) -> Path:
     """Resolves the source (URL, path) of a file to a local file path.
 
@@ -300,8 +327,8 @@ def resolve_source_to_path(
 
 @deprecated("Use `resolve_source_to_path()` or `resolve_source_to_stream()`  instead")
 def resolve_file_source(
-    source: Union[Path, AnyHttpUrl, str],
-    headers: Optional[dict[str, str]] = None,
+    source: Path | AnyHttpUrl | str,
+    headers: dict[str, str] | None = None,
 ) -> Path:
     """Resolves the source (URL, path) of a file to a local file path.
 

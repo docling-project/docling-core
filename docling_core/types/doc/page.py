@@ -38,6 +38,7 @@ from docling_core.types.doc.base import (
     CoordOrigin,
     ImageRefMode,
     PydanticSerCtxKey,
+    Size,
     round_pydantic_float,
 )
 from docling_core.types.doc.document import ImageRef
@@ -280,15 +281,46 @@ class TextDirection(str, Enum):
 class TextCell(ColorMixin, OrderedElement):
     """Model representing a text cell with positioning and content information."""
 
-    rect: BoundingRectangle
+    rect: Annotated[
+        BoundingRectangle,
+        Field(description="Oriented rectangle enclosing the cell on the page."),
+    ]
 
-    text: str
-    orig: str
+    text: Annotated[str, Field(description="Text content of the cell.")]
+    orig: Annotated[
+        str,
+        Field(
+            description=(
+                "Original, untreated text of the cell as produced by the "
+                "extraction backend, before any downstream normalization "
+                "applied to `text`."
+            )
+        ),
+    ]
 
-    text_direction: TextDirection = TextDirection.LEFT_TO_RIGHT
+    text_direction: Annotated[
+        TextDirection,
+        Field(description="Reading direction of the text within the cell."),
+    ] = TextDirection.LEFT_TO_RIGHT
 
-    confidence: float = 1.0
-    from_ocr: bool
+    confidence: Annotated[
+        float,
+        Field(
+            description=(
+                "Confidence of the text extraction. Cells read directly from "
+                "digital text keep the default of 1.0; OCR backends set the "
+                "recognition score reported by the OCR engine."
+            )
+        ),
+    ] = 1.0
+    from_ocr: Annotated[
+        bool,
+        Field(
+            description=(
+                "Whether the cell was produced by OCR rather than extracted from the document's digital text layer."
+            )
+        ),
+    ]
 
     @field_serializer("confidence")
     def _serialize(self, value: float, info: FieldSerializationInfo) -> float:
@@ -354,22 +386,22 @@ class PdfTextCell(TextCell):
 class PdfWidget(OrderedElement):
     rect: BoundingRectangle
 
-    widget_text: Optional[str] = None
-    widget_description: Optional[str] = None
-    widget_field_name: Optional[str] = None
-    widget_field_type: Optional[str] = None
+    widget_text: str | None = None
+    widget_description: str | None = None
+    widget_field_name: str | None = None
+    widget_field_type: str | None = None
 
 
 class PdfHyperlink(OrderedElement):
     rect: BoundingRectangle
-    uri: Optional[Union[AnyUrl, str]] = None
+    uri: AnyUrl | str | None = None
 
-    widget_text: Optional[str] = None
-    widget_description: Optional[str] = None
+    widget_text: str | None = None
+    widget_description: str | None = None
 
     @field_validator("uri", mode="before")
     @classmethod
-    def parse_uri(cls, v: Any) -> Union[AnyUrl, str, None]:
+    def parse_uri(cls, v: Any) -> AnyUrl | str | None:
         """Parse URI with AnyUrl for structured metadata, falling back to str.
 
         PDF hyperlinks may contain relative paths, internal bookmarks, or other
@@ -389,8 +421,8 @@ class BitmapResource(OrderedElement):
 
     rect: BoundingRectangle
     mode: ImageRefMode = ImageRefMode.PLACEHOLDER
-    image: Optional[ImageRef] = None
-    uri: Optional[AnyUrl] = Field(default=None, deprecated="Use 'image' field instead.")
+    image: ImageRef | None = None
+    uri: AnyUrl | None = Field(default=None, deprecated="Use 'image' field instead.")
 
     def to_bottom_left_origin(self, page_height: float):
         """Convert the resource's coordinates to use bottom-left origin.
@@ -458,11 +490,11 @@ class PdfShape(OrderedElement):
     rgb_filling: ColorRGBA = ColorRGBA(r=0, g=0, b=0, a=255)
 
     # deprecated — use rgb_stroking / rgb_filling instead
-    rgba: Optional[ColorRGBA] = Field(
+    rgba: ColorRGBA | None = Field(
         default=None,
         deprecated="Use `rgb_stroking` and `rgb_filling` instead.",
     )
-    width: Optional[float] = Field(
+    width: float | None = Field(
         default=None,
         deprecated="Use `line_width` instead.",
     )
@@ -535,13 +567,48 @@ class PageGeometry(BaseModel):
 class PdfPageGeometry(PageGeometry):
     """Extended dimensions model specific to PDF pages with boundary types."""
 
-    boundary_type: PdfPageBoundaryType
+    boundary_type: Annotated[
+        PdfPageBoundaryType,
+        Field(
+            description=(
+                "The page boundary that `rect` was derived from. In "
+                "`PdfPageGeometry`, `width`, `height` and `origin` are "
+                "computed from `crop_bbox` regardless of this value."
+            )
+        ),
+    ]
 
-    art_bbox: BoundingBox
-    bleed_bbox: BoundingBox
-    crop_bbox: BoundingBox
-    media_bbox: BoundingBox
-    trim_bbox: BoundingBox
+    art_bbox: Annotated[
+        BoundingBox,
+        Field(description=("PDF ArtBox: the extent of the page's meaningful content as intended by its creator.")),
+    ]
+    bleed_bbox: Annotated[
+        BoundingBox,
+        Field(
+            description=(
+                "PDF BleedBox: the clipping region for production output, "
+                "including any bleed area beyond the trim boundary."
+            )
+        ),
+    ]
+    crop_bbox: Annotated[
+        BoundingBox,
+        Field(
+            description=(
+                "PDF CropBox: the region the page contents are clipped to "
+                "when displayed or printed. This is the box `width`, `height` "
+                "and `origin` are computed from."
+            )
+        ),
+    ]
+    media_bbox: Annotated[
+        BoundingBox,
+        Field(description=("PDF MediaBox: the full extent of the physical medium the page is to be printed on.")),
+    ]
+    trim_bbox: Annotated[
+        BoundingBox,
+        Field(description=("PDF TrimBox: the intended dimensions of the page after trimming.")),
+    ]
 
     @property
     def width(self):
@@ -565,25 +632,79 @@ class PdfPageGeometry(PageGeometry):
 class SegmentedPage(BaseModel):
     """Model representing a segmented page with text cells and resources."""
 
-    dimension: PageGeometry
+    dimension: Annotated[
+        PageGeometry,
+        Field(description="Geometry of the page this segmentation belongs to."),
+    ]
 
-    bitmap_resources: list[BitmapResource] = []
+    bitmap_resources: Annotated[
+        list[BitmapResource],
+        Field(description="Bitmap image resources found on the page."),
+    ] = []
 
-    char_cells: list[TextCell] = []
-    word_cells: list[TextCell] = []
-    textline_cells: list[TextCell] = []
+    char_cells: Annotated[
+        list[TextCell],
+        Field(description="Text cells at character granularity."),
+    ] = []
+    word_cells: Annotated[
+        list[TextCell],
+        Field(description="Text cells at word granularity."),
+    ] = []
+    textline_cells: Annotated[
+        list[TextCell],
+        Field(description="Text cells at text-line granularity."),
+    ] = []
 
     # These flags are set to differentiate if above lists of this SegmentedPage
     # are empty (page had no content) or if they have not been computed (i.e. textline_cells may be present
     # but word_cells are not)
-    has_chars: bool = False
-    has_words: bool = False
-    has_lines: bool = False
+    has_chars: Annotated[
+        bool,
+        Field(
+            description=(
+                "Whether character extraction has been computed. When False, "
+                "`char_cells` being empty means extraction was not attempted; "
+                "when True, `char_cells` being empty means the page had no "
+                "extractable characters."
+            )
+        ),
+    ] = False
+    has_words: Annotated[
+        bool,
+        Field(
+            description=(
+                "Whether word extraction has been computed. When False, "
+                "`word_cells` being empty means extraction was not attempted; "
+                "when True, `word_cells` being empty means the page had no "
+                "extractable words."
+            )
+        ),
+    ] = False
+    has_lines: Annotated[
+        bool,
+        Field(
+            description=(
+                "Whether text-line extraction has been computed. When False, "
+                "`textline_cells` being empty means extraction was not "
+                "attempted; when True, `textline_cells` being empty means the "
+                "page had no extractable text lines."
+            )
+        ),
+    ] = False
 
-    image: Optional[ImageRef] = None
+    image: Annotated[
+        ImageRef | None,
+        Field(description="Rendered image of the page, if available."),
+    ] = None
 
-    widgets: list[PdfWidget] = []
-    hyperlinks: list[PdfHyperlink] = []
+    widgets: Annotated[
+        list[PdfWidget],
+        Field(description="Interactive PDF form widgets found on the page."),
+    ] = []
+    hyperlinks: Annotated[
+        list[PdfHyperlink],
+        Field(description="Hyperlink annotations found on the page."),
+    ] = []
 
     @model_validator(mode="after")
     def validate_page(self) -> "SegmentedPage":
@@ -635,13 +756,13 @@ class SegmentedPdfPage(SegmentedPage):
     shapes: list[PdfShape] = []
 
     # Redefine typing of elements to include PdfTextCell
-    char_cells: list[Union[PdfTextCell, TextCell]]
-    word_cells: list[Union[PdfTextCell, TextCell]]
-    textline_cells: list[Union[PdfTextCell, TextCell]]
+    char_cells: list[PdfTextCell | TextCell]
+    word_cells: list[PdfTextCell | TextCell]
+    textline_cells: list[PdfTextCell | TextCell]
 
     def get_cells_in_bbox(
         self, cell_unit: TextCellUnit, bbox: BoundingBox, ios: float = 0.8
-    ) -> list[Union[PdfTextCell, TextCell]]:
+    ) -> list[PdfTextCell | TextCell]:
         """Get text cells that are within the specified bounding box.
 
         Args:
@@ -676,7 +797,7 @@ class SegmentedPdfPage(SegmentedPage):
 
     def save_as_json(
         self,
-        filename: Union[str, Path],
+        filename: str | Path,
         indent: int = 2,
     ):
         """Save the page data as a JSON file.
@@ -688,11 +809,10 @@ class SegmentedPdfPage(SegmentedPage):
         if isinstance(filename, str):
             filename = Path(filename)
         out = self.export_to_dict()
-        with open(filename, "w", encoding="utf-8") as fw:
-            json.dump(out, fw, indent=indent)
+        filename.write_text(json.dumps(out, indent=indent), encoding="utf-8")
 
     @classmethod
-    def load_from_json(cls, filename: Union[str, Path]) -> "SegmentedPdfPage":
+    def load_from_json(cls, filename: str | Path) -> "SegmentedPdfPage":
         """Load page data from a JSON file.
 
         Args:
@@ -703,8 +823,7 @@ class SegmentedPdfPage(SegmentedPage):
         """
         if isinstance(filename, str):
             filename = Path(filename)
-        with open(filename, encoding="utf-8") as f:
-            return cls.model_validate_json(f.read())
+        return cls.model_validate_json(filename.read_text(encoding="utf-8"))
 
     def crop_text(self, cell_unit: TextCellUnit, bbox: BoundingBox, eps: float = 1.0) -> str:
         """Extract text from cells within the specified bounding box.
@@ -1129,7 +1248,7 @@ class SegmentedPdfPage(SegmentedPage):
         img: PILImage.Image,
         rect: BoundingRectangle,
         text: str,
-        font: Optional[Union[FreeTypeFont, ImageFont.ImageFont]] = None,
+        font: FreeTypeFont | ImageFont.ImageFont | None = None,
         fill: str = "black",
     ) -> PILImage.Image:
         """Draw text within a rectangular boundary with rotation.
@@ -1359,6 +1478,69 @@ class PdfMetaData(BaseModel):
                 self.data[tag_open] = content
 
 
+class PdfDestinationKind(str, Enum):
+    """Enumeration of explicit destination syntaxes (ISO 32000-1, 12.3.2.2, Table 151)."""
+
+    XYZ = "XYZ"
+    FIT = "FIT"
+    FIT_H = "FIT_H"
+    FIT_V = "FIT_V"
+    FIT_R = "FIT_R"
+    FIT_B = "FIT_B"
+    FIT_BH = "FIT_BH"
+    FIT_BV = "FIT_BV"
+    UNKNOWN = "UNKNOWN"
+
+    def __str__(self) -> str:
+        """Return string representation of the enum value."""
+        return str(self.value)
+
+
+class PdfDestination(BaseModel):
+    """Model representing a resolved destination in a PDF document (ISO 32000-1, 12.3.2).
+
+    ``point`` is expressed in the target page's own coordinate frame, that is the frame that
+    page's cells are reported in. It is ``None`` when the destination kind carries no position
+    (``FIT``, ``FIT_B``) or when the PDF left the coordinate unspecified -- the specification
+    allows a ``null`` coordinate, meaning "retain the current value".
+
+    ``page_size`` is the target page in that same frame, so the coordinate origin can be
+    changed without loading the page.
+    """
+
+    page_no: PageNumber
+    kind: PdfDestinationKind = PdfDestinationKind.UNKNOWN
+
+    point: Coord2D | None = None
+    coord_origin: CoordOrigin = CoordOrigin.BOTTOMLEFT
+
+    page_size: Size
+
+    def to_top_left_origin(self) -> "PdfDestination":
+        """Return this destination with a top-left coordinate origin."""
+        return self._with_coord_origin(CoordOrigin.TOPLEFT)
+
+    def to_bottom_left_origin(self) -> "PdfDestination":
+        """Return this destination with a bottom-left coordinate origin."""
+        return self._with_coord_origin(CoordOrigin.BOTTOMLEFT)
+
+    def _with_coord_origin(self, coord_origin: CoordOrigin) -> "PdfDestination":
+        if coord_origin == self.coord_origin:
+            return self.model_copy()
+
+        point = self.point
+        if point is not None:
+            point = Coord2D(x=point.x, y=self.page_size.height - point.y)
+
+        return PdfDestination(
+            page_no=self.page_no,
+            kind=self.kind,
+            point=point,
+            coord_origin=coord_origin,
+            page_size=self.page_size,
+        )
+
+
 class PdfTableOfContents(BaseModel):
     """Model representing a PDF table of contents entry with hierarchical structure."""
 
@@ -1367,7 +1549,27 @@ class PdfTableOfContents(BaseModel):
 
     marker: str = ""
 
+    destination: PdfDestination | None = None
+
     children: list["PdfTableOfContents"] = []
+
+    def iterate(self) -> Iterator[tuple[int, "PdfTableOfContents"]]:
+        """Iterate over the descendants of this entry, depth-first in document order.
+
+        This entry itself is not yielded and its direct children are at level 0, matching the
+        convention that a document's outline hangs under a single synthetic root entry.
+
+        An explicit stack is used rather than recursion: outlines nesting hundreds of levels
+        deep occur in real documents, and malformed ones can nest further still.
+
+        Returns:
+            Iterator of (level, entry) tuples.
+        """
+        stack: list[tuple[int, PdfTableOfContents]] = [(0, child) for child in reversed(self.children)]
+        while stack:
+            level, entry = stack.pop()
+            yield level, entry
+            stack.extend((level + 1, child) for child in reversed(entry.children))
 
     def export_to_dict(self, mode: str = "json") -> dict[str, Any]:
         """Export the table of contents to a dictionary.
@@ -1380,7 +1582,7 @@ class PdfTableOfContents(BaseModel):
         """
         return self.model_dump(mode=mode, by_alias=True, exclude_none=True)
 
-    def save_as_json(self, filename: Union[str, Path], indent: int = 2):
+    def save_as_json(self, filename: str | Path, indent: int = 2):
         """Save the table of contents as a JSON file.
 
         Args:
@@ -1390,11 +1592,10 @@ class PdfTableOfContents(BaseModel):
         if isinstance(filename, str):
             filename = Path(filename)
         out = self.export_to_dict()
-        with open(filename, "w", encoding="utf-8") as fw:
-            json.dump(out, fw, indent=indent)
+        filename.write_text(json.dumps(out, indent=indent), encoding="utf-8")
 
     @classmethod
-    def load_from_json(cls, filename: Union[str, Path]) -> "PdfTableOfContents":
+    def load_from_json(cls, filename: str | Path) -> "PdfTableOfContents":
         """Load table of contents from a JSON file.
 
         Args:
@@ -1405,8 +1606,7 @@ class PdfTableOfContents(BaseModel):
         """
         if isinstance(filename, str):
             filename = Path(filename)
-        with open(filename, encoding="utf-8") as f:
-            return cls.model_validate_json(f.read())
+        return cls.model_validate_json(filename.read_text(encoding="utf-8"))
 
 
 class ParsedPdfDocument(BaseModel):
@@ -1414,8 +1614,8 @@ class ParsedPdfDocument(BaseModel):
 
     pages: dict[PageNumber, SegmentedPdfPage] = {}
 
-    meta_data: Optional[PdfMetaData] = None
-    table_of_contents: Optional[PdfTableOfContents] = None
+    meta_data: PdfMetaData | None = None
+    table_of_contents: PdfTableOfContents | None = None
 
     def iterate_pages(
         self,
@@ -1441,7 +1641,7 @@ class ParsedPdfDocument(BaseModel):
         """
         return self.model_dump(mode=mode, by_alias=True, exclude_none=True)
 
-    def save_as_json(self, filename: Union[str, Path], indent: int = 2):
+    def save_as_json(self, filename: str | Path, indent: int = 2):
         """Save the document as a JSON file.
 
         Args:
@@ -1451,11 +1651,10 @@ class ParsedPdfDocument(BaseModel):
         if isinstance(filename, str):
             filename = Path(filename)
         out = self.export_to_dict()
-        with open(filename, "w", encoding="utf-8") as fw:
-            json.dump(out, fw, indent=indent)
+        filename.write_text(json.dumps(out, indent=indent), encoding="utf-8")
 
     @classmethod
-    def load_from_json(cls, filename: Union[str, Path]) -> "ParsedPdfDocument":
+    def load_from_json(cls, filename: str | Path) -> "ParsedPdfDocument":
         """Load document from a JSON file.
 
         Args:
@@ -1466,5 +1665,4 @@ class ParsedPdfDocument(BaseModel):
         """
         if isinstance(filename, str):
             filename = Path(filename)
-        with open(filename, encoding="utf-8") as f:
-            return cls.model_validate_json(f.read())
+        return cls.model_validate_json(filename.read_text(encoding="utf-8"))
