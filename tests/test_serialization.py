@@ -503,6 +503,132 @@ def test_md_field_region():
     verify(exp_file=exp_file, actual=actual)
 
 
+def _table_with_rows(rows: list[list[str]], num_header_rows: int) -> DoclingDocument:
+    doc = DoclingDocument(name="")
+    table = doc.add_table(data=TableData(num_rows=len(rows), num_cols=len(rows[0])))
+    for row_idx, row in enumerate(rows):
+        for col_idx, text in enumerate(row):
+            doc.add_table_cell(
+                table_item=table,
+                cell=TableCell(
+                    start_row_offset_idx=row_idx,
+                    end_row_offset_idx=row_idx + 1,
+                    start_col_offset_idx=col_idx,
+                    end_col_offset_idx=col_idx + 1,
+                    text=text,
+                    column_header=row_idx < num_header_rows,
+                ),
+            )
+    return doc
+
+
+def test_md_table_stacked_header_is_flattened():
+    doc = _table_with_rows(
+        [["Product", "Tier 1", "Tier 2"], ["", "0-99", "100+"], ["CAT-001", "10.00", "9.00"]],
+        num_header_rows=2,
+    )
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    assert actual == (
+        "| Product   |   Tier 1 - 0-99 |   Tier 2 - 100+ |\n"
+        "|-----------|-----------------|-----------------|\n"
+        "| CAT-001   |           10.00 |            9.00 |"
+    )
+
+
+def test_md_table_stacked_header_drops_repeated_span_text():
+    doc = _table_with_rows(
+        [["human", "MRCNN"], ["human", "R50"], ["84-89", "68.4"]],
+        num_header_rows=2,
+    )
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    assert actual.splitlines()[0] == "| human   |   MRCNN - R50 |"
+
+
+def test_md_table_keeps_rows_under_a_vertically_spanning_header():
+    """A row-spanning header is repeated into each row it covers by `grid`.
+
+    Only rows a header starts on are header rows, otherwise the data rows under
+    the span get flattened into the header and disappear from the body.
+    """
+    doc = DoclingDocument(name="")
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=2))
+    for cell in (
+        TableCell(
+            text="Category",
+            start_row_offset_idx=0,
+            end_row_offset_idx=2,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            row_span=2,
+            column_header=True,
+        ),
+        TableCell(
+            text="Price",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            column_header=True,
+        ),
+        TableCell(
+            text="10.00",
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+        ),
+    ):
+        doc.add_table_cell(table_item=table, cell=cell)
+
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    assert actual == ("| Category   |   Price |\n|------------|---------|\n| Category   |   10.00 |")
+
+
+def test_md_table_with_header_flags_below_row_zero_keeps_every_row_as_data():
+    """No leading header block, so nothing is promoted and no row is dropped."""
+    doc = DoclingDocument(name="")
+    rows = [["title", ""], ["Product", "Price"], ["CAT-001", "10.00"]]
+    table = doc.add_table(data=TableData(num_rows=len(rows), num_cols=2))
+    for row_idx, row in enumerate(rows):
+        for col_idx, text in enumerate(row):
+            doc.add_table_cell(
+                table_item=table,
+                cell=TableCell(
+                    start_row_offset_idx=row_idx,
+                    end_row_offset_idx=row_idx + 1,
+                    start_col_offset_idx=col_idx,
+                    end_col_offset_idx=col_idx + 1,
+                    text=text,
+                    column_header=row_idx == 1,
+                ),
+            )
+
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    assert actual.splitlines()[0] == "|         |       |"
+    assert "| title   |       |" in actual
+    assert "| CAT-001 | 10.00 |" in actual
+
+
+def test_md_table_without_header_flags_keeps_first_row_as_header():
+    """Backends that never set column_header keep the pre-existing behavior."""
+    doc = _table_with_rows([["foo", "bar"], ["baz", "qux"]], num_header_rows=0)
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    assert actual.splitlines()[0] == "| foo   | bar   |"
+
+
+def test_md_table_single_header_row_with_flags():
+    """A single flagged header row is used as-is without joining or deduplication."""
+    doc = _table_with_rows(
+        [["Product", "Price"], ["CAT-001", "10.00"], ["CAT-002", "9.00"]],
+        num_header_rows=1,
+    )
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    lines = actual.splitlines()
+    assert lines[0] == "| Product   |   Price |"
+    assert lines[2] == "| CAT-001   |   10.00 |"
+    assert lines[3] == "| CAT-002   |    9.00 |"
+
+
 def test_md_pipe_in_table():
     doc = DoclingDocument(name="Pipe in Table")
     table = doc.add_table(data=TableData(num_rows=1, num_cols=1))

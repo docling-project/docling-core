@@ -522,8 +522,98 @@ class MarkdownAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
         )
 
 
+def _count_header_rows(item: TableItem) -> int:
+    """Count the leading grid rows on which a column header cell starts.
+
+    A header cell spanning several rows is repeated into each row it covers by
+    ``TableData.grid``, so a row is only counted when a header cell actually
+    starts on it. Counting every row that merely holds a flagged cell would
+    pull the data rows beneath a vertically spanning header into the header
+    block.
+
+    Args:
+        item: The table whose header rows are to be counted.
+
+    Returns:
+        The number of leading rows that form the column header, with two
+        special cases:
+
+        - 1 when the table carries no ``column_header`` flags at all, so
+          that tables from backends (or doctags round-trips) that never set the
+          flag keep rendering their first row as the header.
+        - 0 when ``column_header`` flags exist but none starts on row 0
+          (i.e. the flags begin on a later row).  The caller treats this as
+          "no promotable header block", and every row stays in the body.
+    """
+    num_headers = 0
+    for row_idx, row in enumerate(item.data.grid):
+        if any(cell.column_header and cell.start_row_offset_idx == row_idx for cell in row):
+            num_headers += 1
+        else:
+            if row_idx == 0 and not any(cell.column_header for later_row in item.data.grid[1:] for cell in later_row):
+                return 1
+            break
+    return num_headers
+
+
+HEADER_ROW_SEPARATOR = " - "
+"""Joins the cells of a stacked column header into a single Markdown header row."""
+
+
+def _flatten_header_rows(header_rows: list[list[str]], num_cols: int) -> list[str]:
+    """Collapse stacked header rows into the single header row GFM allows.
+
+    Per-column, the texts from each header row are joined with
+    ``HEADER_ROW_SEPARATOR`` after dropping consecutive duplicates.  The
+    duplicate-dropping handles row-spanning cells: ``TableData.grid`` repeats a
+    spanning cell's text into every row it covers, so the repeated occurrences
+    are suppressed rather than joined to themselves.
+
+    Args:
+        header_rows: The rendered cell texts for each header row, in row order.
+            Each inner list has one entry per column.
+        num_cols: The number of columns in the table, used to size the result
+            and to guard against ragged rows.
+
+    Returns:
+        A list of ``num_cols`` strings, one per column, each being the
+        ``HEADER_ROW_SEPARATOR``-joined non-duplicate texts from that column's
+        header rows.  An empty list of ``header_rows`` returns
+        ``[""] * num_cols``.
+
+    Note:
+        The deduplication is position-based, not span-aware: any two adjacent
+        header rows that happen to carry the same text in the same column will
+        have the second occurrence silently dropped, regardless of whether it
+        comes from a spanning cell or from two independent header levels that
+        share a label.  GFM has no way to represent more than one header row,
+        so this is an unavoidable lossy flattening.
+    """
+    if not header_rows:
+        return [""] * num_cols
+    flattened = []
+    for col_idx in range(num_cols):
+        parts: list[str] = []
+        for row in header_rows:
+            text = row[col_idx] if col_idx < len(row) else ""
+            if text and (not parts or parts[-1] != text):
+                parts.append(text)
+        flattened.append(HEADER_ROW_SEPARATOR.join(parts))
+    return flattened
+
+
 class MarkdownTableSerializer(BaseTableSerializer):
-    """Markdown-specific table item serializer."""
+    """Markdown-specific table item serializer.
+
+    Markdown pipe tables have exactly one header row and no spans, so a table's
+    column headers are resolved to a single row as follows:
+
+    - a table with no cell marked ``column_header`` keeps row 0 as the header
+    - otherwise the leading run of rows holding ``column_header`` cells is the
+      header, and per column those cells are joined in the order they appear
+      with ``HEADER_ROW_SEPARATOR``, so ``native backend`` above ``TTS``
+      becomes ``native backend - TTS``
+    """
 
     _SEPARATOR_ROW_RE: re.Pattern = re.compile(r"^\|(\s*:?-+:?\s*\|)+\s*$")
     """Matches a Markdown table separator row, e.g. ``| - | :---: | --: |``."""
@@ -655,18 +745,22 @@ class MarkdownTableSerializer(BaseTableSerializer):
                     rendered_row.append(cell_text.replace("\n", " ").replace("|", "&#124;"))
                 rows.append(rendered_row)
             if len(rows) > 0:
+                # Resolve the column headers to the single row GFM allows
+                num_headers = _count_header_rows(item)
+                header_row = _flatten_header_rows(rows[:num_headers], len(rows[0]))
+                body_rows = rows[num_headers:]
                 # Always disable numparse to prevent silent precision loss in numeric values
                 # Use tabulate's _column_type to detect numeric columns for right-alignment
                 colalign = []
-                if len(rows) > 1:  # Need at least header + 1 data row
+                if body_rows:
                     num_cols = len(rows[0])
                     for col_idx in range(num_cols):
-                        col_values = [row[col_idx] if col_idx < len(row) else "" for row in rows[1:]]
+                        col_values = [row[col_idx] if col_idx < len(row) else "" for row in body_rows]
                         col_type = _column_type(col_values)
                         colalign.append("right" if col_type in (int, float) else "left")
                 table_text = tabulate(
-                    rows[1:],
-                    headers=rows[0],
+                    body_rows,
+                    headers=header_row,
                     tablefmt="github",
                     disable_numparse=True,
                     colalign=tuple(colalign) if colalign else None,
