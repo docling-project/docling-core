@@ -52,6 +52,7 @@ dependencies = [
     "defusedxml (>=0.7.1, <0.8.0)",
     "pydantic-settings>=2.14.0",
     "doclang>=0.7,<0.8",
+    "requests (>=2.34.2,<3.0.0)",
 ]
 
 [project.urls]
