@@ -616,6 +616,19 @@ def test_md_table_without_header_flags_keeps_first_row_as_header():
     assert actual.splitlines()[0] == "| foo   | bar   |"
 
 
+def test_md_table_single_header_row_with_flags():
+    """A single flagged header row is used as-is without joining or deduplication."""
+    doc = _table_with_rows(
+        [["Product", "Price"], ["CAT-001", "10.00"], ["CAT-002", "9.00"]],
+        num_header_rows=1,
+    )
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    lines = actual.splitlines()
+    assert lines[0] == "| Product   |   Price |"
+    assert lines[2] == "| CAT-001   |   10.00 |"
+    assert lines[3] == "| CAT-002   |    9.00 |"
+
+
 def test_md_pipe_in_table():
     doc = DoclingDocument(name="Pipe in Table")
     table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
