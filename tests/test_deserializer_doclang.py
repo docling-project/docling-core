@@ -140,6 +140,42 @@ def test_roundtrip_text():
     assert dt2.strip() == exp_dt.strip()
 
 
+def test_roundtrip_handwriting_formatting():
+    """Handwriting is a Formatting attribute and rides on any element's content.
+
+    It must serialize to a <handwriting> wrapper on text, formula, heading and
+    list items alike (structural label preserved), and round-trip back to
+    formatting.handwritten=True — while non-handwritten siblings stay plain.
+    """
+    hw = Formatting(handwritten=True)
+    doc = DoclingDocument(name="t")
+    doc.add_text(label=DocItemLabel.SECTION_HEADER, text="Notes", formatting=hw)
+    doc.add_text(label=DocItemLabel.TEXT, text="a hand note", formatting=hw)
+    doc.add_text(label=DocItemLabel.FORMULA, text="x^2+y^2=z^2", formatting=hw)
+    lg = doc.add_list_group(name="l")
+    doc.add_list_item(text="handwritten item", parent=lg, formatting=hw)
+    doc.add_list_item(text="typed item", parent=lg)
+    doc.add_text(label=DocItemLabel.TEXT, text="typed line")
+
+    dt = _serialize(doc)
+    assert "<handwriting>" in dt
+    # the formula keeps its structural tag and carries the wrapper inside it
+    formula_block = dt.split("<formula")[1].split("</formula>")[0]
+    assert "<handwriting>" in formula_block
+
+    doc2 = _deserialize(dt)
+    got = {(t.label.value, t.text): bool(t.formatting and t.formatting.handwritten) for t in doc2.texts}
+    assert got[("section_header", "Notes")] is True
+    assert got[("text", "a hand note")] is True
+    assert got[("formula", "x^2+y^2=z^2")] is True
+    assert got[("list_item", "handwritten item")] is True
+    assert got[("list_item", "typed item")] is False
+    assert got[("text", "typed line")] is False
+
+    # idempotent re-serialization
+    assert _serialize(doc2).strip() == dt.strip()
+
+
 def test_deserialize_include_namespace_and_version():
     """Deserialize DocLang XML with namespace and version, then roundtrip."""
     exp_file = Path("./tests/data/doc/deserialize_include_namespace_and_version.gt.dclg.xml")
