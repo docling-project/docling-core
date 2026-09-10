@@ -808,6 +808,25 @@ def test_image_ref():
     assert isinstance(image.uri, Path)
 
 
+def test_image_ref_from_pil_png_compression():
+    """PNGs from from_pil must not be larger than PIL's default compression level."""
+    from PIL import ImageDraw
+
+    image = PILImage.new("RGB", (600, 800), "white")
+    draw = ImageDraw.Draw(image)
+    for i in range(20):
+        draw.rectangle([40, 40 + i * 35, 560, 60 + i * 35], fill=(30, 30, 30))
+    draw.ellipse([100, 600, 400, 780], fill=(200, 40, 40))
+
+    image_ref = ImageRef.from_pil(image=image, dpi=72)
+    encoded_size = len(base64.b64decode(str(image_ref.uri).split(",")[1]))
+
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+
+    assert encoded_size <= len(buffer.getvalue()) * 1.2
+
+
 def test_image_ref_blocks_file_scheme():
     """Test that file:// URI scheme is blocked."""
     fig_image = PILImage.new(mode="RGB", size=(2, 2), color=(0, 0, 0))
