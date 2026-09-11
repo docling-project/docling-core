@@ -1640,3 +1640,48 @@ def test_referenced_image_data_uri_is_not_encoded():
     doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=uri))
 
     assert doc.export_to_markdown(image_mode=ImageRefMode.REFERENCED) == "<!-- image -->"
+
+
+def test_export_to_markdown_image_dir_saves_and_references_images(sample_doc, tmp_path):
+    """export_to_markdown with image_dir saves images and references the portable URI."""
+    image_dir = tmp_path / "images"
+
+    md = sample_doc.export_to_markdown(
+        image_mode=ImageRefMode.REFERENCED,
+        image_dir=image_dir,
+        image_uri_prefix="images/",
+    )
+
+    saved = sorted(image_dir.glob("*.png"))
+    assert saved, "expected at least one image to be saved"
+    for img in saved:
+        assert f"images/{img.name}" in md
+    assert str(image_dir.resolve()) not in md
+
+
+def test_export_to_html_image_dir_saves_and_references_images(sample_doc, tmp_path):
+    """export_to_html with image_dir saves images and references the portable URI."""
+    image_dir = tmp_path / "images"
+
+    html = sample_doc.export_to_html(
+        image_mode=ImageRefMode.REFERENCED,
+        image_dir=image_dir,
+        image_uri_prefix="images/",
+    )
+
+    saved = sorted(image_dir.glob("*.png"))
+    assert saved, "expected at least one image to be saved"
+    for img in saved:
+        assert f"images/{img.name}" in html
+
+
+def test_export_to_markdown_image_dir_without_referenced_raises(sample_doc, tmp_path):
+    """Passing image_dir without REFERENCED mode raises ValueError."""
+    with pytest.raises(ValueError, match=r"ImageRefMode\.REFERENCED"):
+        sample_doc.export_to_markdown(image_dir=tmp_path / "images")
+
+
+def test_export_to_html_image_dir_without_referenced_raises(sample_doc, tmp_path):
+    """Passing image_dir without REFERENCED mode raises ValueError."""
+    with pytest.raises(ValueError, match=r"ImageRefMode\.REFERENCED"):
+        sample_doc.export_to_html(image_dir=tmp_path / "images")
