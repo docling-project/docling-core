@@ -584,6 +584,68 @@ def test_md_table_keeps_rows_under_a_vertically_spanning_header():
     assert actual == ("| Category   |   Price |\n|------------|---------|\n| Category   |   10.00 |")
 
 
+def test_md_table_row_header_above_the_body_is_not_promoted():
+    """A row header that starts on the first body row must stay in the body.
+
+    The ``"2025"`` cell below is intentionally mis-flagged with
+    ``column_header=True`` rather than ``row_header=True``. That reproduces the
+    erroneous output of the HTML backend prior to
+    ``docling-project/docling#4216``, and models documents already serialized
+    with those old flags. It is not a canonical model of a pivot table; this
+    test only verifies the defensive guard in the markdown serializer.
+    """
+    doc = DoclingDocument(name="")
+    table = doc.add_table(data=TableData(num_rows=3, num_cols=2))
+    for cell in (
+        TableCell(
+            text="Year",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            column_header=True,
+        ),
+        TableCell(
+            text="Month",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            column_header=True,
+        ),
+        TableCell(
+            text="2025",
+            start_row_offset_idx=1,
+            end_row_offset_idx=3,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            row_span=2,
+            column_header=True,
+        ),
+        TableCell(
+            text="January",
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+        ),
+        TableCell(
+            text="February",
+            start_row_offset_idx=2,
+            end_row_offset_idx=3,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+        ),
+    ):
+        doc.add_table_cell(table_item=table, cell=cell)
+
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    lines = actual.splitlines()
+    assert lines[0].replace(" ", "") == "|Year|Month|"
+    assert lines[2].replace(" ", "") == "|2025|January|"
+    assert lines[3].replace(" ", "") == "|2025|February|"
+
+
 def test_md_table_with_header_flags_below_row_zero_keeps_every_row_as_data():
     """No leading header block, so nothing is promoted and no row is dropped."""
     doc = DoclingDocument(name="")

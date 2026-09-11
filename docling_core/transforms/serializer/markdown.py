@@ -531,6 +531,11 @@ def _count_header_rows(item: TableItem) -> int:
     pull the data rows beneath a vertically spanning header into the header
     block.
 
+    A row is only promoted when it carries no non-flagged text outside the
+    leading column. Text in the leading column is exempt, because that column
+    holds the row labels, which stay unmarked even on rows that belong to the
+    header.
+
     Args:
         item: The table whose header rows are to be counted.
 
@@ -546,8 +551,14 @@ def _count_header_rows(item: TableItem) -> int:
           "no promotable header block", and every row stays in the body.
     """
     num_headers = 0
+    first_col = min((cell.start_col_offset_idx for cell in item.data.table_cells), default=0)
     for row_idx, row in enumerate(item.data.grid):
-        if any(cell.column_header and cell.start_row_offset_idx == row_idx for cell in row):
+        starting_cells = [cell for cell in row if cell.start_row_offset_idx == row_idx]
+        carries_body_text = any(
+            not cell.column_header and cell.text.strip() and cell.start_col_offset_idx != first_col
+            for cell in starting_cells
+        )
+        if any(cell.column_header for cell in starting_cells) and not carries_body_text:
             num_headers += 1
         else:
             if row_idx == 0 and not any(cell.column_header for later_row in item.data.grid[1:] for cell in later_row):
