@@ -8,7 +8,6 @@ from html.parser import HTMLParser
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Optional, Union
-from urllib.parse import quote
 from xml.etree.ElementTree import SubElement, tostring
 from xml.sax.saxutils import unescape
 
@@ -34,6 +33,7 @@ from docling_core.transforms.serializer.base import (
 from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
+    _escape_uri_path,
     _get_annotation_text,
     _should_use_legacy_annotations,
     create_ser_result,
@@ -607,7 +607,7 @@ class HTMLPictureSerializer(BasePictureSerializer):
                 if isinstance(item.image, ImageRef) and not (
                     isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "data"
                 ):
-                    img_text = f'<img src="{quote(str(item.image.uri))}">'
+                    img_text = f'<img src="{html.escape(_escape_uri_path(item.image.uri))}">'
 
         if img_text:
             res_parts.append(create_ser_result(text=img_text, span_source=item))

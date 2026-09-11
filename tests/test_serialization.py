@@ -1640,3 +1640,28 @@ def test_referenced_image_data_uri_is_not_encoded():
     doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=uri))
 
     assert doc.export_to_markdown(image_mode=ImageRefMode.REFERENCED) == "<!-- image -->"
+
+
+@pytest.mark.parametrize(
+    ("uri", "expected"),
+    [
+        (Path("doc_artifacts/image_000001_ab12.png"), "doc_artifacts/image_000001_ab12.png"),
+        (Path("My Report (final)_artifacts/img.png"), "My%20Report%20%28final%29_artifacts/img.png"),
+        # A Windows-authored separator must reach the page as "/", not as "%5C"
+        # (docling-project/docling#3617).
+        (Path("My Report_artifacts\\img.png"), "My%20Report_artifacts/img.png"),
+        # An absolute Windows path becomes a file:// URL, as in the Markdown output.
+        (Path("C:/Users/me/My Docs/img.png"), "file:///C:/Users/me/My%20Docs/img.png"),
+        # URLs keep their scheme and delimiters, and pydantic's escapes are not encoded twice.
+        (AnyUrl("file:///home/a b/img.png"), "file:///home/a%20b/img.png"),
+        (AnyUrl("s3://bucket/My Report_artifacts/img.png"), "s3://bucket/My%20Report_artifacts/img.png"),
+        # In an HTML attribute, "&" is written as "&amp;".
+        (AnyUrl("https://example.com/img.png?w=1&h=2"), "https://example.com/img.png?w=1&amp;h=2"),
+    ],
+)
+def test_html_referenced_image_uri_is_encoded(uri, expected: str):
+    """Test that the HTML serializer encodes a referenced image URI the same way as Markdown."""
+    doc = DoclingDocument(name="x")
+    doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=uri))
+
+    assert f'<img src="{expected}">' in doc.export_to_html(image_mode=ImageRefMode.REFERENCED)
