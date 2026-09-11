@@ -79,6 +79,8 @@ from docling_core.types.doc.common.meta import (
     EntitiesMetaField,
     EntityMention,
     FloatingMeta,
+    FormulaMeta,
+    FormulaMetaField,
     KeywordsMetaField,
     LanguageMetaField,
     MetaFieldName,

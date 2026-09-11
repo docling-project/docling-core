@@ -8,6 +8,7 @@ from pydantic import AnyUrl, Field
 from typing_extensions import deprecated
 
 from docling_core.types.doc.common.formatting import Formatting
+from docling_core.types.doc.common.meta import FormulaMeta
 from docling_core.types.doc.common.scalars import LevelNumber
 from docling_core.types.doc.items.node import DocItem
 from docling_core.types.doc.labels import DocItemLabel
@@ -150,3 +151,4 @@ class FormulaItem(TextItem):
     """FormulaItem."""
 
     label: typing.Literal[DocItemLabel.FORMULA] = DocItemLabel.FORMULA  # type: ignore[assignment]
+    meta: FormulaMeta | None = None

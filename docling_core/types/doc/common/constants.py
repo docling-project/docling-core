@@ -5,7 +5,7 @@ from typing import Final
 
 from docling_core.types.doc.labels import DocItemLabel
 
-CURRENT_VERSION: Final = "1.10.0"
+CURRENT_VERSION: Final = "1.11.0"
 """Current DoclingDocument schema version.
 
 Bump this (minor) whenever a change to the serialised format would cause an
@@ -20,6 +20,7 @@ SCHEMA_VERSION_HISTORY: Final[list[dict]] = [
     {"schema": "1.8.0", "library_version": "v2.49.0", "note": "BasePrediction, BaseMeta, meta field"},
     {"schema": "1.9.0", "library_version": "v2.57.0", "note": "FineRef, DocItem.comments"},
     {"schema": "1.10.0", "library_version": "v2.69.0", "note": "FieldItem types, 7 new DocItemLabel values"},
+    {"schema": "1.11.0", "library_version": "v2.93.0", "note": "FormulaMeta, FormulaItem.meta"},
 ]
 """Ordered history of DoclingDocument schema versions in docling-core v2.x.
 
