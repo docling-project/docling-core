@@ -98,15 +98,28 @@ class TableItem(FloatingItem):
 
         grid = self.data.grid
 
-        # Count how many rows are column headers
+        # Count how many rows are column headers. A row joins the header block
+        # when a column header cell starts on it and no body text starts on it
+        # beyond the leading column. The second condition keeps a *row* header
+        # that arrives flagged as ``column_header`` (the HTML backend flags a
+        # ``<th rowspan="N">`` occupying its own ``<tr>`` that way) from pulling
+        # the first body row into the column names, e.g. ``Year.2025``.
+        # Text in the leading column is exempt because that column holds the
+        # row labels, which backends leave unmarked even on genuine header rows.
+        first_col = min((cell.start_col_offset_idx for cell in self.data.table_cells), default=0)
         num_headers = 0
         for row_idx, row in enumerate(grid):
             if len(row) == 0:
                 raise RuntimeError(f"Invalid table. {len(row)=} but {self.data.num_cols=}.")
 
-            any_header = any(cell.column_header and cell.start_row_offset_idx == row_idx for cell in row)
+            starting_cells = [cell for cell in row if cell.start_row_offset_idx == row_idx]
+            any_header = any(cell.column_header for cell in starting_cells)
+            carries_body_text = any(
+                not cell.column_header and cell.text.strip() and cell.start_col_offset_idx != first_col
+                for cell in starting_cells
+            )
 
-            if any_header:
+            if any_header and not carries_body_text:
                 num_headers += 1
             else:
                 break
