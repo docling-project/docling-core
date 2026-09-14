@@ -437,7 +437,9 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             # The syntax needs a space after the box, unless the text brings its own.
             text = f"- {box}{text}" if text[:1].isspace() else f"- {box} {text}"
         if item.label == DocItemLabel.FOOTNOTE:
-            return create_ser_result(text="", span_source=res_parts)
+            parent: Any | None = item.parent.resolve(doc) if item.parent else None
+            if isinstance(parent, FloatingItem):
+                return create_ser_result(text="", span_source=res_parts)
         if isinstance(item, ListItem | TitleItem | SectionHeaderItem):
             if not has_inline_repr:
                 # case where processing/formatting should be applied first (in inner scope)
