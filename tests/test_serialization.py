@@ -1041,13 +1041,14 @@ def test_md_anchored_footnote_example():
     assert "[^2]\n\n[^2]: Figures are unaudited estimates." in actual
     assert "[^3]\n\n[^3]: Diagram reproduced with permission from the original authors." in actual
 
-    # Unanchored footnote must be completely absent
+    # Unanchored footnote preserved as plain text
     assert "[^4]" not in actual
-    assert "This footnote has no anchor" not in actual
+    assert "This footnote has no anchor" in actual
 
 
-def test_md_unanchored_footnote_is_skipped():
-    """A FOOTNOTE TextItem not linked to any FloatingItem must produce no output."""
+def test_md_unanchored_footnote_is_plain_text():
+    """A FOOTNOTE item not parented to a FloatingItem must be emitted as plain text
+    without any [^n] Markdown anchor syntax."""
     doc = DoclingDocument(name="test_unanchored_footnote")
 
     doc.add_text(label=DocItemLabel.TEXT, text="Some paragraph text.")
@@ -1059,6 +1060,7 @@ def test_md_unanchored_footnote_is_skipped():
 
     assert "Some paragraph text." in actual
     assert "[^1]" not in actual
+    assert "This footnote has no anchor." in actual
 
 
 def test_md_footnote_validation():
