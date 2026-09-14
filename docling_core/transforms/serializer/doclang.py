@@ -1948,11 +1948,7 @@ class DocLangDocSerializer(DocSerializer):
 
         text_res = delim.join([p.text for p in parts if p.text])
 
-        if self.params.add_page_break:
-            # Always emit well-formed page breaks using the vocabulary
-            page_sep = DocLangVocabulary._create_selfclosing_token(token=DocLangToken.PAGE_BREAK)
-            for full_match, _, _ in self._get_page_breaks(text=text_res):
-                text_res = text_res.replace(full_match, page_sep)
+        text_res = self._resolve_page_breaks(text_res, **kwargs)
 
         text_res = f"{open_token}{head}{text_res}{close_token}"
 
@@ -2012,6 +2008,15 @@ class DocLangDocSerializer(DocSerializer):
     def requires_page_break(self):
         """Return whether page breaks should be emitted for the document."""
         return self.params.add_page_break
+
+    @override
+    def _resolve_page_breaks(self, text: str, **kwargs: Any) -> str:
+        if self.params.add_page_break:
+            # Always emit well-formed page breaks using the vocabulary
+            page_sep = DocLangVocabulary._create_selfclosing_token(token=DocLangToken.PAGE_BREAK)
+            for full_match, _, _ in self._get_page_breaks(text=text):
+                text = text.replace(full_match, page_sep)
+        return text
 
     @override
     def serialize_bold(self, text: str, **kwargs: Any) -> str:

@@ -1322,3 +1322,13 @@ class HTMLDocSerializer(DocSerializer):
     def requires_page_break(self):
         """Whether to add page breaks."""
         return self.params.output_style == HTMLOutputStyle.SPLIT_PAGE
+
+    @override
+    def _resolve_page_breaks(self, text: str, **kwargs: Any) -> str:
+        # Full-document SPLIT_PAGE rendering splits on the sentinel in
+        # serialize_doc to build per-page tables. A single-node fragment
+        # cannot do that, so strip the sentinel to avoid leaking it.
+        if self.requires_page_break():
+            for full_match, _, _ in self._get_page_breaks(text=text):
+                text = text.replace(full_match, "")
+        return text
