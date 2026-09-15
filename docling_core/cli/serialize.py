@@ -23,6 +23,7 @@ app = typer.Typer(
 class OutputFormat(str, Enum):
     """Supported output formats."""
 
+    DCLX = "dclx"
     HTML = "html"
     MARKDOWN = "markdown"
     DOCTAGS = "doctags"
@@ -62,7 +63,7 @@ def serialize(
         typer.Option(
             "--output",
             "-o",
-            help="Output file path. If omitted, writes to stdout.",
+            help="Output file path. If omitted, writes text formats to stdout; required for DCLX.",
         ),
     ] = None,
     split_page_view: Annotated[
@@ -99,7 +100,17 @@ def serialize(
     else:
         raise typer.BadParameter(f"Unsupported source file type: {path.suffix}")
 
-    if output_format is OutputFormat.HTML:
+    if output_format is OutputFormat.DCLX:
+        if output is None:
+            raise typer.BadParameter(
+                "--output is required when --to dclx.",
+                param_hint="--output",
+            )
+        output.parent.mkdir(parents=True, exist_ok=True)
+        doc.save_as_doclang_archive(output)
+        typer.echo(f"Wrote {output}", err=True)
+        return
+    elif output_format is OutputFormat.HTML:
         image_mode = ImageRefMode.EMBEDDED if embed_images else ImageRefMode.PLACEHOLDER
         result = doc.export_to_html(
             image_mode=image_mode,

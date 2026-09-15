@@ -64,6 +64,7 @@ from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
     _PageBreakNode,
+    _PageBreakSerResult,
     create_ser_result,
 )
 from docling_core.types.doc import (
@@ -1166,7 +1167,7 @@ class DocLangPictureSerializer(BasePictureSerializer):
     ) -> SerializationResult:
         """Serializes the passed item."""
         params = DocLangParams(**kwargs)
-        res_parts: list[SerializationResult] = []
+        res_parts: list[SerializationResult] = [create_ser_result(span_source=item)]
 
         if item.self_ref in doc_serializer.get_excluded_refs(**kwargs):
             return create_ser_result()
@@ -1909,6 +1910,85 @@ class DocLangDocSerializer(DocSerializer):
         out = ET.tostring(root, encoding="unicode", method="xml", short_empty_elements=True)
         return out
 
+    def _order_fragmented_parts_by_page(
+        self,
+        parts: list[SerializationResult],
+    ) -> list[SerializationResult]:
+        """Regroup internally fragmented results into page-major order."""
+        has_internal_page_break = any(
+            not isinstance(part, _PageBreakSerResult) and any(self._get_page_breaks(text=part.text)) for part in parts
+        )
+        if not has_internal_page_break:
+            return parts
+
+        page_parts: dict[int, list[SerializationResult]] = {}
+        pending_unpaged: list[SerializationResult] = []
+        current_page: int | None = None
+
+        def append_to_page(page_no: int, part: SerializationResult) -> None:
+            nonlocal pending_unpaged
+            bucket = page_parts.setdefault(page_no, [])
+            if pending_unpaged:
+                bucket.extend(pending_unpaged)
+                pending_unpaged = []
+            bucket.append(part)
+
+        for part in parts:
+            if isinstance(part, _PageBreakSerResult):
+                current_page = part.node.next_page
+                continue
+
+            page_breaks = list(self._get_page_breaks(text=part.text))
+            if page_breaks:
+                remainder = part.text
+                fragment_page = page_breaks[0][1]
+                for marker, _, next_page in page_breaks:
+                    fragment_text, separator, remainder = remainder.partition(marker)
+                    if not separator:
+                        continue
+                    if fragment_text:
+                        append_to_page(
+                            fragment_page,
+                            create_ser_result(text=fragment_text, span_source=[part]),
+                        )
+                    fragment_page = next_page
+                if remainder:
+                    append_to_page(
+                        fragment_page,
+                        create_ser_result(text=remainder, span_source=[part]),
+                    )
+                current_page = fragment_page
+                continue
+
+            page_no = next(
+                (span.item.prov[0].page_no for span in part.spans if span.item.prov),
+                current_page,
+            )
+            if page_no is None:
+                pending_unpaged.append(part)
+            else:
+                append_to_page(page_no, part)
+                current_page = page_no
+
+        if pending_unpaged:
+            if current_page is None:
+                return pending_unpaged
+            page_parts.setdefault(current_page, []).extend(pending_unpaged)
+
+        ordered_parts: list[SerializationResult] = []
+        ordered_pages = sorted(page_parts)
+        for index, page_no in enumerate(ordered_pages):
+            if index:
+                prev_page = ordered_pages[index - 1]
+                page_break = _PageBreakNode(
+                    self_ref=f"#/pb/{index}",
+                    prev_page=prev_page,
+                    next_page=page_no,
+                )
+                ordered_parts.append(create_ser_result(text=_create_page_break_markup(page_break)))
+            ordered_parts.extend(page_parts[page_no])
+        return ordered_parts
+
     def _serialize_body(self, **kwargs) -> SerializationResult:
         """Serialize the document body."""
         self._suppressed_page_breaks = set()
@@ -1945,6 +2025,9 @@ class DocLangDocSerializer(DocSerializer):
         )
         head = self._create_head()
         close_token: str = DocLangVocabulary._create_doclang_root(closing=True)
+
+        if self.params.add_page_break:
+            parts = self._order_fragmented_parts_by_page(parts)
 
         text_res = delim.join([p.text for p in parts if p.text])
 
