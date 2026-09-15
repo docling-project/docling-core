@@ -1982,6 +1982,96 @@ def test_export_dataframe_with_row_spanning_column_header():
     assert dataframe.values.tolist() == [["Alpha", ""]]
 
 
+def test_export_dataframe_with_row_header_flagged_as_column_header():
+    """A row header that starts on the first body row must not become a column name.
+
+    The HTML backend flags a ``<th rowspan="N">`` occupying its own ``<tr>`` as
+    ``column_header``, so counting that row as a header would fold the first body
+    row into the column names (``Year.2025``) and drop it from the data.
+    """
+
+    def cell(
+        text: str,
+        row: int,
+        column: int,
+        row_span: int = 1,
+        column_header: bool = False,
+    ) -> TableCell:
+        return TableCell(
+            text=text,
+            start_row_offset_idx=row,
+            end_row_offset_idx=row + row_span,
+            start_col_offset_idx=column,
+            end_col_offset_idx=column + 1,
+            row_span=row_span,
+            column_header=column_header,
+        )
+
+    doc = DoclingDocument(name="test")
+    table = doc.add_table(
+        data=TableData(
+            num_rows=3,
+            num_cols=3,
+            table_cells=[
+                cell("Year", 0, 0, column_header=True),
+                cell("Month", 0, 1, column_header=True),
+                cell("Revenue", 0, 2, column_header=True),
+                cell("2025", 1, 0, row_span=2, column_header=True),
+                cell("January", 1, 1),
+                cell("$134", 1, 2),
+                cell("February", 2, 1),
+                cell("$150", 2, 2),
+            ],
+        )
+    )
+
+    dataframe = table.export_to_dataframe(doc)
+
+    assert list(dataframe.columns) == ["Year", "Month", "Revenue"]
+    assert dataframe.values.tolist() == [
+        ["2025", "January", "$134"],
+        ["2025", "February", "$150"],
+    ]
+
+
+def test_export_dataframe_keeps_stacked_header_with_unmarked_row_label():
+    """A stacked header whose lower row only has unmarked text in the leading column stays a header."""
+
+    def cell(text: str, row: int, column: int, column_header: bool = False) -> TableCell:
+        return TableCell(
+            text=text,
+            start_row_offset_idx=row,
+            end_row_offset_idx=row + 1,
+            start_col_offset_idx=column,
+            end_col_offset_idx=column + 1,
+            column_header=column_header,
+        )
+
+    doc = DoclingDocument(name="test")
+    table = doc.add_table(
+        data=TableData(
+            num_rows=3,
+            num_cols=3,
+            table_cells=[
+                cell("", 0, 0, column_header=True),
+                cell("% of Total", 0, 1, column_header=True),
+                cell("% of Total", 0, 2, column_header=True),
+                cell("class label", 1, 0),
+                cell("Train", 1, 1, column_header=True),
+                cell("Test", 1, 2, column_header=True),
+                cell("Caption", 2, 0),
+                cell("2.5", 2, 1),
+                cell("2.4", 2, 2),
+            ],
+        )
+    )
+
+    dataframe = table.export_to_dataframe(doc)
+
+    assert list(dataframe.columns) == ["class label", "% of Total.Train", "% of Total.Test"]
+    assert dataframe.values.tolist() == [["Caption", "2.5", "2.4"]]
+
+
 def test_export_traverse_pictures_ocr_scanned_pdf():
     """Test that OCR text nested under a PictureItem is included when traverse_pictures=True."""
     doc = DoclingDocument(name="Scanned Doc")
