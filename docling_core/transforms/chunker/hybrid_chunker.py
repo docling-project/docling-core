@@ -188,6 +188,10 @@ class HybridChunker(BaseChunker):
         return new_chunk
 
     def _split_by_doc_items(self, doc_chunk: DocChunk, doc_serializer: BaseDocSerializer) -> list[DocChunk]:
+        # Keep the serializer's formatting when no split is needed.
+        if self._count_chunk_tokens(doc_chunk=doc_chunk) <= self.max_tokens:
+            return [doc_chunk]
+
         chunks = []
         window_start = 0
         window_end = 0  # an inclusive index
