@@ -1,3 +1,10 @@
+## [v2.96.1](https://github.com/docling-project/docling-core/releases/tag/v2.96.1) - 2026-09-15
+
+### Fix
+
+* Serialization into DCLX on splitted text across pages ([#775](https://github.com/docling-project/docling-core/issues/775)) ([`ebbc1ed`](https://github.com/docling-project/docling-core/commit/ebbc1ed2d1e273cd372f76c90d74795ac5de926c))
+* Add missing dependency on `requests` ([#764](https://github.com/docling-project/docling-core/issues/764)) ([`6073888`](https://github.com/docling-project/docling-core/commit/6073888fb9cac0c3de77a441c7c724620996fb7e))
+
 ## [v2.96.0](https://github.com/docling-project/docling-core/releases/tag/v2.96.0) - 2026-09-10
 
 ### Feature
