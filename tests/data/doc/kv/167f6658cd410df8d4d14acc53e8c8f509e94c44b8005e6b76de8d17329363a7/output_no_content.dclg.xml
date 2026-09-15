@@ -13,51 +13,47 @@
     <location value="223"/>
     <location value="48"/>
     <ldiv/>
-    <group>
+    <field_region>
       <location value="279"/>
       <location value="30"/>
       <location value="448"/>
       <location value="39"/>
-      <field_region>
-        <field_item>
-          <key>
-            <location value="295"/>
-            <location value="31"/>
-            <location value="344"/>
-            <location value="37"/>
-          </key>
-          <value>
-            <location value="365"/>
-            <location value="31"/>
-            <location value="448"/>
-            <location value="39"/>
-          </value>
-        </field_item>
-      </field_region>
-    </group>
+      <field_item>
+        <key>
+          <location value="295"/>
+          <location value="31"/>
+          <location value="344"/>
+          <location value="37"/>
+        </key>
+        <value>
+          <location value="365"/>
+          <location value="31"/>
+          <location value="448"/>
+          <location value="39"/>
+        </value>
+      </field_item>
+    </field_region>
     <ldiv/>
-    <group>
+    <field_region>
       <location value="278"/>
       <location value="40"/>
       <location value="447"/>
       <location value="48"/>
-      <field_region>
-        <field_item>
-          <key>
-            <location value="295"/>
-            <location value="41"/>
-            <location value="360"/>
-            <location value="47"/>
-          </key>
-          <value>
-            <location value="390"/>
-            <location value="41"/>
-            <location value="447"/>
-            <location value="48"/>
-          </value>
-        </field_item>
-      </field_region>
-    </group>
+      <field_item>
+        <key>
+          <location value="295"/>
+          <location value="41"/>
+          <location value="360"/>
+          <location value="47"/>
+        </key>
+        <value>
+          <location value="390"/>
+          <location value="41"/>
+          <location value="447"/>
+          <location value="48"/>
+        </value>
+      </field_item>
+    </field_region>
   </list>
   <list>
     <ldiv/>
@@ -66,28 +62,26 @@
     <location value="225"/>
     <location value="87"/>
     <ldiv/>
-    <group>
+    <field_region>
       <location value="72"/>
       <location value="94"/>
       <location value="247"/>
       <location value="120"/>
-      <field_region>
-        <field_item>
-          <key>
-            <location value="93"/>
-            <location value="94"/>
-            <location value="123"/>
-            <location value="100"/>
-          </key>
-          <value>
-            <location value="127"/>
-            <location value="94"/>
-            <location value="247"/>
-            <location value="119"/>
-          </value>
-        </field_item>
-      </field_region>
-    </group>
+      <field_item>
+        <key>
+          <location value="93"/>
+          <location value="94"/>
+          <location value="123"/>
+          <location value="100"/>
+        </key>
+        <value>
+          <location value="127"/>
+          <location value="94"/>
+          <location value="247"/>
+          <location value="119"/>
+        </value>
+      </field_item>
+    </field_region>
     <ldiv/>
     <group>
       <location value="72"/>
@@ -128,125 +122,115 @@
       </field_region>
     </group>
     <ldiv/>
-    <group>
+    <field_region>
       <location value="73"/>
       <location value="172"/>
       <location value="162"/>
       <location value="177"/>
-      <field_region>
-        <field_item>
-          <key>
-            <location value="93"/>
-            <location value="172"/>
-            <location value="125"/>
-            <location value="177"/>
-          </key>
-          <value>
-            <location value="128"/>
-            <location value="172"/>
-            <location value="162"/>
-            <location value="177"/>
-          </value>
-        </field_item>
-      </field_region>
-    </group>
+      <field_item>
+        <key>
+          <location value="93"/>
+          <location value="172"/>
+          <location value="125"/>
+          <location value="177"/>
+        </key>
+        <value>
+          <location value="128"/>
+          <location value="172"/>
+          <location value="162"/>
+          <location value="177"/>
+        </value>
+      </field_item>
+    </field_region>
     <ldiv/>
-    <group>
+    <field_region>
       <location value="72"/>
       <location value="182"/>
       <location value="172"/>
       <location value="188"/>
-      <field_region>
-        <field_item>
-          <key>
-            <location value="93"/>
-            <location value="182"/>
-            <location value="111"/>
-            <location value="187"/>
-          </key>
-          <value>
-            <location value="128"/>
-            <location value="182"/>
-            <location value="172"/>
-            <location value="187"/>
-          </value>
-        </field_item>
-      </field_region>
-    </group>
+      <field_item>
+        <key>
+          <location value="93"/>
+          <location value="182"/>
+          <location value="111"/>
+          <location value="187"/>
+        </key>
+        <value>
+          <location value="128"/>
+          <location value="182"/>
+          <location value="172"/>
+          <location value="187"/>
+        </value>
+      </field_item>
+    </field_region>
     <ldiv/>
     <location value="73"/>
     <location value="192"/>
     <location value="219"/>
     <location value="198"/>
     <ldiv/>
-    <group>
+    <field_region>
       <location value="73"/>
       <location value="217"/>
       <location value="253"/>
       <location value="224"/>
-      <field_region>
-        <field_item>
-          <key>
-            <location value="93"/>
-            <location value="218"/>
-            <location value="120"/>
-            <location value="223"/>
-          </key>
-          <value>
-            <location value="216"/>
-            <location value="218"/>
-            <location value="254"/>
-            <location value="223"/>
-          </value>
-        </field_item>
-      </field_region>
-    </group>
+      <field_item>
+        <key>
+          <location value="93"/>
+          <location value="218"/>
+          <location value="120"/>
+          <location value="223"/>
+        </key>
+        <value>
+          <location value="216"/>
+          <location value="218"/>
+          <location value="254"/>
+          <location value="223"/>
+        </value>
+      </field_item>
+    </field_region>
     <ldiv/>
-    <group>
+    <field_region>
       <location value="73"/>
       <location value="225"/>
       <location value="254"/>
       <location value="237"/>
-      <field_region>
-        <field_item>
-          <key>
-            <location value="93"/>
-            <location value="225"/>
-            <location value="118"/>
-            <location value="230"/>
-          </key>
-          <value>
-            <location value="112"/>
-            <location value="226"/>
-            <location value="253"/>
-            <location value="237"/>
-          </value>
-        </field_item>
-      </field_region>
-    </group>
+      <field_item>
+        <key>
+          <location value="93"/>
+          <location value="225"/>
+          <location value="118"/>
+          <location value="230"/>
+        </key>
+        <value>
+          <location value="112"/>
+          <location value="226"/>
+          <location value="253"/>
+          <location value="237"/>
+        </value>
+      </field_item>
+    </field_region>
     <ldiv/>
-    <group>
+    <field_region>
       <location value="73"/>
       <location value="239"/>
       <location value="253"/>
       <location value="251"/>
-      <field_region>
-        <field_item>
-          <key>
-            <location value="93"/>
-            <location value="239"/>
-            <location value="143"/>
-            <location value="243"/>
-          </key>
-          <value>
-            <location value="137"/>
-            <location value="239"/>
-            <location value="253"/>
-            <location value="250"/>
-          </value>
-        </field_item>
-      </field_region>
-    </group>
+      <field_item>
+        <key>
+          <location value="93"/>
+          <location value="239"/>
+          <location value="143"/>
+          <location value="243"/>
+        </key>
+        <value>
+          <location value="137"/>
+          <location value="239"/>
+          <location value="253"/>
+          <location value="250"/>
+        </value>
+      </field_item>
+    </field_region>
     <ldiv/>
     <location value="73"/>
     <location value="257"/>

@@ -14,55 +14,51 @@
     <location value="48"/>
     (12) United States Patent Jung et al.
     <ldiv/>
-    <group>
+    <field_region>
       <location value="279"/>
       <location value="30"/>
       <location value="448"/>
       <location value="39"/>
-      <field_region>
-        <field_item>
-          <key>
-            <location value="295"/>
-            <location value="31"/>
-            <location value="344"/>
-            <location value="37"/>
-            Patent No.:
-          </key>
-          <value>
-            <location value="365"/>
-            <location value="31"/>
-            <location value="448"/>
-            <location value="39"/>
-            US\;6,482,565\;\mathrm{B1}
-          </value>
-        </field_item>
-      </field_region>
-    </group>
+      <field_item>
+        <key>
+          <location value="295"/>
+          <location value="31"/>
+          <location value="344"/>
+          <location value="37"/>
+          Patent No.:
+        </key>
+        <value>
+          <location value="365"/>
+          <location value="31"/>
+          <location value="448"/>
+          <location value="39"/>
+          US\;6,482,565\;\mathrm{B1}
+        </value>
+      </field_item>
+    </field_region>
     <ldiv/>
-    <group>
+    <field_region>
       <location value="278"/>
       <location value="40"/>
       <location value="447"/>
       <location value="48"/>
-      <field_region>
-        <field_item>
-          <key>
-            <location value="295"/>
-            <location value="41"/>
-            <location value="360"/>
-            <location value="47"/>
-            Date of Patent:
-          </key>
-          <value>
-            <location value="390"/>
-            <location value="41"/>
-            <location value="447"/>
-            <location value="48"/>
-            Nov.\,19,\,2002
-          </value>
-        </field_item>
-      </field_region>
-    </group>
+      <field_item>
+        <key>
+          <location value="295"/>
+          <location value="41"/>
+          <location value="360"/>
+          <location value="47"/>
+          Date of Patent:
+        </key>
+        <value>
+          <location value="390"/>
+          <location value="41"/>
+          <location value="447"/>
+          <location value="48"/>
+          Nov.\,19,\,2002
+        </value>
+      </field_item>
+    </field_region>
   </list>
   <list>
     <ldiv/>
@@ -72,30 +68,28 @@
     <location value="87"/>
     (54) PHOTORESIST CROSS-LINKER AND
     <ldiv/>
-    <group>
+    <field_region>
       <location value="72"/>
       <location value="94"/>
       <location value="247"/>
       <location value="120"/>
-      <field_region>
-        <field_item>
-          <key>
-            <location value="93"/>
-            <location value="94"/>
-            <location value="123"/>
-            <location value="100"/>
-            Inventors:
-          </key>
-          <value>
-            <location value="127"/>
-            <location value="94"/>
-            <location value="247"/>
-            <location value="119"/>
-            : Jae Chang Jung; Keun Kyu Kong; Myoung Soo Kim; Hyoung Gi Kim; Hyeong Soo Kim; Ki Ho Baik, all of Kyoungki-do (KR)
-          </value>
-        </field_item>
-      </field_region>
-    </group>
+      <field_item>
+        <key>
+          <location value="93"/>
+          <location value="94"/>
+          <location value="123"/>
+          <location value="100"/>
+          Inventors:
+        </key>
+        <value>
+          <location value="127"/>
+          <location value="94"/>
+          <location value="247"/>
+          <location value="119"/>
+          : Jae Chang Jung; Keun Kyu Kong; Myoung Soo Kim; Hyoung Gi Kim; Hyeong Soo Kim; Ki Ho Baik, all of Kyoungki-do (KR)
+        </value>
+      </field_item>
+    </field_region>
     <ldiv/>
     <group>
       <location value="72"/>
@@ -140,55 +134,51 @@
       </field_region>
     </group>
     <ldiv/>
-    <group>
+    <field_region>
       <location value="73"/>
       <location value="172"/>
       <location value="162"/>
       <location value="177"/>
-      <field_region>
-        <field_item>
-          <key>
-            <location value="93"/>
-            <location value="172"/>
-            <location value="125"/>
-            <location value="177"/>
-            Appl. No.:
-          </key>
-          <value>
-            <location value="128"/>
-            <location value="172"/>
-            <location value="162"/>
-            <location value="177"/>
-            09/448,964
-          </value>
-        </field_item>
-      </field_region>
-    </group>
+      <field_item>
+        <key>
+          <location value="93"/>
+          <location value="172"/>
+          <location value="125"/>
+          <location value="177"/>
+          Appl. No.:
+        </key>
+        <value>
+          <location value="128"/>
+          <location value="172"/>
+          <location value="162"/>
+          <location value="177"/>
+          09/448,964
+        </value>
+      </field_item>
+    </field_region>
     <ldiv/>
-    <group>
+    <field_region>
       <location value="72"/>
       <location value="182"/>
       <location value="172"/>
       <location value="188"/>
-      <field_region>
-        <field_item>
-          <key>
-            <location value="93"/>
-            <location value="182"/>
-            <location value="111"/>
-            <location value="187"/>
-            Filed:
-          </key>
-          <value>
-            <location value="128"/>
-            <location value="182"/>
-            <location value="172"/>
-            <location value="187"/>
-            Nov.\textbf{~24},1999
-          </value>
-        </field_item>
-      </field_region>
-    </group>
+      <field_item>
+        <key>
+          <location value="93"/>
+          <location value="182"/>
+          <location value="111"/>
+          <location value="187"/>
+          Filed:
+        </key>
+        <value>
+          <location value="128"/>
+          <location value="182"/>
+          <location value="172"/>
+          <location value="187"/>
+          Nov.\textbf{~24},1999
+        </value>
+      </field_item>
+    </field_region>
     <ldiv/>
     <location value="73"/>
     <location value="192"/>
@@ -196,80 +186,74 @@
     <location value="198"/>
     (30) Foreign Application Priority Data
     <ldiv/>
-    <group>
+    <field_region>
       <location value="73"/>
       <location value="217"/>
       <location value="253"/>
       <location value="224"/>
-      <field_region>
-        <field_item>
-          <key>
-            <location value="93"/>
-            <location value="218"/>
-            <location value="120"/>
-            <location value="223"/>
-            \mathbf{Int.\ Cl.}^{7}
-          </key>
-          <value>
-            <location value="216"/>
-            <location value="218"/>
-            <location value="254"/>
-            <location value="223"/>
-            G03F 7/004
-          </value>
-        </field_item>
-      </field_region>
-    </group>
+      <field_item>
+        <key>
+          <location value="93"/>
+          <location value="218"/>
+          <location value="120"/>
+          <location value="223"/>
+          \mathbf{Int.\ Cl.}^{7}
+        </key>
+        <value>
+          <location value="216"/>
+          <location value="218"/>
+          <location value="254"/>
+          <location value="223"/>
+          G03F 7/004
+        </value>
+      </field_item>
+    </field_region>
     <ldiv/>
-    <group>
+    <field_region>
       <location value="73"/>
       <location value="225"/>
       <location value="254"/>
       <location value="237"/>
-      <field_region>
-        <field_item>
-          <key>
-            <location value="93"/>
-            <location value="225"/>
-            <location value="118"/>
-            <location value="230"/>
-            U.S.\ Cl.
-          </key>
-          <value>
-            <location value="112"/>
-            <location value="226"/>
-            <location value="253"/>
-            <location value="237"/>
-            Cl:430/270.1; 430/325; 526/266; 526/320; 526/271; 549/347; 549/369; 549/430
-          </value>
-        </field_item>
-      </field_region>
-    </group>
+      <field_item>
+        <key>
+          <location value="93"/>
+          <location value="225"/>
+          <location value="118"/>
+          <location value="230"/>
+          U.S.\ Cl.
+        </key>
+        <value>
+          <location value="112"/>
+          <location value="226"/>
+          <location value="253"/>
+          <location value="237"/>
+          Cl:430/270.1; 430/325; 526/266; 526/320; 526/271; 549/347; 549/369; 549/430
+        </value>
+      </field_item>
+    </field_region>
     <ldiv/>
-    <group>
+    <field_region>
       <location value="73"/>
       <location value="239"/>
       <location value="253"/>
       <location value="251"/>
-      <field_region>
-        <field_item>
-          <key>
-            <location value="93"/>
-            <location value="239"/>
-            <location value="143"/>
-            <location value="243"/>
-            Field of Search
-          </key>
-          <value>
-            <location value="137"/>
-            <location value="239"/>
-            <location value="253"/>
-            <location value="250"/>
-            arch . 430/270.1, 325;
-          </value>
-        </field_item>
-      </field_region>
-    </group>
+      <field_item>
+        <key>
+          <location value="93"/>
+          <location value="239"/>
+          <location value="143"/>
+          <location value="243"/>
+          Field of Search
+        </key>
+        <value>
+          <location value="137"/>
+          <location value="239"/>
+          <location value="253"/>
+          <location value="250"/>
+          arch . 430/270.1, 325;
+        </value>
+      </field_item>
+    </field_region>
     <ldiv/>
     <location value="73"/>
     <location value="257"/>

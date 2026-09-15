@@ -15,6 +15,10 @@
     (12) United States Patent Jung et al.
     <ldiv/>
     <field_region>
+      <location value="279"/>
+      <location value="30"/>
+      <location value="448"/>
+      <location value="39"/>
       <field_item>
         <key>
           <location value="295"/>
@@ -34,6 +38,10 @@
     </field_region>
     <ldiv/>
     <field_region>
+      <location value="278"/>
+      <location value="40"/>
+      <location value="447"/>
+      <location value="48"/>
       <field_item>
         <key>
           <location value="295"/>
@@ -61,6 +69,10 @@
     (54) PHOTORESIST CROSS-LINKER AND
     <ldiv/>
     <field_region>
+      <location value="72"/>
+      <location value="94"/>
+      <location value="247"/>
+      <location value="120"/>
       <field_item>
         <key>
           <location value="93"/>
@@ -117,6 +129,10 @@
     </field_region>
     <ldiv/>
     <field_region>
+      <location value="73"/>
+      <location value="172"/>
+      <location value="162"/>
+      <location value="177"/>
       <field_item>
         <key>
           <location value="93"/>
@@ -136,6 +152,10 @@
     </field_region>
     <ldiv/>
     <field_region>
+      <location value="72"/>
+      <location value="182"/>
+      <location value="172"/>
+      <location value="188"/>
       <field_item>
         <key>
           <location value="93"/>
@@ -161,6 +181,10 @@
     (30) Foreign Application Priority Data
     <ldiv/>
     <field_region>
+      <location value="73"/>
+      <location value="217"/>
+      <location value="253"/>
+      <location value="224"/>
       <field_item>
         <key>
           <location value="93"/>
@@ -180,6 +204,10 @@
     </field_region>
     <ldiv/>
     <field_region>
+      <location value="73"/>
+      <location value="225"/>
+      <location value="254"/>
+      <location value="237"/>
       <field_item>
         <key>
           <location value="93"/>
@@ -199,6 +227,10 @@
     </field_region>
     <ldiv/>
     <field_region>
+      <location value="73"/>
+      <location value="239"/>
+      <location value="253"/>
+      <location value="251"/>
       <field_item>
         <key>
           <location value="93"/>

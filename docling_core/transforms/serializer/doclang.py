@@ -13,7 +13,7 @@ from itertools import groupby
 from pathlib import Path
 from typing import Annotated, Any, Optional, Union, cast
 
-from defusedxml.ElementTree import fromstring
+from defusedxml.ElementTree import DefusedXMLParser, fromstring
 from defusedxml.minidom import parseString
 from pydantic import BaseModel, Field, PrivateAttr
 from pydantic.networks import AnyUrl
@@ -204,6 +204,18 @@ class ContentType(str, Enum):
 
 
 _DEFAULT_CONTENT_TYPES: set[ContentType] = set(ContentType)
+
+_HEAD_TAG_ORDER = (
+    DocLangToken.LABEL.value,
+    DocLangToken.THREAD.value,
+    DocLangToken.HREF.value,
+    DocLangToken.LAYER.value,
+    DocLangToken.LOCATION.value,
+    DocLangToken.CAPTION.value,
+    DocLangToken.DESCRIPTION.value,
+    DocLangToken.SUMMARY.value,
+    DocLangToken.CUSTOM.value,
+)
 
 
 def _advanced_field(*, detail: str = "") -> Any:
@@ -469,6 +481,50 @@ def _escape_text(text: str, params: DocLangParams) -> str:
         # text = f'<{el_str} xml:space="preserve">{text}</{el_str}>'
         text = _wrap(text=text, wrap_tag=DocLangToken.CONTENT.value)
     return text
+
+
+_CDATA_PLACEHOLDER_RE = re.compile(r"\x00CDATA(\d+)\x00")
+
+
+def _fromstring_preserving_cdata(text: str) -> tuple[ET.Element, list[str]]:
+    """Parse XML like ``fromstring`` but keep track of CDATA section contents.
+
+    ``xml.etree.ElementTree`` (which ``defusedxml.ElementTree.fromstring`` wraps)
+    merges CDATA sections into ordinary text nodes, so a later ``ET.tostring``
+    would XML-escape content that was deliberately wrapped in CDATA (e.g. text
+    containing ``"``, ``<``, ``&``). To allow a faithful round-trip, each CDATA
+    section's raw content is captured out-of-band in the returned list and
+    replaced in the tree by a placeholder token; use
+    ``_tostring_restoring_cdata`` to re-wrap those placeholders as CDATA.
+    """
+    target = ET.TreeBuilder()
+    parser = DefusedXMLParser(target=target)
+    expat = parser.parser
+    raw_spans: list[str] = []
+    buffer: list[str] = []
+
+    def start_cdata() -> None:
+        expat.CharacterDataHandler = buffer.append
+
+    def end_cdata() -> None:
+        raw_spans.append("".join(buffer))
+        buffer.clear()
+        expat.CharacterDataHandler = target.data
+        target.data(f"\x00CDATA{len(raw_spans) - 1}\x00")
+
+    expat.StartCdataSectionHandler = start_cdata
+    expat.EndCdataSectionHandler = end_cdata
+    parser.feed(text)
+    root = parser.close()
+    return root, raw_spans
+
+
+def _tostring_restoring_cdata(root: ET.Element, raw_spans: list[str]) -> str:
+    """Serialize like ``ET.tostring`` but restore CDATA sections captured by
+    ``_fromstring_preserving_cdata``.
+    """
+    out = ET.tostring(root, encoding="unicode", method="xml", short_empty_elements=True)
+    return _CDATA_PLACEHOLDER_RE.sub(lambda m: f"<![CDATA[{raw_spans[int(m.group(1))]}]]>", out)
 
 
 def _list_item_segment_sibling(child: NodeItem) -> bool:
@@ -1910,6 +1966,93 @@ class DocLangDocSerializer(DocSerializer):
         out = ET.tostring(root, encoding="unicode", method="xml", short_empty_elements=True)
         return out
 
+    def _head_units(self, element: ET.Element) -> tuple[list[tuple[str, list[ET.Element]]], list[ET.Element]]:
+        """Split an element's leading DocLang element-head run from its remaining content.
+
+        Returns ``(head_units, content)`` where each unit is a ``(tag, elements)``
+        pair -- most head properties are a single element, but ``location`` is
+        always four consecutive same-tag siblings (one per bbox coordinate) and
+        is kept together as one unit.
+        """
+        units: list[tuple[str, list[ET.Element]]] = []
+        children = list(element)
+        index = 0
+        while index < len(children) and children[index].tag in _HEAD_TAG_ORDER:
+            tag = children[index].tag
+            run: list[ET.Element] = []
+            while index < len(children) and children[index].tag == tag:
+                run.append(children[index])
+                index += 1
+            units.append((tag, run))
+        return units, children[index:]
+
+    def _collapse_group_if_redundant(self, group: ET.Element) -> ET.Element | None:
+        """Return a replacement element if ``group`` exists only to carry
+        properties for a single child, else None (leave the group as-is).
+
+        A <group> wraps a sole non-InlineGroup ListItem child purely to have
+        somewhere to put the ListItem's own element-head properties (typically
+        <location>) -- even when that child's own element type (e.g.
+        field_region) is already a legal element there in its own right per
+        doclang.xsd. This merges the group's head onto the child directly (in
+        canonical head order) so the group can be dropped, but only when the
+        child does not already carry a conflicting property of the same kind.
+        """
+        head_units, content = self._head_units(group)
+        content_elements = [child for child in content if isinstance(child.tag, str)]
+        if len(content_elements) != 1:
+            return None
+        has_stray_text = (group.text or "").strip() or any((child.tail or "").strip() for child in content)
+        if has_stray_text:
+            return None
+        child = content_elements[0]
+        child_head_units, child_content = self._head_units(child)
+        head_tags = {tag for tag, _ in head_units}
+        child_head_tags = {tag for tag, _ in child_head_units}
+        if head_tags & child_head_tags:
+            return None  # conflicting property on both -- leave this group alone
+
+        merged = dict(child_head_units)
+        merged.update(head_units)
+        new_head = [element for tag in _HEAD_TAG_ORDER if tag in merged for element in merged[tag]]
+        for element in list(child):
+            child.remove(element)
+        for element in (*new_head, *child_content):
+            child.append(element)
+        return child
+
+    def _collapse_redundant_groups_in_tree(self, element: ET.Element) -> None:
+        """Recursively collapse redundant <group> wrapper children of `element`, in place."""
+        for child in list(element):
+            self._collapse_redundant_groups_in_tree(child)
+
+        rebuilt: list[ET.Element] = []
+        changed = False
+        for child in list(element):
+            if (
+                child.tag == DocLangToken.GROUP.value
+                and (replacement := self._collapse_group_if_redundant(child)) is not None
+            ):
+                replacement.tail = child.tail
+                rebuilt.append(replacement)
+                changed = True
+            else:
+                rebuilt.append(child)
+        if changed:
+            for child in list(element):
+                element.remove(child)
+            for child in rebuilt:
+                element.append(child)
+
+    def _collapse_redundant_groups(self, text: str) -> str:
+        group_open_tag = f"<{DocLangToken.GROUP.value}>"
+        if group_open_tag not in text:
+            # Nothing to collapse -- skip the parse/serialize round-trip entirely.
+            return text
+        root, raw_cdata_spans = _fromstring_preserving_cdata(text)
+        self._collapse_redundant_groups_in_tree(root)
+        return _tostring_restoring_cdata(root, raw_cdata_spans)
+
     def _order_fragmented_parts_by_page(
         self,
         parts: list[SerializationResult],
@@ -2038,6 +2181,7 @@ class DocLangDocSerializer(DocSerializer):
                 text_res = text_res.replace(full_match, page_sep)
 
         text_res = f"{open_token}{head}{text_res}{close_token}"
+        text_res = self._collapse_redundant_groups(text_res)
 
         if not self.params.add_content:
             # do XML-based post-filtering

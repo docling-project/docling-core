@@ -42,6 +42,10 @@
     (12) EUROPÄISCHE PATENTANMELDUNG
     <ldiv/>
     <field_region>
+      <location value="61"/>
+      <location value="81"/>
+      <location value="196"/>
+      <location value="94"/>
       <field_item>
         <key>
           <location value="80"/>
@@ -61,6 +65,10 @@
     </field_region>
     <ldiv/>
     <field_region>
+      <location value="61"/>
+      <location value="103"/>
+      <location value="184"/>
+      <location value="109"/>
       <field_item>
         <key>
           <location value="80"/>
@@ -80,6 +88,10 @@
     </field_region>
     <ldiv/>
     <field_region>
+      <location value="61"/>
+      <location value="117"/>
+      <location value="164"/>
+      <location value="123"/>
       <field_item>
         <key>
           <location value="80"/>
@@ -99,6 +111,10 @@
     </field_region>
     <ldiv/>
     <field_region>
+      <location value="267"/>
+      <location value="81"/>
+      <location value="435"/>
+      <location value="107"/>
       <field_item>
         <key>
           <location value="287"/>
@@ -118,6 +134,10 @@
     </field_region>
     <ldiv/>
     <field_region>
+      <location value="61"/>
+      <location value="133"/>
+      <location value="255"/>
+      <location value="189"/>
       <field_item>
         <key>
           <location value="80"/>
@@ -169,6 +189,10 @@
     </field_region>
     <ldiv/>
     <field_region>
+      <location value="61"/>
+      <location value="198"/>
+      <location value="239"/>
+      <location value="218"/>
       <field_item>
         <key>
           <location value="80"/>
@@ -187,6 +211,10 @@
     </field_region>
     <ldiv/>
     <field_region>
+      <location value="61"/>
+      <location value="226"/>
+      <location value="139"/>
+      <location value="247"/>
       <field_item>
         <key>
           <location value="81"/>
@@ -231,6 +259,10 @@
     - Klöcker, Gerd 51061 Köln (DE)
     <ldiv/>
     <field_region>
+      <location value="267"/>
+      <location value="155"/>
+      <location value="459"/>
+      <location value="217"/>
       <field_item>
         <key>
           <location value="286"/>
