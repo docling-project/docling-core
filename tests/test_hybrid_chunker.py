@@ -1650,3 +1650,50 @@ def test_split_using_plain_text_no_headings_avoids_infinite_recursion():
         tc = tokenizer.count_tokens(chunker.contextualize(chunk))
         assert tc <= max_tokens, f"Chunk {i} exceeds token limit: {tc} > {max_tokens}"
         assert chunk.meta.headings is None
+
+
+@pytest.mark.parametrize("merge_peers", [False, True])
+def test_chunk_preserves_inline_formatting_within_token_limit(merge_peers: bool) -> None:
+    doc = DoclingDocument(name="inline")
+    doc.add_heading(text="Setup", level=1)
+    install = doc.add_inline_group()
+    verify = doc.add_inline_group()
+    items = [
+        doc.add_text(label=DocItemLabel.TEXT, text="Install with ", parent=install),
+        doc.add_code(text="pip install x", parent=install),
+        doc.add_text(label=DocItemLabel.TEXT, text=" first.", parent=install),
+        doc.add_text(label=DocItemLabel.TEXT, text="Verify with ", parent=verify),
+        doc.add_code(text="x --version", parent=verify),
+        doc.add_text(label=DocItemLabel.TEXT, text=" next.", parent=verify),
+    ]
+    tokenizer = _WordCountTokenizer(max_tokens=MAX_TOKENS)
+    chunker = HybridChunker(tokenizer=tokenizer, merge_peers=merge_peers)
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    paragraphs = ["Install with `pip install x` first.", "Verify with `x --version` next."]
+    assert [chunk.text for chunk in chunks] == ([chunker.delim.join(paragraphs)] if merge_peers else paragraphs)
+    actual_refs = []
+    for chunk in chunks:
+        assert isinstance(chunk, DocChunk)
+        assert chunk.meta.headings == ["Setup"]
+        actual_refs.extend(item.self_ref for item in chunk.meta.doc_items)
+        assert tokenizer.count_tokens(chunker.contextualize(chunk)) <= MAX_TOKENS
+    assert actual_refs == [item.self_ref for item in items]
+
+
+def test_chunk_preserves_nested_list_within_token_limit() -> None:
+    doc = DoclingDocument(name="nested list")
+    outer = doc.add_list_group()
+    parent = doc.add_list_item(text="Parent", parent=outer)
+    nested = doc.add_list_group(parent=parent)
+    doc.add_list_item(text="Child", parent=nested)
+    doc.add_list_item(text="Sibling", parent=outer)
+    tokenizer = _WordCountTokenizer(max_tokens=MAX_TOKENS)
+    chunker = HybridChunker(tokenizer=tokenizer, merge_peers=False)
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    assert len(chunks) == 1
+    assert chunks[0].text == doc.export_to_markdown()
+    assert tokenizer.count_tokens(chunker.contextualize(chunks[0])) <= MAX_TOKENS
