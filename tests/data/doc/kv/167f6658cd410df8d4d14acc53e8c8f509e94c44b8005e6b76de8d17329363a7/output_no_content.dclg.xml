@@ -90,6 +90,10 @@
       <location value="138"/>
       <field_region>
         <field_item>
+          <location value="73"/>
+          <location value="145"/>
+          <location value="254"/>
+          <location value="163"/>
           <key>
             <location value="93"/>
             <location value="145"/>
@@ -298,6 +302,10 @@
   </text>
   <field_region>
     <field_item>
+      <location value="269"/>
+      <location value="98"/>
+      <location value="429"/>
+      <location value="103"/>
       <key>
         <location value="269"/>
         <location value="98"/>
@@ -314,6 +322,10 @@
   </field_region>
   <field_region>
     <field_item>
+      <location value="269"/>
+      <location value="106"/>
+      <location value="429"/>
+      <location value="111"/>
       <key>
         <location value="269"/>
         <location value="107"/>
@@ -330,6 +342,10 @@
   </field_region>
   <field_region>
     <field_item>
+      <location value="268"/>
+      <location value="114"/>
+      <location value="449"/>
+      <location value="126"/>
       <key>
         <location value="269"/>
         <location value="115"/>

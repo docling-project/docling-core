@@ -1771,7 +1771,7 @@
           "$ref": "#/texts/40"
         }
       ],
-      "content_layer": "body",
+      "content_layer": "furniture",
       "label": "field_item",
       "prov": []
     }

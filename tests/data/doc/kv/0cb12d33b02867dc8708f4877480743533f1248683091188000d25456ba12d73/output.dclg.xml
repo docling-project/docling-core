@@ -313,6 +313,7 @@
   <field_region>
     <layer value="furniture"/>
     <field_item>
+      <layer value="furniture"/>
       <key>
         <layer value="furniture"/>
         <location value="220"/>

@@ -1750,8 +1750,11 @@ class DocLangFallbackSerializer(BaseFallbackSerializer):
         elif isinstance(item, FieldRegionItem | FieldItem):
             parts = []
             is_fri = isinstance(item, FieldRegionItem)
-            # Element head (layer, location) for field regions only
-            if is_fri and (head := _element_head_prefix(item=item, doc=doc, params=params)):
+            # Element head (layer, location): a field_item can carry its own
+            # prov distinct from its parent field_region (e.g. when a
+            # key/value source node was split across multiple cells during
+            # migration), so emit the head for both, not just field_region.
+            if head := _element_head_prefix(item=item, doc=doc, params=params):
                 parts.append(create_ser_result(text=head, span_source=item))
             parts.extend(doc_serializer.get_parts(item=item, **kwargs))
             text_res = delim.join([p.text for p in parts if p.text])

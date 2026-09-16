@@ -2601,7 +2601,22 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 196.0,
+            "t": 85.0,
+            "r": 315.0,
+            "b": 89.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ]
     },
     {
       "self_ref": "#/field_items/1",

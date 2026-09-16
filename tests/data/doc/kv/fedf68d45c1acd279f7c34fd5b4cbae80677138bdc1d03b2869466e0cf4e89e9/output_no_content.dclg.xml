@@ -224,6 +224,10 @@
       </value>
     </field_item>
     <field_item>
+      <location value="99"/>
+      <location value="465"/>
+      <location value="157"/>
+      <location value="469"/>
       <key>
         <location value="99"/>
         <location value="465"/>
@@ -238,6 +242,10 @@
       </value>
     </field_item>
     <field_item>
+      <location value="97"/>
+      <location value="470"/>
+      <location value="160"/>
+      <location value="474"/>
       <key>
         <location value="97"/>
         <location value="470"/>
@@ -252,6 +260,10 @@
       </value>
     </field_item>
     <field_item>
+      <location value="97"/>
+      <location value="474"/>
+      <location value="160"/>
+      <location value="479"/>
       <key>
         <location value="97"/>
         <location value="474"/>
