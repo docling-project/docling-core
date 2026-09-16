@@ -1767,6 +1767,53 @@ def test_misplaced_list_items():
         assert doc == exp_doc
 
 
+def _add_orphan_floating_link(doc: DoclingDocument, host: PictureItem, text: str, field: str) -> RefItem:
+    """Link a text item to `host` via `captions`/`footnotes`/`references` only.
+
+    Mirrors a correctly-structured document: the linked item's parent is
+    `host`, but it is not also a `.children` entry of anything.
+    """
+    item = doc.add_text(label=DocItemLabel.TEXT, text=text)
+    doc.body.children.remove(RefItem(cref=item.self_ref))
+    item.parent = RefItem(cref=host.self_ref)
+    ref = RefItem(cref=item.self_ref)
+    getattr(host, field).append(ref)
+    return ref
+
+
+def test_normalize_references_preserves_orphaned_caption():
+    doc = DoclingDocument(name="")
+    picture = doc.add_picture()
+    _add_orphan_floating_link(doc, picture, "a caption", "captions")
+
+    doc._normalize_references()
+
+    assert len(doc.pictures[0].captions) == 1
+    assert doc.pictures[0].captions[0].resolve(doc=doc).text == "a caption"
+
+
+def test_normalize_references_preserves_orphaned_footnote():
+    doc = DoclingDocument(name="")
+    picture = doc.add_picture()
+    _add_orphan_floating_link(doc, picture, "a footnote", "footnotes")
+
+    doc._normalize_references()
+
+    assert len(doc.pictures[0].footnotes) == 1
+    assert doc.pictures[0].footnotes[0].resolve(doc=doc).text == "a footnote"
+
+
+def test_normalize_references_preserves_orphaned_reference():
+    doc = DoclingDocument(name="")
+    picture = doc.add_picture()
+    _add_orphan_floating_link(doc, picture, "a reference", "references")
+
+    doc._normalize_references()
+
+    assert len(doc.pictures[0].references) == 1
+    assert doc.pictures[0].references[0].resolve(doc=doc).text == "a reference"
+
+
 def test_moving_within_same_parent():
     doc = DoclingDocument(name="")
     doc.add_text(label=DocItemLabel.TEXT, text="bar")

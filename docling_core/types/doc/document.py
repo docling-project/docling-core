@@ -5441,6 +5441,70 @@ class DoclingDocument(BaseModel):
         def get_item_list(self, key: str) -> list[NodeItem]:
             return getattr(self, key)
 
+        def _index_orphaned_floating_refs(
+            self,
+            *,
+            doc: "DoclingDocument",
+            page_delta: int,
+            orig_ref_to_new_ref: dict[str, str],
+            post_processing_keys: list[str],
+            start_indices: dict[str, int],
+        ) -> None:
+            """Index caption/footnote/reference targets not reachable via .children.
+
+            Such targets are correctly linked only via that field, so the
+            main .children traversal in ``index()`` never visits them and
+            the later FloatingItem rewrite would silently drop them. Not
+            appended to any parent's .children -- only its captions/
+            footnotes/references list should point to them.
+            """
+            pending_floating_refs = [
+                ref.cref
+                for key in post_processing_keys
+                for idx_item in self.get_item_list(key)[start_indices[key] :]
+                if isinstance(idx_item, FloatingItem)
+                for ref_list in (idx_item.captions, idx_item.footnotes, idx_item.references)
+                for ref in ref_list
+            ]
+            while pending_floating_refs:
+                orig_cref = pending_floating_refs.pop()
+                if orig_cref in orig_ref_to_new_ref:
+                    continue
+                orig_item = RefItem(cref=orig_cref).resolve(doc=doc)
+                # Key by orig_cref, not orig_item.self_ref: an unreached
+                # item's self_ref can go stale after _delete_items()
+                # renumbering, unlike refs pointing at it.
+                item_key = orig_cref.split("/")[1]
+                new_item_cref = f"#/{item_key}/{len(self.get_item_list(item_key))}"
+                orig_ref_to_new_ref[orig_cref] = new_item_cref
+
+                new_floating_item = copy.deepcopy(orig_item)
+                new_floating_item.children = []
+                new_floating_item.self_ref = new_item_cref
+                self.get_item_list(item_key).append(new_floating_item)
+
+                if isinstance(new_floating_item, DocItem):
+                    for prov in new_floating_item.prov:
+                        prov.page_no += page_delta
+
+                if orig_item.parent:
+                    new_parent_cref = orig_ref_to_new_ref.get(orig_item.parent.cref)
+                    if new_parent_cref is not None:
+                        new_floating_item.parent = RefItem(cref=new_parent_cref)
+                    # Else: owner unindexed too (unreachable from doc.body);
+                    # leave the stale parent cref rather than guess.
+
+                if isinstance(new_floating_item, FloatingItem):
+                    pending_floating_refs.extend(
+                        ref.cref
+                        for ref_list in (
+                            new_floating_item.captions,
+                            new_floating_item.footnotes,
+                            new_floating_item.references,
+                        )
+                        for ref in ref_list
+                    )
+
         def index(self, doc: "DoclingDocument", page_nrs: set[int] | None = None) -> None:
             if page_nrs is not None and (unavailable_page_nrs := page_nrs - set(doc.pages.keys())):
                 raise ValueError(f"The following page numbers are not present in the document: {unavailable_page_nrs}")
@@ -5538,6 +5602,14 @@ class DoclingDocument(BaseModel):
                         else:
                             raise RuntimeError(f"Unsupported ref format: {new_parent_cref}")
                         parent_item.children.append(RefItem(cref=new_cref))
+
+            self._index_orphaned_floating_refs(
+                doc=doc,
+                page_delta=page_delta,
+                orig_ref_to_new_ref=orig_ref_to_new_ref,
+                post_processing_keys=post_processing_keys,
+                start_indices=start_indices,
+            )
 
             # rewrite FloatingItem explicit refs starting from start_indices to avoid corrupting items from prior calls
             for key in post_processing_keys:
