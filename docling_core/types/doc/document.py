@@ -3426,28 +3426,40 @@ class DoclingDocument(BaseModel):
         img: PILImage.Image,
         loc_path: Path,
         reference_path: Path | None,
+        uri_prefix: str | None = None,
     ) -> AnyUrl | Path:
         """Save *img* to *loc_path* and return the URI to store on the ImageRef.
 
         Uses a BytesIO intermediate buffer so that the write is compatible with
         UPath remote backends (PIL cannot write directly to non-local paths).
-        For remote paths the URI is returned as an absolute AnyUrl string; for
-        local paths it is returned relative to *reference_path* when available,
-        or as the absolute *loc_path* when *reference_path* is None.
+        When *uri_prefix* is provided, the returned URI is *uri_prefix* joined
+        with the saved image's file name, yielding a portable reference that is
+        independent of the local filesystem layout. Otherwise, for remote paths
+        the URI is returned as an absolute AnyUrl string; for local paths it is
+        returned relative to *reference_path* when available, or as the absolute
+        *loc_path* when *reference_path* is None.
 
         Args:
             img: The PIL image to save.
             loc_path: Destination path (local or remote UPath).
             reference_path: Base path used to compute a relative URI for local
                 storage. Pass ``None`` to store the absolute path instead.
+            uri_prefix: Optional prefix prepended to the saved file name to form
+                a portable URI (e.g. ``"images/"`` or ``"https://cdn/assets/"``).
 
         Returns:
-            An AnyUrl for remote paths, or a Path (relative or absolute) for local paths.
+            An AnyUrl for remote paths or URL-scheme prefixes, or a Path
+            (relative or absolute) for local paths.
         """
         buf = BytesIO()
         img.save(buf, format="PNG")
         loc_path.write_bytes(buf.getvalue())
 
+        if uri_prefix is not None:
+            combined = f"{uri_prefix}{loc_path.name}"
+            if "://" in uri_prefix:
+                return AnyUrl(combined)
+            return Path(combined)
         if is_remote_path(loc_path) or is_remote_path(reference_path):
             return AnyUrl(str(loc_path))
         if reference_path is not None:
@@ -3460,6 +3472,7 @@ class DoclingDocument(BaseModel):
         page_no: int | None,
         reference_path: Path | None = None,
         include_page_images: bool = False,
+        uri_prefix: str | None = None,
     ) -> "DoclingDocument":
         """Document with images as refs.
 
@@ -3469,6 +3482,10 @@ class DoclingDocument(BaseModel):
         When ``include_page_images`` is True, the page images are saved to
         image_dir and referenced through file URIs as well (instead of being
         kept as embedded base64 blobs).
+
+        When ``uri_prefix`` is provided, the stored image URIs are built from
+        it and the saved file name, producing portable references that do not
+        depend on the local filesystem layout.
         """
         result: DoclingDocument = copy.deepcopy(self)
 
@@ -3482,7 +3499,7 @@ class DoclingDocument(BaseModel):
                     hexhash = PictureItem._image_to_hexhash(img)
                     if hexhash is not None:
                         loc_path = image_dir / f"image_{img_count:06}_{hexhash}.png"
-                        obj_path = self._save_image_and_resolve_uri(img, loc_path, reference_path)
+                        obj_path = self._save_image_and_resolve_uri(img, loc_path, reference_path, uri_prefix)
                         if item.image is None:
                             scale = img.size[0] / item.prov[0].bbox.width
                             item.image = ImageRef.from_pil(image=img, dpi=round(72 * scale))
@@ -3502,7 +3519,9 @@ class DoclingDocument(BaseModel):
                 if hexhash is None:
                     continue
                 loc_path = image_dir / f"page_{p_no:06}_{hexhash}.png"
-                page.image.uri = self._save_image_and_resolve_uri(img, loc_path, reference_path)  # type: ignore[assignment]
+                page.image.uri = self._save_image_and_resolve_uri(  # type: ignore[assignment]
+                    img, loc_path, reference_path, uri_prefix
+                )
 
         return result
 
@@ -3761,6 +3780,8 @@ class DoclingDocument(BaseModel):
         mark_annotations: bool = False,
         compact_tables: bool = False,
         traverse_pictures: bool = False,
+        image_dir: str | Path | None = None,
+        image_uri_prefix: str | None = None,
         *,
         use_legacy_annotations: bool | None = None,  # deprecated
         allowed_meta_names: set[str] | None = None,
@@ -3819,6 +3840,15 @@ class DoclingDocument(BaseModel):
             PDFs processed with full-page OCR, where the layout model places all OCR
             text as children of a top-level PictureItem. (Default value = False).
         :type traverse_pictures: bool = False
+        :param image_dir: Optional directory path where images will be saved when using
+            ImageRefMode.REFERENCED. If provided, images are automatically saved to this
+            directory and referenced in the markdown output. (Default value = None).
+        :type image_dir: Optional[Union[str, Path]] = None
+        :param image_uri_prefix: Optional prefix prepended to each saved image's file name
+            to build a portable image URI in the output (e.g. "images/" or
+            "https://cdn/assets/"). If None, the referenced image path is used as-is, which
+            may be an absolute filesystem path. (Default value = None).
+        :type image_uri_prefix: Optional[str] = None
         :param use_legacy_annotations: bool: Deprecated; legacy annotations considered only when meta not present.
         :type use_legacy_annotations: Optional[bool] = None
         :param mark_meta: bool: Whether to mark meta in the export
@@ -3848,8 +3878,21 @@ class DoclingDocument(BaseModel):
                 DeprecationWarning,
             )
 
+        if image_dir is not None and image_mode != ImageRefMode.REFERENCED:
+            raise ValueError("`image_dir` requires `image_mode=ImageRefMode.REFERENCED`")
+
+        doc = (
+            self._with_pictures_refs(
+                image_dir=Path(image_dir),
+                page_no=page_no,
+                uri_prefix=image_uri_prefix,
+            )
+            if image_dir is not None
+            else self
+        )
+
         serializer = MarkdownDocSerializer(
-            doc=self,
+            doc=doc,
             params=MarkdownParams(
                 labels=my_labels,
                 layers=my_layers,
@@ -4070,6 +4113,8 @@ class DoclingDocument(BaseModel):
         included_content_layers: set[ContentLayer] | None = None,
         split_page_view: bool = False,
         include_annotations: bool = True,
+        image_dir: str | Path | None = None,
+        image_uri_prefix: str | None = None,
     ) -> str:
         r"""Serialize to HTML."""
         from docling_core.transforms.serializer.html import (
@@ -4103,8 +4148,21 @@ class DoclingDocument(BaseModel):
         if html_head == "null":
             params.html_head = None
 
+        if image_dir is not None and image_mode != ImageRefMode.REFERENCED:
+            raise ValueError("`image_dir` requires `image_mode=ImageRefMode.REFERENCED`")
+
+        doc = (
+            self._with_pictures_refs(
+                image_dir=Path(image_dir),
+                page_no=page_no,
+                uri_prefix=image_uri_prefix,
+            )
+            if image_dir is not None
+            else self
+        )
+
         serializer = HTMLDocSerializer(
-            doc=self,
+            doc=doc,
             params=params,
         )
         ser_res = serializer.serialize()
