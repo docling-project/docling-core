@@ -30,6 +30,7 @@ from docling_core.types.doc import (
     DescriptionMetaField,
     DocItemLabel,
     DoclingDocument,
+    FieldRegionItem,
     Formatting,
     PictureClassificationLabel,
     PictureClassificationMetaField,
@@ -1377,6 +1378,74 @@ def test_kv_migration_annot_scenario():
                 pages = doc.get_visualization(viz_mode=modes[mode_kw])
                 for page_no, page in pages.items():
                     page.save(str(subdir / f"output_{mode_kw}_p{page_no}.png"))
+
+
+def test_kv_migration_preserves_semantic_key_label():
+    """A footnote/caption/page-header/-footer key item keeps its label as the
+    ancestor of the migrated field region, instead of being replaced or
+    left behind as a leftover empty duplicate."""
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    key_prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((1, 6, 3, 8), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 1),
+    )
+    value_prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 15),
+    )
+    footnote_item = doc.add_text(label=DocItemLabel.FOOTNOTE, text="1", prov=key_prov)
+    value_item = doc.add_text(label=DocItemLabel.TEXT, text="See appendix A.", prov=value_prov)
+
+    doc.add_key_values(
+        graph=GraphData(
+            cells=[
+                GraphCell(
+                    label=GraphCellLabel.KEY,
+                    cell_id=0,
+                    text="1",
+                    orig="1",
+                    prov=key_prov,
+                    item_ref=footnote_item.get_ref(),
+                ),
+                GraphCell(
+                    label=GraphCellLabel.VALUE,
+                    cell_id=1,
+                    text="See appendix A.",
+                    orig="See appendix A.",
+                    prov=value_prov,
+                    item_ref=value_item.get_ref(),
+                ),
+            ],
+            links=[
+                GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=0, target_cell_id=1),
+                GraphLink(label=GraphLinkLabel.TO_KEY, source_cell_id=1, target_cell_id=0),
+            ],
+        ),
+    )
+
+    doc._migrate_to_field_regions()
+
+    # the footnote item survives (not duplicated, not deleted), keeps its
+    # label, and hosts the migrated field region as a child
+    assert footnote_item in doc.texts
+    assert footnote_item.label == DocItemLabel.FOOTNOTE
+    assert footnote_item.text == ""
+    assert len(footnote_item.children) == 1
+
+    field_region = footnote_item.children[0].resolve(doc=doc)
+    assert isinstance(field_region, FieldRegionItem)
+    assert field_region in doc.field_regions
+
+    field_item = field_region.children[0].resolve(doc=doc)
+    key_item = field_item.children[0].resolve(doc=doc)
+    assert key_item.label == DocItemLabel.FIELD_KEY
+    assert key_item.text == "1"
+
+    # the (non-preservable) value item was consumed as usual
+    assert value_item not in doc.texts
 
 
 # ===============================

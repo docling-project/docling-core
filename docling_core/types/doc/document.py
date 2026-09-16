@@ -170,6 +170,15 @@ from docling_core.utils.settings import settings
 
 _logger = logging.getLogger(__name__)
 
+_FIELD_MIGRATION_PRESERVABLE_LABELS = frozenset(
+    {
+        DocItemLabel.FOOTNOTE,
+        DocItemLabel.CAPTION,
+        DocItemLabel.PAGE_HEADER,
+        DocItemLabel.PAGE_FOOTER,
+    }
+)
+
 
 class DoclingDocument(BaseModel):
     """DoclingDocument."""
@@ -558,7 +567,16 @@ class DoclingDocument(BaseModel):
             existing_key_item = RefItem(cref=key_cref).resolve(doc=self)
             fri = FieldRegionItem(self_ref="#")
 
-            if ex_key_item_is_li := isinstance(existing_key_item, ListItem):
+            # A source node whose label carries real semantic meaning (footnote,
+            # caption, page header/footer) has nowhere else to keep that
+            # classification once migrated -- Field* types have a fixed label.
+            # Nest the new field_region under it (like the ListItem case below)
+            # instead of shifting it down, so it survives as the ancestor.
+            existing_key_item_is_preservable = (
+                isinstance(existing_key_item, TextItem)
+                and existing_key_item.label in _FIELD_MIGRATION_PRESERVABLE_LABELS
+            )
+            if (ex_key_item_is_li := isinstance(existing_key_item, ListItem)) or existing_key_item_is_preservable:
                 self.append_child_item(child=fri, parent=existing_key_item)
             else:
                 self._shift_down(old_subroot=existing_key_item, new_subroot=fri)
@@ -596,6 +614,11 @@ class DoclingDocument(BaseModel):
                         prov=key_prov,
                     )
                 skip_ki_deletion = key_item in to_delete
+                preserve_key_label = (
+                    isinstance(key_item, TextItem) and key_item.label in _FIELD_MIGRATION_PRESERVABLE_LABELS
+                )
+                if preserve_key_label:
+                    skip_ki_deletion = True
 
                 fi = self.add_field_item(parent=fri)
                 if isinstance(key_item, TextItem):
@@ -621,6 +644,11 @@ class DoclingDocument(BaseModel):
                         value_item.prov[0] if isinstance(value_item, DocItem) and value_item.prov else None
                     )
                     skip_vi_deletion = value_item in to_delete
+                    preserve_value_label = (
+                        isinstance(value_item, TextItem) and value_item.label in _FIELD_MIGRATION_PRESERVABLE_LABELS
+                    )
+                    if preserve_value_label:
+                        skip_vi_deletion = True
                     if isinstance(value_item, TextItem):
                         # giving priority to the text from the graph cells
                         value_text = migr_data_item.value_cells[idx].text or value_item.text
@@ -651,11 +679,35 @@ class DoclingDocument(BaseModel):
 
                     if not skip_vi_deletion:
                         to_delete.append(value_item)
+                    elif preserve_value_label and isinstance(value_item, TextItem):
+                        value_item.text = ""
                 if not skip_ki_deletion:
                     to_delete.append(key_item)
+                elif preserve_key_label and isinstance(key_item, TextItem):
+                    key_item.text = ""
 
-                if existing_key_item.prov and not cell_and_ex_key_item_provs_equal and not ex_key_item_is_li:
+                if (
+                    existing_key_item.prov
+                    and not cell_and_ex_key_item_provs_equal
+                    and not ex_key_item_is_li
+                    and not existing_key_item_is_preservable
+                ):
                     fi.prov = existing_key_item.prov
+
+            # The "not reuse" (split) branch above never adds existing_key_item
+            # itself to to_delete -- only the temporary text node it creates.
+            # Once every cell it feeds has been migrated, delete it too unless
+            # it's being kept on purpose: as a preserved semantic ancestor
+            # (handled above) or as a ListItem (docling-core already keeps
+            # those). Left alone, it's a content-free node duplicating the
+            # bbox of the field_item it produced.
+            if (
+                isinstance(existing_key_item, TextItem)
+                and not ex_key_item_is_li
+                and not existing_key_item_is_preservable
+                and existing_key_item not in to_delete
+            ):
+                to_delete.append(existing_key_item)
 
         self.delete_items(node_items=to_delete)
 
