@@ -184,6 +184,27 @@ def create_ser_result(
     )
 
 
+def hyperlink_uri(hyperlink: AnyUrl | Path) -> str:
+    """Render a hyperlink destination as a portable URI string.
+
+    ``TextItem.hyperlink`` is typed ``AnyUrl | Path``. A ``Path`` hyperlink that a
+    parser read out of a document is a native path, so on Windows ``str()`` yields
+    backslash separators and the exported destination stops being a portable URI:
+    Markdown emits ``[next](sub\next.html)``, HTML emits
+    ``<a href="sub\next.html">``, and a JSON/DocLang round trip on POSIX collapses
+    the link into a single path component containing a backslash.
+
+    ``Path.as_posix()`` normalizes separators to ``/`` and leaves everything else
+    untouched, so ``?``/``#`` delimiters, percent escapes and spaces keep their
+    meaning -- reusing the image-path encoder would percent-encode those delimiters
+    and change the link target. URLs are unaffected by definition, and a hyperlink
+    already parsed as a POSIX path stays byte-identical to ``str()``.
+    """
+    if isinstance(hyperlink, Path):
+        return hyperlink.as_posix()
+    return str(hyperlink)
+
+
 class CommonParams(BaseModel):
     """Common serialization parameters."""
 

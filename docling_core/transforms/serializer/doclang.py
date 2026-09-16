@@ -66,6 +66,7 @@ from docling_core.transforms.serializer.common import (
     _PageBreakNode,
     _PageBreakSerResult,
     create_ser_result,
+    hyperlink_uri,
 )
 from docling_core.types.doc import (
     BaseMeta,
@@ -327,7 +328,7 @@ def _create_href_token(*, uri: str) -> str:
 
 def _text_item_hyperlink_uri(item: DocItem) -> str | None:
     if isinstance(item, TextItem) and item.hyperlink is not None:
-        return str(item.hyperlink)
+        return hyperlink_uri(item.hyperlink)
     return None
 
 
