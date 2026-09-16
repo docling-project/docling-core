@@ -45,6 +45,7 @@ from docling_core.types.doc import (
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     ContentLayer,
+    GroupLabel,
     GraphCell,
     GraphData,
     GraphLink,
@@ -1685,6 +1686,85 @@ def test_layer_filter_body_only(doc_with_layers):
 
     exp_file = Path("./tests/data/doc/layer_only_body.dclg.xml")
     verify_doclang(exp_file=exp_file, actual=ser_txt)
+
+
+def _serialize_inline_runs(doc: DoclingDocument) -> str:
+    """Serialize without the reference validator, which needs a Schematron backend."""
+    return DocLangDocSerializer(
+        doc=doc,
+        params=DocLangParams(include_version=False),
+    ).serialize().text
+
+
+def test_inline_runs_with_same_layer_emit_single_layer_token():
+    """Merged inline runs must not repeat the element-head <layer/> token.
+
+    Each child is serialized independently, so every non-BODY child emits its own
+    <layer/>. The merged wrapper allows exactly one, so the previous output failed
+    DocLang XSD validation with "Element layer: This element is not expected".
+    """
+    doc = DoclingDocument(name="t")
+    group = doc.add_group(label=GroupLabel.SECTION, name="page footer")
+    inline = doc.add_inline_group(parent=group)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Adobe",
+        parent=inline,
+        content_layer=ContentLayer.FURNITURE,
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="All rights reserved.",
+        parent=inline,
+        content_layer=ContentLayer.FURNITURE,
+    )
+
+    ser_txt = _serialize_inline_runs(doc)
+
+    assert ser_txt.count("<layer") == 1
+    assert ser_txt.count("Adobe") == 1
+    assert ser_txt.count("All rights reserved.") == 1
+
+
+def test_inline_runs_with_interleaved_layers_emit_single_layer_token():
+    """Two non-BODY runs separated by a BODY run still yield one <layer/>."""
+    doc = DoclingDocument(name="t")
+    group = doc.add_group(label=GroupLabel.SECTION, name="interleaved")
+    inline = doc.add_inline_group(parent=group)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Furniture run",
+        parent=inline,
+        content_layer=ContentLayer.FURNITURE,
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="Body run", parent=inline)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Trailing furniture run",
+        parent=inline,
+        content_layer=ContentLayer.FURNITURE,
+    )
+
+    ser_txt = _serialize_inline_runs(doc)
+
+    assert ser_txt.count("<layer") == 1
+    assert "Furniture run" in ser_txt
+    assert "Body run" in ser_txt
+    assert "Trailing furniture run" in ser_txt
+
+
+def test_inline_runs_all_body_emit_no_layer_token():
+    """Guard against over-correction: BODY-only runs keep the previous output."""
+    doc = DoclingDocument(name="t")
+    group = doc.add_group(label=GroupLabel.SECTION, name="body")
+    inline = doc.add_inline_group(parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text="Alpha", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="Beta", parent=inline)
+
+    ser_txt = _serialize_inline_runs(doc)
+
+    assert "<layer" not in ser_txt
+    assert "Alpha" in ser_txt and "Beta" in ser_txt
 
 
 def _doc_with_labeled_code_and_pictures() -> DoclingDocument:
