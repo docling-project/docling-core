@@ -243,6 +243,88 @@ class TestProjectorCoverage:
 # ---------------------------------------------------------------------------
 
 
+class TestProjector_1_11_to_1_10:
+    """Tests for the 1.11 → 1.10 downgrade projector."""
+
+    def _apply(self, data: dict) -> dict:
+        from docling_core.compat import _project_1_11_to_1_10
+
+        return _project_1_11_to_1_10(data)
+
+    @staticmethod
+    def _formula_item(meta: dict) -> dict:
+        return {
+            "self_ref": "#/texts/0",
+            "parent": None,
+            "children": [],
+            "content_layer": "body",
+            "label": "formula",
+            "orig": "x/y",
+            "text": "",
+            "prov": [],
+            "meta": meta,
+        }
+
+    def test_version_set_to_1_10(self):
+        result = self._apply(_minimal_doc_dict("1.11.0"))
+        assert result["version"] == "1.10.0"
+
+    def test_strips_formula_meta_key(self):
+        data = _minimal_doc_dict("1.11.0")
+        data["texts"] = [self._formula_item({"formula": {"mathml": "<math/>", "created_by": "pdf_struct_tree"}})]
+        result = self._apply(data)
+        assert result["texts"][0]["meta"] == {}
+
+    def test_preserves_other_meta_keys(self):
+        data = _minimal_doc_dict("1.11.0")
+        data["texts"] = [
+            self._formula_item(
+                {
+                    "formula": {"mathml": "<math/>"},
+                    "summary": {"text": "a fraction"},
+                }
+            )
+        ]
+        result = self._apply(data)
+        assert result["texts"][0]["meta"] == {"summary": {"text": "a fraction"}}
+
+    def test_strips_formula_meta_from_every_item_list(self):
+        """The sweep must cover all item lists, not just texts."""
+        data = _minimal_doc_dict("1.11.0")
+        for list_key in ("pictures", "tables", "key_value_items", "form_items", "field_regions", "field_items"):
+            data[list_key] = [{"self_ref": f"#/{list_key}/0", "meta": {"formula": {"mathml": "<math/>"}}}]
+        result = self._apply(data)
+        for list_key in ("pictures", "tables", "key_value_items", "form_items", "field_regions", "field_items"):
+            assert result[list_key][0]["meta"] == {}, list_key
+
+    def test_item_without_meta_is_untouched(self):
+        data = _minimal_doc_dict("1.11.0")
+        item = {k: v for k, v in self._formula_item({}).items() if k != "meta"}
+        data["texts"] = [item]
+        result = self._apply(data)
+        assert result["texts"][0] == item
+
+    def test_projected_payload_is_accepted_by_a_1_10_client(self):
+        """The whole point of the projector: an old client must stop raising.
+
+        A 1.10 client's FormulaItem.meta is a plain BaseMeta, whose validator rejects any
+        extra key that is not namespaced as ``namespace__field``. ``formula`` is not, so the
+        unprojected payload raises there and the projected one must not.
+        """
+        from pydantic import ValidationError
+
+        from docling_core.types.doc.common.meta import BaseMeta
+
+        payload = {"formula": {"mathml": "<math/>", "created_by": "pdf_struct_tree"}}
+        with pytest.raises(ValidationError):
+            BaseMeta.model_validate(payload)
+
+        data = _minimal_doc_dict("1.11.0")
+        data["texts"] = [self._formula_item(payload)]
+        projected = self._apply(data)
+        BaseMeta.model_validate(projected["texts"][0]["meta"])
+
+
 class TestProjector_1_10_to_1_9:
     """Tests for the 1.10 → 1.9 downgrade projector."""
 
