@@ -1220,7 +1220,7 @@
         "$ref": "#/field_items/11"
       },
       "children": [],
-      "content_layer": "body",
+      "content_layer": "furniture",
       "label": "field_key",
       "prov": [
         {
@@ -1247,7 +1247,7 @@
         "$ref": "#/field_items/11"
       },
       "children": [],
-      "content_layer": "body",
+      "content_layer": "furniture",
       "label": "field_value",
       "prov": [
         {
@@ -1599,7 +1599,7 @@
           "$ref": "#/field_items/11"
         }
       ],
-      "content_layer": "body",
+      "content_layer": "furniture",
       "label": "field_region",
       "prov": []
     }
@@ -1808,7 +1808,7 @@
           "$ref": "#/texts/40"
         }
       ],
-      "content_layer": "body",
+      "content_layer": "furniture",
       "label": "field_item",
       "prov": []
     }

@@ -1103,7 +1103,7 @@
         "$ref": "#/field_items/11"
       },
       "children": [],
-      "content_layer": "body",
+      "content_layer": "furniture",
       "label": "field_key",
       "prov": [
         {
@@ -1130,7 +1130,7 @@
         "$ref": "#/field_items/11"
       },
       "children": [],
-      "content_layer": "body",
+      "content_layer": "furniture",
       "label": "field_value",
       "prov": [
         {

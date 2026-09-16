@@ -566,6 +566,11 @@ class DoclingDocument(BaseModel):
         for key_cref, key_cell_dict in outgoing_links.items():
             existing_key_item = RefItem(cref=key_cref).resolve(doc=self)
             fri = FieldRegionItem(self_ref="#")
+            # Preserve the source node's content layer (e.g. furniture) on the
+            # field_region that supersedes it -- new NodeItems otherwise default
+            # to ContentLayer.BODY, silently reclassifying furniture/background
+            # key/value content as body content during migration.
+            fri.content_layer = existing_key_item.content_layer
 
             # A source node whose label carries real semantic meaning (footnote,
             # caption, page header/footer) has nowhere else to keep that
@@ -620,16 +625,26 @@ class DoclingDocument(BaseModel):
                 if preserve_key_label:
                     skip_ki_deletion = True
 
-                fi = self.add_field_item(parent=fri)
+                fi = self.add_field_item(parent=fri, content_layer=existing_key_item.content_layer)
                 if isinstance(key_item, TextItem):
-                    self.add_field_key(text=migr_data_item.key_cell.text or key_item.text, parent=fi, prov=key_prov)
+                    self.add_field_key(
+                        text=migr_data_item.key_cell.text or key_item.text,
+                        parent=fi,
+                        prov=key_prov,
+                        content_layer=existing_key_item.content_layer,
+                    )
                     if isinstance(key_item, ListItem):
                         skip_ki_deletion = True
                         key_item.text = ""
                         if cell_and_ex_key_item_provs_equal:
                             key_item.prov = []
                 elif isinstance(key_item, PictureItem):
-                    fk = self.add_field_key(text=migr_data_item.key_cell.text, parent=fi, prov=key_prov)
+                    fk = self.add_field_key(
+                        text=migr_data_item.key_cell.text,
+                        parent=fi,
+                        prov=key_prov,
+                        content_layer=existing_key_item.content_layer,
+                    )
                     if not key_item.children:
                         self.append_child_item(child=key_item.model_copy(deep=True), parent=fk)
                     else:
@@ -654,7 +669,7 @@ class DoclingDocument(BaseModel):
                         value_text = migr_data_item.value_cells[idx].text or value_item.text
                         if value_item.label in {DocItemLabel.CHECKBOX_SELECTED, DocItemLabel.CHECKBOX_UNSELECTED}:
                             if not value_item.children:
-                                fv = self.add_field_value(text="", parent=fi)
+                                fv = self.add_field_value(text="", parent=fi, content_layer=value_item.content_layer)
                                 new_text_item = value_item.model_copy(deep=True)
                                 new_text_item.prov = [value_prov] if value_prov else []
                                 new_text_item.text = value_text
@@ -662,14 +677,24 @@ class DoclingDocument(BaseModel):
                             else:
                                 skip_vi_deletion = True
                         else:
-                            fv = self.add_field_value(text=value_text, parent=fi, prov=value_prov)
+                            fv = self.add_field_value(
+                                text=value_text,
+                                parent=fi,
+                                prov=value_prov,
+                                content_layer=value_item.content_layer,
+                            )
                             if value_item.label == DocItemLabel.EMPTY_VALUE:
                                 fv.kind = "fillable"
 
                         if isinstance(value_item, ListItem):
                             skip_vi_deletion = True
                     elif isinstance(value_item, PictureItem):
-                        fv = self.add_field_value(text=migr_data_item.value_cells[idx].text, parent=fi, prov=value_prov)
+                        fv = self.add_field_value(
+                            text=migr_data_item.value_cells[idx].text,
+                            parent=fi,
+                            prov=value_prov,
+                            content_layer=value_item.content_layer,
+                        )
                         if not value_item.children:
                             self.append_child_item(child=value_item.model_copy(deep=True), parent=fv)
                         else:

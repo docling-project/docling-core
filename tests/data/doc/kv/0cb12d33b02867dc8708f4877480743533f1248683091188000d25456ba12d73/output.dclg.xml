@@ -311,8 +311,10 @@
     </caption>
   </picture>
   <field_region>
+    <layer value="furniture"/>
     <field_item>
       <key>
+        <layer value="furniture"/>
         <location value="220"/>
         <location value="491"/>
         <location value="304"/>
@@ -320,6 +322,7 @@
         Printed by Jouve, 75001 PARIS (FR)
       </key>
       <value class="fillable">
+        <layer value="furniture"/>
         <location value="201"/>
         <location value="482"/>
         <location value="323"/>
