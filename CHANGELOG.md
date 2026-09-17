@@ -1,3 +1,13 @@
+## [v2.97.0](https://github.com/docling-project/docling-core/releases/tag/v2.97.0) - 2026-09-16
+
+### Feature
+
+* Add artifacts_dir parameter to export_to_markdown and export_to_html ([#552](https://github.com/docling-project/docling-core/issues/552)) ([`1259eba`](https://github.com/docling-project/docling-core/commit/1259eba96b8fefeadc4313f8c1af5c7304c28256))
+
+### Fix
+
+* **serializer:** Keep row-header rows out of the markdown table header block ([#766](https://github.com/docling-project/docling-core/issues/766)) ([`b2a768c`](https://github.com/docling-project/docling-core/commit/b2a768c018827176b3b22b7deda463560fcffcf0))
+
 ## [v2.96.1](https://github.com/docling-project/docling-core/releases/tag/v2.96.1) - 2026-09-15
 
 ### Fix
