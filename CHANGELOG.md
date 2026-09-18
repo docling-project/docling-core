@@ -1,3 +1,9 @@
+## [v2.97.1](https://github.com/docling-project/docling-core/releases/tag/v2.97.1) - 2026-09-18
+
+### Fix
+
+* Doclang serializer for footnotes ([#782](https://github.com/docling-project/docling-core/issues/782)) ([`975c773`](https://github.com/docling-project/docling-core/commit/975c773b39265e6b6841d400f1cccc8eb03530a0))
+
 ## [v2.97.0](https://github.com/docling-project/docling-core/releases/tag/v2.97.0) - 2026-09-16
 
 ### Feature
