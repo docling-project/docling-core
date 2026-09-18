@@ -2343,6 +2343,74 @@ def test_cross_page_paragraph_keeps_following_page_one_picture_before_break():
     assert "".join(caption_element.itertext()).strip() == caption_text
 
 
+@doclang_validator
+def test_cross_page_paragraph_keeps_grouped_page_six_footer_before_break():
+    """A page-six footer in a transparent group stays before the page break."""
+    doc = DoclingDocument(name="cross_page_paragraph_with_grouped_footer")
+    for page_no in (6, 7):
+        doc.add_page(page_no=page_no, size=Size(width=612, height=792), image=None)
+
+    group = doc.add_group(name="section")
+    page_6_text = "Paragraph starts on page six. "
+    page_7_text = "Paragraph continues on page seven."
+    full_text = page_6_text + page_7_text
+    paragraph = doc.add_text(
+        label=DocItemLabel.TEXT,
+        text=full_text,
+        orig=full_text,
+        parent=group,
+        prov=ProvenanceItem(
+            page_no=6,
+            bbox=BoundingBox.from_tuple((32, 88, 284, 38), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, len(page_6_text)),
+        ),
+    )
+    paragraph.prov.append(
+        ProvenanceItem(
+            page_no=7,
+            bbox=BoundingBox.from_tuple((43, 726, 294, 676), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(len(page_6_text), len(full_text)),
+        )
+    )
+
+    footer_text = "nnh: number of neuron in the hidden layer."
+    doc.add_text(
+        label=DocItemLabel.PAGE_FOOTER,
+        text=footer_text,
+        parent=group,
+        content_layer=ContentLayer.FURNITURE,
+        prov=ProvenanceItem(
+            page_no=6,
+            bbox=BoundingBox.from_tuple((32, 24, 284, 10), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, len(footer_text)),
+        ),
+    )
+    header_text = "Header on page seven"
+    doc.add_text(
+        label=DocItemLabel.PAGE_HEADER,
+        text=header_text,
+        parent=group,
+        content_layer=ContentLayer.FURNITURE,
+        prov=ProvenanceItem(
+            page_no=7,
+            bbox=BoundingBox.from_tuple((32, 780, 284, 760), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, len(header_text)),
+        ),
+    )
+
+    root = ET.fromstring(serialize_doclang(doc))
+    assert [child.tag for child in root] == [
+        "text",
+        "page_footer",
+        "page_break",
+        "text",
+        "page_header",
+    ]
+    footer_element = root.find("page_footer")
+    assert footer_element is not None
+    assert "".join(footer_element.itertext()).strip() == footer_text
+
+
 def _doc_cross_page_list() -> DoclingDocument:
     """List group with whole items on page 1 and page 2 (list-level fragmentation)."""
     doc = DoclingDocument(name="cross_page_list")
