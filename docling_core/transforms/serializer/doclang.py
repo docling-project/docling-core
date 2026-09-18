@@ -1678,6 +1678,12 @@ class DocLangFallbackSerializer(BaseFallbackSerializer):
         delim = _get_delim(params=DocLangParams(**kwargs))
         if isinstance(item, GroupItem):
             parts = doc_serializer.get_parts(item=item, **kwargs)
+            if (
+                not params.add_named_groups
+                and params.add_page_break
+                and isinstance(doc_serializer, DocLangDocSerializer)
+            ):
+                parts = doc_serializer._order_fragmented_parts_by_page(parts)
             text_res = delim.join([p.text for p in parts if p.text])
             # ListGroup and InlineGroup have their own serializers and never reach
             # the fallback; guard anyway so they can never be double-wrapped.
