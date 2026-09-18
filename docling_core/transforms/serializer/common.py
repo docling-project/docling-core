@@ -7,7 +7,7 @@ import warnings
 from abc import abstractmethod
 from collections.abc import Iterable
 from functools import cached_property
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Annotated, Any, Optional, Union
 
 from pydantic import (
@@ -184,7 +184,7 @@ def create_ser_result(
     )
 
 
-def hyperlink_uri(hyperlink: AnyUrl | Path) -> str:
+def hyperlink_uri(hyperlink: AnyUrl | PurePath) -> str:
     """Render a hyperlink destination as a portable URI string.
 
     ``TextItem.hyperlink`` is typed ``AnyUrl | Path``. A ``Path`` hyperlink that a
@@ -200,7 +200,10 @@ def hyperlink_uri(hyperlink: AnyUrl | Path) -> str:
     and change the link target. URLs are unaffected by definition, and a hyperlink
     already parsed as a POSIX path stays byte-identical to ``str()``.
     """
-    if isinstance(hyperlink, Path):
+    # ``PurePath`` covers both native ``Path`` values and explicitly foreign
+    # spellings such as ``PureWindowsPath``; on a POSIX host a native ``Path``
+    # built from a string containing a backslash treats it as a filename char.
+    if isinstance(hyperlink, PurePath):
         return hyperlink.as_posix()
     return str(hyperlink)
 

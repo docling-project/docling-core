@@ -1712,10 +1712,13 @@ def test_referenced_image_data_uri_is_not_encoded():
 @pytest.mark.parametrize(
     ("hyperlink", "expected"),
     [
-        # The plain relative link from the report.
+        # The plain relative link from the report (native and POSIX spelling).
         (Path("sub/next.html"), "sub/next.html"),
-        # A Windows-authored separator must not survive into the destination.
-        (Path("sub\\next.html"), "sub/next.html"),
+        (PurePosixPath("sub/next.html"), "sub/next.html"),
+        # A Windows spelling normalizes on every host -- a native POSIX Path
+        # treats '\' as a legal filename character, so the foreign spelling
+        # must be expressed with PureWindowsPath to stay host-independent.
+        (PureWindowsPath("sub\\next.html"), "sub/next.html"),
         # Fragment and query delimiters are part of the URL, not of the path, and must
         # not be percent-encoded the way an image path would be.
         (Path("sub/next.html#section"), "sub/next.html#section"),
@@ -1727,7 +1730,7 @@ def test_referenced_image_data_uri_is_not_encoded():
         (AnyUrl("https://example.com/a/b?q=1#f"), "https://example.com/a/b?q=1#f"),
     ],
 )
-def test_hyperlink_uri_is_portable(hyperlink: AnyUrl | Path, expected: str):
+def test_hyperlink_uri_is_portable(hyperlink: AnyUrl | PurePath, expected: str):
     """Test that `hyperlink_uri` emits a portable destination on every host."""
     from docling_core.transforms.serializer.common import hyperlink_uri
 
