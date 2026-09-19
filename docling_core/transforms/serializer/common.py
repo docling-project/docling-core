@@ -44,6 +44,7 @@ from docling_core.types.doc import (
     FloatingItem,
     Formatting,
     FormItem,
+    GroupItem,
     InlineGroup,
     KeyValueItem,
     ListGroup,
@@ -79,6 +80,22 @@ class _PageBreakSerResult(SerializationResult):
     node: _PageBreakNode
 
 
+def _page_break_ref(prev_page: int, next_page: int) -> str:
+    """Build the self_ref identifying a page break by the boundary it closes.
+
+    Keying on the boundary rather than on a running counter is what lets the
+    ``self_ref`` dedup in ``get_parts()`` collapse the duplicate a group produces
+    when it spans a boundary: ``get_parts()`` re-enters for every group and shares
+    ``visited`` with the recursion, so the nested scope and the root scope both see
+    the same transition. A counter is scope-local -- the nested scope restarts at 0 --
+    so the two scopes would disagree on the ref and the duplicate would surface.
+
+    The result satisfies the ``^#(?:/([\\w-]+)(?:/(\\d+))?)?$`` ref validator, since
+    ``[\\w-]+`` accepts dashes.
+    """
+    return f"#/pb-{prev_page}-{next_page}"
+
+
 def _iterate_items(
     doc: DoclingDocument,
     layers: set[ContentLayer] | None,
@@ -89,7 +106,6 @@ def _iterate_items(
 ) -> Iterable[tuple[NodeItem, int]]:
     my_visited: set[str] = visited if visited is not None else set()
     prev_page_nr: int | None = None
-    page_break_i = 0
     for item, lvl in doc.iterate_items(
         root=node,
         with_groups=True,
@@ -97,7 +113,7 @@ def _iterate_items(
         traverse_pictures=traverse_pictures,
     ):
         if add_page_breaks:
-            if isinstance(item, ListGroup | InlineGroup) and item.self_ref not in my_visited:
+            if isinstance(item, GroupItem) and item.self_ref not in my_visited:
                 # if group starts with new page, yield page break before group node
                 my_visited.add(item.self_ref)
                 for it, _ in _iterate_items(
@@ -113,12 +129,22 @@ def _iterate_items(
                         if prev_page_nr is not None and page_no > prev_page_nr:
                             yield (
                                 _PageBreakNode(
-                                    self_ref=f"#/pb/{page_break_i}",
+                                    self_ref=_page_break_ref(prev_page_nr, page_no),
                                     prev_page=prev_page_nr,
                                     next_page=page_no,
                                 ),
                                 lvl,
                             )
+                            # Advance past the boundary we just emitted, as the DocItem
+                            # branch below does. Without this, the group's first child
+                            # re-emits the same boundary and only the self_ref dedup in
+                            # get_parts() hides the duplicate.
+                            #
+                            # Unlike that branch this does not need to seed prev_page_nr
+                            # when it is still None: the group's children are re-yielded
+                            # at this level anyway, so the DocItem branch seeds it from
+                            # the first one.
+                            prev_page_nr = page_no
                         break
             elif isinstance(item, DocItem) and item.prov:
                 page_no = item.prov[0].page_no
@@ -126,13 +152,12 @@ def _iterate_items(
                     if prev_page_nr is not None:  # close previous range
                         yield (
                             _PageBreakNode(
-                                self_ref=f"#/pb/{page_break_i}",
+                                self_ref=_page_break_ref(prev_page_nr, page_no),
                                 prev_page=prev_page_nr,
                                 next_page=page_no,
                             ),
                             lvl,
                         )
-                        page_break_i += 1
                     prev_page_nr = page_no
         yield item, lvl
 
