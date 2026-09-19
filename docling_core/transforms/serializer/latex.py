@@ -25,6 +25,7 @@ from docling_core.transforms.serializer.common import (
     DocSerializer,
     _get_annotation_text,
     create_ser_result,
+    hyperlink_uri,
 )
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
@@ -610,7 +611,7 @@ class LaTeXDocSerializer(DocSerializer):
     ) -> str:
         """Return LaTeX hyperlink command (requires ``hyperref`` package)."""
         # Escape special characters in URL argument to avoid raw `#`, `%`, `_`, etc.
-        url_arg = _escape_latex(str(hyperlink))
+        url_arg = _escape_latex(hyperlink_uri(hyperlink))
         return f"\\href{{{url_arg}}}{{{text}}}"
 
     @override

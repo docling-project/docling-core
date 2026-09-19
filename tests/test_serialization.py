@@ -1704,6 +1704,77 @@ def test_referenced_image_data_uri_is_not_encoded():
     assert doc.export_to_markdown(image_mode=ImageRefMode.REFERENCED) == "<!-- image -->"
 
 
+# ===============================
+# Hyperlink destination tests
+# ===============================
+
+
+@pytest.mark.parametrize(
+    ("hyperlink", "expected"),
+    [
+        # The plain relative link from the report (native and POSIX spelling).
+        (Path("sub/next.html"), "sub/next.html"),
+        (PurePosixPath("sub/next.html"), "sub/next.html"),
+        # A Windows spelling normalizes on every host -- a native POSIX Path
+        # treats '\' as a legal filename character, so the foreign spelling
+        # must be expressed with PureWindowsPath to stay host-independent.
+        (PureWindowsPath("sub\\next.html"), "sub/next.html"),
+        # Fragment and query delimiters are part of the URL, not of the path, and must
+        # not be percent-encoded the way an image path would be.
+        (Path("sub/next.html#section"), "sub/next.html#section"),
+        (Path("sub/next.html?x=1#section"), "sub/next.html?x=1#section"),
+        # Spaces and existing escapes stay as they are.
+        (Path("dir with space/x.html"), "dir with space/x.html"),
+        (Path("a%20b/x.html"), "a%20b/x.html"),
+        # A URL is untouched, including its own backslash-free spelling.
+        (AnyUrl("https://example.com/a/b?q=1#f"), "https://example.com/a/b?q=1#f"),
+    ],
+)
+def test_hyperlink_uri_is_portable(hyperlink: AnyUrl | PurePath, expected: str):
+    """Test that `hyperlink_uri` emits a portable destination on every host."""
+    from docling_core.transforms.serializer.common import hyperlink_uri
+
+    assert hyperlink_uri(hyperlink) == expected
+
+
+@pytest.mark.parametrize(
+    ("hyperlink", "expected_md", "expected_html"),
+    [
+        (Path("sub/next.html"), "[next page](sub/next.html)", '<a href="sub/next.html">'),
+        (
+            Path("sub/next.html#section"),
+            "[next page](sub/next.html#section)",
+            '<a href="sub/next.html#section">',
+        ),
+        (
+            Path("sub/next.html?x=1#section"),
+            "[next page](sub/next.html?x=1#section)",
+            '<a href="sub/next.html?x=1#section">',
+        ),
+    ],
+)
+def test_relative_hyperlink_export_uses_forward_slashes(hyperlink: AnyUrl | Path, expected_md: str, expected_html: str):
+    """Test that Markdown and HTML export a relative hyperlink with `/` separators."""
+    doc = DoclingDocument(name="x")
+    doc.add_text(label=DocItemLabel.TEXT, text="next page", hyperlink=hyperlink)
+
+    assert doc.export_to_markdown().strip() == expected_md
+    html = doc.export_to_html(image_mode=ImageRefMode.PLACEHOLDER)
+    assert expected_html in html
+
+
+def test_relative_hyperlink_survives_json_round_trip():
+    """Test that a JSON round trip keeps a relative hyperlink on any host."""
+    doc = DoclingDocument(name="x")
+    doc.add_text(label=DocItemLabel.TEXT, text="next page", hyperlink=Path("sub/next.html"))
+
+    reloaded = DoclingDocument.model_validate(doc.model_dump(mode="json"))
+
+    md = reloaded.export_to_markdown().strip()
+    assert md == "[next page](sub/next.html)"
+    assert "\\" not in md
+
+
 def test_export_to_markdown_image_dir_saves_and_references_images(sample_doc, tmp_path):
     """export_to_markdown with image_dir saves images and references the portable URI."""
     image_dir = tmp_path / "images"
