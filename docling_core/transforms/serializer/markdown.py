@@ -1075,6 +1075,24 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
         return create_ser_result(text=text_res, span_source=my_parts)
 
 
+_INLINE_NO_SPACE_BEFORE_RE = re.compile(r"^[,.;:!?%\)\]\}]")
+
+
+def _join_inline_parts(parts: list[str]) -> str:
+    """Join inline Markdown fragments while avoiding spaces before punctuation."""
+    if not parts:
+        return ""
+
+    text = parts[0]
+    for part in parts[1:]:
+        if _INLINE_NO_SPACE_BEFORE_RE.match(part):
+            text += part
+        else:
+            text += " " + part
+
+    return text
+
+
 class MarkdownInlineSerializer(BaseInlineSerializer):
     """Markdown-specific inline group serializer."""
 
@@ -1098,7 +1116,7 @@ class MarkdownInlineSerializer(BaseInlineSerializer):
             visited=my_visited,
             **kwargs,
         )
-        text_res = " ".join([p.text for p in parts if p.text])
+        text_res = _join_inline_parts([p.text for p in parts if p.text])
         return create_ser_result(text=text_res, span_source=parts)
 
 

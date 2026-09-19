@@ -27,7 +27,7 @@ from docling_core.transforms.serializer.markdown import (
 )
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
-from docling_core.types.doc import DoclingDocument, ImageRef
+from docling_core.types.doc import DoclingDocument, Formatting, ImageRef
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, ImageRefMode, Size
 from docling_core.types.doc.document import (
     BaseMeta,
@@ -76,6 +76,50 @@ def verify(exp_file: Path, actual: str):
 # ===============================
 # Markdown tests
 # ===============================
+
+
+def test_md_inline_group_punctuation_spacing():
+    cases = [
+        (
+            [
+                ("Capital social", Formatting(bold=True)),
+                (": 1 000,00 Euros", None),
+            ],
+            "- **Capital social**: 1 000,00 Euros",
+        ),
+        (
+            [
+                ("Hello", Formatting(bold=True)),
+                (", world", None),
+            ],
+            "- **Hello**, world",
+        ),
+        (
+            [
+                ("x", None),
+                ("bold", Formatting(bold=True)),
+                ("tail", None),
+            ],
+            "- x **bold** tail",
+        ),
+    ]
+
+    for parts, expected in cases:
+        doc = DoclingDocument(name="inline-punctuation")
+
+        list_group = doc.add_list_group()
+        list_item = doc.add_list_item(text="", parent=list_group)
+        inline_group = doc.add_inline_group(parent=list_item)
+
+        for text, formatting in parts:
+            doc.add_text(
+                label=DocItemLabel.TEXT,
+                text=text,
+                formatting=formatting,
+                parent=inline_group,
+            )
+
+        assert doc.export_to_markdown() == expected
 
 
 def test_md_cross_page_list_page_break():
