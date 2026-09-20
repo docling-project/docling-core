@@ -1019,9 +1019,7 @@ def test_md_footnotes_yaml():
 
 
 def test_md_anchored_footnote_example():
-    """Test that footnotes owned by FloatingItems (table, picture) render with
-    inline anchors and definitions. If there is no anchor, do not render.
-    """
+    # Test that footnotes owned by FloatingItems (table, picture)
 
     src = Path("./tests/data/doc/footnote_with_anchor_example.json")
     doc = DoclingDocument.load_from_json(src)
@@ -1043,7 +1041,7 @@ def test_md_anchored_footnote_example():
 
     # Unanchored footnote preserved as plain text
     assert "[^4]" not in actual
-    assert "This footnote has no anchor" in actual
+    assert "This footnote has no anchor and must not appear in the output." in actual
 
 
 def test_md_unanchored_footnote_is_plain_text():
