@@ -107,33 +107,39 @@ def _mark_subtree_visited(
             _mark_subtree_visited(child_ref.resolve(doc=doc), doc, visited)
 
 
-def _collect_subtree_text(item: NodeItem, doc: DoclingDocument) -> str:
+def _collect_subtree_text(item: NodeItem, doc: DoclingDocument, excluded_refs: set[str]) -> str:
     """Collect all text from *item*'s subtree, flattening nested tables.
 
     Returns a space-joined string of every piece of text found so that the
     content of a nested table is preserved in a flat, readable form.
 
     For TableItems the text is pulled from ``data.grid`` cells directly;
-    children are *not* recursed into because they duplicate the grid content
-    for RichTableCells.  For all other items, ``.text`` is collected and
-    children are visited recursively.
+    RichTableCells are resolved through their references, without visiting the
+    table children again. Exclusions apply during flattening just as they do
+    during normal serialization.
     """
     parts: list[str] = []
 
     if isinstance(item, TableItem):
+        if item.self_ref in excluded_refs:
+            return ""
         for row in item.data.grid:
             for cell in row:
-                if cell.text:
-                    parts.append(cell.text)
+                if isinstance(cell, RichTableCell):
+                    cell_text = _collect_subtree_text(cell.ref.resolve(doc), doc, excluded_refs)
+                else:
+                    cell_text = cell.text
+                if cell_text:
+                    parts.append(cell_text)
         return " ".join(parts)
 
-    if isinstance(item, TextItem) and item.text:
+    if isinstance(item, TextItem) and item.self_ref not in excluded_refs and item.text:
         parts.append(item.text)
 
     if isinstance(item, NodeItem):
         for child_ref in item.children:
             child = child_ref.resolve(doc=doc)
-            child_text = _collect_subtree_text(child, doc)
+            child_text = _collect_subtree_text(child, doc, excluded_refs)
             if child_text:
                 parts.append(child_text)
 
@@ -704,7 +710,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
             visited: set[str] = kwargs.get("visited") or set()
             _mark_subtree_visited(item, doc, visited)
             return create_ser_result(
-                text=_collect_subtree_text(item, doc),
+                text=_collect_subtree_text(item, doc, doc_serializer.get_excluded_refs(**kwargs)),
                 span_source=item,
             )
 

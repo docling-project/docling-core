@@ -137,6 +137,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
     # Internal state used while walking the tree (private instance attributes)
     _page_no: int = PrivateAttr(default=1)
     _default_resolution: int = PrivateAttr(default=DOCLANG_DFLT_RESOLUTION)
+    _default_page_width: int = PrivateAttr(default=DOCLANG_DFLT_RESOLUTION)
+    _default_page_height: int = PrivateAttr(default=DOCLANG_DFLT_RESOLUTION)
     _thread_registry: dict[tuple[str, str], NodeItem] = PrivateAttr(default_factory=dict)
     _media_root: Path | None = PrivateAttr(default=None)
     _max_xml_bytes: int = PrivateAttr(default=settings.max_doclang_xml_bytes)
@@ -205,8 +207,11 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         doc = DoclingDocument(name="Document")
         self._page_no = page_no
         self._default_resolution = DOCLANG_DFLT_RESOLUTION
+        self._default_page_width = DOCLANG_DFLT_RESOLUTION
+        self._default_page_height = DOCLANG_DFLT_RESOLUTION
+        self._apply_default_resolution(root)
         self._thread_registry = {}
-        self._ensure_page_exists(doc=doc, page_no=self._page_no, resolution=self._default_resolution)
+        self._ensure_page_exists(doc=doc, page_no=self._page_no)
         self._parse_document_root(doc=doc, root=root)
         return doc
 
@@ -232,7 +237,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
 
     def _advance_page_break(self, *, doc: DoclingDocument) -> None:
         self._page_no += 1
-        self._ensure_page_exists(doc=doc, page_no=self._page_no, resolution=self._default_resolution)
+        self._ensure_page_exists(doc=doc, page_no=self._page_no)
 
     def _provenance_from_nodes_with_page_breaks(
         self,
@@ -320,9 +325,9 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         }:
             self._parse_text_like(doc=doc, el=el, parent=parent)
         elif name == DocLangToken.PAGE_BREAK.value:
-            # Start a new page; keep a default square page using the configured resolution
+            # Start a new page using the document's declared default resolution
             self._page_no += 1
-            self._ensure_page_exists(doc=doc, page_no=self._page_no, resolution=self._default_resolution)
+            self._ensure_page_exists(doc=doc, page_no=self._page_no)
             self._source_recorder.bind_page(el, self._page_no)
         elif name == DocLangToken.HEADING.value:
             self._parse_heading(doc=doc, el=el, parent=parent)
@@ -1291,7 +1296,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
 
             is_virtual_text = self._is_list_item_virtual_text(all_content_nodes)
 
-            if not all_content_nodes:
+            if self._first_non_whitespace_node(all_content_nodes) is None:
                 # Empty list item (just ldiv, no content)
                 doc.add_list_item(
                     text="",
@@ -2183,10 +2188,36 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         return "".join(out)
 
     # --------- Location helpers ---------
-    def _ensure_page_exists(self, *, doc: DoclingDocument, page_no: int, resolution: int) -> None:
-        # If the page already exists, do nothing; otherwise add with a square size based on resolution
-        if page_no not in doc.pages:
-            doc.add_page(page_no=page_no, size=Size(width=resolution, height=resolution))
+    def _ensure_page_exists(self, *, doc: DoclingDocument, page_no: int, resolution: int | None = None) -> None:
+        # If the page already exists, do nothing. A per-<location> resolution attribute
+        # (rare/legacy) forces a square page; otherwise use the document default size,
+        # which honours a non-square <default_resolution>.
+        if page_no in doc.pages:
+            return
+        if resolution is not None:
+            size = Size(width=resolution, height=resolution)
+        else:
+            size = Size(width=self._default_page_width, height=self._default_page_height)
+        doc.add_page(page_no=page_no, size=size)
+
+    def _apply_default_resolution(self, root: Element) -> None:
+        """Read <default_resolution width height/> so pages use the declared coordinate space."""
+        elems = root.getElementsByTagName("default_resolution")
+        if not elems:
+            return
+        el = cast(Element, elems[0])
+        try:
+            width = int(el.getAttribute("width") or 0)
+            height = int(el.getAttribute("height") or 0)
+        except ValueError:
+            return
+        if width > 0:
+            self._default_page_width = width
+        if height > 0:
+            self._default_page_height = height
+        # Scalar fallback for <location resolution="..."> value space (square docs only).
+        if width > 0:
+            self._default_resolution = width
 
     def _extract_provenance(self, *, doc: DoclingDocument, el: Element) -> list[ProvenanceItem]:
         head_nodes, _ = self._split_element_children_head_body(el)
