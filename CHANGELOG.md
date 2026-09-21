@@ -1,3 +1,9 @@
+## [v2.97.2](https://github.com/docling-project/docling-core/releases/tag/v2.97.2) - 2026-09-21
+
+### Fix
+
+* **doclang:** Honour non-square default_resolution, drop locationless-list artifacts, and scope table-cell text to exclusions ([#785](https://github.com/docling-project/docling-core/issues/785)) ([`8bba310`](https://github.com/docling-project/docling-core/commit/8bba310cc5e1b590c13262c443d286474ff10a81))
+
 ## [v2.97.1](https://github.com/docling-project/docling-core/releases/tag/v2.97.1) - 2026-09-18
 
 ### Fix
