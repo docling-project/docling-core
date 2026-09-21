@@ -795,6 +795,27 @@ def test_roundtrip_nested_list_unordered_in_unordered():
     assert dt2 == dt
 
 
+def test_deserialize_locationless_list_with_empty_item_and_formula():
+    doc = _deserialize(
+        """
+<doclang>
+  <list>
+    <ldiv/>
+    <ldiv/>
+    A.
+    <formula>f(x)</formula>
+    is odd
+  </list>
+</doclang>
+"""
+    )
+
+    assert [item.text for item in doc.texts] == ["", "", "A.", "f(x)", "is odd"]
+    assert doc.texts[3].label == DocItemLabel.FORMULA
+    assert all(not item.prov for item in doc.texts)
+    assert "<location" not in _serialize(doc)
+
+
 def test_roundtrip_nested_list_ordered_in_ordered():
     """Test nested ordered list within ordered list."""
     doc = DoclingDocument(name="t")
@@ -2410,3 +2431,29 @@ def test_unnamed_group_markup_still_wraps_floats() -> None:
     doc = _deserialize(xml, validate=False)
     assert doc.groups == []
     assert len(doc.pictures) == 1
+
+
+def test_default_resolution_sets_page_coordinate_space():
+    """<default_resolution> establishes the page size so locations are not clamped."""
+    import warnings
+
+    xml = (
+        '<doclang version="0.7">'
+        '<head><default_resolution width="2048" height="2048"/></head>'
+        "<text>"
+        '<location value="27"/><location value="14"/>'
+        '<location value="1316"/><location value="1900"/>'
+        "<content>Hello</content></text>"
+        "</doclang>"
+    )
+    doc = _deserialize(xml, validate=False)
+
+    assert doc.pages[1].size.width == 2048
+    assert doc.pages[1].size.height == 2048
+    bbox = doc.texts[0].prov[0].bbox
+    assert (bbox.l, bbox.t, bbox.r, bbox.b) == (27, 14, 1316, 1900)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        DoclingDocument.validate_document(doc)
+    assert [w for w in caught if "clamping" in str(w.message)] == []
