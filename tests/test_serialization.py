@@ -18,6 +18,7 @@ from docling_core.transforms.serializer.html import (
     HTMLTableSerializer,
 )
 from docling_core.transforms.serializer.markdown import (
+    CaptionPlacement,
     MarkdownDocSerializer,
     MarkdownParams,
     MarkdownPictureSerializer,
@@ -1747,3 +1748,125 @@ def test_export_to_html_image_dir_without_referenced_raises(sample_doc, tmp_path
     """Passing image_dir without REFERENCED mode raises ValueError."""
     with pytest.raises(ValueError, match=r"ImageRefMode\.REFERENCED"):
         sample_doc.export_to_html(image_dir=tmp_path / "images")
+
+
+def _make_captioned_doc(
+    *,
+    kind: str,
+    cap_bbox: BoundingBox | None,
+    obj_bbox: BoundingBox | None,
+    page_no: int = 1,
+) -> DoclingDocument:
+    doc = DoclingDocument(name="cap_order")
+    doc.add_page(page_no=1, size=Size(width=100, height=200))
+
+    def prov(bbox: BoundingBox | None) -> ProvenanceItem | None:
+        if bbox is None:
+            return None
+        return ProvenanceItem(page_no=page_no, bbox=bbox, charspan=(0, 0))
+
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text="THE CAPTION", prov=prov(cap_bbox))
+    if kind == "table":
+        table_data = TableData(num_rows=1, num_cols=1)
+        table_data.add_row(["cell"])
+        table_data.num_rows = 1
+        doc.add_table(data=table_data, caption=caption, prov=prov(obj_bbox))
+    else:
+        doc.add_picture(caption=caption, prov=prov(obj_bbox))
+    return doc
+
+
+def _tl(t: float, b: float) -> BoundingBox:
+    return BoundingBox(l=0, r=10, t=t, b=b, coord_origin=CoordOrigin.TOPLEFT)
+
+
+def _bl(t: float, b: float) -> BoundingBox:
+    return BoundingBox(l=0, r=10, t=t, b=b, coord_origin=CoordOrigin.BOTTOMLEFT)
+
+
+def _serialize_md(doc: DoclingDocument, placement: CaptionPlacement) -> str:
+    return MarkdownDocSerializer(doc=doc, params=MarkdownParams(caption_placement=placement)).serialize().text
+
+
+@pytest.mark.parametrize("kind, marker", [("table", "cell"), ("picture", "<!-- image -->")])
+@pytest.mark.parametrize(
+    "cap_bbox, obj_bbox, layout_caption_first",
+    [
+        (None, None, True),  # no bboxes: falls back to standard order (caption first)
+        (_tl(150, 170), None, True),  # object without bbox: falls back to standard order
+        (_tl(10, 30), _tl(50, 100), True),  # caption above
+        (_tl(150, 170), _tl(50, 100), False),  # caption below
+        (_bl(190, 170), _bl(150, 100), True),  # caption above, BOTTOMLEFT origin
+        (_bl(50, 30), _bl(150, 100), False),  # caption below, BOTTOMLEFT origin
+        (_tl(150, 170), _bl(150, 100), False),  # mixed origins: caption (y=160) below object (y=75)
+        (_tl(10, 30), _bl(150, 100), True),  # mixed origins: caption (y=20) above object (y=75)
+    ],
+)
+def test_markdown_caption_placement(kind, marker, cap_bbox, obj_bbox, layout_caption_first):
+    doc = _make_captioned_doc(kind=kind, cap_bbox=cap_bbox, obj_bbox=obj_bbox)
+
+    # standard ignores bboxes: tables and pictures always have the caption first
+    md = _serialize_md(doc, CaptionPlacement.STANDARD)
+    assert md.index("THE CAPTION") < md.index(marker)
+    assert md == doc.export_to_markdown()
+
+    md = _serialize_md(doc, CaptionPlacement.LAYOUT)
+    if layout_caption_first:
+        assert md.index("THE CAPTION") < md.index(marker)
+    else:
+        assert md.index("THE CAPTION") > md.index(marker)
+
+
+def test_markdown_caption_placement_layout_other_page_falls_back_to_standard():
+    doc = DoclingDocument(name="cap_pages")
+    doc.add_page(page_no=1, size=Size(width=100, height=200))
+    doc.add_page(page_no=2, size=Size(width=100, height=200))
+    caption = doc.add_text(
+        label=DocItemLabel.CAPTION,
+        text="THE CAPTION",
+        prov=ProvenanceItem(page_no=2, bbox=_tl(150, 170), charspan=(0, 0)),
+    )
+    doc.add_picture(caption=caption, prov=ProvenanceItem(page_no=1, bbox=_tl(50, 100), charspan=(0, 0)))
+    md = _serialize_md(doc, CaptionPlacement.LAYOUT)
+    assert md.index("THE CAPTION") < md.index("<!-- image -->")
+
+
+@pytest.mark.parametrize(
+    "cap_bbox, placement, caption_first",
+    [
+        (None, CaptionPlacement.STANDARD, False),  # standard: code captions come after
+        (_tl(10, 30), CaptionPlacement.STANDARD, False),  # standard ignores bboxes
+        (None, CaptionPlacement.LAYOUT, False),  # no bboxes: falls back to standard
+        (_tl(10, 30), CaptionPlacement.LAYOUT, True),  # caption above the code
+        (_tl(150, 170), CaptionPlacement.LAYOUT, False),  # caption below the code
+    ],
+)
+def test_markdown_caption_placement_code(cap_bbox, placement, caption_first):
+    doc = DoclingDocument(name="cap_code")
+    doc.add_page(page_no=1, size=Size(width=100, height=200))
+
+    def prov(bbox):
+        return None if bbox is None else ProvenanceItem(page_no=1, bbox=bbox, charspan=(0, 0))
+
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text="THE CAPTION", prov=prov(cap_bbox))
+    code = doc.add_code(text="print(1)", prov=prov(_tl(50, 100) if cap_bbox else None))
+    code.captions.append(caption.get_ref())
+
+    md = _serialize_md(doc, placement)
+    assert (md.index("THE CAPTION") < md.index("print(1)")) == caption_first
+
+
+@pytest.mark.parametrize("placement", [CaptionPlacement.LAYOUT, "layout"])
+def test_export_and_save_markdown_caption_placement(tmp_path, placement):
+    doc = _make_captioned_doc(kind="picture", cap_bbox=_tl(150, 170), obj_bbox=_tl(50, 100))
+
+    md = doc.export_to_markdown(caption_placement=placement)
+    assert md.index("THE CAPTION") > md.index("<!-- image -->")
+
+    out = tmp_path / "out.md"
+    doc.save_as_markdown(out, caption_placement=placement)
+    assert out.read_text(encoding="utf-8") == md
+
+    # default is unchanged
+    assert doc.export_to_markdown().index("THE CAPTION") < doc.export_to_markdown().index("<!-- image -->")
+    assert doc.export_to_markdown() == doc.export_to_markdown(caption_placement="standard")

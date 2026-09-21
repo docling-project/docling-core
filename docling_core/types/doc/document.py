@@ -52,6 +52,7 @@ from typing_extensions import Self, deprecated, override
 from docling_core.types.base import _JSON_POINTER_REGEX, VERSION_PATTERN, UniqueList
 from docling_core.types.doc import BoundingBox, Size
 from docling_core.types.doc.base import (
+    CaptionPlacement,
     CoordOrigin,
     ImageRefMode,
     PydanticSerCtxKey,
@@ -3722,6 +3723,7 @@ class DoclingDocument(BaseModel):
         mark_meta: bool = False,
         use_legacy_annotations: bool | None = None,  # deprecated
         include_picture_classification: bool = True,
+        caption_placement: CaptionPlacement = CaptionPlacement.STANDARD,
     ):
         """Save to markdown."""
         if isinstance(filename, str):
@@ -3755,6 +3757,7 @@ class DoclingDocument(BaseModel):
             use_legacy_annotations=use_legacy_annotations,
             mark_meta=mark_meta,
             include_picture_classification=include_picture_classification,
+            caption_placement=caption_placement,
         )
 
         filename.write_text(md_out, encoding="utf-8")
@@ -3788,6 +3791,7 @@ class DoclingDocument(BaseModel):
         blocked_meta_names: set[str] | None = None,
         mark_meta: bool = False,
         include_picture_classification: bool = True,
+        caption_placement: CaptionPlacement = CaptionPlacement.STANDARD,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -3863,6 +3867,12 @@ class DoclingDocument(BaseModel):
             classification prediction (the image's predicted class) in the export.
             (Default value = True).
         :type include_picture_classification: bool = True
+        :param caption_placement: Where captions go relative to their item: "standard" keeps
+            the per-type order (before tables and pictures, after code and formulas); "layout"
+            places a caption after its item if the caption's bbox center is lower on the page,
+            else before, falling back to "standard" when positions are unavailable.
+            (Default value = CaptionPlacement.STANDARD).
+        :type caption_placement: CaptionPlacement = CaptionPlacement.STANDARD
         """
         from docling_core.transforms.serializer.markdown import (
             MarkdownDocSerializer,
@@ -3915,6 +3925,7 @@ class DoclingDocument(BaseModel):
                 compact_tables=compact_tables,
                 traverse_pictures=traverse_pictures,
                 include_picture_classification=include_picture_classification,
+                caption_placement=caption_placement,
             ),
         )
         ser_res = serializer.serialize()
