@@ -37,8 +37,10 @@ from docling_core.transforms.serializer.common import (
 )
 from docling_core.types.doc import (
     BaseMeta,
+    CaptionPlacement,
     CodeItem,
     ContentLayer,
+    CoordOrigin,
     DescriptionAnnotation,
     DescriptionMetaField,
     DocItem,
@@ -65,6 +67,7 @@ from docling_core.types.doc import (
     PictureItem,
     PictureMoleculeData,
     PictureTabularChartData,
+    ProvenanceItem,
     RichTableCell,
     SectionHeaderItem,
     SummaryMetaField,
@@ -87,6 +90,61 @@ def _cell_content_has_table(item: NodeItem, doc: DoclingDocument) -> bool:
             if _cell_content_has_table(child_ref.resolve(doc=doc), doc):
                 return True
     return False
+
+
+def _captions_below_item(item: FloatingItem, doc: DoclingDocument) -> bool | None:
+    """Tell whether the item's captions sit below the item, judging by bbox centers.
+
+    Returns ``True`` if every caption is centered lower than the item on the page,
+    ``False`` if the item has captions located at or above it, and ``None`` if the
+    position cannot be determined (no captions, missing provenance, different pages
+    or unresolvable page height), in which case the caller keeps its default order.
+    """
+
+    def center_y(prov: ProvenanceItem) -> float | None:
+        bbox = prov.bbox
+        if bbox.coord_origin != CoordOrigin.TOPLEFT:
+            page = doc.pages.get(prov.page_no)
+            if page is None:
+                return None
+            bbox = bbox.to_top_left_origin(page_height=page.size.height)
+        return (bbox.t + bbox.b) / 2
+
+    if not item.prov or not item.captions:
+        return None
+    item_prov = item.prov[0]
+    item_y = center_y(item_prov)
+    if item_y is None:
+        return None
+
+    below: list[bool] = []
+    for cap_ref in item.captions:
+        cap = cap_ref.resolve(doc)
+        if not isinstance(cap, DocItem):
+            continue
+        cap_prov = next((p for p in cap.prov if p.page_no == item_prov.page_no), None)
+        if cap_prov is None or (cap_y := center_y(cap_prov)) is None:
+            return None
+        below.append(cap_y > item_y)
+    return all(below) if below else None
+
+
+def _caption_goes_after(
+    item: FloatingItem,
+    doc: DoclingDocument,
+    params: "MarkdownParams",
+    standard_after: bool,
+) -> bool:
+    """Decide whether the item's captions are serialized after the item.
+
+    ``standard_after`` is the item type's default order, used for ``STANDARD``
+    placement and whenever ``LAYOUT`` placement cannot determine the position.
+    """
+    if params.caption_placement == CaptionPlacement.LAYOUT:
+        below = _captions_below_item(item, doc)
+        if below is not None:
+            return below
+    return standard_after
 
 
 def _mark_subtree_visited(
@@ -190,6 +248,15 @@ class MarkdownParams(CommonParams):
     include_picture_classification: bool = Field(
         default=True,
         description="Include the picture classification prediction (the image's predicted class).",
+    )
+    caption_placement: CaptionPlacement = Field(
+        default=CaptionPlacement.STANDARD,
+        description=(
+            "Where captions go relative to their item. 'standard' keeps the per-type order "
+            "(before tables and pictures, after code and formulas); 'layout' places a caption "
+            "after its item if the caption's bbox center is lower on the page, else before, "
+            "falling back to 'standard' when positions are unavailable."
+        ),
     )
 
 
@@ -367,7 +434,10 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         if isinstance(item, FloatingItem):
             cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
             if cap_res.text:
-                res_parts.append(cap_res)
+                if _caption_goes_after(item, doc, params, standard_after=True):
+                    res_parts.append(cap_res)
+                else:
+                    res_parts.insert(0, cap_res)
 
         text = (" " if is_inline_scope else "\n\n").join([r.text for r in res_parts])
         if processing_pending:
@@ -726,7 +796,8 @@ class MarkdownTableSerializer(BaseTableSerializer):
             item=item,
             **kwargs,
         )
-        if cap_res.text:
+        cap_after = _caption_goes_after(item, doc, params, standard_after=False)
+        if cap_res.text and not cap_after:
             res_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
@@ -784,6 +855,9 @@ class MarkdownTableSerializer(BaseTableSerializer):
             if table_text:
                 res_parts.append(create_ser_result(text=table_text, span_source=item))
 
+        if cap_res.text and cap_after:
+            res_parts.append(cap_res)
+
         text_res = "\n\n".join([r.text for r in res_parts])
 
         return create_ser_result(text=text_res, span_source=res_parts)
@@ -822,7 +896,8 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             item=item,
             **kwargs,
         )
-        if cap_res.text:
+        cap_after = _caption_goes_after(item, doc, params, standard_after=False)
+        if cap_res.text and not cap_after:
             res_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
@@ -856,6 +931,10 @@ class MarkdownPictureSerializer(BasePictureSerializer):
                 md_table_content = temp_table.export_to_markdown(temp_doc)
                 if len(md_table_content) > 0:
                     res_parts.append(create_ser_result(text=md_table_content, span_source=item))
+
+        if cap_res.text and cap_after:
+            res_parts.append(cap_res)
+
         text_res = "\n\n".join([r.text for r in res_parts if r.text])
 
         return create_ser_result(text=text_res, span_source=res_parts)
