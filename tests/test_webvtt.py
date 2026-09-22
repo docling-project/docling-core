@@ -10,6 +10,7 @@ import pytest
 from pydantic import ValidationError
 
 from docling_core.types.doc.webvtt import (
+    _ENTITY_CHARS,
     WebVTTCueBlock,
     WebVTTCueComponentWithTerminator,
     WebVTTCueInternalText,
@@ -116,15 +117,8 @@ def test_vtt_cue_commponents() -> None:
     # writes the escape back out.
     assert span.text == "My favorite book is Pride & Prejudice"
     assert str(span) == valid_text
-    for escape, char in (
-        ("&amp;", "&"),
-        ("&lt;", "<"),
-        ("&gt;", ">"),
-        ("&lrm;", "\u200e"),
-        ("&rlm;", "\u200f"),
-        ("&nbsp;", "\u00a0"),
-    ):
-        assert WebVTTCueTextSpan(text=f"a{escape}b").text == f"a{char}b"
+    for name, char in _ENTITY_CHARS.items():
+        assert WebVTTCueTextSpan(text=f"a&{name};b").text == f"a{char}b"
     # Only the two that cannot be written literally come back escaped.
     assert str(WebVTTCueTextSpan(text="a&gt;b")) == "a>b"
 
