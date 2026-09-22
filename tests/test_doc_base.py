@@ -11,6 +11,8 @@ from docling_core.types.doc import DocItemLabel, DoclingDocument, DocumentOrigin
         "application/vnd.box.boxnote",
         "application/vnd.docling.ebcdic",
         "application/x-ebcdic",
+        "audio/m4a",
+        "audio/mp4",
         "text/markdown",
     ],
 )
