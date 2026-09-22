@@ -1,3 +1,9 @@
+## [v2.98.0](https://github.com/docling-project/docling-core/releases/tag/v2.98.0) - 2026-09-22
+
+### Feature
+
+* **markdown:** Add caption_placement param to markdown serialization ([#786](https://github.com/docling-project/docling-core/issues/786)) ([`f17ef63`](https://github.com/docling-project/docling-core/commit/f17ef63cc673d9a979bc49f66fe9763fc8e2c993))
+
 ## [v2.97.2](https://github.com/docling-project/docling-core/releases/tag/v2.97.2) - 2026-09-21
 
 ### Fix
