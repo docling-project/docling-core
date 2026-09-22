@@ -1061,6 +1061,46 @@ def test_md_unanchored_footnote_is_plain_text():
     assert "This footnote has no anchor." in actual
 
 
+@pytest.mark.parametrize("item_kind", ["table", "picture"])
+@pytest.mark.parametrize(
+    "footnote_text, expected_text",
+    [
+        ("[1] İlgili hüküm için bkz. m. 5.", "[1] İlgili hüküm için bkz. m. 5."),
+        ("1\tİlgili hüküm için bkz. m. 5.", "1\tİlgili hüküm için bkz. m. 5."),
+        ("1\nİlgili hüküm için bkz. m. 5.", "1  \nİlgili hüküm için bkz. m. 5."),
+        ("1: İlgili hüküm & <istisna>.", "1: İlgili hüküm &amp; &lt;istisna&gt;."),
+    ],
+)
+def test_md_malformed_floating_footnote_preserves_text(item_kind, footnote_text, expected_text):
+    """An unsupported footnote marker must not discard the source text."""
+    doc = DoclingDocument(name="legal_footnote")
+    if item_kind == "table":
+        data = TableData(num_rows=0, num_cols=1)
+        data.add_row(["Provision"])
+        item = doc.add_table(data=data)
+    else:
+        item = doc.add_picture()
+
+    footnote = doc.add_text(label=DocItemLabel.FOOTNOTE, text=footnote_text, parent=item)
+    valid_footnote = doc.add_text(label=DocItemLabel.FOOTNOTE, text="2 Valid related note.", parent=item)
+    item.footnotes.extend([footnote.get_ref(), valid_footnote.get_ref()])
+
+    result = MarkdownDocSerializer(doc=doc).serialize()
+
+    assert result.text.count(expected_text) == 1
+    assert "[^1" not in result.text
+    assert result.text.count("[^2]\n\n[^2]: Valid related note.") == 1
+    assert footnote in result.get_unique_doc_items()
+
+    filtered = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(labels=_DEFAULT_LABELS - {DocItemLabel.FOOTNOTE}),
+    ).serialize()
+    assert "İlgili hüküm" not in filtered.text
+    assert "Valid related note." not in filtered.text
+    assert footnote not in filtered.get_unique_doc_items()
+
+
 def test_md_footnote_validation():
     from docling_core.transforms.serializer.markdown import MarkdownTextSerializer
 

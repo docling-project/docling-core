@@ -320,10 +320,6 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             text = f"- [x] {text}"
         if item.label == DocItemLabel.CHECKBOX_UNSELECTED:
             text = f"- [ ] {text}"
-        if item.label == DocItemLabel.FOOTNOTE:
-            parent: Any | None = item.parent.resolve(doc) if item.parent else None
-            if isinstance(parent, FloatingItem):
-                return create_ser_result(text="", span_source=res_parts)
         if isinstance(item, ListItem | TitleItem | SectionHeaderItem):
             if not has_inline_repr:
                 # case where processing/formatting should be applied first (in inner scope)
@@ -1228,7 +1224,18 @@ class MarkdownDocSerializer(DocSerializer):
                     try:
                         parsed = MarkdownTextSerializer._validate_and_format_footnote(resolved.text)
                     except ValueError as exc:
-                        self._logger.warning(f"Skipping malformed footnote {footnote.cref}: {exc}")
+                        self._logger.warning(f"Preserving malformed footnote {footnote.cref} as text: {exc}")
+                        # DocSerializer already skips owned footnotes during traversal.
+                        # Render unsupported markers through the normal text serializer
+                        # so their contents and source spans are not lost.
+                        results.append(
+                            self.text_serializer.serialize(
+                                item=resolved,
+                                doc_serializer=self,
+                                doc=self.doc,
+                                **(self.params.model_dump() | kwargs),
+                            )
+                        )
                     if parsed is not None:
                         identifier, definition = parsed
                         anchor_ref = f"[^{identifier}]"
