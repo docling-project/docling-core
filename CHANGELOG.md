@@ -1,3 +1,38 @@
+## [v2.98.0](https://github.com/docling-project/docling-core/releases/tag/v2.98.0) - 2026-09-22
+
+### Feature
+
+* **markdown:** Add caption_placement param to markdown serialization ([#786](https://github.com/docling-project/docling-core/issues/786)) ([`f17ef63`](https://github.com/docling-project/docling-core/commit/f17ef63cc673d9a979bc49f66fe9763fc8e2c993))
+
+## [v2.97.2](https://github.com/docling-project/docling-core/releases/tag/v2.97.2) - 2026-09-21
+
+### Fix
+
+* **doclang:** Honour non-square default_resolution, drop locationless-list artifacts, and scope table-cell text to exclusions ([#785](https://github.com/docling-project/docling-core/issues/785)) ([`8bba310`](https://github.com/docling-project/docling-core/commit/8bba310cc5e1b590c13262c443d286474ff10a81))
+
+## [v2.97.1](https://github.com/docling-project/docling-core/releases/tag/v2.97.1) - 2026-09-18
+
+### Fix
+
+* Doclang serializer for footnotes ([#782](https://github.com/docling-project/docling-core/issues/782)) ([`975c773`](https://github.com/docling-project/docling-core/commit/975c773b39265e6b6841d400f1cccc8eb03530a0))
+
+## [v2.97.0](https://github.com/docling-project/docling-core/releases/tag/v2.97.0) - 2026-09-16
+
+### Feature
+
+* Add artifacts_dir parameter to export_to_markdown and export_to_html ([#552](https://github.com/docling-project/docling-core/issues/552)) ([`1259eba`](https://github.com/docling-project/docling-core/commit/1259eba96b8fefeadc4313f8c1af5c7304c28256))
+
+### Fix
+
+* **serializer:** Keep row-header rows out of the markdown table header block ([#766](https://github.com/docling-project/docling-core/issues/766)) ([`b2a768c`](https://github.com/docling-project/docling-core/commit/b2a768c018827176b3b22b7deda463560fcffcf0))
+
+## [v2.96.1](https://github.com/docling-project/docling-core/releases/tag/v2.96.1) - 2026-09-15
+
+### Fix
+
+* Serialization into DCLX on splitted text across pages ([#775](https://github.com/docling-project/docling-core/issues/775)) ([`ebbc1ed`](https://github.com/docling-project/docling-core/commit/ebbc1ed2d1e273cd372f76c90d74795ac5de926c))
+* Add missing dependency on `requests` ([#764](https://github.com/docling-project/docling-core/issues/764)) ([`6073888`](https://github.com/docling-project/docling-core/commit/6073888fb9cac0c3de77a441c7c724620996fb7e))
+
 ## [v2.96.0](https://github.com/docling-project/docling-core/releases/tag/v2.96.0) - 2026-09-10
 
 ### Feature

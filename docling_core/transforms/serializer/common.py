@@ -52,6 +52,7 @@ from docling_core.types.doc import (
     PictureDataType,
     PictureItem,
     PictureMoleculeData,
+    RichTableCell,
     Script,
     TableAnnotationType,
     TableItem,
@@ -188,7 +189,8 @@ class CommonParams(BaseModel):
     """Common serialization parameters."""
 
     # allowlists with non-recursive semantics, i.e. if a list group node is outside the
-    # range and some of its children items are within, they will be serialized
+    # range and some of its children items are within, they will be serialized.
+    # Table cell subtrees are content of their table and are excluded with it.
     labels: set[DocItemLabel] = _DEFAULT_LABELS
     layers: set[ContentLayer] = _DEFAULT_LAYERS
     pages: set[int] | None = None  # None means all pages are allowed
@@ -313,6 +315,22 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                     )
                 )
             }
+            # Rich cells own subtrees, unlike plain cells whose content lives in data.
+            # Exclude both representations with the table; leave captions independent.
+            for table in self.doc.tables:
+                if table.self_ref in refs or table.content_layer not in params.layers:
+                    refs.add(table.self_ref)
+                    for cell in table.data.table_cells:
+                        if isinstance(cell, RichTableCell):
+                            refs.update(
+                                node.self_ref
+                                for node, _ in self.doc.iterate_items(
+                                    root=cell.ref.resolve(self.doc),
+                                    with_groups=True,
+                                    traverse_pictures=True,
+                                    included_content_layers=set(ContentLayer),
+                                )
+                            )
             self._excluded_refs_cache[params_json] = refs
         return refs
 

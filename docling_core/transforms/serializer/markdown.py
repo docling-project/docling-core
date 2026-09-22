@@ -38,8 +38,10 @@ from docling_core.transforms.serializer.common import (
 )
 from docling_core.types.doc import (
     BaseMeta,
+    CaptionPlacement,
     CodeItem,
     ContentLayer,
+    CoordOrigin,
     DescriptionAnnotation,
     DescriptionMetaField,
     DocItem,
@@ -66,6 +68,7 @@ from docling_core.types.doc import (
     PictureItem,
     PictureMoleculeData,
     PictureTabularChartData,
+    ProvenanceItem,
     RichTableCell,
     SectionHeaderItem,
     SummaryMetaField,
@@ -90,6 +93,61 @@ def _cell_content_has_table(item: NodeItem, doc: DoclingDocument) -> bool:
     return False
 
 
+def _captions_below_item(item: FloatingItem, doc: DoclingDocument) -> bool | None:
+    """Tell whether the item's captions sit below the item, judging by bbox centers.
+
+    Returns ``True`` if every caption is centered lower than the item on the page,
+    ``False`` if the item has captions located at or above it, and ``None`` if the
+    position cannot be determined (no captions, missing provenance, different pages
+    or unresolvable page height), in which case the caller keeps its default order.
+    """
+
+    def center_y(prov: ProvenanceItem) -> float | None:
+        bbox = prov.bbox
+        if bbox.coord_origin != CoordOrigin.TOPLEFT:
+            page = doc.pages.get(prov.page_no)
+            if page is None:
+                return None
+            bbox = bbox.to_top_left_origin(page_height=page.size.height)
+        return (bbox.t + bbox.b) / 2
+
+    if not item.prov or not item.captions:
+        return None
+    item_prov = item.prov[0]
+    item_y = center_y(item_prov)
+    if item_y is None:
+        return None
+
+    below: list[bool] = []
+    for cap_ref in item.captions:
+        cap = cap_ref.resolve(doc)
+        if not isinstance(cap, DocItem):
+            continue
+        cap_prov = next((p for p in cap.prov if p.page_no == item_prov.page_no), None)
+        if cap_prov is None or (cap_y := center_y(cap_prov)) is None:
+            return None
+        below.append(cap_y > item_y)
+    return all(below) if below else None
+
+
+def _caption_goes_after(
+    item: FloatingItem,
+    doc: DoclingDocument,
+    params: "MarkdownParams",
+    standard_after: bool,
+) -> bool:
+    """Decide whether the item's captions are serialized after the item.
+
+    ``standard_after`` is the item type's default order, used for ``STANDARD``
+    placement and whenever ``LAYOUT`` placement cannot determine the position.
+    """
+    if params.caption_placement == CaptionPlacement.LAYOUT:
+        below = _captions_below_item(item, doc)
+        if below is not None:
+            return below
+    return standard_after
+
+
 def _mark_subtree_visited(
     item: NodeItem,
     doc: DoclingDocument,
@@ -108,33 +166,39 @@ def _mark_subtree_visited(
             _mark_subtree_visited(child_ref.resolve(doc=doc), doc, visited)
 
 
-def _collect_subtree_text(item: NodeItem, doc: DoclingDocument) -> str:
+def _collect_subtree_text(item: NodeItem, doc: DoclingDocument, excluded_refs: set[str]) -> str:
     """Collect all text from *item*'s subtree, flattening nested tables.
 
     Returns a space-joined string of every piece of text found so that the
     content of a nested table is preserved in a flat, readable form.
 
     For TableItems the text is pulled from ``data.grid`` cells directly;
-    children are *not* recursed into because they duplicate the grid content
-    for RichTableCells.  For all other items, ``.text`` is collected and
-    children are visited recursively.
+    RichTableCells are resolved through their references, without visiting the
+    table children again. Exclusions apply during flattening just as they do
+    during normal serialization.
     """
     parts: list[str] = []
 
     if isinstance(item, TableItem):
+        if item.self_ref in excluded_refs:
+            return ""
         for row in item.data.grid:
             for cell in row:
-                if cell.text:
-                    parts.append(cell.text)
+                if isinstance(cell, RichTableCell):
+                    cell_text = _collect_subtree_text(cell.ref.resolve(doc), doc, excluded_refs)
+                else:
+                    cell_text = cell.text
+                if cell_text:
+                    parts.append(cell_text)
         return " ".join(parts)
 
-    if isinstance(item, TextItem) and item.text:
+    if isinstance(item, TextItem) and item.self_ref not in excluded_refs and item.text:
         parts.append(item.text)
 
     if isinstance(item, NodeItem):
         for child_ref in item.children:
             child = child_ref.resolve(doc=doc)
-            child_text = _collect_subtree_text(child, doc)
+            child_text = _collect_subtree_text(child, doc, excluded_refs)
             if child_text:
                 parts.append(child_text)
 
@@ -191,6 +255,15 @@ class MarkdownParams(CommonParams):
     include_picture_classification: bool = Field(
         default=True,
         description="Include the picture classification prediction (the image's predicted class).",
+    )
+    caption_placement: CaptionPlacement = Field(
+        default=CaptionPlacement.STANDARD,
+        description=(
+            "Where captions go relative to their item. 'standard' keeps the per-type order "
+            "(before tables and pictures, after code and formulas); 'layout' places a caption "
+            "after its item if the caption's bbox center is lower on the page, else before, "
+            "falling back to 'standard' when positions are unavailable."
+        ),
     )
 
 
@@ -415,7 +488,10 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         if isinstance(item, FloatingItem):
             cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
             if cap_res.text:
-                res_parts.append(cap_res)
+                if _caption_goes_after(item, doc, params, standard_after=True):
+                    res_parts.append(cap_res)
+                else:
+                    res_parts.insert(0, cap_res)
 
         text = (" " if is_inline_scope else "\n\n").join([r.text for r in res_parts])
         if processing_pending:
@@ -579,6 +655,11 @@ def _count_header_rows(item: TableItem) -> int:
     pull the data rows beneath a vertically spanning header into the header
     block.
 
+    A row is only promoted when it carries no non-flagged text outside the
+    leading column. Text in the leading column is exempt, because that column
+    holds the row labels, which stay unmarked even on rows that belong to the
+    header.
+
     Args:
         item: The table whose header rows are to be counted.
 
@@ -594,8 +675,14 @@ def _count_header_rows(item: TableItem) -> int:
           "no promotable header block", and every row stays in the body.
     """
     num_headers = 0
+    first_col = min((cell.start_col_offset_idx for cell in item.data.table_cells), default=0)
     for row_idx, row in enumerate(item.data.grid):
-        if any(cell.column_header and cell.start_row_offset_idx == row_idx for cell in row):
+        starting_cells = [cell for cell in row if cell.start_row_offset_idx == row_idx]
+        carries_body_text = any(
+            not cell.column_header and cell.text.strip() and cell.start_col_offset_idx != first_col
+            for cell in starting_cells
+        )
+        if any(cell.column_header for cell in starting_cells) and not carries_body_text:
             num_headers += 1
         else:
             if row_idx == 0 and not any(cell.column_header for later_row in item.data.grid[1:] for cell in later_row):
@@ -752,7 +839,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
             visited: set[str] = kwargs.get("visited") or set()
             _mark_subtree_visited(item, doc, visited)
             return create_ser_result(
-                text=_collect_subtree_text(item, doc),
+                text=_collect_subtree_text(item, doc, doc_serializer.get_excluded_refs(**kwargs)),
                 span_source=item,
             )
 
@@ -763,7 +850,8 @@ class MarkdownTableSerializer(BaseTableSerializer):
             item=item,
             **kwargs,
         )
-        if cap_res.text:
+        cap_after = _caption_goes_after(item, doc, params, standard_after=False)
+        if cap_res.text and not cap_after:
             res_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
@@ -821,6 +909,9 @@ class MarkdownTableSerializer(BaseTableSerializer):
             if table_text:
                 res_parts.append(create_ser_result(text=table_text, span_source=item))
 
+        if cap_res.text and cap_after:
+            res_parts.append(cap_res)
+
         ftn_res = doc_serializer.serialize_footnotes(
             item=item,
             **kwargs,
@@ -866,7 +957,8 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             item=item,
             **kwargs,
         )
-        if cap_res.text:
+        cap_after = _caption_goes_after(item, doc, params, standard_after=False)
+        if cap_res.text and not cap_after:
             res_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
@@ -900,6 +992,9 @@ class MarkdownPictureSerializer(BasePictureSerializer):
                 md_table_content = temp_table.export_to_markdown(temp_doc)
                 if len(md_table_content) > 0:
                     res_parts.append(create_ser_result(text=md_table_content, span_source=item))
+
+        if cap_res.text and cap_after:
+            res_parts.append(cap_res)
 
         ftn_res = doc_serializer.serialize_footnotes(
             item=item,
