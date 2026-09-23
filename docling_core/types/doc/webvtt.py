@@ -11,8 +11,40 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from pydantic.types import StringConstraints
 from typing_extensions import Self, override
 
-_VALID_ENTITIES: set = {"amp", "lt", "gt", "lrm", "rlm", "nbsp"}
+# WebVTT cue text escapes and the characters they denote (W3C WebVTT 1, 6.3).
+# The names double as the validation whitelist so the two cannot drift apart.
+_ENTITY_CHARS: dict[str, str] = {
+    "amp": "&",
+    "lt": "<",
+    "gt": ">",
+    "lrm": "\u200e",
+    "rlm": "\u200f",
+    "nbsp": "\u00a0",
+}
+_ESCAPE_NAMES: dict[str, str] = {char: name for name, char in _ENTITY_CHARS.items()}
+_VALID_ENTITIES: set = set(_ENTITY_CHARS)
 _ENTITY_PATTERN: re.Pattern = re.compile(r"&([a-zA-Z0-9]+);")
+
+
+def _unescape(value: str) -> str:
+    """Replace WebVTT escape sequences with the characters they denote."""
+    return _ENTITY_PATTERN.sub(lambda m: _ENTITY_CHARS.get(m.group(1), m.group(0)), value)
+
+
+def _escape(value: str, terminator: str) -> str:
+    """Escape the characters that cannot be written literally in a construct.
+
+    ``&`` always has to be escaped, or it would open an escape sequence on the
+    way back in, and it is replaced first so the second pass cannot double up.
+    ``terminator`` is the character that would otherwise end the construct being
+    written: ``<`` in cue text, ``>`` in an annotation. The other three escapes
+    are optional, so the literal character is kept and a file that never used
+    them round-trips unchanged.
+    """
+    escaped = value.replace("&", "&amp;")
+    return escaped.replace(terminator, f"&{_ESCAPE_NAMES[terminator]};")
+
+
 _TIMESTAMP_PATTERN_STR: str = r"(?:(\d{2,}):)?([0-5]\d):([0-5]\d)\.(\d{3})"
 START_TAG_NAMES = Literal["c", "b", "i", "u", "v", "lang"]
 
@@ -193,12 +225,12 @@ class WebVTTCueTextSpan(BaseModel):
         if len(value) == 0:
             raise ValueError("Cue text cannot be empty")
 
-        return value
+        return _unescape(value)
 
     @override
     def __str__(self) -> str:
         """Return a string representation of the cue text span."""
-        return self.text
+        return _escape(self.text, "<")
 
 
 class WebVTTCueComponentWithTerminator(BaseModel):
@@ -279,12 +311,12 @@ class WebVTTCueSpanStartTagAnnotated(WebVTTCueSpanStartTag):
         if len(value) == 0:
             raise ValueError("Annotation cannot be empty")
 
-        return value
+        return _unescape(value)
 
     @override
     def __str__(self) -> str:
         """Return a string representation of the cue span start tag."""
-        return f"<{self._get_name_with_classes()} {self.annotation}>"
+        return f"<{self._get_name_with_classes()} {_escape(self.annotation, '>')}>"
 
 
 class WebVTTCueLanguageSpanStartTag(WebVTTCueSpanStartTagAnnotated):
@@ -417,7 +449,7 @@ class WebVTTCueBlock(BaseModel):
         r"<(?P<end>/?)"
         r"(?P<tag>i|b|c|u|v|lang)"
         r"(?P<class>(?:\.[^\t\n\r &<>.]+)*)"
-        r"(?:[ \t](?P<annotation>[^\n\r&>]*))?>"
+        r"(?:[ \t](?P<annotation>[^\n\r>]*))?>"
     )
 
     # pattern of a WebVTT cue timestamp tag (e.g. <00:00:01.500> or <00:01.500>)
