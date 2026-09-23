@@ -1,0 +1,130 @@
+<doclang>
+  <text>
+    <location value="85"/>
+    <location value="26"/>
+    <location value="427"/>
+    <location value="38"/>
+    Some introductory text.
+  </text>
+  <group>
+    <picture>
+      <location value="85"/>
+      <location value="96"/>
+      <location value="427"/>
+      <location value="224"/>
+      <caption>
+        <location value="85"/>
+        <location value="230"/>
+        <location value="427"/>
+        <location value="238"/>
+        <location value="85"/>
+        <location value="250"/>
+        <location value="427"/>
+        <location value="257"/>
+        <location value="85"/>
+        <location value="70"/>
+        <location value="427"/>
+        <location value="78"/>
+        <location value="17"/>
+        <location value="179"/>
+        <location value="81"/>
+        <location value="192"/>
+        Figure 1, caption 1 (main). Figure 1, caption 2 (below). Figure 1, caption 3 (above). Figure 1, caption 4 (left).
+      </caption>
+    </picture>
+    <footnote>
+      <location value="85"/>
+      <location value="241"/>
+      <location value="427"/>
+      <location value="248"/>
+      Figure 1, footnote 1 (below).
+    </footnote>
+    <footnote>
+      <location value="85"/>
+      <location value="259"/>
+      <location value="427"/>
+      <location value="266"/>
+      Figure 1, footnote 2 (below).
+    </footnote>
+    <footnote>
+      <location value="85"/>
+      <location value="79"/>
+      <location value="427"/>
+      <location value="87"/>
+      Figure 1, footnote 3 (above).
+    </footnote>
+    <footnote>
+      <location value="431"/>
+      <location value="102"/>
+      <location value="503"/>
+      <location value="115"/>
+      Figure 1, footnote 4 (right).
+    </footnote>
+  </group>
+  <group>
+    <table>
+      <location value="85"/>
+      <location value="307"/>
+      <location value="427"/>
+      <location value="371"/>
+      <caption>
+        <location value="85"/>
+        <location value="288"/>
+        <location value="427"/>
+        <location value="296"/>
+        <location value="85"/>
+        <location value="374"/>
+        <location value="427"/>
+        <location value="382"/>
+        Table 1, caption 1 (main). Table 1, caption 2 (below).
+      </caption>
+      <ched/>
+      Name
+      <ched/>
+      Value
+      <nl/>
+      <fcel/>
+      alpha
+      <fcel/>
+      1
+      <nl/>
+      <fcel/>
+      beta
+      <fcel/>
+      2
+      <nl/>
+    </table>
+    <footnote>
+      <location value="85"/>
+      <location value="384"/>
+      <location value="427"/>
+      <location value="392"/>
+      Table 1, footnote 1 (below).
+    </footnote>
+    <footnote>
+      <location value="85"/>
+      <location value="393"/>
+      <location value="427"/>
+      <location value="401"/>
+      Table 1, footnote 2 (below).
+    </footnote>
+  </group>
+  <group>
+    <picture>
+      <location value="85"/>
+      <location value="416"/>
+      <location value="427"/>
+      <location value="480"/>
+      <caption>Figure 2, caption 1. Figure 2, caption 2.</caption>
+    </picture>
+    <footnote>Figure 2, footnote 1.</footnote>
+    <footnote>Figure 2, footnote 2.</footnote>
+  </group>
+  <page_break/>
+  <code>
+    <location value="85"/>
+    <location value="128"/>
+    <location value="427"/>
+    <location value="192"/>
+<![CDATA[print('hello')]]><![CDATA[<caption><location value="85"/><location value="109"/><location value="427"/><location value="116"/><location value="85"/><location value="198"/><location value="427"/><location value="206"/>Listing 1, caption 1 (main). Listing 1, caption 2 (below).</caption>]]><![CDATA[<footnote><location value="85"/><location value="209"/><location value="427"/><location value="216"/>Listing 1, footnote 1 (below).</footnote><footnote><location value="85"/><location value="96"/><location value="427"/><location value="104"/>Listing 1, footnote 2 (above).</footnote>]]>  </code>
+</doclang>

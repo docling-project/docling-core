@@ -893,6 +893,33 @@ def test_chart():
     verify_doclang(exp_file=exp_file, actual=ser_txt)
 
 
+@pytest.mark.parametrize(
+    "src",
+    [
+        # captions and footnotes as children of their picture/table (as produced by conversion)
+        Path("./tests/data/doc/multi_captions_footnotes.json"),
+        # captions and footnotes at body level
+        Path("./tests/data/doc/multi_captions_footnotes_top_level.json"),
+    ],
+    ids=lambda p: p.stem,
+)
+def test_multiple_captions_and_footnotes(src: Path):
+    doc = DoclingDocument.load_from_json(src)
+    params = DocLangParams(include_version=False)
+
+    ser_txt = DocLangDocSerializer(doc=doc, params=params).serialize().text
+    # TODO: switch to verify_doclang once multiple captions no longer get merged
+    # into a single <caption> (currently fails DocLang schema validation)
+    verify(exp_file=src.with_suffix(".gt.dclg.xml"), actual=ser_txt)
+
+    # TODO: re-enable deserialization/reserialization once the above is fixed
+    # doc2 = DocLangDocDeserializer().deserialize_str(ser_txt)
+    # _verify_doc(doc=doc2, exp_json=src.with_suffix(".deserialized.gt.json"))
+    #
+    # reser_txt = DocLangDocSerializer(doc=doc2, params=params).serialize().text
+    # verify_doclang(exp_file=src.with_suffix(".reserialized.gt.dclg.xml"), actual=reser_txt)
+
+
 def _verify_doc(doc: DoclingDocument, exp_json: Path):
     if GEN_TEST_DATA:
         doc.save_as_json(filename=exp_json)
