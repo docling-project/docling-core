@@ -966,24 +966,46 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
             or (isinstance(item, FormulaItem) and ContentType.TEXT_FORMULA in params.content_types)
             or (not isinstance(item, CodeItem | FormulaItem) and ContentType.TEXT_OTHER in params.content_types)
         ):
-            if item.children and not item.text:
-                # Check if first child is InlineGroup - if so, only serialize that as text content
-                first_child_ref = item.children[0]
-                first_child_item = first_child_ref.resolve(doc)
-
-                if isinstance(first_child_item, InlineGroup):
-                    # Only serialize the first child (InlineGroup) as the text content
-                    # Other children are hierarchical subordinates and will be serialized separately
-                    text_part = doc_serializer.serialize(item=first_child_item, visited=my_visited, **kwargs).text
+            first_child_item = item.children[0].resolve(doc) if item.children else None
+            if isinstance(first_child_item, InlineGroup):
+                # Only serialize the first child (InlineGroup) as the text content
+                # Other children are hierarchical subordinates and will be serialized separately.
+                # The item's own text, when present, precedes the runs within the same element:
+                # emitting the runs as siblings instead yields invalid DocLang and loses content.
+                inline_part = doc_serializer.serialize(item=first_child_item, visited=my_visited, **kwargs).text
+                if item.text:
+                    own_part = _escape_text(item.text, params)
+                    own_part = doc_serializer.post_process(
+                        text=own_part,
+                        formatting=item.formatting,
+                        hyperlink=None,
+                    )
+                    if item.label == DocItemLabel.HANDWRITTEN_TEXT:
+                        own_part = _wrap(text=own_part, wrap_tag=DocLangToken.HANDWRITING.value)
+                    elif item.label in [
+                        DocItemLabel.CHECKBOX_SELECTED,
+                        DocItemLabel.CHECKBOX_UNSELECTED,
+                    ]:
+                        # Add checkbox token before the text
+                        checkbox_token = DocLangVocabulary._create_checkbox_token(
+                            selected=(item.label == DocItemLabel.CHECKBOX_SELECTED)
+                        )
+                        own_part = checkbox_token + own_part
+                    # Join with a plain space rather than the pretty-printing delimiter:
+                    # own_part and inline_part are two runs of the same inline flow, so
+                    # they need a real word boundary even in minimized (non-pretty) output.
+                    text_part = " ".join([p for p in (own_part, inline_part) if p])
                 else:
-                    # Serialize all children as text content
-                    sub_parts: list[str] = []
-                    for child_ref in item.children:
-                        child_item = child_ref.resolve(doc)
-                        if isinstance(item, ListItem) and _list_item_segment_sibling(child_item):
-                            continue
-                        sub_parts.append(doc_serializer.serialize(item=child_item, visited=my_visited, **kwargs).text)
-                    text_part = _get_delim(params=params).join(sub_parts)
+                    text_part = inline_part
+            elif item.children and not item.text:
+                # Serialize all children as text content
+                sub_parts: list[str] = []
+                for child_ref in item.children:
+                    child_item = child_ref.resolve(doc)
+                    if isinstance(item, ListItem) and _list_item_segment_sibling(child_item):
+                        continue
+                    sub_parts.append(doc_serializer.serialize(item=child_item, visited=my_visited, **kwargs).text)
+                text_part = _get_delim(params=params).join(sub_parts)
             else:
                 text_part = _escape_text(item.text, params)
                 text_part = doc_serializer.post_process(
