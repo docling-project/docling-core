@@ -353,11 +353,14 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             # holding a picture or a table is not a float.
             if group_name := el.getAttribute(DocLangAttributeKey.NAME.value):
                 self._parse_named_group(doc=doc, el=el, parent=parent, name=group_name)
-            # Float + footnote siblings: parse as one unit (not a Docling GroupItem).
-            elif self._first_child(el, DocLangToken.TABLE.value) or self._first_child(el, DocLangToken.INDEX.value):
-                self._parse_table(doc=doc, el=el, parent=parent)
-            elif self._first_child(el, DocLangToken.PICTURE.value):
-                self._parse_picture(doc=doc, el=el, parent=parent)
+            # Float + satellites (extra captions, footnotes): parse as one unit (not a Docling GroupItem).
+            elif (host_el := self._float_group_host(el)) is not None:
+                if host_el.tagName == DocLangToken.PICTURE.value:
+                    self._parse_picture(doc=doc, el=el, parent=parent)
+                elif host_el.tagName == DocLangToken.CODE.value:
+                    self._parse_code_group(doc=doc, el=el, code_el=host_el, parent=parent)
+                else:
+                    self._parse_table(doc=doc, el=el, parent=parent)
             else:
                 self._walk_children(doc=doc, el=el, parent=parent)
         elif name in {DocLangToken.TABLE.value, DocLangToken.INDEX.value}:
@@ -482,6 +485,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 content_layer=content_layer,
             )
             self._apply_initial_text_provenance(item, text=code_text, prov_list=prov_list)
+            if (caption := self._extract_caption(doc=doc, el=el)) is not None:
+                item.captions.append(caption.get_ref())
             if thread_id:
                 self._register_thread(thread_id=thread_id, host=nm, item=item)
             self._apply_custom_meta_from_element(item=item, el=el)
@@ -606,6 +611,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     DocLangToken.LOCATION.value,
                     DocLangToken.LAYER.value,
                     DocLangToken.LABEL.value,
+                    DocLangToken.CAPTION.value,
                 }:
                     continue
                 elif nm_child == DocLangToken.BR.value:
@@ -1463,23 +1469,23 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         return DocItemLabel.TABLE
 
     def _parse_table(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
-        """Parse ``<table>``, ``<index>``, or a ``<group>`` wrapping them (with footnotes)."""
+        """Parse ``<table>``, ``<index>``, or a ``<group>`` wrapping them (with satellites)."""
         otsl_el: Element | None
+        extra_captions: list[TextItem] = []
         footnotes: list[TextItem] = []
         if el.tagName in {DocLangToken.TABLE.value, DocLangToken.INDEX.value}:
             caption = self._extract_caption(doc=doc, el=el)
             otsl_el = el
             table_label = self._table_label_from_otsl_element(el)
         else:
-            footnotes = self._extract_footnotes(doc=doc, el=el)
+            extra_captions, footnotes = self._extract_satellites(doc=doc, el=el)
             otsl_el = self._first_child(el, DocLangToken.TABLE.value) or self._first_child(el, DocLangToken.INDEX.value)
             caption = self._extract_caption(doc=doc, el=el)
             if caption is None and otsl_el is not None:
                 caption = self._extract_caption(doc=doc, el=otsl_el)
             if otsl_el is None:
                 tbl = doc.add_table(data=TableData(), caption=caption, parent=parent)
-                for ftn in footnotes:
-                    tbl.footnotes.append(ftn.get_ref())
+                self._attach_satellites(item=tbl, captions=extra_captions, footnotes=footnotes)
                 return
             table_label = self._table_label_from_otsl_element(otsl_el)
 
@@ -1543,18 +1549,18 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             tbl.prov.append(p)
         if thread_id:
             self._register_thread(thread_id=thread_id, host=table_host, item=tbl)
-        for ftn in footnotes:
-            tbl.footnotes.append(ftn.get_ref())
+        self._attach_satellites(item=tbl, captions=extra_captions, footnotes=footnotes)
 
     def _parse_picture(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
-        """Parse ``<picture>`` or a ``<group>`` wrapping it (with footnotes)."""
+        """Parse ``<picture>`` or a ``<group>`` wrapping it (with satellites)."""
         picture_el: Element | None
+        extra_captions: list[TextItem] = []
         footnotes: list[TextItem] = []
         if el.tagName == DocLangToken.PICTURE.value:
             caption = self._extract_caption(doc=doc, el=el)
             picture_el = el
         else:
-            footnotes = self._extract_footnotes(doc=doc, el=el)
+            extra_captions, footnotes = self._extract_satellites(doc=doc, el=el)
             picture_el = self._first_child(el, DocLangToken.PICTURE.value)
             caption = self._extract_caption(doc=doc, el=el)
             if caption is None and picture_el is not None:
@@ -1576,8 +1582,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             self._source_recorder.bind_item(picture_el, pic)
         for p in prov_list[1:]:
             pic.prov.append(p)
-        for ftn in footnotes:
-            pic.footnotes.append(ftn.get_ref())
+        self._attach_satellites(item=pic, captions=extra_captions, footnotes=footnotes)
 
         if picture_el is not None:
             if label_val := self._extract_label_value(el=picture_el):
@@ -1763,23 +1768,72 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         self._source_recorder.bind_item(cap_el, item)
         return item
 
-    def _extract_footnotes(self, *, doc: DoclingDocument, el: Element) -> list[TextItem]:
+    def _float_group_host(self, el: Element) -> Element | None:
+        """Return the host of a float group, or ``None`` if ``el`` is not one.
+
+        DocLang has no dedicated construct for a float's extra captions and footnotes
+        yet, so by convention they are emitted as ``<text>`` and ``<footnote>`` siblings
+        of the host inside an unnamed ``<group>``. Such a group wraps exactly one
+        ``<picture>``, ``<table>``, ``<index>`` or ``<code>`` and nothing but satellites
+        besides it.
+        """
+        host_tags = {
+            DocLangToken.PICTURE.value,
+            DocLangToken.TABLE.value,
+            DocLangToken.INDEX.value,
+            DocLangToken.CODE.value,
+        }
+        satellite_tags = {DocLangToken.TEXT.value, DocLangToken.FOOTNOTE.value, DocLangToken.CAPTION.value}
+        hosts: list[Element] = []
+        for node in el.childNodes:
+            if not isinstance(node, Element):
+                continue
+            if node.tagName in host_tags:
+                hosts.append(node)
+            elif node.tagName not in satellite_tags:
+                return None
+        return hosts[0] if len(hosts) == 1 else None
+
+    def _extract_satellites(self, *, doc: DoclingDocument, el: Element) -> tuple[list[TextItem], list[TextItem]]:
+        """Extract the satellites of a float group: ``<text>`` as captions, ``<footnote>`` as footnotes."""
+        labels = {
+            DocLangToken.TEXT.value: DocItemLabel.CAPTION,
+            DocLangToken.FOOTNOTE.value: DocItemLabel.FOOTNOTE,
+        }
+        captions: list[TextItem] = []
         footnotes: list[TextItem] = []
         for node in el.childNodes:
-            if isinstance(node, Element) and node.tagName == DocLangToken.FOOTNOTE.value:
+            if isinstance(node, Element) and (label := labels.get(node.tagName)) is not None:
                 text = self._get_text(node).strip()
                 if text:
                     prov_list = self._extract_provenance(doc=doc, el=node)
                     item = doc.add_text(
-                        label=DocItemLabel.FOOTNOTE,
+                        label=label,
                         text=text,
                         prov=(prov_list[0] if prov_list else None),
                     )
                     for p in prov_list[1:]:
                         item.prov.append(p)
                     self._source_recorder.bind_item(node, item)
-                    footnotes.append(item)
-        return footnotes
+                    (captions if label == DocItemLabel.CAPTION else footnotes).append(item)
+        return captions, footnotes
+
+    def _parse_code_group(
+        self, *, doc: DoclingDocument, el: Element, code_el: Element, parent: NodeItem | None
+    ) -> None:
+        """Parse a ``<group>`` wrapping a ``<code>`` with its satellites."""
+        extra_captions, footnotes = self._extract_satellites(doc=doc, el=el)
+        num_texts = len(doc.texts)
+        self._parse_text_like(doc=doc, el=code_el, parent=parent)
+        if (code := next((t for t in doc.texts[num_texts:] if isinstance(t, CodeItem)), None)) is not None:
+            self._attach_satellites(item=code, captions=extra_captions, footnotes=footnotes)
+
+    @staticmethod
+    def _attach_satellites(*, item: FloatingItem, captions: list[TextItem], footnotes: list[TextItem]) -> None:
+        for cap in captions:
+            item.captions.append(cap.get_ref())
+        for ftn in footnotes:
+            item.footnotes.append(ftn.get_ref())
 
     def _first_child(self, el: Element, tag_name: str) -> Element | None:
         for node in el.childNodes:
