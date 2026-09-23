@@ -979,7 +979,21 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                         formatting=item.formatting,
                         hyperlink=None,
                     )
-                    text_part = _get_delim(params=params).join([p for p in (own_part, inline_part) if p])
+                    if item.label == DocItemLabel.HANDWRITTEN_TEXT:
+                        own_part = _wrap(text=own_part, wrap_tag=DocLangToken.HANDWRITING.value)
+                    elif item.label in [
+                        DocItemLabel.CHECKBOX_SELECTED,
+                        DocItemLabel.CHECKBOX_UNSELECTED,
+                    ]:
+                        # Add checkbox token before the text
+                        checkbox_token = DocLangVocabulary._create_checkbox_token(
+                            selected=(item.label == DocItemLabel.CHECKBOX_SELECTED)
+                        )
+                        own_part = checkbox_token + own_part
+                    # Join with a plain space rather than the pretty-printing delimiter:
+                    # own_part and inline_part are two runs of the same inline flow, so
+                    # they need a real word boundary even in minimized (non-pretty) output.
+                    text_part = " ".join([p for p in (own_part, inline_part) if p])
                 else:
                     text_part = inline_part
             elif item.children and not item.text:

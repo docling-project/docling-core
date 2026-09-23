@@ -2602,3 +2602,52 @@ def test_inline_group_nested_when_parent_text_item_has_text():
         "italic",
     ]
     assert " plain " in txt
+
+
+def test_inline_group_nested_preserves_checkbox_and_handwriting():
+    """The checkbox token and handwriting wrap survive when text has an InlineGroup child.
+
+    Regression test: a ``CHECKBOX_SELECTED``/``HANDWRITTEN_TEXT`` item that has
+    both its own text and an ``InlineGroup`` child used to silently drop the
+    checkbox state token / ``<handwriting>`` wrap, since that label-specific
+    handling only lived in the branch that runs when there is no InlineGroup
+    child.
+    """
+    doc = DoclingDocument(name="t")
+    checkbox = doc.add_text(label=DocItemLabel.CHECKBOX_SELECTED, text="Yes")
+    inline = doc.add_inline_group(parent=checkbox)
+    doc.add_text(label=DocItemLabel.TEXT, text="confirmed", parent=inline, formatting=Formatting(bold=True))
+
+    txt = serialize_doclang(doc)
+    assert "<checkbox" in txt
+    assert "confirmed" in txt
+
+    doc2 = DoclingDocument(name="t")
+    handwritten = doc2.add_text(label=DocItemLabel.HANDWRITTEN_TEXT, text="Signed by")
+    inline2 = doc2.add_inline_group(parent=handwritten)
+    doc2.add_text(label=DocItemLabel.TEXT, text="John", parent=inline2, formatting=Formatting(bold=True))
+
+    txt2 = serialize_doclang(doc2)
+    assert "<handwriting>" in txt2
+    assert "John" in txt2
+
+
+def test_inline_group_nested_word_boundary_when_minimized():
+    """A word boundary is kept between own text and inline runs in minimized mode.
+
+    Regression test: joining the item's own text with the InlineGroup's runs
+    used to reuse the pretty-printing record delimiter, which is the empty
+    string when ``pretty_indentation=None`` (minimized serialization), running
+    the two words together with no separator.
+    """
+    doc = DoclingDocument(name="t")
+    heading = doc.add_heading(text="Heading text", level=2)
+    inline = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", parent=inline, formatting=Formatting(bold=True))
+
+    txt = serialize_doclang(doc, params=DocLangParams(include_version=False, pretty_indentation=None))
+    assert "Heading textbold" not in txt
+
+    root = ET.fromstring(txt)
+    heading_el = root[0]
+    assert "".join(heading_el.itertext()).split() == ["Heading", "text", "bold"]
