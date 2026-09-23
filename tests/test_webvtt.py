@@ -22,6 +22,7 @@ from docling_core.types.doc.webvtt import (
     WebVTTCueVoiceSpan,
     WebVTTFile,
     WebVTTTimestamp,
+    unescape_entities,
 )
 
 from .test_data_gen_flag import GEN_TEST_DATA
@@ -328,3 +329,45 @@ def test_webvtt_cue_language_span_start_tag():
         WebVTTCueLanguageSpanStartTag.model_validate_json('{"annotation": "en_US"}')
     with pytest.raises(ValidationError, match="BCP 47"):
         WebVTTCueLanguageSpanStartTag.model_validate_json('{"annotation": "123-de"}')
+
+
+def test_webvtt_unescape_entities() -> None:
+    """The WebVTT character escapes resolve to the characters they denote."""
+    assert unescape_entities("a &amp; b") == "a & b"
+    assert unescape_entities("&lt;tag&gt;") == "<tag>"
+    assert unescape_entities("x&nbsp;y") == "x\u00a0y"
+    assert unescape_entities("&lrm;&rlm;") == "\u200e\u200f"
+    assert unescape_entities("nothing to do") == "nothing to do"
+    # An entity outside the WebVTT set is not one of ours; leave it alone.
+    assert unescape_entities("&unknown;") == "&unknown;"
+
+
+def test_webvtt_cue_text_span_unescaped_text() -> None:
+    """`text` keeps the escaped form, `unescaped_text` resolves it."""
+    span = WebVTTCueTextSpan(text="A &amp; B &lt;tag&gt;")
+
+    assert span.text == "A &amp; B &lt;tag&gt;"
+    assert span.unescaped_text == "A & B <tag>"
+    # Serialization must still reproduce the file as written.
+    assert str(span) == "A &amp; B &lt;tag&gt;"
+
+
+def test_webvtt_annotation_unescaped() -> None:
+    """The same holds for a start tag annotation, such as a speaker name."""
+    tag = WebVTTCueSpanStartTagAnnotated(name="v", annotation="Alice &amp; Bob")
+
+    assert tag.annotation == "Alice &amp; Bob"
+    assert tag.unescaped_annotation == "Alice & Bob"
+
+
+def test_webvtt_file_cue_text_is_unescaped() -> None:
+    """Through a parsed file: an ampersand and angle brackets survive as themselves."""
+    raw = "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\n<v Alice>A &amp; B &lt;tag&gt;</v>"
+    vtt = WebVTTFile.parse(raw)
+
+    voice = vtt.cue_blocks[0].payload[0].component
+    inner = voice.internal_text.components[0].component
+    assert inner.text == "A &amp; B &lt;tag&gt;"
+    assert inner.unescaped_text == "A & B <tag>"
+    # The file still serializes back to exactly what was parsed.
+    assert str(vtt) == raw

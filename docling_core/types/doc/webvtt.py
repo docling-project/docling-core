@@ -13,6 +13,34 @@ from typing_extensions import Self, override
 
 _VALID_ENTITIES: set = {"amp", "lt", "gt", "lrm", "rlm", "nbsp"}
 _ENTITY_PATTERN: re.Pattern = re.compile(r"&([a-zA-Z0-9]+);")
+_ENTITY_REPLACEMENTS: dict[str, str] = {
+    "amp": "&",
+    "lt": "<",
+    "gt": ">",
+    "lrm": "\u200e",
+    "rlm": "\u200f",
+    "nbsp": "\u00a0",
+}
+
+
+def unescape_entities(value: str) -> str:
+    """Replace the WebVTT character escapes in a string by the characters they denote.
+
+    A cue text span and a start tag annotation store the escaped form, since that
+    is what a WebVTT file holds and what serialization has to reproduce. A reader
+    that wants the text itself needs the escapes resolved: `&` and `<` cannot be
+    written literally in cue text, so `&amp;` and `&lt;` are the only way to
+    express them.
+
+    Args:
+        value: The escaped string, as stored on the model.
+
+    Returns:
+        The string with every WebVTT escape replaced by its character.
+    """
+    return _ENTITY_PATTERN.sub(lambda match: _ENTITY_REPLACEMENTS.get(match.group(1), match.group(0)), value)
+
+
 _TIMESTAMP_PATTERN_STR: str = r"(?:(\d{2,}):)?([0-5]\d):([0-5]\d)\.(\d{3})"
 START_TAG_NAMES = Literal["c", "b", "i", "u", "v", "lang"]
 
@@ -195,6 +223,15 @@ class WebVTTCueTextSpan(BaseModel):
 
         return value
 
+    @property
+    def unescaped_text(self) -> str:
+        """The cue text with its WebVTT character escapes resolved.
+
+        `text` keeps the escaped form so the span serializes back to the same
+        WebVTT; this is the text itself.
+        """
+        return unescape_entities(self.text)
+
     @override
     def __str__(self) -> str:
         """Return a string representation of the cue text span."""
@@ -280,6 +317,15 @@ class WebVTTCueSpanStartTagAnnotated(WebVTTCueSpanStartTag):
             raise ValueError("Annotation cannot be empty")
 
         return value
+
+    @property
+    def unescaped_annotation(self) -> str:
+        """The annotation with its WebVTT character escapes resolved.
+
+        `annotation` keeps the escaped form for serialization; this is the value
+        itself, such as a speaker name containing an ampersand.
+        """
+        return unescape_entities(self.annotation)
 
     @override
     def __str__(self) -> str:
