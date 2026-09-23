@@ -298,6 +298,32 @@ def _create_layer_token(
     return ""
 
 
+_LEADING_LAYER_TOKEN_RE = re.compile(r"\A<layer\s+value=\"[^\"]*\"\s*/>")
+
+
+def _drop_duplicate_leading_layer_tokens(parts: list[str]) -> list[str]:
+    """Keep only the first leading `<layer/>` token across merged inline parts.
+
+    Inline/group children are serialized independently and every child whose
+    ``content_layer`` is not ``BODY`` emits its own element-head property tokens.
+    When those children are merged into a single wrapper, the merged text carries
+    one `<layer/>` per child, while the DocLang ``element_head`` sequence allows
+    exactly one, so the exported document fails XSD validation. Only leading
+    tokens are touched, so text that merely contains a ``<layer/>``-looking
+    literal is left alone.
+    """
+    seen = False
+    deduped: list[str] = []
+    for part in parts:
+        if _LEADING_LAYER_TOKEN_RE.match(part):
+            if seen:
+                deduped.append(_LEADING_LAYER_TOKEN_RE.sub("", part, count=1))
+                continue
+            seen = True
+        deduped.append(part)
+    return deduped
+
+
 def _create_label_token(*, value: str) -> str:
     """Emit `<label value="..."/>` for element head (e.g. code language)."""
     safe = value.replace("&", "&amp;").replace('"', "&quot;")
@@ -1657,6 +1683,13 @@ class DocLangInlineSerializer(BaseInlineSerializer):
         if should_wrap:
             # if "unwrapped", wrap in <text>...</text>
             if text_res or not params.suppress_empty_elements:
+                # Children were serialized one by one, so several of them may have
+                # emitted their own <layer/> element-head token. The merged wrapper
+                # accepts exactly one, so keep the first and drop the rest.
+                merged = _drop_duplicate_leading_layer_tokens([p.text for p in parts if p.text])
+                text_res = delim.join(merged)
+                if text_res:
+                    text_res = f"{text_res}{delim}"
                 text_res = _wrap(text=text_res, wrap_tag=DocLangToken.TEXT.value)
         return create_ser_result(text=text_res, span_source=parts)
 
