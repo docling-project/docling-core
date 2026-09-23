@@ -2569,3 +2569,28 @@ def test_roundtrip_furniture_inline_group():
     items = [it for it, _ in doc2.iterate_items(with_groups=True, included_content_layers=set(ContentLayer))][1:]
     assert [it.label for it in items] == [GroupLabel.INLINE, DocItemLabel.TEXT, DocItemLabel.TEXT]
     assert {it.content_layer for it in items} == {ContentLayer.FURNITURE}
+
+
+@pytest.mark.parametrize(
+    ("body", "expected"),
+    [
+        ("Wiley & Sons", ["Wiley & Sons"]),
+        ("$q < 0$ and p <0.05 and $a<\\ln b$", ["$q < 0$ and p <0.05 and $a<\\ln b$"]),
+        ("x]]> y", ["x]]> y"]),
+        ("a\x18b", ["ab"]),
+        ("<![CDATA[a & b < c]]> & d", ["a & b < c", "& d"]),
+    ],
+)
+def test_non_strict_repairs_unescaped_text(body: str, expected: list[str]):
+    xml = f"<doclang><text>{body}</text></doclang>"
+    with pytest.raises(ValueError, match="Invalid DocLang XML"):
+        DocLangDocDeserializer().deserialize_str(xml)
+    doc = DocLangDocDeserializer().deserialize_str(xml, strict=False)
+    assert [t.text for t in doc.texts] == expected
+
+
+def test_non_strict_keeps_well_formed_markup_and_entities():
+    xml = '<doclang><text>a &amp; &#60; &#x3E;<![CDATA[ & < ]]></text><heading level="1">H</heading></doclang>'
+    strict = DocLangDocDeserializer().deserialize_str(xml)
+    lenient = DocLangDocDeserializer().deserialize_str(xml, strict=False)
+    assert lenient.export_to_dict() == strict.export_to_dict()
