@@ -9,6 +9,7 @@ from typing import Optional
 import pytest
 from pydantic import AnyUrl
 
+from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 from docling_core.transforms.serializer._doclang_utils import (
     _create_location_tokens_for_bbox,
     _quantize_to_resolution,
@@ -891,6 +892,31 @@ def test_chart():
     ser_txt = ser_res.text
     exp_file = Path("./tests/data/doc/barchart.out.dclg.xml")
     verify_doclang(exp_file=exp_file, actual=ser_txt)
+
+
+@pytest.mark.parametrize(
+    "src",
+    [
+        # captions and footnotes as children of their picture/table (as produced by conversion)
+        Path("./tests/data/doc/multi_captions_footnotes.json"),
+        # captions and footnotes at body level
+        Path("./tests/data/doc/multi_captions_footnotes_top_level.json"),
+    ],
+    ids=lambda p: p.stem,
+)
+def test_multiple_captions_and_footnotes(src: Path):
+    doc = DoclingDocument.load_from_json(src)
+    params = DocLangParams(include_version=False)
+
+    ser_txt = DocLangDocSerializer(doc=doc, params=params).serialize().text
+    verify_doclang(exp_file=src.with_suffix(".gt.dclg.xml"), actual=ser_txt)
+
+    doc2 = DocLangDocDeserializer().deserialize_str(ser_txt)
+    _verify_doc(doc=doc2, exp_json=src.with_suffix(".deserialized.gt.json"))
+
+    reser_txt = DocLangDocSerializer(doc=doc2, params=params).serialize().text
+    verify_doclang(exp_file=src.with_suffix(".reserialized.gt.dclg.xml"), actual=reser_txt)
+    assert reser_txt == ser_txt
 
 
 def _verify_doc(doc: DoclingDocument, exp_json: Path):

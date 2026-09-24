@@ -89,6 +89,7 @@ from docling_core.types.doc import (
     PictureItem,
     PictureMeta,
     ProvenanceItem,
+    RefItem,
     Script,
     SectionHeaderItem,
     Size,
@@ -397,11 +398,156 @@ def _serialize_floating_caption_head(
     params: DocLangParams,
     **kwargs: Any,
 ) -> str:
-    """Serialize referenced caption(s) for inclusion in the host element head."""
-    if not params.add_referenced_caption or not item.captions:
+    """Serialize the first referenced caption for inclusion in the host element head.
+
+    The element head holds at most one ``<caption>``; any further captions are emitted
+    next to the host by ``_serialize_floating_satellites``.
+    """
+    if not params.add_referenced_caption:
         return ""
-    cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
+    captions = _resolve_satellites(refs=item.captions, doc_serializer=doc_serializer, doc=doc, **kwargs)
+    if not captions:
+        return ""
+    head_item = item.model_copy(update={"captions": [captions[0].get_ref()]})
+    cap_res = doc_serializer.serialize_captions(item=head_item, **kwargs)
     return cap_res.text or ""
+
+
+def _resolve_satellites(
+    *,
+    refs: list[RefItem],
+    doc_serializer: BaseDocSerializer,
+    doc: DoclingDocument,
+    **kwargs: Any,
+) -> list[TextItem]:
+    """Resolve caption or footnote references, skipping excluded ones."""
+    excluded = doc_serializer.get_excluded_refs(**kwargs)
+    return [sat for ref in refs if ref.cref not in excluded and isinstance(sat := ref.resolve(doc), TextItem)]
+
+
+def _serialize_satellite(
+    *,
+    item: TextItem,
+    tag: DocLangToken,
+    content_type: ContentType,
+    doc: DoclingDocument,
+    params: DocLangParams,
+) -> str:
+    """Serialize a caption or footnote of a floating item as a standalone element."""
+    head = _element_head_prefix(item=item, doc=doc, params=params)
+    content = _escape_text(item.text, params) if item.text and content_type in params.content_types else ""
+    text = f"{head}{content}"
+    return _wrap(text=text, wrap_tag=tag.value) if text else ""
+
+
+def _top_left_bbox(prov: ProvenanceItem, doc: DoclingDocument) -> BoundingBox | None:
+    """Return the provenance bbox in top-left origin, or ``None`` if the page height is unknown."""
+    if prov.bbox.coord_origin == CoordOrigin.TOPLEFT:
+        return prov.bbox
+    page = doc.pages.get(prov.page_no)
+    if page is None:
+        return None
+    return prov.bbox.to_top_left_origin(page_height=page.size.height)
+
+
+def _satellite_placement(
+    *,
+    sat: DocItem,
+    host: FloatingItem,
+    doc: DoclingDocument,
+) -> tuple[bool, tuple[int, float, float]] | None:
+    """Place a satellite (extra caption or footnote) relative to its host by layout.
+
+    The satellite goes after the host if it sits on a later page, entirely below the
+    host, or (when overlapping it vertically) entirely to its right; if it overlaps
+    the host in both directions, if its bbox center is lower. Returns this decision
+    together with the satellite's reading-order sort key, or ``None`` if the position
+    cannot be determined.
+    """
+    if not sat.prov or not host.prov:
+        return None
+    sat_prov = sat.prov[0]
+    if (sat_bbox := _top_left_bbox(sat_prov, doc)) is None:
+        return None
+    key = (sat_prov.page_no, sat_bbox.t, sat_bbox.l)
+    host_pages = [p.page_no for p in host.prov]
+    if sat_prov.page_no < min(host_pages):
+        return False, key
+    if sat_prov.page_no > max(host_pages):
+        return True, key
+    host_prov = next((p for p in host.prov if p.page_no == sat_prov.page_no), None)
+    if host_prov is None or (host_bbox := _top_left_bbox(host_prov, doc)) is None:
+        return None
+    # clearly above or below the host
+    if sat_bbox.b <= host_bbox.t:
+        return False, key
+    if sat_bbox.t >= host_bbox.b:
+        return True, key
+    # beside the host
+    if sat_bbox.r <= host_bbox.l:
+        return False, key
+    if sat_bbox.l >= host_bbox.r:
+        return True, key
+    # overlapping the host
+    sat_y = (sat_bbox.t + sat_bbox.b) / 2
+    host_y = (host_bbox.t + host_bbox.b) / 2
+    return sat_y > host_y, key
+
+
+def _serialize_floating_satellites(
+    *,
+    item: FloatingItem,
+    doc_serializer: BaseDocSerializer,
+    doc: DoclingDocument,
+    params: DocLangParams,
+    **kwargs: Any,
+) -> tuple[list[SerializationResult], list[SerializationResult]]:
+    """Serialize the extra captions and the footnotes of a floating item.
+
+    Captions beyond the first one (which goes in the host element head) become
+    ``<text>`` elements, footnotes become ``<footnote>`` elements. Each is placed
+    before or after the host by layout (see ``_satellite_placement``), and sorted in
+    reading order (page, top, left) on either side. Satellites without a determinable
+    position fall back to extra captions before and footnotes after the host.
+
+    Returns the ``(before, after)`` serialization results.
+    """
+    sats: list[tuple[TextItem, str, bool]] = []
+    if params.add_referenced_caption:
+        captions = _resolve_satellites(refs=item.captions, doc_serializer=doc_serializer, doc=doc, **kwargs)
+        for cap in captions[1:]:
+            text = _serialize_satellite(
+                item=cap, tag=DocLangToken.TEXT, content_type=ContentType.REF_CAPTION, doc=doc, params=params
+            )
+            sats.append((cap, text, False))
+    if params.add_referenced_footnote:
+        footnotes = _resolve_satellites(refs=item.footnotes, doc_serializer=doc_serializer, doc=doc, **kwargs)
+        for ftn in footnotes:
+            text = _serialize_satellite(
+                item=ftn, tag=DocLangToken.FOOTNOTE, content_type=ContentType.REF_FOOTNOTE, doc=doc, params=params
+            )
+            sats.append((ftn, text, True))
+
+    before_unplaced: list[SerializationResult] = []
+    after_unplaced: list[SerializationResult] = []
+    before: list[tuple[tuple[int, float, float], SerializationResult]] = []
+    after: list[tuple[tuple[int, float, float], SerializationResult]] = []
+    for sat, text, default_after in sats:
+        if not text:
+            continue
+        res = create_ser_result(text=text, span_source=sat)
+        if (placement := _satellite_placement(sat=sat, host=item, doc=doc)) is None:
+            (after_unplaced if default_after else before_unplaced).append(res)
+        else:
+            goes_after, key = placement
+            (after if goes_after else before).append((key, res))
+
+    before.sort(key=lambda x: x[0])
+    after.sort(key=lambda x: x[0])
+    return (
+        before_unplaced + [res for _, res in before],
+        [res for _, res in after] + after_unplaced,
+    )
 
 
 def _element_label_for_serialization(
@@ -723,6 +869,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                     visited=visited,
                     is_inline_scope=is_inline_scope,
                     thread_id=thread_id,
+                    include_caption_head=idp == 0,
                     **kwargs,
                 )
                 res.append(tres)
@@ -814,14 +961,17 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
         is_inline_scope: bool = False,
         visited: set[str] | None = None,
         thread_id: str | None = None,
+        include_caption_head: bool = True,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a ``TextItem`` into DocLang markup.
 
         Depending on parameters, emits meta blocks, location tokens, and the
         item's textual content (prefixing code language for ``CodeItem``). For
-        floating items, captions may be appended. The result can be wrapped in a
-        tag derived from the item's label when applicable.
+        floating items, the first caption goes in the element head and further
+        captions and footnotes are emitted around it (see
+        ``_serialize_floating_satellites``). The result can be wrapped in a tag
+        derived from the item's label when applicable.
 
         Args:
             item: The text-like item to serialize.
@@ -935,6 +1085,12 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 params=params,
             )
 
+        caption_head = ""
+        if include_caption_head and isinstance(item, FloatingItem):
+            caption_head = _serialize_floating_caption_head(
+                item=item, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
+            )
+
         include_href = not is_inline_scope
         if not skip_location:
             parts.append(
@@ -943,6 +1099,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                     doc=doc,
                     params=params,
                     label_value=code_label,
+                    caption_text=caption_head or None,
                     custom_text=custom_head or None,
                     include_href=include_href,
                     thread_id=thread_id,
@@ -1028,18 +1185,6 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
             if text_part:
                 parts.append(text_part)
 
-        if params.add_referenced_caption and isinstance(item, FloatingItem):
-            cap_text = doc_serializer.serialize_captions(item=item, **kwargs).text
-            if cap_text:
-                cap_text = _escape_text(cap_text, params)
-                parts.append(cap_text)
-
-        if params.add_referenced_footnote and isinstance(item, FloatingItem):
-            ftn_text = doc_serializer.serialize_footnotes(item=item, **kwargs).text
-            if ftn_text:
-                ftn_text = _escape_text(ftn_text, params)
-                parts.append(ftn_text)
-
         text_res = "".join(parts)
 
         # Special handling for ListItems with suppress_empty_elements
@@ -1064,6 +1209,17 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                     text_res = _wrap_in_field_region_if_needed(text=text_res, item=item, doc=doc)
                 elif item.label in (DocItemLabel.FIELD_KEY, DocItemLabel.FIELD_VALUE):
                     text_res = _wrap_field_kv_markup_if_needed(text=text_res, item=item, doc=doc)
+
+        if include_caption_head and isinstance(item, FloatingItem) and not is_inline_scope:
+            before, after = _serialize_floating_satellites(
+                item=item, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
+            )
+            if before or after:
+                # Wrap the host with its satellites so that they can be re-attached on deserialization.
+                text_res = _wrap(
+                    text="".join(r.text for r in before) + text_res + "".join(r.text for r in after),
+                    wrap_tag=DocLangToken.GROUP.value,
+                )
 
         # Prepend ldiv element for ListItems (it's a delimiter, not a wrapper)
         if ldiv_element:
@@ -1276,19 +1432,21 @@ class DocLangPictureSerializer(BasePictureSerializer):
         picture_open += ">"
         picture_text = f"{picture_open}{inner}</{DocLangToken.PICTURE.value}>"
 
-        footnote_text = ""
-        if params.add_referenced_footnote:
-            ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
-            if ftn_res.text:
-                footnote_text = ftn_res.text
-                res_parts.append(ftn_res)
+        before, after = _serialize_floating_satellites(
+            item=item, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
+        )
+        res_parts.extend(before + after)
 
-        if not inner and not footnote_text:
+        if not inner and not (before or after):
             if params.suppress_empty_elements:
                 return create_ser_result()
             text_res = f"<{DocLangToken.PICTURE.value}></{DocLangToken.PICTURE.value}>"
-        elif footnote_text:
-            text_res = _wrap(text=picture_text + footnote_text, wrap_tag=DocLangToken.GROUP.value)
+        elif before or after:
+            # Wrap the host with its satellites so that they can be re-attached on deserialization.
+            text_res = _wrap(
+                text="".join(r.text for r in before) + picture_text + "".join(r.text for r in after),
+                wrap_tag=DocLangToken.GROUP.value,
+            )
         else:
             text_res = picture_text
 
@@ -1510,19 +1668,24 @@ class DocLangTableSerializer(BaseTableSerializer):
         table_text = _wrap(text=head + "".join(inner_parts), wrap_tag=host_token.value)
         res_parts.append(create_ser_result(text=head + "".join(inner_parts), span_source=item))
 
-        footnote_text = ""
-        if include_caption_head and params.add_referenced_footnote:
-            ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
-            if ftn_res.text:
-                footnote_text = ftn_res.text
-                res_parts.append(ftn_res)
+        before: list[SerializationResult] = []
+        after: list[SerializationResult] = []
+        if include_caption_head:
+            before, after = _serialize_floating_satellites(
+                item=item, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
+            )
+            res_parts.extend(before + after)
 
-        if not (head or inner_parts) and not footnote_text:
+        if not (head or inner_parts) and not (before or after):
             if params.suppress_empty_elements:
                 return create_ser_result()
             text_res = f"<{host_token.value}></{host_token.value}>"
-        elif footnote_text:
-            text_res = _wrap(text=table_text + footnote_text, wrap_tag=DocLangToken.GROUP.value)
+        elif before or after:
+            # Wrap the host with its satellites so that they can be re-attached on deserialization.
+            text_res = _wrap(
+                text="".join(r.text for r in before) + table_text + "".join(r.text for r in after),
+                wrap_tag=DocLangToken.GROUP.value,
+            )
         else:
             text_res = table_text
 
@@ -1885,19 +2048,16 @@ class DocLangDocSerializer(DocSerializer):
         """Serialize the item's footnotes with DocLang location tokens."""
         params = DocLangParams(**kwargs)
         results: list[SerializationResult] = []
-        for footnote in item.footnotes:
-            if footnote.cref not in self.get_excluded_refs(**kwargs):
-                if isinstance(ftn := footnote.resolve(self.doc), TextItem):
-                    head = _element_head_prefix(item=ftn, doc=self.doc, params=params)
-
-                    content = ""
-                    if ftn.text and ContentType.REF_FOOTNOTE in params.content_types:
-                        content = _escape_text(ftn.text, params)
-
-                    text_res = f"{head}{content}"
-                    if text_res:
-                        text_res = _wrap(text_res, wrap_tag=DocLangToken.FOOTNOTE.value)
-                        results.append(create_ser_result(text=text_res))
+        for ftn in _resolve_satellites(refs=item.footnotes, doc_serializer=self, doc=self.doc, **kwargs):
+            text_res = _serialize_satellite(
+                item=ftn,
+                tag=DocLangToken.FOOTNOTE,
+                content_type=ContentType.REF_FOOTNOTE,
+                doc=self.doc,
+                params=params,
+            )
+            if text_res:
+                results.append(create_ser_result(text=text_res))
 
         text_res = "".join([r.text for r in results])
 
