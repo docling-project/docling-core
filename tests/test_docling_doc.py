@@ -15,6 +15,7 @@ import yaml
 from PIL import Image as PILImage
 from pydantic import AnyUrl, BaseModel, ValidationError
 
+from docling_core.transforms.serializer.markdown import MarkdownDocSerializer
 from docling_core.types.doc import (
     BoundingBox,
     CodeItem,
@@ -2131,6 +2132,28 @@ def test_doc_manipulation_with_rich_tables(rich_table_doc):
 
     exp_doc = DoclingDocument.load_from_yaml(exp_file)
     assert rich_table_doc == exp_doc
+
+
+def test_rich_table_cell_text_reuses_given_serializer(rich_table_doc, monkeypatch):
+    """A rich cell must not build a fallback serializer when the caller passes one.
+
+    Building a serializer validates the whole document, so doing it for every rich
+    cell made serializing documents with many rich tables quadratic in the document
+    size (docling-project/docling#3222).
+    """
+    serializer = MarkdownDocSerializer(doc=rich_table_doc)
+    rich_cells = [
+        cell for table in rich_table_doc.tables for cell in table.data.table_cells if isinstance(cell, RichTableCell)
+    ]
+    expected = [serializer.serialize(item=cell.ref.resolve(doc=rich_table_doc)).text for cell in rich_cells]
+
+    def fail_on_fallback(self, *args, **kwargs):
+        raise AssertionError("RichTableCell built its own serializer although one was passed")
+
+    monkeypatch.setattr(MarkdownDocSerializer, "__init__", fail_on_fallback)
+
+    assert rich_cells
+    assert [cell._get_text(doc=rich_table_doc, doc_serializer=serializer) for cell in rich_cells] == expected
 
 
 def test_invalid_rich_table_doc():

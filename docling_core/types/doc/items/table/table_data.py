@@ -70,7 +70,11 @@ class RichTableCell(TableCell):
         from docling_core.transforms.serializer.markdown import MarkdownDocSerializer
 
         if doc is not None:
-            doc_serializer = kwargs.pop("doc_serializer", MarkdownDocSerializer(doc=doc))
+            doc_serializer = kwargs.pop("doc_serializer", None)
+            if doc_serializer is None:
+                # Built only as a fallback: creating a serializer validates the whole
+                # document, which is far too costly to repeat for every rich cell.
+                doc_serializer = MarkdownDocSerializer(doc=doc)
             ser_res = doc_serializer.serialize(item=self.ref.resolve(doc=doc), **kwargs)
             return ser_res.text
         else:
