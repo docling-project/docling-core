@@ -1,3 +1,65 @@
+## [v2.98.1](https://github.com/docling-project/docling-core/releases/tag/v2.98.1) - 2026-09-25
+
+### Fix
+
+* **doclang:** Fix multi-caption/footnote (de)serialization ([#797](https://github.com/docling-project/docling-core/issues/797)) ([`9aa4a53`](https://github.com/docling-project/docling-core/commit/9aa4a535800879f3e922251cc647fb58bf16cda0))
+* **webvtt:** Decode cue text escapes and allow them in annotations ([#776](https://github.com/docling-project/docling-core/issues/776)) ([`876e9d8`](https://github.com/docling-project/docling-core/commit/876e9d8852b56a1345cfbba4aaa6baa6dc9941e0))
+* **origin:** Accept M4A and MP4 audio MIME types ([#789](https://github.com/docling-project/docling-core/issues/789)) ([`c0e852c`](https://github.com/docling-project/docling-core/commit/c0e852c4490f6087934f96ffba48ec6e4d143736))
+* **doclang:** Nest InlineGroup runs inside a TextItem that has its own text ([#752](https://github.com/docling-project/docling-core/issues/752)) ([`7096ba0`](https://github.com/docling-project/docling-core/commit/7096ba0c400cb2843ee11b466c41633088f3caa2))
+
+## [v2.98.0](https://github.com/docling-project/docling-core/releases/tag/v2.98.0) - 2026-09-22
+
+### Feature
+
+* **markdown:** Add caption_placement param to markdown serialization ([#786](https://github.com/docling-project/docling-core/issues/786)) ([`f17ef63`](https://github.com/docling-project/docling-core/commit/f17ef63cc673d9a979bc49f66fe9763fc8e2c993))
+
+## [v2.97.2](https://github.com/docling-project/docling-core/releases/tag/v2.97.2) - 2026-09-21
+
+### Fix
+
+* **doclang:** Honour non-square default_resolution, drop locationless-list artifacts, and scope table-cell text to exclusions ([#785](https://github.com/docling-project/docling-core/issues/785)) ([`8bba310`](https://github.com/docling-project/docling-core/commit/8bba310cc5e1b590c13262c443d286474ff10a81))
+
+## [v2.97.1](https://github.com/docling-project/docling-core/releases/tag/v2.97.1) - 2026-09-18
+
+### Fix
+
+* Doclang serializer for footnotes ([#782](https://github.com/docling-project/docling-core/issues/782)) ([`975c773`](https://github.com/docling-project/docling-core/commit/975c773b39265e6b6841d400f1cccc8eb03530a0))
+
+## [v2.97.0](https://github.com/docling-project/docling-core/releases/tag/v2.97.0) - 2026-09-16
+
+### Feature
+
+* Add artifacts_dir parameter to export_to_markdown and export_to_html ([#552](https://github.com/docling-project/docling-core/issues/552)) ([`1259eba`](https://github.com/docling-project/docling-core/commit/1259eba96b8fefeadc4313f8c1af5c7304c28256))
+
+### Fix
+
+* **serializer:** Keep row-header rows out of the markdown table header block ([#766](https://github.com/docling-project/docling-core/issues/766)) ([`b2a768c`](https://github.com/docling-project/docling-core/commit/b2a768c018827176b3b22b7deda463560fcffcf0))
+
+## [v2.96.1](https://github.com/docling-project/docling-core/releases/tag/v2.96.1) - 2026-09-15
+
+### Fix
+
+* Serialization into DCLX on splitted text across pages ([#775](https://github.com/docling-project/docling-core/issues/775)) ([`ebbc1ed`](https://github.com/docling-project/docling-core/commit/ebbc1ed2d1e273cd372f76c90d74795ac5de926c))
+* Add missing dependency on `requests` ([#764](https://github.com/docling-project/docling-core/issues/764)) ([`6073888`](https://github.com/docling-project/docling-core/commit/6073888fb9cac0c3de77a441c7c724620996fb7e))
+
+## [v2.96.0](https://github.com/docling-project/docling-core/releases/tag/v2.96.0) - 2026-09-10
+
+### Feature
+
+* Add DOCLINGCORE_ALLOWED_PRIVATE_IPS setting to allow private IPs ([#608](https://github.com/docling-project/docling-core/issues/608)) ([`864036d`](https://github.com/docling-project/docling-core/commit/864036d54541023957e01877a9ef8d50d21003ed))
+
+### Fix
+
+* **serializer:** Derive markdown table header rows from column_header flags ([#723](https://github.com/docling-project/docling-core/issues/723)) ([`9b23d31`](https://github.com/docling-project/docling-core/commit/9b23d315af336269d74d8445958f844abe9ebf9a))
+* Set PNG compression level in OpenCV encoder ([#759](https://github.com/docling-project/docling-core/issues/759)) ([`ee120d4`](https://github.com/docling-project/docling-core/commit/ee120d4834e1b1b6045fd367aabcc3fb40215983))
+* **webvtt:** Accept CR line terminator in verify_signature ([#749](https://github.com/docling-project/docling-core/issues/749)) ([`840aba6`](https://github.com/docling-project/docling-core/commit/840aba6b1a8263c7eb8235b83a10809df5d0840a))
+* Register AFP MIME types ([#761](https://github.com/docling-project/docling-core/issues/761)) ([`17f1a95`](https://github.com/docling-project/docling-core/commit/17f1a958affeed3d42a314681387f02614ccd6bb))
+* Preserve rows under spanning column headers ([#756](https://github.com/docling-project/docling-core/issues/756)) ([`a0949d7`](https://github.com/docling-project/docling-core/commit/a0949d7ded41d4be994bf633ebb949e7767bd41a))
+
+### Performance
+
+* Reuse table grid during dataframe export ([#754](https://github.com/docling-project/docling-core/issues/754)) ([`a1945f7`](https://github.com/docling-project/docling-core/commit/a1945f7d1f7df3e388e5f2d53b00fed428235d43))
+
 ## [v2.95.0](https://github.com/docling-project/docling-core/releases/tag/v2.95.0) - 2026-09-04
 
 ### Feature

@@ -1,6 +1,6 @@
 [project]
 name = "docling-core"
-version = "2.95.0"  # DO NOT EDIT, updated automatically
+version = "2.98.1"  # DO NOT EDIT, updated automatically
 description = "A python library to define and validate data types in Docling."
 license = "MIT"
 license-files = ["LICENSE"]
@@ -52,6 +52,7 @@ dependencies = [
     "defusedxml (>=0.7.1, <0.8.0)",
     "pydantic-settings>=2.14.0",
     "doclang>=0.7,<0.8",
+    "requests (>=2.34.2,<3.0.0)",
 ]
 
 [project.urls]

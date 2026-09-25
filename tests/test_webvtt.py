@@ -10,6 +10,7 @@ import pytest
 from pydantic import ValidationError
 
 from docling_core.types.doc.webvtt import (
+    _ENTITY_CHARS,
     WebVTTCueBlock,
     WebVTTCueComponentWithTerminator,
     WebVTTCueInternalText,
@@ -112,7 +113,14 @@ def test_vtt_cue_commponents() -> None:
         WebVTTCueTextSpan(text=invalid_text)
     valid_text = "My favorite book is Pride &amp; Prejudice"
     span = WebVTTCueTextSpan(text=valid_text)
-    assert span.text == valid_text
+    # An escape denotes the character, so the span holds the character and
+    # writes the escape back out.
+    assert span.text == "My favorite book is Pride & Prejudice"
+    assert str(span) == valid_text
+    for name, char in _ENTITY_CHARS.items():
+        assert WebVTTCueTextSpan(text=f"a&{name};b").text == f"a{char}b"
+    # Only the two that cannot be written literally come back escaped.
+    assert str(WebVTTCueTextSpan(text="a&gt;b")) == "a>b"
 
     """Test with text containing less-than sign."""
     invalid_text = "This cue text span contains <."
@@ -206,6 +214,51 @@ def test_webvttcueblock_parse() -> None:
     assert block.payload[0].component.text == "the quick brown"
 
 
+def test_webvtt_verify_signature() -> None:
+    """Test WebVTTFile.verify_signature conforms to the W3C WebVTT specification.
+
+    Per https://www.w3.org/TR/webvtt1/ the magic string is "WEBVTT" optionally
+    followed by a space (U+0020), a tab (U+0009), or any line terminator
+    (CR U+000D, LF U+000A, or CRLF).
+    """
+    # Exact 6-character "WEBVTT" with nothing after it
+    assert WebVTTFile.verify_signature("WEBVTT") is True
+
+    # Valid: space or tab after "WEBVTT"
+    assert WebVTTFile.verify_signature("WEBVTT some title") is True
+    assert WebVTTFile.verify_signature("WEBVTT\t") is True
+
+    # Valid: LF line terminator (already worked before this fix)
+    assert WebVTTFile.verify_signature("WEBVTT\ncue block") is True
+
+    # Valid: CR line terminator (CR-only files — fixed by this patch)
+    assert WebVTTFile.verify_signature("WEBVTT\rcue block") is True
+
+    # Valid: CRLF — the \r at position 6 is now accepted; the \n at 7 is fine too
+    assert WebVTTFile.verify_signature("WEBVTT\r\ncue block") is True
+
+    # Invalid: empty string
+    assert WebVTTFile.verify_signature("") is False
+
+    # Invalid: wrong magic bytes
+    assert WebVTTFile.verify_signature("WEBVT") is False
+    assert WebVTTFile.verify_signature("webvtt") is False
+
+    # Invalid: character other than space/tab/CR/LF after "WEBVTT"
+    assert WebVTTFile.verify_signature("WEBVTT!") is False
+
+
+def test_webvtt_parse_cr_separator() -> None:
+    """WebVTTFile.parse must handle files that use bare CR as line separator."""
+    # Bare CR (U+000D) as line terminator — per the W3C WebVTT spec this is valid.
+    cr_vtt = "WEBVTT\r\r00:00:00.000 --> 00:00:01.000\rHello world\r"
+    vtt = WebVTTFile.parse(cr_vtt)
+    assert len(vtt) == 1
+    component = vtt[0].payload[0].component
+    assert isinstance(component, WebVTTCueTextSpan)
+    assert component.text == "Hello world"
+
+
 def test_webvtt_file() -> None:
     """Test WebVTT files."""
     with open("./tests/data/webvtt/webvtt_example_01.vtt", encoding="utf-8") as f:
@@ -273,6 +326,27 @@ def test_webvtt_file() -> None:
     assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
     assert block.payload[0].component.text == "the quick brown fox"
     assert vtt.title == "Danger of Nitrogen"
+
+
+def test_webvtt_cue_escapes_in_annotation() -> None:
+    """Test that an escape in a cue span annotation keeps the cue parseable."""
+    # The start tag pattern used to exclude "&" from the annotation, so a cue
+    # whose speaker name contained an escape matched no tag at all, fell through
+    # to the text span, and was rejected there for containing "<" — the whole
+    # cue was dropped with only a warning.
+    content = "WEBVTT\n\n00:00.000 --> 00:02.000\n<v Ben &amp; Jerry>We charge 5 &lt; 10 &amp; win</v>"
+    vtt = WebVTTFile.parse(content)
+
+    assert len(vtt) == 1
+    component = vtt.cue_blocks[0].payload[0].component
+    assert isinstance(component, WebVTTCueVoiceSpan)
+    assert component.start_tag.annotation == "Ben & Jerry"
+    text_span = component.internal_text.components[0].component
+    assert isinstance(text_span, WebVTTCueTextSpan)
+    assert text_span.text == "We charge 5 < 10 & win"
+
+    # The escapes are written back, so the file still round-trips.
+    assert str(vtt.cue_blocks[0]).rstrip("\n").endswith("<v Ben &amp; Jerry>We charge 5 &lt; 10 &amp; win</v>")
 
 
 def test_webvtt_cue_language_span_start_tag():

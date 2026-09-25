@@ -96,17 +96,15 @@ class TableItem(FloatingItem):
         if self.data.num_rows == 0 or self.data.num_cols == 0:
             return pd.DataFrame()
 
+        grid = self.data.grid
+
         # Count how many rows are column headers
         num_headers = 0
-        for i, row in enumerate(self.data.grid):
+        for row_idx, row in enumerate(grid):
             if len(row) == 0:
                 raise RuntimeError(f"Invalid table. {len(row)=} but {self.data.num_cols=}.")
 
-            any_header = False
-            for cell in row:
-                if cell.column_header:
-                    any_header = True
-                    break
+            any_header = any(cell.column_header and cell.start_row_offset_idx == row_idx for cell in row)
 
             if any_header:
                 num_headers += 1
@@ -118,14 +116,14 @@ class TableItem(FloatingItem):
         if num_headers > 0:
             columns = ["" for _ in range(self.data.num_cols)]
             for i in range(num_headers):
-                for j, cell in enumerate(self.data.grid[i]):
+                for j, cell in enumerate(grid[i]):
                     col_name = cell._get_text(doc=doc, **kwargs)
                     if columns[j] != "":
                         col_name = f".{col_name}"
                     columns[j] += col_name
 
         # Create table data
-        table_data = [[cell._get_text(doc=doc, **kwargs) for cell in row] for row in self.data.grid[num_headers:]]
+        table_data = [[cell._get_text(doc=doc, **kwargs) for cell in row] for row in grid[num_headers:]]
 
         # Create DataFrame
         table = pd.DataFrame(table_data, columns=columns)
