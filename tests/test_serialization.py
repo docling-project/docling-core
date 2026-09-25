@@ -1066,6 +1066,176 @@ def test_md_line_breaks():
     assert "\n" not in result.split("|")[1].strip()
 
 
+def test_md_footnotes_yaml():
+    src = Path("./tests/data/doc/2206.01062.yaml")
+    doc = DoclingDocument.load_from_yaml(src)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            image_placeholder="<!-- image -->",
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.with_suffix(".yaml.md"), actual=actual)
+
+
+def test_md_anchored_footnote_example():
+    # Test that footnotes owned by FloatingItems (table, picture)
+
+    src = Path("./tests/data/doc/footnote_with_anchor_example.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            image_placeholder="<!-- image -->",
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / "footnote_with_anchor_example.gt.md", actual=actual)
+
+    # Anchored footnotes: both inline anchor and full definition must be present
+    assert "[^1]\n\n[^1]: Revenue figures are in USD and exclude tax." in actual
+    assert "[^2]\n\n[^2]: Figures are unaudited estimates." in actual
+    assert "[^3]\n\n[^3]: Diagram reproduced with permission from the original authors." in actual
+
+    # Unanchored footnote preserved as plain text
+    assert "[^4]" not in actual
+    assert "This footnote has no anchor and must not appear in the output." in actual
+
+
+def test_md_unanchored_footnote_is_plain_text():
+    """A FOOTNOTE item not parented to a FloatingItem must be emitted as plain text
+    without any [^n] Markdown anchor syntax."""
+    doc = DoclingDocument(name="test_unanchored_footnote")
+
+    doc.add_text(label=DocItemLabel.TEXT, text="Some paragraph text.")
+
+    doc.add_text(label=DocItemLabel.FOOTNOTE, text="1 This footnote has no anchor.")
+
+    ser = MarkdownDocSerializer(doc=doc, params=MarkdownParams())
+    actual = ser.serialize().text
+
+    assert "Some paragraph text." in actual
+    assert "[^1]" not in actual
+    assert "This footnote has no anchor." in actual
+
+
+@pytest.mark.parametrize("item_kind", ["table", "picture"])
+@pytest.mark.parametrize(
+    "footnote_text, expected_text",
+    [
+        ("[1] İlgili hüküm için bkz. m. 5.", "[1] İlgili hüküm için bkz. m. 5."),
+        ("1\tİlgili hüküm için bkz. m. 5.", "1\tİlgili hüküm için bkz. m. 5."),
+        ("1\nİlgili hüküm için bkz. m. 5.", "1  \nİlgili hüküm için bkz. m. 5."),
+        ("1: İlgili hüküm & <istisna>.", "1: İlgili hüküm &amp; &lt;istisna&gt;."),
+    ],
+)
+def test_md_malformed_floating_footnote_preserves_text(item_kind, footnote_text, expected_text):
+    """An unsupported footnote marker must not discard the source text."""
+    doc = DoclingDocument(name="legal_footnote")
+    if item_kind == "table":
+        data = TableData(num_rows=0, num_cols=1)
+        data.add_row(["Provision"])
+        item = doc.add_table(data=data)
+    else:
+        item = doc.add_picture()
+
+    footnote = doc.add_text(label=DocItemLabel.FOOTNOTE, text=footnote_text, parent=item)
+    valid_footnote = doc.add_text(label=DocItemLabel.FOOTNOTE, text="2 Valid related note.", parent=item)
+    item.footnotes.extend([footnote.get_ref(), valid_footnote.get_ref()])
+
+    result = MarkdownDocSerializer(doc=doc).serialize()
+
+    assert result.text.count(expected_text) == 1
+    assert "[^1" not in result.text
+    assert result.text.count("[^2]\n\n[^2]: Valid related note.") == 1
+    assert footnote in result.get_unique_doc_items()
+
+    filtered = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(labels=_DEFAULT_LABELS - {DocItemLabel.FOOTNOTE}),
+    ).serialize()
+    assert "İlgili hüküm" not in filtered.text
+    assert "Valid related note." not in filtered.text
+    assert footnote not in filtered.get_unique_doc_items()
+
+
+def test_md_footnote_validation():
+    from docling_core.transforms.serializer.markdown import MarkdownTextSerializer
+
+    with pytest.raises(ValueError, match="Footnote cannot be empty"):
+        MarkdownTextSerializer._validate_and_format_footnote("")
+
+    with pytest.raises(ValueError, match="Footnote cannot be empty"):
+        MarkdownTextSerializer._validate_and_format_footnote(" ")
+
+    with pytest.raises(ValueError, match="Footnote identifier cannot be empty"):
+        MarkdownTextSerializer._validate_and_format_footnote(" Example")
+
+    with pytest.raises(ValueError, match="contains invalid characters"):
+        MarkdownTextSerializer._validate_and_format_footnote("\t1 Example")
+
+    with pytest.raises(ValueError, match="contains invalid markdown characters"):
+        MarkdownTextSerializer._validate_and_format_footnote("[1] Example")
+
+    # Test valid footnote text returns (identifier, definition)
+    identifier, definition = MarkdownTextSerializer._validate_and_format_footnote("1 Example footnote")
+    assert identifier == "1"
+    assert definition == "[^1]: Example footnote"
+
+    # Test footnote with only an (identifier)
+    identifier, definition = MarkdownTextSerializer._validate_and_format_footnote("table")
+    assert identifier == "table"
+    assert definition == "[^table]:"
+
+
+def test_md_footnotes_json():
+    src = Path("./tests/data/doc/2408.09869v3_enriched.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            pages={2},
+        ),
+    )
+    actual = ser.serialize().text
+    verify(exp_file=src.parent / f"{src.stem}_p2.gt.md", actual=actual)
+
+
+def test_md_table_with_footnotes():
+    doc = DoclingDocument(name="test_table_footnotes")
+
+    td = TableData(num_rows=2, num_cols=1)
+    td.add_row(["Header 1"])
+    td.add_row(["Data 1"])
+
+    table = doc.add_table(data=td)
+
+    footnote1 = doc.add_text(label=DocItemLabel.FOOTNOTE, text="1 table footnote explanation")
+
+    table.footnotes.append(footnote1.get_ref())
+
+    ser = MarkdownDocSerializer(
+        doc=doc,
+        params=MarkdownParams(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            image_placeholder="<!-- image -->",
+        ),
+    )
+    actual = ser.serialize().text
+
+    assert "| Header 1" in actual
+    assert "| Data 1" in actual
+
+    assert "[^1]" in actual
+    assert "[^1]: table footnote explanation" in actual
+
+
 # ===============================
 # HTML tests
 # ===============================
