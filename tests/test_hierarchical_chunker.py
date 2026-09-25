@@ -326,3 +326,34 @@ def test_contextualize_excludes_fields_when_alias_differs_from_attribute_name():
     assert "drop me" not in result
     assert "keep me" in result
     assert "body" in result
+
+
+def test_chunk_heading_with_inline_group():
+    """A heading whose text lives in an InlineGroup still contributes its plain text.
+
+    The Markdown backend gives a multi-run heading a ``SectionHeaderItem`` with
+    ``text=""`` and one ``InlineGroup`` child. ``meta.headings`` must carry the
+    heading's plain text -- how the runs render is the serializer's concern --
+    and the runs must not surface again as a body chunk of their own.
+    """
+    doc = DoclingDocument(name="t")
+    doc.add_title(text="Sample")
+    heading = doc.add_heading(text="", level=1)
+    group = doc.add_inline_group(parent=heading)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="Release",
+        parent=group,
+        hyperlink="https://example.com/releases",
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="notes", parent=group)
+    para = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="Install with", parent=para)
+    doc.add_code(text="pip install x", parent=para)
+    doc.add_text(label=DocItemLabel.TEXT, text="first.", parent=para)
+
+    chunks = list(HierarchicalChunker().chunk(dl_doc=doc))
+
+    assert [(chunk.meta.headings, chunk.text) for chunk in chunks] == [
+        (["Sample", "Release notes"], "Install with `pip install x` first."),
+    ]
