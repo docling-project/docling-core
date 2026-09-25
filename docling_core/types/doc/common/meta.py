@@ -131,6 +131,9 @@ class MetaFieldName(str, Enum):
     TABULAR_CHART = "tabular_chart"
     """Tabular data extracted from a chart element."""
 
+    FORMULA = "formula"
+    """Structured mathematical representation (MathML, LaTeX) of a formula element."""
+
 
 class EntityMention(BasePrediction):
     """Entity mention extracted from text."""
@@ -263,6 +266,25 @@ class CodeMetaField(BasePrediction):
 
     text: str  # the actual code
     language: CodeLanguageLabel | None = None
+
+
+class FormulaMetaField(BasePrediction):
+    """Structured mathematical representation for the respective item.
+
+    Holds representations that are more faithful than the rendered glyphs, either read
+    from the source document (e.g. the MathML of a tagged PDF's ``Formula`` structure
+    element) or produced by a formula understanding model. ``created_by`` records which
+    of the two a value came from.
+    """
+
+    mathml: str | None = None
+    latex: str | None = None
+
+
+class FormulaMeta(BaseMeta):
+    """Metadata model for formulas."""
+
+    formula: FormulaMetaField | None = None
 
 
 class MetaUtils:
