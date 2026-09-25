@@ -420,3 +420,42 @@ def test_keywords_topics_required_values() -> None:
         TopicsMetaField(values=34)
     with pytest.raises(ValidationError, match="valid string"):
         TopicsMetaField(values=[34])
+
+
+def _doc_with_language_meta() -> DoclingDocument:
+    doc = DoclingDocument(name="lang-meta")
+    english = doc.add_text(label=DocItemLabel.TEXT, text="This paragraph is in English.")
+    english.meta = BaseMeta(language=LanguageMetaField(code=HumanLanguageLabel.EN))
+    german = doc.add_text(label=DocItemLabel.TEXT, text="Dieser Absatz ist auf Deutsch.")
+    german.meta = BaseMeta(
+        language=LanguageMetaField(code=HumanLanguageLabel.DE, confidence=0.99, created_by="detector")
+    )
+    doc.add_heading(text="Überschrift", level=1).meta = BaseMeta(language=LanguageMetaField(code=HumanLanguageLabel.DE))
+    return doc
+
+
+def test_md_and_text_language_meta_is_not_rendered_as_prose() -> None:
+    doc = _doc_with_language_meta()
+    for rendered in (doc.export_to_markdown(), doc.export_to_text()):
+        assert "HumanLanguageLabel" not in rendered
+        assert "created_by" not in rendered
+        assert "Dieser Absatz ist auf Deutsch." in rendered
+        # Neither the bare code nor its repr appears as a paragraph.
+        assert "\nde\n" not in f"\n{rendered}\n"
+    marked = doc.export_to_markdown(mark_meta=True)
+    assert "[Language] de" in marked
+    assert "[Language] en" in marked
+
+
+def test_html_declares_document_and_element_languages() -> None:
+    doc = _doc_with_language_meta()
+    default_html = HTMLDocSerializer(doc=doc, params=HTMLParams()).serialize().text
+    assert '<html lang="en">' in default_html
+    assert "<p>This paragraph is in English.</p>" in default_html  # same as document language
+    assert '<p lang="de">Dieser Absatz ist auf Deutsch.</p>' in default_html
+    assert '<h2 lang="de">Überschrift</h2>' in default_html
+
+    german_html = HTMLDocSerializer(doc=doc, params=HTMLParams(html_lang="de")).serialize().text
+    assert '<html lang="de">' in german_html
+    assert '<p lang="en">This paragraph is in English.</p>' in german_html
+    assert "<p>Dieser Absatz ist auf Deutsch.</p>" in german_html
