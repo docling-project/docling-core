@@ -1,3 +1,12 @@
+## [v2.98.1](https://github.com/docling-project/docling-core/releases/tag/v2.98.1) - 2026-09-25
+
+### Fix
+
+* **doclang:** Fix multi-caption/footnote (de)serialization ([#797](https://github.com/docling-project/docling-core/issues/797)) ([`9aa4a53`](https://github.com/docling-project/docling-core/commit/9aa4a535800879f3e922251cc647fb58bf16cda0))
+* **webvtt:** Decode cue text escapes and allow them in annotations ([#776](https://github.com/docling-project/docling-core/issues/776)) ([`876e9d8`](https://github.com/docling-project/docling-core/commit/876e9d8852b56a1345cfbba4aaa6baa6dc9941e0))
+* **origin:** Accept M4A and MP4 audio MIME types ([#789](https://github.com/docling-project/docling-core/issues/789)) ([`c0e852c`](https://github.com/docling-project/docling-core/commit/c0e852c4490f6087934f96ffba48ec6e4d143736))
+* **doclang:** Nest InlineGroup runs inside a TextItem that has its own text ([#752](https://github.com/docling-project/docling-core/issues/752)) ([`7096ba0`](https://github.com/docling-project/docling-core/commit/7096ba0c400cb2843ee11b466c41633088f3caa2))
+
 ## [v2.98.0](https://github.com/docling-project/docling-core/releases/tag/v2.98.0) - 2026-09-22
 
 ### Feature
