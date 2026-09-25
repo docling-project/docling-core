@@ -459,3 +459,11 @@ def test_html_declares_document_and_element_languages() -> None:
     assert '<html lang="de">' in german_html
     assert '<p lang="en">This paragraph is in English.</p>' in german_html
     assert "<p>Dieser Absatz ist auf Deutsch.</p>" in german_html
+
+
+def test_html_lang_attribute_is_quote_safe() -> None:
+    doc = DoclingDocument(name="lang-escape")
+    doc.add_text(label=DocItemLabel.TEXT, text="x")
+    html_out = HTMLDocSerializer(doc=doc, params=HTMLParams(html_lang='en" onload="x')).serialize().text
+    assert '<html lang="en&quot; onload=&quot;x">' in html_out
+    assert 'lang="en" onload=' not in html_out

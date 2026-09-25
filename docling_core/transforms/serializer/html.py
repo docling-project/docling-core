@@ -1167,7 +1167,7 @@ class HTMLDocSerializer(DocSerializer):
         # Create HTML structure
         html_parts = [
             "<!DOCTYPE html>",
-            f'<html lang="{html.escape(self.params.html_lang, quote=False)}">',
+            f'<html lang="{html.escape(self.params.html_lang)}">',
             self._generate_head(),
             "<body>",
         ]
