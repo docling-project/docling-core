@@ -1,3 +1,9 @@
+## [v2.99.0](https://github.com/docling-project/docling-core/releases/tag/v2.99.0) - 2026-09-25
+
+### Feature
+
+* Expose raw AcroForm widget state ([#733](https://github.com/docling-project/docling-core/issues/733)) ([`254224c`](https://github.com/docling-project/docling-core/commit/254224ccaae8e17b5cd8e6e7780c1e5cd5036c36))
+
 ## [v2.98.1](https://github.com/docling-project/docling-core/releases/tag/v2.98.1) - 2026-09-25
 
 ### Fix
