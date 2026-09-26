@@ -376,6 +376,27 @@ def test_md_list_item_markers(sample_doc):
             )
 
 
+@pytest.mark.parametrize(
+    ("marker", "expected"),
+    [
+        pytest.param("a)", "- a) item", id="ascii-letter"),
+        pytest.param("第九条", "- 第九条 item", id="cjk-article"),
+        pytest.param("\uff08一\uff09", "- \uff08一\uff09 item", id="cjk-fullwidth-parens"),
+        pytest.param("①", "- ① item", id="enclosed-circle"),
+        pytest.param("壹、", "- 壹、 item", id="cjk-legal"),
+        pytest.param("•", "- item", id="bullet-glyph"),
+    ],
+)
+def test_md_list_item_marker_auto_non_ascii(marker, expected):
+    doc = DoclingDocument(name="markers")
+    group = doc.add_list_group()
+    doc.add_list_item(text="item", enumerated=True, marker=marker, parent=group)
+
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+
+    assert actual == expected
+
+
 def test_md_mark_meta_true():
     src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
