@@ -292,9 +292,13 @@ def _create_layer_token(
     if params.layer_mode == LayerMode.ALWAYS or (
         params.layer_mode == LayerMode.AUTO and item.content_layer != ContentLayer.BODY
     ):
+        layer = item.content_layer
+        # DocLang 0.7 has no notes or invisible layer values.
+        if layer in (ContentLayer.NOTES, ContentLayer.INVISIBLE):
+            layer = ContentLayer.FURNITURE
         return DocLangVocabulary._create_selfclosing_token(
             token=DocLangToken.LAYER,
-            attrs={DocLangAttributeKey.VALUE: item.content_layer.value},
+            attrs={DocLangAttributeKey.VALUE: layer.value},
         )
     return ""
 

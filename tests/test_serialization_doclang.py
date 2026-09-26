@@ -1713,6 +1713,41 @@ def test_layer_filter_body_only(doc_with_layers):
     verify_doclang(exp_file=exp_file, actual=ser_txt)
 
 
+@pytest.mark.parametrize(
+    ("layer", "expected"),
+    [
+        (ContentLayer.BODY, "body"),
+        (ContentLayer.BACKGROUND, "background"),
+        (ContentLayer.FURNITURE, "furniture"),
+        (ContentLayer.NOTES, "furniture"),
+        (ContentLayer.INVISIBLE, "furniture"),
+    ],
+)
+def test_doclang_layers_use_xsd_values(layer, expected):
+    """Docling-only layers use the closest layer supported by DocLang 0.7."""
+    doc = DoclingDocument(name="layers")
+    doc.add_text(label=DocItemLabel.TEXT, text="content", content_layer=layer)
+
+    xml = DocLangDocSerializer(doc=doc, params=DocLangParams(layer_mode=LayerMode.ALWAYS)).serialize().text
+
+    assert f'<layer value="{expected}"/>' in xml
+
+
+@doclang_validator
+def test_doclang_notes_and_invisible_layers_validate_against_xsd(tmp_path):
+    """DocLang 0.7 rejects notes and invisible layer values in XML."""
+    from doclang import validate
+
+    doc = DoclingDocument(name="layers")
+    doc.add_text(label=DocItemLabel.TEXT, text="note", content_layer=ContentLayer.NOTES)
+    doc.add_text(label=DocItemLabel.TEXT, text="hidden", content_layer=ContentLayer.INVISIBLE)
+    xml = DocLangDocSerializer(doc=doc, params=DocLangParams(include_namespace=True)).serialize().text
+    path = tmp_path / "layers.dclg.xml"
+    path.write_text(xml, encoding="utf-8")
+
+    validate(path, xsd_only=True)
+
+
 def _doc_with_labeled_code_and_pictures() -> DoclingDocument:
     doc = DoclingDocument(name="t")
     doc.add_code(text="x = 1", code_language=CodeLanguageLabel.PYTHON)
