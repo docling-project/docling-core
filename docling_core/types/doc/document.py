@@ -498,6 +498,29 @@ class DoclingDocument(BaseModel):
         furniture.children = []
         return num_migrated
 
+    def _repair_referenced_orphans(self) -> int:
+        """Add orphaned captions, footnotes and references to the children of their referencing parent.
+
+        Only orphans whose parent references them via ``captions``, ``footnotes`` or ``references``
+        are repaired, as this is where they unambiguously belong.
+
+        :return: The number of repaired orphans.
+        """
+        num_repaired = 0
+        for node in self._iterate_all_nodes():
+            if not isinstance(node, FloatingItem):
+                continue
+            node_ref = node.get_ref()
+            for ref in [*node.captions, *node.footnotes, *node.references]:
+                try:
+                    item = ref.resolve(doc=self)
+                except (IndexError, AttributeError):
+                    continue
+                if item.parent == node_ref and ref not in node.children:
+                    node.children.append(ref)
+                    num_repaired += 1
+        return num_repaired
+
     class _KVMigrData(BaseModel):
         value_crefs: list[str] = []
         key_cell: GraphCell = GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="", orig="")

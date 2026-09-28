@@ -2538,6 +2538,45 @@ def test_meta_migration_warnings():
         _ = doc.tables[0].annotations
 
 
+def test_repair_referenced_orphans():
+    def text(idx: int, label: str) -> dict:
+        return {
+            "self_ref": f"#/texts/{idx}",
+            "parent": {"$ref": "#/pictures/0"},
+            "label": label,
+            "orig": label,
+            "text": label,
+        }
+
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "referenced_orphans",
+        "body": {
+            "self_ref": "#/body",
+            "children": [{"$ref": "#/pictures/0"}],
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        # all three are orphans; only the caption and the footnote are referenced by the picture
+        "texts": [text(0, "caption"), text(1, "footnote"), text(2, "text")],
+        "pictures": [
+            {
+                "self_ref": "#/pictures/0",
+                "parent": {"$ref": "#/body"},
+                "label": "picture",
+                "captions": [{"$ref": "#/texts/0"}],
+                "footnotes": [{"$ref": "#/texts/1"}],
+            }
+        ],
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+
+    assert doc._repair_referenced_orphans() == 2
+    assert [ref.cref for ref in doc.pictures[0].children] == ["#/texts/0", "#/texts/1"]
+    assert doc._repair_referenced_orphans() == 0  # idempotent
+
+
 @pytest.mark.parametrize(
     "example_num",
     [1, 2, 3, 4, 5],
