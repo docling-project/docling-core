@@ -5721,6 +5721,18 @@ class DoclingDocument(BaseModel):
                     ValueError(f"Deprecated furniture node {furniture.self_ref} has children"),
                 )
 
+        def validate_key_value_and_form_items(doc: DoclingDocument):
+            if doc.key_value_items:
+                _handle(
+                    ValueError(
+                        f"Document has {len(doc.key_value_items)} key-value item(s), to be migrated to field regions"
+                    ),
+                )
+            if doc.form_items:
+                _handle(
+                    ValueError(f"Document has {len(doc.form_items)} form item(s), to be migrated to field regions"),
+                )
+
         def validate_list_group(doc: DoclingDocument, item: ListGroup):
             for ref in item.children:
                 child = ref.resolve(doc)
@@ -5766,6 +5778,7 @@ class DoclingDocument(BaseModel):
                 )
 
         validate_furniture(self)
+        validate_key_value_and_form_items(self)
 
         for item, _ in self.iterate_items(
             with_groups=True,

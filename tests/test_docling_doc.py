@@ -1832,6 +1832,23 @@ def test_misplaced_list_items_with_orphaned_items():
         doc._validate_rules()
 
 
+def test_validate_rules_key_value_and_form_items():
+    doc = DoclingDocument(name="")
+    doc.add_key_values(graph=GraphData(cells=[], links=[]))
+    doc.add_form(graph=GraphData(cells=[], links=[]))
+
+    with pytest.raises(ValueError, match="1 key-value item\\(s\\), to be migrated to field regions"):
+        doc._validate_rules()
+    with pytest.warns(UserWarning) as record:
+        doc._validate_rules(raise_on_error=False)
+    messages = [str(w.message) for w in record]
+    assert any("1 key-value item(s)" in m for m in messages)
+    assert any("1 form item(s)" in m for m in messages)
+
+    doc._migrate_to_field_regions()
+    doc._validate_rules()
+
+
 def test_delete_items_renumbers_furniture():
     doc_dict = {
         "schema_name": "DoclingDocument",
