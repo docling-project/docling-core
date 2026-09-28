@@ -4961,6 +4961,7 @@ class DoclingDocument(BaseModel):
         artifacts_dir: Path | None = None,
         validate: bool = False,
         add_named_groups: bool = False,
+        include_namespace: bool = False,
     ) -> None:
         """Save the document as a DocLang OPC archive (``.dclx``).
 
@@ -4969,6 +4970,11 @@ class DoclingDocument(BaseModel):
 
         ``add_named_groups`` emits plain ``GroupItem``s as ``<group name="...">``
         elements so the grouping survives a round trip.
+
+        ``include_namespace`` declares the DocLang namespace on the root element. It is
+        required for ``validate`` to pass, as the schema only declares the namespaced root.
+        Note that ``validate`` also runs the Schematron rules, which need a Schematron backend
+        to be installed for ``doclang``.
         """
         from doclang import pack
 
@@ -4993,6 +4999,7 @@ class DoclingDocument(BaseModel):
                 params=DocLangParams(
                     image_mode=ImageRefMode.REFERENCED,
                     add_named_groups=add_named_groups,
+                    include_namespace=include_namespace,
                 ),
             )
             document_path = staging_root / "document.dclg.xml"

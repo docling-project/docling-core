@@ -93,6 +93,38 @@ def test_save_as_doclang_archive(save_fixture_doc: DoclingDocument, tmp_path: Pa
         assert 'uri="assets/' in xml
 
 
+def test_save_as_doclang_archive_with_namespace(save_fixture_doc: DoclingDocument, tmp_path: Path) -> None:
+    from doclang import SchematronBackendNotFound, ValidationError
+
+    from docling_core.transforms.serializer._doclang_utils import DOCLANG_NAMESPACE
+
+    def document_xml(dclx: Path) -> str:
+        with zipfile.ZipFile(dclx) as archive:
+            return archive.read("document.xml").decode("utf-8")
+
+    # by default, no namespace is declared (unchanged output)
+    plain = tmp_path / "plain.dclx"
+    save_fixture_doc.save_as_doclang_archive(plain)
+    assert f'xmlns="{DOCLANG_NAMESPACE}"' not in document_xml(plain)
+
+    namespaced = tmp_path / "namespaced.dclx"
+    save_fixture_doc.save_as_doclang_archive(namespaced, include_namespace=True)
+    assert f'xmlns="{DOCLANG_NAMESPACE}"' in document_xml(namespaced)
+
+    # the namespaced archive loads like the plain one
+    loaded = DoclingDocument.load_from_doclang_archive(namespaced, artifacts_dir=tmp_path / "namespaced_artifacts")
+    loaded_plain = DoclingDocument.load_from_doclang_archive(plain, artifacts_dir=tmp_path / "plain_artifacts")
+    assert loaded.export_to_markdown() == loaded_plain.export_to_markdown()
+
+    # validation needs the namespace (and a Schematron backend)
+    try:
+        save_fixture_doc.save_as_doclang_archive(tmp_path / "validated.dclx", include_namespace=True, validate=True)
+    except SchematronBackendNotFound:
+        pytest.skip("no Schematron backend installed for doclang")
+    with pytest.raises(ValidationError):
+        save_fixture_doc.save_as_doclang_archive(tmp_path / "invalid.dclx", validate=True)
+
+
 def test_load_from_doclang_archive(tmp_path: Path) -> None:
     loaded = DoclingDocument.load_from_doclang_archive(
         LOAD_FIXTURE_DCLX,
