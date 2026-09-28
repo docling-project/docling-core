@@ -1042,7 +1042,10 @@ class DoclingDocument(BaseModel):
                 _logger.debug(f"deleting item in doc for {item_label} for {item_index}")
                 del self.__getattribute__(item_label)[item_index]
 
-        self._update_breadth_first_with_lookup(node=self.body, refs_to_be_deleted=refs, lookup=lookup)
+        # Update all nodes, not only those reachable from body via children: orphaned items
+        # (e.g. captions whose parent does not list them as children) must be renumbered too
+        for node in self._iterate_all_nodes():
+            self._update_node_with_lookup(node=node, refs_to_be_deleted=refs, lookup=lookup)
 
     # Update the references
     def _update_ref_with_lookup(self, item_label: str, item_index: int, lookup: dict[str, dict[int, int]]) -> RefItem:
@@ -1080,13 +1083,32 @@ class DoclingDocument(BaseModel):
 
         return new_refitems
 
-    def _update_breadth_first_with_lookup(
+    def _iterate_all_nodes(self) -> Iterable[NodeItem]:
+        """Iterate over body, furniture and all items, regardless of tree reachability."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            furniture = self.furniture
+        yield self.body
+        yield furniture
+        for item_list in (
+            self.groups,
+            self.texts,
+            self.pictures,
+            self.tables,
+            self.key_value_items,
+            self.form_items,
+            self.field_regions,
+            self.field_items,
+        ):
+            yield from item_list
+
+    def _update_node_with_lookup(
         self,
         node: NodeItem,
         refs_to_be_deleted: list[RefItem],
         lookup: dict[str, dict[int, int]],
     ):
-        """Update breadth first with lookup."""
+        """Update the references of a single node with lookup."""
         # Update the comments references on any DocItem
         if isinstance(node, DocItem):
             node.comments = [ref_item for ref_item in node.comments if ref_item not in refs_to_be_deleted]
@@ -1139,10 +1161,6 @@ class DoclingDocument(BaseModel):
             refs_to_be_deleted=refs_to_be_deleted,
             lookup=lookup,
         )
-
-        for i, child_ref in enumerate(node.children):
-            node = child_ref.resolve(self)
-            self._update_breadth_first_with_lookup(node=node, refs_to_be_deleted=refs_to_be_deleted, lookup=lookup)
 
     def _shift_up(self, *, old_subroot: NodeItem) -> None:
         """Move a subtree up in the document tree, removing the old subroot.

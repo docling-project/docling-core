@@ -38,6 +38,7 @@ from docling_core.types.doc import (
     ImageRef,
     ImageRefMode,
     KeyValueItem,
+    ListGroup,
     ListItem,
     NodeItem,
     Orientation,
@@ -1766,6 +1767,92 @@ def test_misplaced_list_items():
     else:
         exp_doc = DoclingDocument.load_from_yaml(exp_file)
         assert doc == exp_doc
+
+
+def test_misplaced_list_items_with_orphaned_items():
+    # The caption is referenced by the picture but is not one of its children, so it is not
+    # reachable from body via children. Repairing the misplaced list item deletes #/texts/0,
+    # so the caption must be renumbered to avoid clashing with the re-added list item.
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "orphaned_items",
+        "body": {
+            "self_ref": "#/body",
+            "children": [{"$ref": "#/texts/0"}, {"$ref": "#/pictures/0"}],
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        "texts": [
+            {
+                "self_ref": "#/texts/0",
+                "parent": {"$ref": "#/body"},
+                "label": "list_item",
+                "orig": "item",
+                "text": "item",
+                "enumerated": False,
+                "marker": "-",
+            },
+            {
+                "self_ref": "#/texts/1",
+                "parent": {"$ref": "#/pictures/0"},
+                "label": "caption",
+                "orig": "caption",
+                "text": "caption",
+            },
+        ],
+        "pictures": [
+            {
+                "self_ref": "#/pictures/0",
+                "parent": {"$ref": "#/body"},
+                "label": "picture",
+                "captions": [{"$ref": "#/texts/1"}],
+            }
+        ],
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+
+    doc._validate_unique_refs()
+    for item in doc.texts:
+        assert item.get_ref().resolve(doc) is item
+    assert [it.text for it in doc.texts] == ["caption", "item"]
+    assert doc.pictures[0].captions[0].resolve(doc).text == "caption"
+    assert doc.texts[0].parent.cref == "#/pictures/0"
+    assert isinstance(doc.texts[1].parent.resolve(doc), ListGroup)
+
+
+def test_delete_items_renumbers_furniture():
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "legacy_furniture",
+        "furniture": {
+            "self_ref": "#/furniture",
+            "children": [{"$ref": "#/texts/1"}],
+            "content_layer": "furniture",
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        "body": {"self_ref": "#/body", "children": [{"$ref": "#/texts/0"}], "name": "_root_", "label": "unspecified"},
+        "texts": [
+            {"self_ref": "#/texts/0", "parent": {"$ref": "#/body"}, "label": "text", "orig": "text", "text": "text"},
+            {
+                "self_ref": "#/texts/1",
+                "parent": {"$ref": "#/furniture"},
+                "content_layer": "furniture",
+                "label": "page_header",
+                "orig": "header",
+                "text": "header",
+            },
+        ],
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+    doc.delete_items(node_items=[doc.texts[0]])
+
+    assert doc.texts[0].self_ref == "#/texts/0"
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        assert [ref.resolve(doc).text for ref in doc.furniture.children] == ["header"]
 
 
 def test_moving_within_same_parent():
