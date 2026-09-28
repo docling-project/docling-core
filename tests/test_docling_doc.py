@@ -1820,6 +1820,17 @@ def test_misplaced_list_items_with_orphaned_items():
     assert doc.texts[0].parent.cref == "#/pictures/0"
     assert isinstance(doc.texts[1].parent.resolve(doc), ListGroup)
 
+    # the caption is still an orphan, which the rules detect
+    with pytest.raises(ValueError, match="#/texts/0 is not a child of its parent #/pictures/0"):
+        doc._validate_rules()
+    with pytest.warns(UserWarning, match="#/texts/0 is not a child of its parent #/pictures/0"):
+        doc._validate_rules(raise_on_error=False)
+
+    # a dangling parent is reported, not crashed on
+    doc.texts[0].parent = RefItem(cref="#/pictures/1")
+    with pytest.raises(ValueError, match="#/texts/0 has non-existent parent #/pictures/1"):
+        doc._validate_rules()
+
 
 def test_delete_items_renumbers_furniture():
     doc_dict = {
@@ -2575,6 +2586,10 @@ def test_repair_referenced_orphans():
     assert doc._repair_referenced_orphans() == 2
     assert [ref.cref for ref in doc.pictures[0].children] == ["#/texts/0", "#/texts/1"]
     assert doc._repair_referenced_orphans() == 0  # idempotent
+
+    # the unreferenced orphan is left as is
+    with pytest.raises(ValueError, match="#/texts/2 is not a child of its parent #/pictures/0"):
+        doc._validate_rules()
 
 
 @pytest.mark.parametrize(

@@ -5715,10 +5715,10 @@ class DoclingDocument(BaseModel):
         def validate_furniture(doc: DoclingDocument):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=DeprecationWarning)
-                has_furniture_children = len(doc.furniture.children) > 0
-            if has_furniture_children:
+                furniture = doc.furniture
+            if furniture.children:
                 _handle(
-                    ValueError(f"Deprecated furniture node {doc.furniture.self_ref} has children"),
+                    ValueError(f"Deprecated furniture node {furniture.self_ref} has children"),
                 )
 
         def validate_list_group(doc: DoclingDocument, item: ListGroup):
@@ -5747,6 +5747,24 @@ class DoclingDocument(BaseModel):
                     ValueError(f"Group {item.self_ref} has no children"),
                 )
 
+        def validate_orphan(doc: DoclingDocument, item: NodeItem):
+            if item.parent is None:
+                return
+            try:
+                with warnings.catch_warnings():
+                    # the parent may be the deprecated furniture node
+                    warnings.simplefilter("ignore", category=DeprecationWarning)
+                    parent = item.parent.resolve(doc)
+            except (IndexError, AttributeError):
+                _handle(
+                    ValueError(f"{item.self_ref} has non-existent parent {item.parent.cref}"),
+                )
+                return
+            if item.get_ref() not in parent.children:
+                _handle(
+                    ValueError(f"{item.self_ref} is not a child of its parent {item.parent.cref}"),
+                )
+
         validate_furniture(self)
 
         for item, _ in self.iterate_items(
@@ -5762,6 +5780,10 @@ class DoclingDocument(BaseModel):
 
             elif isinstance(item, ListItem):
                 validate_list_item(self, item)
+
+        # orphans are not reachable via the tree, so check all items
+        for item in self._iterate_all_nodes():
+            validate_orphan(self, item)
 
     def add_table_cell(self, table_item: TableItem, cell: TableCell) -> None:
         """Add a table cell to the table."""
