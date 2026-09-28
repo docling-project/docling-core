@@ -5782,15 +5782,13 @@ class DoclingDocument(BaseModel):
                 )
 
         def validate_key_value_and_form_items(doc: DoclingDocument):
-            if doc.key_value_items:
+            for kv_item in doc.key_value_items:
                 _handle(
-                    ValueError(
-                        f"Document has {len(doc.key_value_items)} key-value item(s), to be migrated to field regions"
-                    ),
+                    ValueError(f"Key-value item {kv_item.self_ref} is to be migrated to a field region"),
                 )
-            if doc.form_items:
+            for form_item in doc.form_items:
                 _handle(
-                    ValueError(f"Document has {len(doc.form_items)} form item(s), to be migrated to field regions"),
+                    ValueError(f"Form item {form_item.self_ref} is to be migrated to a field region"),
                 )
 
         def validate_list_group(doc: DoclingDocument, item: ListGroup):
