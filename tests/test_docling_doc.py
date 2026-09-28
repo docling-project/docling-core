@@ -1855,6 +1855,66 @@ def test_delete_items_renumbers_furniture():
         assert [ref.resolve(doc).text for ref in doc.furniture.children] == ["header"]
 
 
+def test_migrate_furniture_to_body():
+    def text(idx: int, parent: str, label: str, top: float | None = None) -> dict:
+        item: dict = {
+            "self_ref": f"#/texts/{idx}",
+            "parent": {"$ref": parent},
+            "label": label,
+            "orig": label,
+            "text": label,
+        }
+        if top is not None:
+            item["prov"] = [
+                {
+                    "page_no": 1,
+                    "bbox": {"l": 10, "t": top, "r": 90, "b": top + 5, "coord_origin": "TOPLEFT"},
+                    "charspan": [0, len(label)],
+                }
+            ]
+        return item
+
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "legacy_furniture",
+        "furniture": {
+            "self_ref": "#/furniture",
+            "children": [{"$ref": "#/texts/1"}, {"$ref": "#/texts/2"}],
+            "content_layer": "furniture",
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        "body": {
+            "self_ref": "#/body",
+            "children": [{"$ref": "#/texts/0"}],
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        "texts": [
+            text(0, "#/body", "text", top=50),
+            text(1, "#/furniture", "page_footer", top=90),
+            text(2, "#/furniture", "page_header", top=5),
+        ],
+        "pages": {"1": {"page_no": 1, "size": {"width": 100, "height": 100}}},
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+    assert [ref.cref for ref in doc.body.children] == ["#/texts/0"]  # not migrated on load
+
+    assert doc._migrate_furniture_to_body() == 2
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        assert doc.furniture.children == []
+
+    assert [ref.resolve(doc).text for ref in doc.body.children] == ["page_header", "text", "page_footer"]
+    assert all(it.parent.cref == "#/body" for it in doc.texts)
+    assert [it.content_layer for it in doc.texts] == [
+        ContentLayer.BODY,
+        ContentLayer.FURNITURE,
+        ContentLayer.FURNITURE,
+    ]
+
+
 def test_moving_within_same_parent():
     doc = DoclingDocument(name="")
     doc.add_text(label=DocItemLabel.TEXT, text="bar")

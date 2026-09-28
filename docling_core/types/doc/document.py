@@ -445,6 +445,59 @@ class DoclingDocument(BaseModel):
 
         self._normalize_references()
 
+    def _furniture_sort_key(self, item: NodeItem, index: int) -> tuple[bool, tuple[int, int, float, int]]:
+        """Classify a furniture item as header or footer and give it a stable visual order."""
+        prov = item.prov[0] if isinstance(item, DocItem) and item.prov else None
+        page = self.pages.get(prov.page_no) if prov is not None else None
+        if prov is None or page is None:
+            # keep unlocated furniture before the body, in its source order
+            return False, (0, 0, 0.0, index)
+        bbox = prov.bbox.to_top_left_origin(page_height=page.size.height)
+        is_footer = (bbox.t + bbox.b) / 2 > page.size.height / 2
+        # treat nearby baselines as one visual line, so that left-to-right order wins
+        visual_line = round(bbox.t / 12.0)
+        return is_footer, (prov.page_no, visual_line, bbox.l, index)
+
+    def _migrate_furniture_to_body(self) -> int:
+        """Move the children of the deprecated furniture tree into body.
+
+        Headers are placed before the body content, footers after it. As being in the furniture tree
+        used to mark items as furniture, any of them (or their descendants) in the body layer are moved
+        to the furniture layer.
+
+        :return: The number of migrated furniture children.
+        """
+
+        def set_furniture_layer(item: NodeItem) -> None:
+            if item.content_layer == ContentLayer.BODY:
+                item.content_layer = ContentLayer.FURNITURE
+            for child_ref in item.children:
+                set_furniture_layer(child_ref.resolve(doc=self))
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            furniture = self.furniture
+        if not furniture.children:
+            return 0
+
+        headers: list[tuple[tuple[int, int, float, int], RefItem]] = []
+        footers: list[tuple[tuple[int, int, float, int], RefItem]] = []
+        for index, ref in enumerate(furniture.children):
+            item = ref.resolve(doc=self)
+            is_footer, key = self._furniture_sort_key(item=item, index=index)
+            (footers if is_footer else headers).append((key, ref))
+            item.parent = self.body.get_ref()
+            set_furniture_layer(item)
+
+        self.body.children = [
+            *(ref for _, ref in sorted(headers, key=lambda x: x[0])),
+            *self.body.children,
+            *(ref for _, ref in sorted(footers, key=lambda x: x[0])),
+        ]
+        num_migrated = len(furniture.children)
+        furniture.children = []
+        return num_migrated
+
     class _KVMigrData(BaseModel):
         value_crefs: list[str] = []
         key_cell: GraphCell = GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="", orig="")
