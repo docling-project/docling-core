@@ -1769,10 +1769,9 @@ def test_misplaced_list_items():
         assert doc == exp_doc
 
 
-def test_misplaced_list_items_with_orphaned_items():
+def test_delete_items_renumbers_orphaned_items():
     # The caption is referenced by the picture but is not one of its children, so it is not
-    # reachable from body via children. Repairing the misplaced list item deletes #/texts/0,
-    # so the caption must be renumbered to avoid clashing with the re-added list item.
+    # reachable from body via children. Deleting an item before it must still renumber it.
     doc_dict = {
         "schema_name": "DoclingDocument",
         "version": CURRENT_VERSION,
@@ -1812,19 +1811,24 @@ def test_misplaced_list_items_with_orphaned_items():
     }
     doc = DoclingDocument.model_validate(doc_dict)
 
+    # loading moves the misplaced list item into a new list, without renumbering anything
+    assert [it.text for it in doc.texts] == ["item", "caption"]
+    assert isinstance(doc.texts[0].parent.resolve(doc), ListGroup)
+
+    # the caption is an orphan, which the rules detect
+    with pytest.raises(ValueError, match="#/texts/1 is not a child of its parent #/pictures/0"):
+        doc._validate_rules()
+    with pytest.warns(UserWarning, match="#/texts/1 is not a child of its parent #/pictures/0"):
+        doc._validate_rules(raise_on_error=False)
+
+    # deleting the list (and so the list item) renumbers the orphaned caption too
+    doc.delete_items(node_items=[doc.groups[0]])
     doc._validate_unique_refs()
     for item in doc.texts:
         assert item.get_ref().resolve(doc) is item
-    assert [it.text for it in doc.texts] == ["caption", "item"]
+    assert [it.text for it in doc.texts] == ["caption"]
     assert doc.pictures[0].captions[0].resolve(doc).text == "caption"
     assert doc.texts[0].parent.cref == "#/pictures/0"
-    assert isinstance(doc.texts[1].parent.resolve(doc), ListGroup)
-
-    # the caption is still an orphan, which the rules detect
-    with pytest.raises(ValueError, match="#/texts/0 is not a child of its parent #/pictures/0"):
-        doc._validate_rules()
-    with pytest.warns(UserWarning, match="#/texts/0 is not a child of its parent #/pictures/0"):
-        doc._validate_rules(raise_on_error=False)
 
     # a dangling parent is reported, not crashed on
     doc.texts[0].parent = RefItem(cref="#/pictures/1")
@@ -1967,6 +1971,63 @@ def test_migrate_furniture_to_body():
         ContentLayer.FURNITURE,
         ContentLayer.FURNITURE,
     ]
+
+
+def test_misplaced_list_items_keep_children_and_refs():
+    # a list item outside a list, with a picture as child and a graph cell pointing to it
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "misplaced_with_children",
+        "body": {
+            "self_ref": "#/body",
+            "children": [{"$ref": "#/texts/0"}, {"$ref": "#/texts/1"}, {"$ref": "#/key_value_items/0"}],
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        "texts": [
+            {
+                "self_ref": "#/texts/0",
+                "parent": {"$ref": "#/body"},
+                "children": [{"$ref": "#/pictures/0"}],
+                "label": "list_item",
+                "orig": "item",
+                "text": "item",
+                "enumerated": False,
+                "marker": "-",
+            },
+            {"self_ref": "#/texts/1", "parent": {"$ref": "#/body"}, "label": "text", "orig": "text", "text": "text"},
+        ],
+        "pictures": [{"self_ref": "#/pictures/0", "parent": {"$ref": "#/texts/0"}, "label": "picture"}],
+        "key_value_items": [
+            {
+                "self_ref": "#/key_value_items/0",
+                "parent": {"$ref": "#/body"},
+                "label": "key_value_region",
+                "graph": {
+                    "cells": [
+                        {
+                            "label": "key",
+                            "cell_id": 0,
+                            "text": "item",
+                            "orig": "item",
+                            "item_ref": {"$ref": "#/texts/0"},
+                        }
+                    ],
+                    "links": [],
+                },
+            }
+        ],
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+
+    # the list item is moved into a new list, keeping its ref, its child and the refs to it
+    item = doc.texts[0]
+    assert item.text == "item" and isinstance(item.parent.resolve(doc), ListGroup)
+    assert [ref.cref for ref in doc.body.children] == ["#/groups/0", "#/texts/1", "#/key_value_items/0"]
+    assert len(doc.pictures) == 1 and doc.pictures[0].parent == item.get_ref()
+    assert [ref.cref for ref in item.children] == ["#/pictures/0"]
+    assert doc.key_value_items[0].graph.cells[0].item_ref.resolve(doc) is item
 
 
 def test_moving_within_same_parent():

@@ -5547,6 +5547,7 @@ class DoclingDocument(BaseModel):
                     misplaced_list_items.append([item])
             prev = item
 
+        # moving relies on each item's parent listing it, which validate_document ensures
         for curr_list_items in reversed(misplaced_list_items):
             # add group
             new_group = ListGroup(self_ref="#")
@@ -5555,22 +5556,9 @@ class DoclingDocument(BaseModel):
                 sibling=curr_list_items[0],
             )
 
-            # delete list items from document (should not be affected by group addition)
-            self.delete_items(node_items=list(curr_list_items))
-
-            # add list items to new group
+            # move the list items into the new group, keeping their refs, fields and children
             for li in curr_list_items:
-                self.add_list_item(
-                    text=li.text,
-                    enumerated=li.enumerated,
-                    marker=li.marker,
-                    orig=li.orig,
-                    prov=li.prov[0] if li.prov else None,
-                    parent=new_group,
-                    content_layer=li.content_layer,
-                    formatting=li.formatting,
-                    hyperlink=li.hyperlink,
-                )
+                self._move_subtree(old_subroot=li, new_subroot=new_group)
         return self
 
     class _DocIndex(BaseModel):
