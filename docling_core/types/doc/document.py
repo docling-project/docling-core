@@ -1273,6 +1273,18 @@ class DoclingDocument(BaseModel):
                             lookup=lookup,
                         )
 
+        # Update the item references of key-value and form graph cells
+        if isinstance(node, KeyValueItem | FormItem):
+            for graph_cell in node.graph.cells:
+                if graph_cell.item_ref is None or len(path := graph_cell.item_ref._split_ref_to_path()) != 3:
+                    continue
+                if int(path[2]) in lookup.get(path[1], {}):  # the referenced item was deleted
+                    graph_cell.item_ref = None
+                else:
+                    graph_cell.item_ref = self._update_ref_with_lookup(
+                        item_label=path[1], item_index=int(path[2]), lookup=lookup
+                    )
+
         # Update the self_ref reference
         if node.parent is not None:
             path = node.parent._split_ref_to_path()
@@ -5699,6 +5711,11 @@ class DoclingDocument(BaseModel):
                             for fn in idx_item.footnotes
                             if fn.cref in orig_ref_to_new_ref
                         ]
+                    if isinstance(idx_item, KeyValueItem | FormItem):
+                        for graph_cell in idx_item.graph.cells:
+                            if graph_cell.item_ref is not None:
+                                mapped_cref = orig_ref_to_new_ref.get(graph_cell.item_ref.cref)
+                                graph_cell.item_ref = RefItem(cref=mapped_cref) if mapped_cref is not None else None
 
             # update pages
             new_max_page = None

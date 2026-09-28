@@ -1849,6 +1849,32 @@ def test_validate_rules_key_value_and_form_items():
     doc._validate_rules()
 
 
+def test_graph_cell_item_refs_follow_renumbering():
+    def build() -> tuple[DoclingDocument, KeyValueItem]:
+        doc = DoclingDocument(name="")
+        a = doc.add_text(label=DocItemLabel.TEXT, text="a")
+        b = doc.add_text(label=DocItemLabel.TEXT, text="b")
+        cells = [
+            GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="b", orig="b", item_ref=b.get_ref()),
+            GraphCell(label=GraphCellLabel.VALUE, cell_id=1, text="a", orig="a", item_ref=a.get_ref()),
+        ]
+        return doc, doc.add_key_values(graph=GraphData(cells=cells, links=[]))
+
+    # deletion: refs are renumbered, refs to deleted items dropped
+    doc, kv = build()
+    doc.delete_items(node_items=[doc.texts[0]])
+    assert [c.item_ref.cref if c.item_ref else None for c in kv.graph.cells] == ["#/texts/0", None]
+    assert kv.graph.cells[0].item_ref.resolve(doc).text == "b"
+
+    # normalization: refs follow the reordering
+    doc, _ = build()
+    doc.body.children = [doc.body.children[1], doc.body.children[0], doc.body.children[2]]  # b, a, kv
+    doc._normalize_references()
+    assert [t.text for t in doc.texts] == ["b", "a"]
+    cells = doc.key_value_items[0].graph.cells
+    assert [c.item_ref.resolve(doc).text for c in cells] == ["b", "a"]
+
+
 def test_delete_items_renumbers_furniture():
     doc_dict = {
         "schema_name": "DoclingDocument",
