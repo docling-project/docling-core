@@ -550,6 +550,32 @@ class DoclingDocument(BaseModel):
             self._move_subtree(old_subroot=child, new_subroot=list_item)
         return len(to_wrap)
 
+    def _remove_empty_groups(self) -> int:
+        """Remove groups without children, whether listed by their parent or not.
+
+        Groups still claimed as parent by some item (an orphan) are kept. As a removal can make
+        another group removable, this is repeated until no removable group is left.
+
+        :return: The number of removed groups.
+        """
+        num_removed = 0
+        while True:
+            claimed = {node.parent.cref for node in self._iterate_all_nodes() if node.parent is not None}
+            refs = [
+                group.get_ref()
+                for group in self.groups
+                if group.parent is not None and not group.children and group.self_ref not in claimed
+            ]
+            if not refs:
+                return num_removed
+
+            lookup: dict[str, dict[int, int]] = {"groups": {int(ref.cref.split("/")[2]): -1 for ref in refs}}
+            for index in sorted(lookup["groups"], reverse=True):
+                del self.groups[index]
+            for node in self._iterate_all_nodes():
+                self._update_node_with_lookup(node=node, refs_to_be_deleted=refs, lookup=lookup)
+            num_removed += len(refs)
+
     class _KVMigrData(BaseModel):
         value_crefs: list[str] = []
         key_cell: GraphCell = GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="", orig="")
@@ -5817,15 +5843,14 @@ class DoclingDocument(BaseModel):
             if isinstance(item, ListGroup):
                 validate_list_group(self, item)
 
-            elif isinstance(item, GroupItem):
-                validate_group(self, item)
-
             elif isinstance(item, ListItem):
                 validate_list_item(self, item)
 
-        # orphans are not reachable via the tree, so check all items
+        # orphans (and orphaned empty groups) are not reachable via the tree, so check all items
         for item in self._iterate_all_nodes():
             validate_orphan(self, item)
+            if isinstance(item, GroupItem):
+                validate_group(self, item)
 
     def add_table_cell(self, table_item: TableItem, cell: TableCell) -> None:
         """Add a table cell to the table."""

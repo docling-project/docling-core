@@ -2590,6 +2590,57 @@ def test_migrate_non_list_item_list_children():
     assert doc._migrate_non_list_item_list_children() == 0  # idempotent
 
 
+def test_empty_groups():
+    def group(idx: int, label: str, parent: str, children: list[str] | None = None) -> dict:
+        return {
+            "self_ref": f"#/groups/{idx}",
+            "parent": {"$ref": parent},
+            "children": [{"$ref": c} for c in children or []],
+            "label": label,
+            "name": "group",
+        }
+
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "empty_groups",
+        "body": {
+            "self_ref": "#/body",
+            "children": [{"$ref": "#/groups/0"}, {"$ref": "#/groups/1"}, {"$ref": "#/groups/4"}],
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        "groups": [
+            group(0, "list", "#/body"),  # empty, linked
+            group(1, "list", "#/body", ["#/texts/0"]),  # not empty
+            group(2, "list", "#/body"),  # empty, orphaned
+            group(3, "list", "#/groups/2"),  # empty, orphaned, claiming #/groups/2 as parent
+            group(4, "inline", "#/body"),  # empty, linked
+            group(5, "unspecified", "#/body"),  # empty, orphaned, but claimed by an orphan with content
+        ],
+        "texts": [
+            {"self_ref": "#/texts/0", "parent": {"$ref": "#/groups/1"}, "label": "list_item", "orig": "a", "text": "a"},
+            {"self_ref": "#/texts/1", "parent": {"$ref": "#/groups/5"}, "label": "text", "orig": "b", "text": "b"},
+        ],
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+
+    # detected: every empty group, also lists and orphaned ones
+    with pytest.warns(UserWarning) as record:
+        doc._validate_rules(raise_on_error=False)
+    empty = sorted(str(w.message) for w in record if str(w.message).endswith("has no children"))
+    assert empty == [f"Group #/groups/{i} has no children" for i in (0, 2, 3, 4, 5)]
+
+    assert doc._remove_empty_groups() == 4
+    assert [g.label.value for g in doc.groups] == ["list", "unspecified"]
+    assert [ref.cref for ref in doc.body.children] == ["#/groups/0"]
+    assert [ref.cref for ref in doc.groups[0].children] == ["#/texts/0"]
+    assert doc.texts[0].parent.cref == "#/groups/0"
+    assert doc.texts[1].parent.cref == "#/groups/1"  # the claimed group is kept (and renumbered)
+    doc._validate_unique_refs()
+    assert doc._remove_empty_groups() == 0  # idempotent
+
+
 def test_repair_referenced_orphans():
     def text(idx: int, label: str) -> dict:
         return {
