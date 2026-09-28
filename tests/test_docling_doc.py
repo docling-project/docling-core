@@ -2566,6 +2566,30 @@ def test_meta_migration_warnings():
         _ = doc.tables[0].annotations
 
 
+def test_migrate_non_list_item_list_children():
+    doc = DoclingDocument(name="")
+    outer = doc.add_list_group()
+    doc.add_list_item(text="first", parent=outer)
+    inner = doc.add_list_group(parent=outer)
+    doc.add_list_item(text="nested", parent=inner)
+    text = doc.add_text(label=DocItemLabel.TEXT, text="stray", parent=outer)
+    with pytest.raises(ValueError, match="contains non-ListItem"):
+        doc._validate_rules()
+
+    assert doc._migrate_non_list_item_list_children() == 2
+
+    # the wrapped children keep their positions, each under a new, empty list item
+    first, wrap_inner, wrap_text = (ref.resolve(doc) for ref in outer.children)
+    assert first.text == "first"
+    for wrapper, child in ((wrap_inner, inner), (wrap_text, text)):
+        assert isinstance(wrapper, ListItem) and wrapper.text == ""
+        assert wrapper.parent == outer.get_ref()
+        assert [ref.resolve(doc) for ref in wrapper.children] == [child]
+        assert child.parent == wrapper.get_ref()
+    doc._validate_rules()
+    assert doc._migrate_non_list_item_list_children() == 0  # idempotent
+
+
 def test_repair_referenced_orphans():
     def text(idx: int, label: str) -> dict:
         return {

@@ -521,6 +521,35 @@ class DoclingDocument(BaseModel):
                     num_repaired += 1
         return num_repaired
 
+    def _migrate_non_list_item_list_children(self) -> int:
+        """Wrap each non-ListItem child of a ListGroup into a new, empty ListItem.
+
+        The child keeps its position in the list, e.g. a list directly nested in a list becomes a
+        sublist of a new list item. Children whose parent does not point back to the list are skipped.
+
+        :return: The number of wrapped children.
+        """
+        to_wrap: list[tuple[ListGroup, NodeItem]] = []
+        for node in self._iterate_all_nodes():
+            if isinstance(node, ListGroup):
+                for ref in node.children:
+                    child = ref.resolve(doc=self)
+                    if not isinstance(child, ListItem) and child.parent == node.get_ref():
+                        to_wrap.append((node, child))
+
+        for list_group, child in to_wrap:
+            list_item = ListItem(
+                self_ref="#",
+                text="",
+                orig="",
+                marker="",
+                content_layer=child.content_layer,
+            )
+            item_ref = self._append_item(item=list_item, parent_ref=list_group.get_ref())
+            list_group.children.insert(list_group.children.index(child.get_ref()), item_ref)
+            self._move_subtree(old_subroot=child, new_subroot=list_item)
+        return len(to_wrap)
+
     class _KVMigrData(BaseModel):
         value_crefs: list[str] = []
         key_cell: GraphCell = GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="", orig="")
