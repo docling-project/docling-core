@@ -17,6 +17,7 @@ from docling_core.transforms.serializer.html import (
     HTMLParams,
     HTMLTableSerializer,
 )
+from docling_core.transforms.serializer.latex import LaTeXDocSerializer
 from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownParams,
@@ -1704,11 +1705,6 @@ def test_referenced_image_data_uri_is_not_encoded():
     assert doc.export_to_markdown(image_mode=ImageRefMode.REFERENCED) == "<!-- image -->"
 
 
-# ===============================
-# Hyperlink destination tests
-# ===============================
-
-
 @pytest.mark.parametrize(
     ("hyperlink", "expected"),
     [
@@ -1763,16 +1759,24 @@ def test_relative_hyperlink_export_uses_forward_slashes(hyperlink: AnyUrl | Path
     assert expected_html in html
 
 
-def test_relative_hyperlink_survives_json_round_trip():
-    """Test that a JSON round trip keeps a relative hyperlink on any host."""
+def test_relative_hyperlink_export_doclang_uses_forward_slashes():
+    """Test that DocLang exports a relative hyperlink with `/` separators."""
     doc = DoclingDocument(name="x")
     doc.add_text(label=DocItemLabel.TEXT, text="next page", hyperlink=Path("sub/next.html"))
 
-    reloaded = DoclingDocument.model_validate(doc.model_dump(mode="json"))
+    doclang = doc.export_to_doclang()
+    assert '<href uri="sub/next.html"/>' in doclang
+    assert "sub\\next.html" not in doclang
 
-    md = reloaded.export_to_markdown().strip()
-    assert md == "[next page](sub/next.html)"
-    assert "\\" not in md
+
+@pytest.mark.xfail(reason="LaTeX backslash-escapes '#' inside href URL args; pre-existing, out of scope")
+def test_relative_hyperlink_export_latex_keeps_fragment():
+    """LaTeX should keep the '#' fragment delimiter in a hyperlink destination."""
+    doc = DoclingDocument(name="x")
+    doc.add_text(label=DocItemLabel.TEXT, text="next page", hyperlink=Path("sub/next.html#section"))
+
+    tex = LaTeXDocSerializer(doc=doc).serialize().text
+    assert "\\href{sub/next.html#section}" in tex
 
 
 def test_export_to_markdown_image_dir_saves_and_references_images(sample_doc, tmp_path):
