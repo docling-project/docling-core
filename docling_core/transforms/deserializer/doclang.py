@@ -487,6 +487,20 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     return None
         return result
 
+    def _is_empty_text_block(self, element: Element) -> bool:
+        """Return True when ``element`` has no text and no children other than location/layer/label."""
+        for node in element.childNodes:
+            if isinstance(node, Element):
+                if node.tagName not in {
+                    DocLangToken.LOCATION.value,
+                    DocLangToken.LAYER.value,
+                    DocLangToken.LABEL.value,
+                } and not self._is_element_head_tag(node):
+                    return False
+            elif isinstance(node, Text) and node.data.strip():
+                return False
+        return True
+
     def _parse_text_like(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         """Parse text-like tokens (text, caption, footnotes, code, formula)."""
         element_children = [
@@ -495,14 +509,16 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
 
         thread_id = self._extract_thread_id(el)
         simple_text = self._get_children_simple_text_block(el)
-        if len(element_children) > 1 or (simple_text is None and thread_id is None):
+        # an element without any content is an empty item, not a (childless) inline group
+        is_empty = simple_text is None and thread_id is None and self._is_empty_text_block(el)
+        if not is_empty and (len(element_children) > 1 or (simple_text is None and thread_id is None)):
             self._parse_mixed_text_like(doc=doc, el=el, parent=parent)
             return
 
         prov_list = self._extract_provenance(doc=doc, el=el)
         content_layer = self._extract_layer(el=el)
         text, formatting = self._extract_text_with_formatting(el)
-        if not text:
+        if not text and not is_empty:
             if (
                 thread_id
                 and (existing := self._get_thread_item(thread_id, host=el.tagName)) is not None
