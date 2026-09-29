@@ -2469,6 +2469,7 @@ def test_default_resolution_sets_page_coordinate_space():
         ("<text>plain <bold>b</bold></text>", ["plain", "b"]),
         ("<footnote>see <italic>ibid</italic></footnote>", ["see", "ibid"]),
         ("<formula>E <bold>=</bold></formula>", ["E", "="]),
+        ("<text>x <bold>a <italic>b</italic></bold></text>", ["x", "a", "b"]),
         # shapes that already worked
         ("<text><superscript>nd</superscript> place</text>", ["nd", "place"]),
         ("<text>H<subscript>2</subscript>O</text>", ["H", "2", "O"]),
@@ -2500,7 +2501,6 @@ def test_mixed_content_footnote_keeps_label_and_provenance():
     ("label", "layer"),
     [
         (DocItemLabel.FOOTNOTE, ContentLayer.BODY),
-        (DocItemLabel.FORMULA, ContentLayer.BODY),
         (DocItemLabel.PAGE_HEADER, ContentLayer.FURNITURE),
         (DocItemLabel.PAGE_FOOTER, ContentLayer.FURNITURE),
     ],
@@ -2508,10 +2508,7 @@ def test_mixed_content_footnote_keeps_label_and_provenance():
 def test_roundtrip_inline_host(label: DocItemLabel, layer: ContentLayer):
     doc = DoclingDocument(name="t")
     _add_default_page(doc)
-    if label == DocItemLabel.FORMULA:
-        host = doc.add_formula(text="", prov=_default_prov(), content_layer=layer)
-    else:
-        host = doc.add_text(label=label, text="", prov=_default_prov(), content_layer=layer)
+    host = doc.add_text(label=label, text="", prov=_default_prov(), content_layer=layer)
     inline = doc.add_inline_group(parent=host, content_layer=layer)
     doc.add_text(
         label=DocItemLabel.TEXT,
@@ -2536,3 +2533,23 @@ def test_roundtrip_inline_host(label: DocItemLabel, layer: ContentLayer):
     ]
     assert [(r.text, r.content_layer) for r in runs] == [("1", layer), ("body", layer)]
     assert runs[0].formatting is not None and runs[0].formatting.script == Script.SUPER
+
+
+def test_roundtrip_furniture_inline_group():
+    doc = DoclingDocument(name="t")
+    _add_default_page(doc)
+    inline = doc.add_inline_group(content_layer=ContentLayer.FURNITURE)
+    doc.add_text(label=DocItemLabel.TEXT, text="a", parent=inline, content_layer=ContentLayer.FURNITURE)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="b",
+        parent=inline,
+        formatting=Formatting(bold=True),
+        content_layer=ContentLayer.FURNITURE,
+    )
+
+    doc2 = _deserialize(_serialize(doc))
+
+    items = [it for it, _ in doc2.iterate_items(with_groups=True, included_content_layers=set(ContentLayer))][1:]
+    assert [it.label for it in items] == [GroupLabel.INLINE, DocItemLabel.TEXT, DocItemLabel.TEXT]
+    assert {it.content_layer for it in items} == {ContentLayer.FURNITURE}
