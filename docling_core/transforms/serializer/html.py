@@ -6,7 +6,7 @@ import logging
 from enum import Enum
 from html.parser import HTMLParser
 from io import BytesIO
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, Optional, Union
 from urllib.parse import quote
 from xml.etree.ElementTree import SubElement, tostring
@@ -1119,7 +1119,7 @@ class HTMLDocSerializer(DocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: AnyUrl | Path,
+        hyperlink: AnyUrl | PurePath,
         **kwargs: Any,
     ) -> str:
         """Apply HTML-specific hyperlink serialization."""

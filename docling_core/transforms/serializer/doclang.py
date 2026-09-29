@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 from collections.abc import Callable
 from enum import Enum
 from itertools import groupby
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Annotated, Any, Optional, Union, cast
 
 from defusedxml.ElementTree import fromstring
@@ -1799,7 +1799,7 @@ class DocLangDocSerializer(DocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: AnyUrl | Path,
+        hyperlink: AnyUrl | PurePath,
         **kwargs: Any,
     ) -> str:
         r"""Hyperlinks are emitted as ``<href uri=\"...\"/>`` in element head, not inline."""
@@ -2137,7 +2137,7 @@ class DocLangDocSerializer(DocSerializer):
         text: str,
         *,
         formatting: Formatting | None = None,
-        hyperlink: AnyUrl | Path | None = None,
+        hyperlink: AnyUrl | PurePath | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply DocLang text post-processing including RTL direction."""

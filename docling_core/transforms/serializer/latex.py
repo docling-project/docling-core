@@ -1,7 +1,7 @@
 """Define classes for LaTeX serialization."""
 
 import re
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, Optional, Union
 
 from pydantic import AnyUrl, BaseModel
@@ -606,7 +606,7 @@ class LaTeXDocSerializer(DocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: AnyUrl | Path,
+        hyperlink: AnyUrl | PurePath,
         **kwargs: Any,
     ) -> str:
         """Return LaTeX hyperlink command (requires ``hyperref`` package)."""
@@ -710,7 +710,7 @@ class LaTeXDocSerializer(DocSerializer):
         text: str,
         *,
         formatting: Formatting | None = None,
-        hyperlink: AnyUrl | Path | None = None,
+        hyperlink: AnyUrl | PurePath | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply LaTeX escaping before formatting/hyperlinks."""

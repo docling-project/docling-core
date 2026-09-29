@@ -1166,7 +1166,7 @@ class MarkdownDocSerializer(DocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: AnyUrl | Path,
+        hyperlink: AnyUrl | PurePath,
         **kwargs: Any,
     ):
         """Apply Markdown-specific hyperlink serialization."""
@@ -1204,7 +1204,7 @@ class MarkdownDocSerializer(DocSerializer):
         escape_html: bool = True,
         escape_underscores: bool = True,
         formatting: Formatting | None = None,
-        hyperlink: AnyUrl | Path | None = None,
+        hyperlink: AnyUrl | PurePath | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply some text post-processing steps."""
