@@ -16,10 +16,10 @@
         "$ref": "#/field_regions/0"
       },
       {
-        "$ref": "#/texts/27"
+        "$ref": "#/texts/29"
       },
       {
-        "$ref": "#/texts/28"
+        "$ref": "#/texts/30"
       }
     ],
     "content_layer": "body",
@@ -30,7 +30,7 @@
     {
       "self_ref": "#/groups/0",
       "parent": {
-        "$ref": "#/field_regions/0"
+        "$ref": "#/texts/4"
       },
       "children": [
         {
@@ -44,12 +44,9 @@
     {
       "self_ref": "#/groups/1",
       "parent": {
-        "$ref": "#/texts/9"
+        "$ref": "#/texts/10"
       },
       "children": [
-        {
-          "$ref": "#/texts/10"
-        },
         {
           "$ref": "#/texts/11"
         },
@@ -58,6 +55,9 @@
         },
         {
           "$ref": "#/texts/13"
+        },
+        {
+          "$ref": "#/texts/14"
         }
       ],
       "content_layer": "body",
@@ -67,20 +67,20 @@
     {
       "self_ref": "#/groups/2",
       "parent": {
-        "$ref": "#/field_items/2"
+        "$ref": "#/texts/16"
       },
       "children": [
-        {
-          "$ref": "#/texts/15"
-        },
-        {
-          "$ref": "#/texts/16"
-        },
         {
           "$ref": "#/texts/17"
         },
         {
           "$ref": "#/texts/18"
+        },
+        {
+          "$ref": "#/texts/19"
+        },
+        {
+          "$ref": "#/texts/20"
         }
       ],
       "content_layer": "body",
@@ -89,20 +89,6 @@
     },
     {
       "self_ref": "#/groups/3",
-      "parent": {
-        "$ref": "#/texts/20"
-      },
-      "children": [
-        {
-          "$ref": "#/texts/21"
-        }
-      ],
-      "content_layer": "body",
-      "name": "group",
-      "label": "inline"
-    },
-    {
-      "self_ref": "#/groups/4",
       "parent": {
         "$ref": "#/texts/22"
       },
@@ -116,13 +102,27 @@
       "label": "inline"
     },
     {
-      "self_ref": "#/groups/5",
+      "self_ref": "#/groups/4",
       "parent": {
         "$ref": "#/texts/24"
       },
       "children": [
         {
           "$ref": "#/texts/25"
+        }
+      ],
+      "content_layer": "body",
+      "name": "group",
+      "label": "inline"
+    },
+    {
+      "self_ref": "#/groups/5",
+      "parent": {
+        "$ref": "#/texts/26"
+      },
+      "children": [
+        {
+          "$ref": "#/texts/27"
         }
       ],
       "content_layer": "body",
@@ -185,6 +185,22 @@
     {
       "self_ref": "#/texts/4",
       "parent": {
+        "$ref": "#/field_regions/0"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/0"
+        }
+      ],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "",
+      "text": ""
+    },
+    {
+      "self_ref": "#/texts/5",
+      "parent": {
         "$ref": "#/field_items/1"
       },
       "children": [],
@@ -195,7 +211,7 @@
       "text": "my inline key1: "
     },
     {
-      "self_ref": "#/texts/5",
+      "self_ref": "#/texts/6",
       "parent": {
         "$ref": "#/field_items/1"
       },
@@ -208,7 +224,7 @@
       "kind": "fillable"
     },
     {
-      "self_ref": "#/texts/6",
+      "self_ref": "#/texts/7",
       "parent": {
         "$ref": "#/field_items/2"
       },
@@ -220,7 +236,7 @@
       "text": "name"
     },
     {
-      "self_ref": "#/texts/7",
+      "self_ref": "#/texts/8",
       "parent": {
         "$ref": "#/field_items/2"
       },
@@ -233,7 +249,7 @@
       "kind": "fillable"
     },
     {
-      "self_ref": "#/texts/8",
+      "self_ref": "#/texts/9",
       "parent": {
         "$ref": "#/field_items/2"
       },
@@ -246,7 +262,7 @@
       "kind": "fillable"
     },
     {
-      "self_ref": "#/texts/9",
+      "self_ref": "#/texts/10",
       "parent": {
         "$ref": "#/field_items/2"
       },
@@ -263,7 +279,7 @@
       "kind": "fillable"
     },
     {
-      "self_ref": "#/texts/10",
+      "self_ref": "#/texts/11",
       "parent": {
         "$ref": "#/groups/1"
       },
@@ -275,7 +291,7 @@
       "text": ""
     },
     {
-      "self_ref": "#/texts/11",
+      "self_ref": "#/texts/12",
       "parent": {
         "$ref": "#/groups/1"
       },
@@ -287,7 +303,7 @@
       "text": "Clark "
     },
     {
-      "self_ref": "#/texts/12",
+      "self_ref": "#/texts/13",
       "parent": {
         "$ref": "#/groups/1"
       },
@@ -306,7 +322,7 @@
       }
     },
     {
-      "self_ref": "#/texts/13",
+      "self_ref": "#/texts/14",
       "parent": {
         "$ref": "#/groups/1"
       },
@@ -318,7 +334,7 @@
       "text": "Select this if you are a Superman fan"
     },
     {
-      "self_ref": "#/texts/14",
+      "self_ref": "#/texts/15",
       "parent": {
         "$ref": "#/field_items/2"
       },
@@ -331,7 +347,23 @@
       "kind": "read_only"
     },
     {
-      "self_ref": "#/texts/15",
+      "self_ref": "#/texts/16",
+      "parent": {
+        "$ref": "#/field_items/2"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/2"
+        }
+      ],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "",
+      "text": ""
+    },
+    {
+      "self_ref": "#/texts/17",
       "parent": {
         "$ref": "#/groups/2"
       },
@@ -343,7 +375,7 @@
       "text": "My first input "
     },
     {
-      "self_ref": "#/texts/16",
+      "self_ref": "#/texts/18",
       "parent": {
         "$ref": "#/groups/2"
       },
@@ -356,7 +388,7 @@
       "kind": "fillable"
     },
     {
-      "self_ref": "#/texts/17",
+      "self_ref": "#/texts/19",
       "parent": {
         "$ref": "#/groups/2"
       },
@@ -368,7 +400,7 @@
       "text": " and my second input "
     },
     {
-      "self_ref": "#/texts/18",
+      "self_ref": "#/texts/20",
       "parent": {
         "$ref": "#/groups/2"
       },
@@ -381,7 +413,7 @@
       "kind": "fillable"
     },
     {
-      "self_ref": "#/texts/19",
+      "self_ref": "#/texts/21",
       "parent": {
         "$ref": "#/field_items/3"
       },
@@ -393,7 +425,7 @@
       "text": "I am in the country as a: "
     },
     {
-      "self_ref": "#/texts/20",
+      "self_ref": "#/texts/22",
       "parent": {
         "$ref": "#/field_items/3"
       },
@@ -410,7 +442,7 @@
       "kind": "fillable"
     },
     {
-      "self_ref": "#/texts/21",
+      "self_ref": "#/texts/23",
       "parent": {
         "$ref": "#/groups/3"
       },
@@ -422,7 +454,7 @@
       "text": "Visitor"
     },
     {
-      "self_ref": "#/texts/22",
+      "self_ref": "#/texts/24",
       "parent": {
         "$ref": "#/field_items/3"
       },
@@ -439,7 +471,7 @@
       "kind": "fillable"
     },
     {
-      "self_ref": "#/texts/23",
+      "self_ref": "#/texts/25",
       "parent": {
         "$ref": "#/groups/4"
       },
@@ -451,7 +483,7 @@
       "text": " Student"
     },
     {
-      "self_ref": "#/texts/24",
+      "self_ref": "#/texts/26",
       "parent": {
         "$ref": "#/field_items/3"
       },
@@ -468,7 +500,7 @@
       "kind": "fillable"
     },
     {
-      "self_ref": "#/texts/25",
+      "self_ref": "#/texts/27",
       "parent": {
         "$ref": "#/groups/5"
       },
@@ -480,7 +512,7 @@
       "text": "Other (Specify)"
     },
     {
-      "self_ref": "#/texts/26",
+      "self_ref": "#/texts/28",
       "parent": {
         "$ref": "#/field_items/3"
       },
@@ -493,7 +525,7 @@
       "kind": "fillable"
     },
     {
-      "self_ref": "#/texts/27",
+      "self_ref": "#/texts/29",
       "parent": {
         "$ref": "#/body"
       },
@@ -505,7 +537,7 @@
       "text": "Some final stuff."
     },
     {
-      "self_ref": "#/texts/28",
+      "self_ref": "#/texts/30",
       "parent": {
         "$ref": "#/body"
       },
@@ -538,7 +570,7 @@
           "$ref": "#/texts/3"
         },
         {
-          "$ref": "#/groups/0"
+          "$ref": "#/texts/4"
         },
         {
           "$ref": "#/field_items/2"
@@ -577,10 +609,10 @@
       },
       "children": [
         {
-          "$ref": "#/texts/4"
+          "$ref": "#/texts/5"
         },
         {
-          "$ref": "#/texts/5"
+          "$ref": "#/texts/6"
         }
       ],
       "content_layer": "body",
@@ -594,9 +626,6 @@
       },
       "children": [
         {
-          "$ref": "#/texts/6"
-        },
-        {
           "$ref": "#/texts/7"
         },
         {
@@ -606,10 +635,13 @@
           "$ref": "#/texts/9"
         },
         {
-          "$ref": "#/texts/14"
+          "$ref": "#/texts/10"
         },
         {
-          "$ref": "#/groups/2"
+          "$ref": "#/texts/15"
+        },
+        {
+          "$ref": "#/texts/16"
         }
       ],
       "content_layer": "body",
@@ -623,10 +655,7 @@
       },
       "children": [
         {
-          "$ref": "#/texts/19"
-        },
-        {
-          "$ref": "#/texts/20"
+          "$ref": "#/texts/21"
         },
         {
           "$ref": "#/texts/22"
@@ -636,6 +665,9 @@
         },
         {
           "$ref": "#/texts/26"
+        },
+        {
+          "$ref": "#/texts/28"
         }
       ],
       "content_layer": "body",

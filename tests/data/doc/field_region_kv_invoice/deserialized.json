@@ -30,7 +30,7 @@
     {
       "self_ref": "#/groups/0",
       "parent": {
-        "$ref": "#/field_regions/1"
+        "$ref": "#/texts/4"
       },
       "children": [
         {
@@ -44,7 +44,7 @@
     {
       "self_ref": "#/groups/1",
       "parent": {
-        "$ref": "#/field_regions/1"
+        "$ref": "#/texts/7"
       },
       "children": [
         {
@@ -118,6 +118,22 @@
     {
       "self_ref": "#/texts/4",
       "parent": {
+        "$ref": "#/field_regions/1"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/0"
+        }
+      ],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "",
+      "text": ""
+    },
+    {
+      "self_ref": "#/texts/5",
+      "parent": {
         "$ref": "#/field_items/2"
       },
       "children": [],
@@ -128,7 +144,7 @@
       "text": "Invoice No: "
     },
     {
-      "self_ref": "#/texts/5",
+      "self_ref": "#/texts/6",
       "parent": {
         "$ref": "#/field_items/2"
       },
@@ -141,7 +157,23 @@
       "kind": "read_only"
     },
     {
-      "self_ref": "#/texts/6",
+      "self_ref": "#/texts/7",
+      "parent": {
+        "$ref": "#/field_regions/1"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/1"
+        }
+      ],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [],
+      "orig": "",
+      "text": ""
+    },
+    {
+      "self_ref": "#/texts/8",
       "parent": {
         "$ref": "#/field_items/3"
       },
@@ -153,7 +185,7 @@
       "text": "Date: "
     },
     {
-      "self_ref": "#/texts/7",
+      "self_ref": "#/texts/9",
       "parent": {
         "$ref": "#/field_items/3"
       },
@@ -166,7 +198,7 @@
       "kind": "read_only"
     },
     {
-      "self_ref": "#/texts/8",
+      "self_ref": "#/texts/10",
       "parent": {
         "$ref": "#/field_items/4"
       },
@@ -193,7 +225,7 @@
       "text": "Administrator"
     },
     {
-      "self_ref": "#/texts/9",
+      "self_ref": "#/texts/11",
       "parent": {
         "$ref": "#/field_items/4"
       },
@@ -294,10 +326,10 @@
       },
       "children": [
         {
-          "$ref": "#/groups/0"
+          "$ref": "#/texts/4"
         },
         {
-          "$ref": "#/groups/1"
+          "$ref": "#/texts/7"
         }
       ],
       "content_layer": "body",
@@ -361,10 +393,10 @@
       },
       "children": [
         {
-          "$ref": "#/texts/4"
+          "$ref": "#/texts/5"
         },
         {
-          "$ref": "#/texts/5"
+          "$ref": "#/texts/6"
         }
       ],
       "content_layer": "body",
@@ -378,10 +410,10 @@
       },
       "children": [
         {
-          "$ref": "#/texts/6"
+          "$ref": "#/texts/8"
         },
         {
-          "$ref": "#/texts/7"
+          "$ref": "#/texts/9"
         }
       ],
       "content_layer": "body",
@@ -395,10 +427,10 @@
       },
       "children": [
         {
-          "$ref": "#/texts/8"
+          "$ref": "#/texts/10"
         },
         {
-          "$ref": "#/texts/9"
+          "$ref": "#/texts/11"
         }
       ],
       "content_layer": "body",

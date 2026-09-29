@@ -436,6 +436,14 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     return None
         return result
 
+    _WRAPPED_INLINE_LABELS: ClassVar[dict[str, DocItemLabel]] = {
+        DocLangToken.TEXT.value: DocItemLabel.TEXT,
+        DocLangToken.CAPTION.value: DocItemLabel.CAPTION,
+        DocLangToken.FOOTNOTE.value: DocItemLabel.FOOTNOTE,
+        DocLangToken.PAGE_HEADER.value: DocItemLabel.PAGE_HEADER,
+        DocLangToken.PAGE_FOOTER.value: DocItemLabel.PAGE_FOOTER,
+    }
+
     def _is_empty_text_block(self, element: Element) -> bool:
         """Return True when ``element`` has no text and no children other than location/layer/label."""
         for node in element.childNodes:
@@ -461,7 +469,22 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         # an element without any content is an empty item, not a (childless) inline group
         is_empty = simple_text is None and thread_id is None and self._is_empty_text_block(el)
         if not is_empty and (len(element_children) > 1 or (simple_text is None and thread_id is None)):
-            self._parse_inline_group(doc=doc, el=el, parent=parent)
+            if not isinstance(parent, ListItem) and (label := self._WRAPPED_INLINE_LABELS.get(el.tagName)) is not None:
+                # keep the element's label, layer and location on an item (a group cannot carry them);
+                # a list item already is such an item
+                prov_list = self._extract_provenance(doc=doc, el=el)
+                item = doc.add_text(
+                    label=label,
+                    text="",
+                    parent=parent,
+                    prov=(prov_list[0] if prov_list else None),
+                    content_layer=self._extract_layer(el=el),
+                )
+                self._apply_initial_text_provenance(item, text="", prov_list=prov_list)
+                self._parse_inline_group(doc=doc, el=el, parent=item, nodes=el.childNodes)
+                self._source_recorder.bind_item(el, item)
+            else:
+                self._parse_inline_group(doc=doc, el=el, parent=parent)
             return
 
         prov_list = self._extract_provenance(doc=doc, el=el)

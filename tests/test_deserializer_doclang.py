@@ -2492,3 +2492,31 @@ def test_roundtrip_located_text_like_content() -> None:
         exp_file=data_dir / "roundtrip_located_text_like_content_reserialized.dclg.xml",
         actual=_serialize(doc),
     )
+
+
+_LOCS = "".join(f'<location value="{v}"/>' for v in (10, 20, 30, 40))
+
+
+def test_footnote_with_nested_field_region_keeps_label_and_bbox() -> None:
+    region = "<field_region><field_item><key>Tel.:</key><value>123</value></field_item></field_region>"
+    doc = DocLangDocDeserializer().deserialize_str(
+        f'<doclang version="0.7"><footnote>{_LOCS}Corresponding author.{region}</footnote></doclang>'
+    )
+
+    (footnote,) = [t for t in doc.texts if t.label == DocItemLabel.FOOTNOTE]
+    assert footnote.prov and footnote.text == ""
+    (inline,) = [c.resolve(doc) for c in footnote.children]
+    assert inline.label == GroupLabel.INLINE
+    assert [t.text for t in doc.texts if t.label == DocItemLabel.TEXT] == ["Corresponding author."]
+    assert len(doc.field_regions) == 1
+
+
+def test_footnote_with_nested_field_region_roundtrips() -> None:
+    region = "<field_region><field_item><key>Tel.:</key><value>123</value></field_item></field_region>"
+    doc = DocLangDocDeserializer().deserialize_str(
+        f'<doclang version="0.7"><footnote>{_LOCS}Corresponding author.{region}</footnote></doclang>'
+    )
+
+    dt = _serialize(doc)
+    assert "<footnote>" in dt and dt.count("<location") == 4
+    assert _serialize(_deserialize(dt)) == dt

@@ -1,12 +1,16 @@
 <doclang>
   <text>
+    <location value="10"/>
+    <location value="20"/>
+    <location value="300"/>
+    <location value="40"/>
     <content>Plain run, </content>
     <bold>bold run</bold>
   </text>
-  <text>
+  <footnote>
     <location value="10"/>
     <location value="60"/>
-    <location value="200"/>
+    <location value="300"/>
     <location value="80"/>
 Corresponding author.
     <field_region>
@@ -15,12 +19,12 @@ Corresponding author.
         <value>+81 48 467 4764</value>
       </field_item>
     </field_region>
-  </text>
+  </footnote>
   <text>
     <location value="10"/>
     <location value="100"/>
     <location value="300"/>
-    <location value="120"/>
+    <location value="140"/>
 Contact
     <field_region>
       <field_item>

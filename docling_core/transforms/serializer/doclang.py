@@ -901,10 +901,10 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 **kwargs,
             )
 
-    def _should_skip_location_for_list_item(self, *, item: ListItem, doc: DoclingDocument) -> bool:
-        """Check if location tokens should be skipped for a ListItem.
+    def _should_skip_location_for_list_item(self, *, item: TextItem, doc: DoclingDocument) -> bool:
+        """Check if location tokens should be skipped for a text item (list items included).
 
-        Returns True if the ListItem has empty text, provenance, and its first
+        Returns True if the item has empty text, provenance, and its first
         child is an InlineGroup (which will handle location tokens itself).
         """
         if not item.text and item.prov and item.children:
@@ -1073,7 +1073,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
 
         # Skip adding location tokens if this is a ListItem with InlineGroup child
         # (InlineSerializer will handle location tokens using parent's provenance)
-        skip_location = isinstance(item, ListItem) and self._should_skip_location_for_list_item(item=item, doc=doc)
+        skip_location = self._should_skip_location_for_list_item(item=item, doc=doc)
 
         code_label: str | None = None
         if isinstance(item, CodeItem):
@@ -1776,9 +1776,9 @@ class DocLangInlineSerializer(BaseInlineSerializer):
         params = DocLangParams(**kwargs)
         parts: list[SerializationResult] = []
         if params.add_location:
-            # Check if parent is ListItem with provenance - use that instead of children
+            # Check if parent is a text item (e.g. ListItem) with provenance - use that instead of children
             parent_item = item.parent.resolve(doc) if item.parent else None
-            if isinstance(parent_item, ListItem) and parent_item.prov:
+            if isinstance(parent_item, TextItem) and parent_item.prov:
                 # Use parent ListItem's provenance
                 for prov in parent_item.prov:
                     page_w, page_h = doc.pages[prov.page_no].size.as_tuple()
