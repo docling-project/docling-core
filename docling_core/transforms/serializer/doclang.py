@@ -347,6 +347,7 @@ def _element_head_prefix(
     caption_text: str | None = None,
     custom_text: str | None = None,
     include_href: bool = True,
+    include_layer: bool = True,
     include_item_meta_head: bool = True,
     thread_id: str | None = None,
 ) -> str:
@@ -358,7 +359,7 @@ def _element_head_prefix(
         parts.append(DocLangVocabulary._create_threading_token(thread_id=thread_id))
     if include_href and (href_uri := _text_item_hyperlink_uri(item)):
         parts.append(_create_href_token(uri=href_uri))
-    if layer_token := _create_layer_token(item=item, params=params):
+    if include_layer and (layer_token := _create_layer_token(item=item, params=params)):
         parts.append(layer_token)
     if params.add_location:
         if loc := _create_location_tokens_for_item(item=item, doc=doc, xres=params.xsize, yres=params.ysize):
@@ -1102,6 +1103,8 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                     caption_text=caption_head or None,
                     custom_text=custom_head or None,
                     include_href=include_href,
+                    # An inline run inherits its host's layer; a head token here is invalid mid-content.
+                    include_layer=not is_inline_scope,
                     thread_id=thread_id,
                 )
             )

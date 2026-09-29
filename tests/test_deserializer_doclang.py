@@ -13,6 +13,7 @@ from docling_core.transforms.serializer.doclang import (
 )
 from docling_core.types.doc import (
     BoundingBox,
+    ContentLayer,
     CoordOrigin,
     DescriptionMetaField,
     DocItemLabel,
@@ -26,12 +27,14 @@ from docling_core.types.doc import (
     PictureMeta,
     ProvenanceItem,
     RichTableCell,
+    Script,
     Size,
     SummaryMetaField,
     TableCell,
     TableData,
     TableItem,
     TabularChartMetaField,
+    TextItem,
 )
 from docling_core.types.doc.document import GroupLabel
 from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
@@ -2457,3 +2460,79 @@ def test_default_resolution_sets_page_coordinate_space():
         warnings.simplefilter("always")
         DoclingDocument.validate_document(doc)
     assert [w for w in caught if "clamping" in str(w.message)] == []
+
+
+@pytest.mark.parametrize(
+    ("frag", "expected"),
+    [
+        ("<text>2<superscript>nd</superscript></text>", ["2", "nd"]),
+        ("<text>plain <bold>b</bold></text>", ["plain", "b"]),
+        ("<footnote>see <italic>ibid</italic></footnote>", ["see", "ibid"]),
+        ("<formula>E <bold>=</bold></formula>", ["E", "="]),
+        # shapes that already worked
+        ("<text><superscript>nd</superscript> place</text>", ["nd", "place"]),
+        ("<text>H<subscript>2</subscript>O</text>", ["H", "2", "O"]),
+    ],
+)
+def test_leading_text_before_lone_formatting_tag_is_preserved(frag: str, expected: list[str]):
+    doc = _deserialize(f'<doclang version="0.7">{frag}</doclang>')
+    assert [t.text.strip() for t in doc.texts if t.text] == expected
+
+
+def test_mixed_content_footnote_keeps_label_and_provenance():
+    doc = _deserialize(
+        '<doclang version="0.7"><footnote>'
+        '<location value="87"/><location value="417"/><location value="387"/><location value="426"/>'
+        "<superscript>①</superscript>盐池县县志编纂委员会编《盐池县志》</footnote></doclang>"
+    )
+    host = doc.texts[0]
+    assert host.label == DocItemLabel.FOOTNOTE
+    assert host.text == ""
+    assert host.prov and host.prov[0].bbox.as_tuple() == (87, 417, 387, 426)
+    (inline,) = [ref.resolve(doc) for ref in host.children]
+    assert inline.label == GroupLabel.INLINE
+    runs = [ref.resolve(doc) for ref in inline.children]
+    assert [r.text for r in runs] == ["①", "盐池县县志编纂委员会编《盐池县志》"]
+    assert runs[0].formatting is not None and runs[0].formatting.script == Script.SUPER
+
+
+@pytest.mark.parametrize(
+    ("label", "layer"),
+    [
+        (DocItemLabel.FOOTNOTE, ContentLayer.BODY),
+        (DocItemLabel.FORMULA, ContentLayer.BODY),
+        (DocItemLabel.PAGE_HEADER, ContentLayer.FURNITURE),
+        (DocItemLabel.PAGE_FOOTER, ContentLayer.FURNITURE),
+    ],
+)
+def test_roundtrip_inline_host(label: DocItemLabel, layer: ContentLayer):
+    doc = DoclingDocument(name="t")
+    _add_default_page(doc)
+    if label == DocItemLabel.FORMULA:
+        host = doc.add_formula(text="", prov=_default_prov(), content_layer=layer)
+    else:
+        host = doc.add_text(label=label, text="", prov=_default_prov(), content_layer=layer)
+    inline = doc.add_inline_group(parent=host, content_layer=layer)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="1",
+        parent=inline,
+        formatting=Formatting(script=Script.SUPER),
+        content_layer=layer,
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="body", parent=inline, content_layer=layer)
+
+    doc2 = _deserialize(_serialize(doc))
+
+    host2 = doc2.texts[0]
+    assert host2.label == label
+    assert host2.text == ""
+    assert host2.content_layer == layer
+    assert host2.prov
+    runs = [
+        it
+        for it, _ in doc2.iterate_items(root=host2, included_content_layers=set(ContentLayer))
+        if isinstance(it, TextItem) and it is not host2
+    ]
+    assert [(r.text, r.content_layer) for r in runs] == [("1", layer), ("body", layer)]
+    assert runs[0].formatting is not None and runs[0].formatting.script == Script.SUPER

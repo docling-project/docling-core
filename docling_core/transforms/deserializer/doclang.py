@@ -97,6 +97,15 @@ from docling_core.utils.settings import settings
 
 __all__ = ["DocLangDocDeserializer", "DocLangSourceMap", "DocLangSourceTarget"]
 
+# Text-like tags whose label must survive when their content is mixed (text + formatting runs).
+# ``<text>`` is absent on purpose: a bare InlineGroup is serialized as ``<text>``, so it maps back to one.
+_INLINE_HOST_LABELS: dict[str, DocItemLabel] = {
+    DocLangToken.FOOTNOTE.value: DocItemLabel.FOOTNOTE,
+    DocLangToken.PAGE_HEADER.value: DocItemLabel.PAGE_HEADER,
+    DocLangToken.PAGE_FOOTER.value: DocItemLabel.PAGE_FOOTER,
+    DocLangToken.FORMULA.value: DocItemLabel.FORMULA,
+}
+
 
 def _utf8_byte_length(text: str) -> int:
     """Return UTF-8 byte length of ``text`` without retaining the encoded buffer."""
@@ -428,6 +437,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 }:
                     return None
                 elif tmp := self._get_children_simple_text_block(el):
+                    if result is not None:
+                        return None
                     result = tmp
             elif isinstance(el, Text) and el.data.strip():  # TODO should still support whitespace-only
                 if result is None:
@@ -445,7 +456,10 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         thread_id = self._extract_thread_id(el)
         simple_text = self._get_children_simple_text_block(el)
         if len(element_children) > 1 or (simple_text is None and thread_id is None):
-            self._parse_inline_group(doc=doc, el=el, parent=parent)
+            if (host_label := _INLINE_HOST_LABELS.get(el.tagName)) is not None:
+                self._parse_inline_host(doc=doc, el=el, parent=parent, label=host_label)
+            else:
+                self._parse_inline_group(doc=doc, el=el, parent=parent)
             return
 
         prov_list = self._extract_provenance(doc=doc, el=el)
@@ -1454,6 +1468,37 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                         text=text_content,
                         parent=inline_group,
                     )
+
+    def _parse_inline_host(
+        self,
+        *,
+        doc: DoclingDocument,
+        el: Element,
+        parent: NodeItem | None,
+        label: DocItemLabel,
+    ) -> None:
+        """Parse a labeled text-like element with mixed content as an empty host item holding an InlineGroup.
+
+        This is the shape the serializer writes back as ``<footnote>...runs...</footnote>``, so the host's
+        label, provenance and layer survive the round trip.
+        """
+        prov_list = self._extract_provenance(doc=doc, el=el)
+        content_layer = self._extract_layer(el=el)
+        prov = prov_list[0] if prov_list else None
+        item: TextItem
+        if label == DocItemLabel.FORMULA:
+            item = doc.add_formula(text="", parent=parent, prov=prov, content_layer=content_layer)
+        else:
+            item = doc.add_text(label=label, text="", parent=parent, prov=prov, content_layer=content_layer)
+        self._apply_initial_text_provenance(item, text="", prov_list=prov_list)
+        _, body_nodes = self._split_element_children_head_body(el)
+        self._parse_inline_group(doc=doc, el=el, parent=item, nodes=body_nodes)
+        if content_layer is not None:
+            # Runs carry no layer of their own; without this, a furniture host's runs would leak into the body.
+            for node, _ in doc.iterate_items(root=item, with_groups=True, included_content_layers=set(ContentLayer)):
+                node.content_layer = content_layer
+        self._apply_custom_meta_from_element(item=item, el=el)
+        self._source_recorder.bind_item(el, item)
 
     # ------------- Floating items (table / picture) -------------
 
