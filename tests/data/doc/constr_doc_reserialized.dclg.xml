@@ -124,6 +124,18 @@ Affiliation 2</content>
 <![CDATA[print("Hello world")]]>  </code>
   <text>Here a formula block:</text>
   <formula>E=mc^2</formula>
+  <field_region>
+    <field_item>
+      <key>number</key>
+      <value>1</value>
+    </field_item>
+  </field_region>
+  <field_region>
+    <field_item>
+      <key>number</key>
+      <value>1</value>
+    </field_item>
+  </field_region>
   <text>
     Some formatting chops:
     <bold>bold</bold>

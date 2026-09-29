@@ -46,6 +46,11 @@ from docling_core.transforms.serializer._doclang_utils import (
     _wrap_token,
     _xml_error_context,
 )
+from docling_core.transforms.serializer._field_utils import (
+    create_key_item,
+    create_value_item,
+    extract_key_value_pairs,
+)
 from docling_core.transforms.serializer.base import (
     BaseAnnotationSerializer,
     BaseDocSerializer,
@@ -1898,8 +1903,72 @@ class DocLangFallbackSerializer(BaseFallbackSerializer):
         return create_ser_result()
 
 
+def _strip_orphan_field_kv_wrap(*, text: str) -> str:
+    """Strip the wrapper the text serializer adds to orphan field keys/values.
+
+    ``DocLangTextSerializer`` wraps a key or value without a field-item ancestor in
+    ``<field_region><field_item>...</field_item></field_region>``. Legacy graph cells
+    are not part of the document tree, so the wrapper is removed here and the legacy
+    serializer emits its own grouping.
+    """
+    open_token = f"<{DocLangToken.FIELD_REGION.value}><{DocLangToken.FIELD_ITEM.value}>"
+    close_token = f"</{DocLangToken.FIELD_ITEM.value}></{DocLangToken.FIELD_REGION.value}>"
+    if text.startswith(open_token) and text.endswith(close_token):
+        return text[len(open_token) : -len(close_token)]
+    return text
+
+
+def _serialize_legacy_graph_doclang(
+    *,
+    item: KeyValueItem | FormItem,
+    doc_serializer: BaseDocSerializer,
+    doc: DoclingDocument,
+    **kwargs: Any,
+) -> SerializationResult:
+    """Serialize a legacy key-value graph like the migrated field regions."""
+    pairs = extract_key_value_pairs(graph=item.graph)
+    if not pairs:
+        return create_ser_result()
+
+    params = DocLangParams(**kwargs)
+    delim = _get_delim(params=params)
+    field_items: list[str] = []
+    idx = 0
+    for key_cell, value_cells in pairs:
+        kv_parts: list[str] = []
+        kv_parts.append(
+            _strip_orphan_field_kv_wrap(
+                text=doc_serializer.serialize(item=create_key_item(cell=key_cell, idx=idx), **kwargs).text
+            )
+        )
+        idx += 1
+        for value_cell in value_cells:
+            kv_parts.append(
+                _strip_orphan_field_kv_wrap(
+                    text=doc_serializer.serialize(item=create_value_item(cell=value_cell, idx=idx), **kwargs).text
+                )
+            )
+            idx += 1
+        field_items.append(
+            _wrap(
+                text=delim.join(part for part in kv_parts if part),
+                wrap_tag=DocLangToken.FIELD_ITEM.value,
+            )
+        )
+
+    head = _element_head_prefix(item=item, doc=doc, params=params)
+    region_parts = [head, *field_items] if head else field_items
+    return create_ser_result(
+        text=_wrap(
+            text=delim.join(part for part in region_parts if part),
+            wrap_tag=DocLangToken.FIELD_REGION.value,
+        ),
+        span_source=item,
+    )
+
+
 class DocLangKeyValueSerializer(BaseKeyValueSerializer):
-    """No-op serializer for key/value items in DocLang."""
+    """DocLang-specific key/value item serializer."""
 
     @override
     def serialize(
@@ -1910,12 +1979,14 @@ class DocLangKeyValueSerializer(BaseKeyValueSerializer):
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
-        """Return an empty result for key/value items."""
-        return create_ser_result()
+        """Serialize the passed item."""
+        if item.self_ref in doc_serializer.get_excluded_refs():
+            return create_ser_result()
+        return _serialize_legacy_graph_doclang(item=item, doc_serializer=doc_serializer, doc=doc, **kwargs)
 
 
 class DocLangFormSerializer(BaseFormSerializer):
-    """No-op serializer for form items in DocLang."""
+    """DocLang-specific form item serializer."""
 
     @override
     def serialize(
@@ -1926,8 +1997,10 @@ class DocLangFormSerializer(BaseFormSerializer):
         doc: DoclingDocument,
         **kwargs: Any,
     ) -> SerializationResult:
-        """Return an empty result for form items."""
-        return create_ser_result()
+        """Serialize the passed item."""
+        if item.self_ref in doc_serializer.get_excluded_refs():
+            return create_ser_result()
+        return _serialize_legacy_graph_doclang(item=item, doc_serializer=doc_serializer, doc=doc, **kwargs)
 
 
 class DocLangAnnotationSerializer(BaseAnnotationSerializer):

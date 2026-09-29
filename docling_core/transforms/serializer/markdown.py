@@ -13,6 +13,11 @@ from pydantic import AnyUrl, BaseModel, Field, PositiveInt
 from tabulate import _column_type, tabulate
 from typing_extensions import override
 
+from docling_core.transforms.serializer._field_utils import (
+    create_key_item,
+    create_value_item,
+    extract_key_value_pairs,
+)
 from docling_core.transforms.serializer.base import (
     BaseAnnotationSerializer,
     BaseDocSerializer,
@@ -1056,6 +1061,25 @@ class MarkdownPictureSerializer(BasePictureSerializer):
         return quote(s, safe=keep)
 
 
+def _serialize_legacy_graph_markdown(
+    *,
+    item: KeyValueItem | FormItem,
+    doc_serializer: "BaseDocSerializer",
+    doc: DoclingDocument,
+    **kwargs: Any,
+) -> SerializationResult:
+    """Serialize a legacy key-value graph like the migrated field regions."""
+    texts: list[str] = []
+    idx = 0
+    for key_cell, value_cells in extract_key_value_pairs(graph=item.graph):
+        texts.append(doc_serializer.serialize(item=create_key_item(cell=key_cell, idx=idx), **kwargs).text)
+        idx += 1
+        for value_cell in value_cells:
+            texts.append(doc_serializer.serialize(item=create_value_item(cell=value_cell, idx=idx), **kwargs).text)
+            idx += 1
+    return create_ser_result(text="\n\n".join(text for text in texts if text), span_source=item)
+
+
 class MarkdownKeyValueSerializer(BaseKeyValueSerializer):
     """Markdown-specific key-value item serializer."""
 
@@ -1069,14 +1093,9 @@ class MarkdownKeyValueSerializer(BaseKeyValueSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        # TODO add actual implementation
-        if item.self_ref not in doc_serializer.get_excluded_refs():
-            return create_ser_result(
-                text="<!-- missing-key-value-item -->",
-                span_source=item,
-            )
-        else:
+        if item.self_ref in doc_serializer.get_excluded_refs():
             return create_ser_result()
+        return _serialize_legacy_graph_markdown(item=item, doc_serializer=doc_serializer, doc=doc, **kwargs)
 
 
 class MarkdownFormSerializer(BaseFormSerializer):
@@ -1092,14 +1111,9 @@ class MarkdownFormSerializer(BaseFormSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        # TODO add actual implementation
-        if item.self_ref not in doc_serializer.get_excluded_refs():
-            return create_ser_result(
-                text="<!-- missing-form-item -->",
-                span_source=item,
-            )
-        else:
+        if item.self_ref in doc_serializer.get_excluded_refs():
             return create_ser_result()
+        return _serialize_legacy_graph_markdown(item=item, doc_serializer=doc_serializer, doc=doc, **kwargs)
 
 
 class MarkdownListSerializer(BaseModel, BaseListSerializer):

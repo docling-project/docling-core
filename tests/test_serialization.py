@@ -36,6 +36,9 @@ from docling_core.types.doc.document import (
     DescriptionAnnotation,
     EntitiesMetaField,
     EntityMention,
+    GraphCell,
+    GraphData,
+    GraphLink,
     LanguageMetaField,
     PictureClassificationMetaField,
     PictureClassificationPrediction,
@@ -48,7 +51,7 @@ from docling_core.types.doc.document import (
     TableData,
     TextItem,
 )
-from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc.labels import DocItemLabel, GraphCellLabel, GraphLinkLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -1891,3 +1894,72 @@ def test_export_and_save_markdown_caption_placement(tmp_path, placement):
     # default is unchanged
     assert doc.export_to_markdown().index("THE CAPTION") < doc.export_to_markdown().index("<!-- image -->")
     assert doc.export_to_markdown() == doc.export_to_markdown(caption_placement="standard")
+
+
+def _legacy_graph_doc(*, form: bool = False, with_prov: bool = False, trailing: bool = True) -> DoclingDocument:
+    """Build a document holding one legacy key-value or form graph item."""
+    doc = DoclingDocument(name="legacy_graph")
+    if with_prov:
+        doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    prov = (
+        ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 1),
+        )
+        if with_prov
+        else None
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="Before")
+    graph = GraphData(
+        cells=[
+            GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="Name", orig="Name", prov=prov),
+            GraphCell(label=GraphCellLabel.VALUE, cell_id=1, text="John Doe", orig="", prov=prov),
+            GraphCell(label=GraphCellLabel.VALUE, cell_id=2, text="Jane Doe", orig="Jane Doe"),
+        ],
+        links=[
+            GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=0, target_cell_id=1),
+            GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=0, target_cell_id=2),
+            GraphLink(label=GraphLinkLabel.TO_KEY, source_cell_id=1, target_cell_id=0),
+        ],
+    )
+    if form:
+        doc.add_form(graph=graph, prov=prov)
+    else:
+        doc.add_key_values(graph=graph, prov=prov)
+    if trailing:
+        doc.add_text(label=DocItemLabel.TEXT, text="After")
+    return doc
+
+
+@pytest.mark.parametrize("form", [False, True], ids=["key-value", "form"])
+def test_md_legacy_graph_item(form):
+    doc = _legacy_graph_doc(form=form)
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    assert actual == "Before\n\nName\n\nJohn Doe\n\nJane Doe\n\nAfter"
+
+
+@pytest.mark.parametrize("form", [False, True], ids=["key-value", "form"])
+@pytest.mark.parametrize("with_prov", [False, True], ids=["no-prov", "prov"])
+def test_md_legacy_graph_matches_migrated_field_regions(form, with_prov):
+    doc = _legacy_graph_doc(form=form, with_prov=with_prov)
+    migrated = _legacy_graph_doc(form=form, with_prov=with_prov)
+    migrated._migrate_to_field_regions()
+    assert MarkdownDocSerializer(doc=doc).serialize().text == MarkdownDocSerializer(doc=migrated).serialize().text
+
+
+def test_md_legacy_graph_single_item_renders():
+    doc = _legacy_graph_doc(trailing=False)
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    assert actual == "Before\n\nName\n\nJohn Doe\n\nJane Doe"
+
+
+def test_md_legacy_graph_without_pairs_renders_empty():
+    doc = DoclingDocument(name="empty_graph")
+    doc.add_key_values(
+        graph=GraphData(
+            cells=[GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="orphan", orig="orphan")],
+            links=[],
+        )
+    )
+    assert MarkdownDocSerializer(doc=doc).serialize().text == ""
