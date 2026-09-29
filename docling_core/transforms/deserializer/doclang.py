@@ -97,14 +97,11 @@ from docling_core.utils.settings import settings
 
 __all__ = ["DocLangDocDeserializer", "DocLangSourceMap", "DocLangSourceTarget"]
 
-# Text-like tags whose label must survive when their content is mixed (text + formatting runs).
-# ``<text>`` is absent on purpose: a bare InlineGroup is serialized as ``<text>``, so it maps back to one.
-_INLINE_HOST_LABELS: dict[str, DocItemLabel] = {
-    DocLangToken.FOOTNOTE.value: DocItemLabel.FOOTNOTE,
-    DocLangToken.PAGE_HEADER.value: DocItemLabel.PAGE_HEADER,
-    DocLangToken.PAGE_FOOTER.value: DocItemLabel.PAGE_FOOTER,
-    DocLangToken.FORMULA.value: DocItemLabel.FORMULA,
-}
+# Labels whose text-like tag must keep its label when its content is mixed (text + formatting runs).
+# TEXT is absent on purpose: a bare InlineGroup is serialized as ``<text>``, so it maps back to one.
+_INLINE_HOST_LABELS: frozenset[DocItemLabel] = frozenset(
+    {DocItemLabel.FOOTNOTE, DocItemLabel.PAGE_HEADER, DocItemLabel.PAGE_FOOTER, DocItemLabel.FORMULA}
+)
 
 
 def _utf8_byte_length(text: str) -> int:
@@ -456,8 +453,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         thread_id = self._extract_thread_id(el)
         simple_text = self._get_children_simple_text_block(el)
         if len(element_children) > 1 or (simple_text is None and thread_id is None):
-            if (host_label := _INLINE_HOST_LABELS.get(el.tagName)) is not None:
-                self._parse_inline_host(doc=doc, el=el, parent=parent, label=host_label)
+            if el.tagName in _INLINE_HOST_LABELS:
+                self._parse_inline_host(doc=doc, el=el, parent=parent, label=DocItemLabel(el.tagName))
             else:
                 self._parse_inline_group(doc=doc, el=el, parent=parent)
             return
