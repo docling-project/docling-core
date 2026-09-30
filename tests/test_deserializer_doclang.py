@@ -2457,3 +2457,24 @@ def test_default_resolution_sets_page_coordinate_space():
         warnings.simplefilter("always")
         DoclingDocument.validate_document(doc)
     assert [w for w in caught if "clamping" in str(w.message)] == []
+
+
+@pytest.mark.parametrize("markup", ["<text></text>", "<text>\n  </text>"])
+def test_empty_text_is_an_empty_text_item(markup: str) -> None:
+    doc = DocLangDocDeserializer().deserialize_str(f'<doclang version="0.7">\n<text>a</text>\n{markup}\n</doclang>')
+
+    assert [t.text for t in doc.texts] == ["a", ""]
+    assert not doc.groups
+
+
+def test_empty_text_keeps_its_locations_and_layer() -> None:
+    locs = "".join(f'<location value="{v}"/>' for v in (10, 20, 30, 40))
+    doc = DocLangDocDeserializer().deserialize_str(
+        f'<doclang version="0.7"><text><layer value="furniture"/>{locs}</text></doclang>'
+    )
+
+    (item,) = doc.texts
+    assert item.text == ""
+    assert item.content_layer.value == "furniture"
+    assert len(item.prov) == 1 and item.prov[0].bbox.l < item.prov[0].bbox.r
+    assert not doc.groups
