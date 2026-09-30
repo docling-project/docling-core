@@ -838,7 +838,7 @@ class _CountingSerializerProxy:
 
 
 def test_split_by_doc_items_serializes_each_item_once():
-    """_split_by_doc_items serializes each item exactly once (regression for #807)."""
+    """_split_by_doc_items serializes each item exactly once."""
     num_items = 200
     doc = DoclingDocument(name="t")
     doc.add_heading(text="Chapter 1", level=1)
