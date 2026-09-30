@@ -2520,3 +2520,26 @@ def test_footnote_with_nested_field_region_roundtrips() -> None:
     dt = _serialize(doc)
     assert "<footnote>" in dt and dt.count("<location") == 4
     assert _serialize(_deserialize(dt)) == dt
+
+
+_FIELD_REGION_WITH_LOCS = (
+    f"<field_region><field_item><key>{_LOCS}Tel.:</key><value>{_LOCS}123</value></field_item></field_region>"
+)
+
+
+@pytest.mark.parametrize(
+    "markup",
+    [
+        f"<footnote>{_LOCS}Corresponding author.{_FIELD_REGION_WITH_LOCS}</footnote>",
+        f"<text>{_LOCS}Corresponding author.{_FIELD_REGION_WITH_LOCS}</text>",
+        f"<list><ldiv/><text>{_LOCS}item{_FIELD_REGION_WITH_LOCS}</text></list>",
+    ],
+    ids=["in-footnote", "in-text", "in-list-item"],
+)
+def test_field_region_nested_in_inline_content_keeps_its_locations(markup: str) -> None:
+    doc = _deserialize(f'<doclang version="0.7">{markup}</doclang>')
+
+    dt = _serialize(doc)
+    # the enclosing element's bbox plus the key's and the value's own
+    assert dt.count("<location") == 3 * 4
+    assert _serialize(_deserialize(dt)) == dt

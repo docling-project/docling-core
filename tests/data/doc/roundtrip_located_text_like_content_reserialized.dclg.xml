@@ -15,8 +15,20 @@
 Corresponding author.
     <field_region>
       <field_item>
-        <key>Tel.:</key>
-        <value>+81 48 467 4764</value>
+        <key>
+          <location value="10"/>
+          <location value="60"/>
+          <location value="60"/>
+          <location value="80"/>
+          Tel.:
+        </key>
+        <value>
+          <location value="70"/>
+          <location value="60"/>
+          <location value="200"/>
+          <location value="80"/>
+          +81 48 467 4764
+        </value>
       </field_item>
     </field_region>
   </footnote>
@@ -28,8 +40,20 @@ Corresponding author.
 Contact
     <field_region>
       <field_item>
-        <key>E-mail:</key>
-        <value>someone@example.org</value>
+        <key>
+          <location value="10"/>
+          <location value="100"/>
+          <location value="60"/>
+          <location value="120"/>
+          E-mail:
+        </key>
+        <value>
+          <location value="70"/>
+          <location value="100"/>
+          <location value="300"/>
+          <location value="120"/>
+          someone@example.org
+        </value>
       </field_item>
     </field_region>
   </text>
