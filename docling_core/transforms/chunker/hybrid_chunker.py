@@ -196,7 +196,9 @@ class HybridChunker(BaseChunker):
         def window_count(window_start: int, window_end: int) -> int:
             return self._count_chunk_tokens(doc_chunk=build_window(window_start, window_end))
 
-        # constant token cost of the chunk meta around the window text
+        # constant across windows: doc_items and origin are excluded from the embed
+        # serialization (DocMeta.excluded_embed), so contextualize() only sees
+        # headings/captions, which are the same for every window in this chunk
         meta_overhead = window_count(0, 0) - self.tokenizer.count_tokens(text=build_window(0, 0).text)
 
         chunks: list[DocChunk] = []
