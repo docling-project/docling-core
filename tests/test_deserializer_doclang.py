@@ -2478,3 +2478,17 @@ def test_empty_text_keeps_its_locations_and_layer() -> None:
     assert item.content_layer.value == "furniture"
     assert len(item.prov) == 1 and item.prov[0].bbox.l < item.prov[0].bbox.r
     assert not doc.groups
+
+
+def test_roundtrip_located_text_like_content() -> None:
+    """Located text-like elements with nested content (runs, field regions) deserialize and round-trip."""
+    data_dir = Path(__file__).parent / "data" / "doc"
+    src = (data_dir / "roundtrip_located_text_like_content.dclg.xml").read_text(encoding="utf-8")
+
+    doc = _deserialize(src)
+    _verify_doc(doc=doc, exp_json=data_dir / "roundtrip_located_text_like_content_deserialized.json")
+
+    verify_doclang(
+        exp_file=data_dir / "roundtrip_located_text_like_content_reserialized.dclg.xml",
+        actual=_serialize(doc),
+    )
