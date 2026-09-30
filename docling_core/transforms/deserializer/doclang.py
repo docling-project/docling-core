@@ -243,7 +243,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         self._max_xml_elements = int(kwargs.get("max_xml_elements", settings.max_doclang_xml_elements))
         self._source_recorder = _DocLangSourceRecorder(kwargs.get("source_map"))
 
-        if not kwargs.get("strict", True):
+        if kwargs.get("strict") is False:
             text = _repair_unescaped_xml_text(text)
         root = self._parse_xml_string(text)
         if root.tagName != DocLangToken.DOCUMENT.value:

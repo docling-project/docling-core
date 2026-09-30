@@ -2589,6 +2589,11 @@ def test_non_strict_repairs_unescaped_text(body: str, expected: list[str]):
     assert [t.text for t in doc.texts] == expected
 
 
+def test_non_strict_requires_explicit_false():
+    with pytest.raises(ValueError, match="Invalid DocLang XML"):
+        DocLangDocDeserializer().deserialize_str("<doclang><text>a & b</text></doclang>", strict=None)
+
+
 def test_non_strict_keeps_well_formed_markup_and_entities():
     xml = '<doclang><text>a &amp; &#60; &#x3E;<![CDATA[ & < ]]></text><heading level="1">H</heading></doclang>'
     strict = DocLangDocDeserializer().deserialize_str(xml)
