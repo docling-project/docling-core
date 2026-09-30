@@ -2478,3 +2478,68 @@ def test_empty_text_keeps_its_locations_and_layer() -> None:
     assert item.content_layer.value == "furniture"
     assert len(item.prov) == 1 and item.prov[0].bbox.l < item.prov[0].bbox.r
     assert not doc.groups
+
+
+def test_roundtrip_located_text_like_content() -> None:
+    """Located text-like elements with nested content (runs, field regions) deserialize and round-trip."""
+    data_dir = Path(__file__).parent / "data" / "doc"
+    src = (data_dir / "roundtrip_located_text_like_content.dclg.xml").read_text(encoding="utf-8")
+
+    doc = _deserialize(src)
+    _verify_doc(doc=doc, exp_json=data_dir / "roundtrip_located_text_like_content_deserialized.json")
+
+    verify_doclang(
+        exp_file=data_dir / "roundtrip_located_text_like_content_reserialized.dclg.xml",
+        actual=_serialize(doc),
+    )
+
+
+_LOCS = "".join(f'<location value="{v}"/>' for v in (10, 20, 30, 40))
+
+
+def test_footnote_with_nested_field_region_keeps_label_and_bbox() -> None:
+    region = "<field_region><field_item><key>Tel.:</key><value>123</value></field_item></field_region>"
+    doc = DocLangDocDeserializer().deserialize_str(
+        f'<doclang version="0.7"><footnote>{_LOCS}Corresponding author.{region}</footnote></doclang>'
+    )
+
+    (footnote,) = [t for t in doc.texts if t.label == DocItemLabel.FOOTNOTE]
+    assert footnote.prov and footnote.text == ""
+    (inline,) = [c.resolve(doc) for c in footnote.children]
+    assert inline.label == GroupLabel.INLINE
+    assert [t.text for t in doc.texts if t.label == DocItemLabel.TEXT] == ["Corresponding author."]
+    assert len(doc.field_regions) == 1
+
+
+def test_footnote_with_nested_field_region_roundtrips() -> None:
+    region = "<field_region><field_item><key>Tel.:</key><value>123</value></field_item></field_region>"
+    doc = DocLangDocDeserializer().deserialize_str(
+        f'<doclang version="0.7"><footnote>{_LOCS}Corresponding author.{region}</footnote></doclang>'
+    )
+
+    dt = _serialize(doc)
+    assert "<footnote>" in dt and dt.count("<location") == 4
+    assert _serialize(_deserialize(dt)) == dt
+
+
+_FIELD_REGION_WITH_LOCS = (
+    f"<field_region><field_item><key>{_LOCS}Tel.:</key><value>{_LOCS}123</value></field_item></field_region>"
+)
+
+
+@pytest.mark.parametrize(
+    "markup",
+    [
+        f"<footnote>{_LOCS}Corresponding author.{_FIELD_REGION_WITH_LOCS}</footnote>",
+        f"<text>{_LOCS}Corresponding author.{_FIELD_REGION_WITH_LOCS}</text>",
+        f"<list><ldiv/><text>{_LOCS}item{_FIELD_REGION_WITH_LOCS}</text></list>",
+    ],
+    ids=["in-footnote", "in-text", "in-list-item"],
+)
+def test_field_region_nested_in_inline_content_keeps_its_locations(markup: str) -> None:
+    doc = _deserialize(f'<doclang version="0.7">{markup}</doclang>')
+
+    dt = _serialize(doc)
+    # the enclosing element's bbox plus the key's and the value's own
+    assert dt.count("<location") == 3 * 4
+    assert _serialize(_deserialize(dt)) == dt

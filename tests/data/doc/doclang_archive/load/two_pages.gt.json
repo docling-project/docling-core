@@ -61,10 +61,7 @@
         "$ref": "#/texts/19"
       },
       {
-        "$ref": "#/groups/1"
-      },
-      {
-        "$ref": "#/texts/22"
+        "$ref": "#/texts/20"
       },
       {
         "$ref": "#/texts/23"
@@ -92,6 +89,9 @@
       },
       {
         "$ref": "#/texts/31"
+      },
+      {
+        "$ref": "#/texts/32"
       }
     ],
     "content_layer": "body",
@@ -131,14 +131,14 @@
     {
       "self_ref": "#/groups/1",
       "parent": {
-        "$ref": "#/body"
+        "$ref": "#/texts/20"
       },
       "children": [
         {
-          "$ref": "#/texts/20"
+          "$ref": "#/texts/21"
         },
         {
-          "$ref": "#/texts/21"
+          "$ref": "#/texts/22"
         }
       ],
       "content_layer": "body",
@@ -705,6 +705,37 @@
     {
       "self_ref": "#/texts/20",
       "parent": {
+        "$ref": "#/body"
+      },
+      "children": [
+        {
+          "$ref": "#/groups/1"
+        }
+      ],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 2,
+          "bbox": {
+            "l": 90.0,
+            "t": 158.0,
+            "r": 422.0,
+            "b": 185.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": ""
+    },
+    {
+      "self_ref": "#/texts/21",
+      "parent": {
         "$ref": "#/groups/1"
       },
       "children": [],
@@ -715,7 +746,7 @@
       "text": "To use Docling, you can simply install the docling package from PyPI. Documentation and examples are available in our GitHub repository at "
     },
     {
-      "self_ref": "#/texts/21",
+      "self_ref": "#/texts/22",
       "parent": {
         "$ref": "#/groups/1"
       },
@@ -727,7 +758,7 @@
       "text": "github.com/DS4SD/docling\n. All required model assets 1 are downloaded to a local huggingface datasets cache on first use, unless you choose to pre-install the model assets in advance."
     },
     {
-      "self_ref": "#/texts/22",
+      "self_ref": "#/texts/23",
       "parent": {
         "$ref": "#/body"
       },
@@ -754,7 +785,7 @@
       "text": "Docling provides an easy code interface to convert PDF documents from file system, URLs or binary streams, and retrieve the output in either JSON or Markdown format. For convenience, separate methods are offered to convert single documents or batches of documents. A basic usage example is illustrated below. Further examples are available in the Doclign code repository."
     },
     {
-      "self_ref": "#/texts/23",
+      "self_ref": "#/texts/24",
       "parent": {
         "$ref": "#/body"
       },
@@ -785,7 +816,7 @@
       "code_language": "Python"
     },
     {
-      "self_ref": "#/texts/24",
+      "self_ref": "#/texts/25",
       "parent": {
         "$ref": "#/body"
       },
@@ -816,7 +847,7 @@
       "code_language": "Python"
     },
     {
-      "self_ref": "#/texts/25",
+      "self_ref": "#/texts/26",
       "parent": {
         "$ref": "#/body"
       },
@@ -843,7 +874,7 @@
       "text": "Optionally, you can configure custom pipeline features and runtime options, such as turning on or off features (e.g. OCR, table structure recognition), enforcing limits on the input document size, and defining the budget of CPU threads. Advanced usage examples and options are documented in the README file. Docling also provides a Dockerfile to demonstrate how to install and run it inside a container."
     },
     {
-      "self_ref": "#/texts/26",
+      "self_ref": "#/texts/27",
       "parent": {
         "$ref": "#/body"
       },
@@ -871,7 +902,7 @@
       "level": 1
     },
     {
-      "self_ref": "#/texts/27",
+      "self_ref": "#/texts/28",
       "parent": {
         "$ref": "#/body"
       },
@@ -898,7 +929,7 @@
       "text": "Docling implements a linear pipeline of operations, which execute sequentially on each given document (see Fig. 1). Each document is first parsed by a PDF backend, which retrieves the programmatic text tokens, consisting of string content and its coordinates on the page, and also renders a bitmap image of each page to support downstream operations. Then, the standard model pipeline applies a sequence of AI models independently on every page in the document to extract features and content, such as layout and table structures. Finally, the results from all pages are aggregated and passed through a post-processing stage, which augments metadata, detects the document language, infers reading-order and eventually assembles a typed document object which can be serialized to JSON or Markdown."
     },
     {
-      "self_ref": "#/texts/28",
+      "self_ref": "#/texts/29",
       "parent": {
         "$ref": "#/body"
       },
@@ -926,7 +957,7 @@
       "level": 1
     },
     {
-      "self_ref": "#/texts/29",
+      "self_ref": "#/texts/30",
       "parent": {
         "$ref": "#/body"
       },
@@ -953,7 +984,7 @@
       "text": "Two basic requirements to process PDF documents in our pipeline are a) to retrieve all text content and their geometric coordinates on each page and b) to render the visual representation of each page as it would appear in a PDF viewer. Both these requirements are encapsulated in Docling's PDF backend interface. While there are several open-source PDF parsing libraries available for python, we faced major obstacles with all of them for different reasons, among which were restrictive"
     },
     {
-      "self_ref": "#/texts/30",
+      "self_ref": "#/texts/31",
       "parent": {
         "$ref": "#/body"
       },
@@ -980,7 +1011,7 @@
       "text": "1 see huggingface.co/ds4sd/docling-models/"
     },
     {
-      "self_ref": "#/texts/31",
+      "self_ref": "#/texts/32",
       "parent": {
         "$ref": "#/body"
       },
