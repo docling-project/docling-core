@@ -159,6 +159,23 @@ class HybridChunker(BaseChunker):
         )
 
     def _split_by_doc_items(self, doc_chunk: DocChunk, doc_serializer: BaseDocSerializer) -> list[DocChunk]:
+        """Split a chunk along doc-item boundaries, keeping each window within max_tokens.
+
+        Each item is serialized once and its token count cached. Windows are
+        grown with a running token estimate, re-anchored by exact counts at
+        overflow points, and shrunk back to the largest fitting window when the
+        estimate under-counts. The resulting windows match the previous
+        implementation exactly, since the largest window that fits is unique.
+
+        Args:
+            doc_chunk: The chunk to split, containing one or more doc items.
+            doc_serializer: Serializer for the document, used to obtain per-item text.
+
+        Returns:
+            A list of chunks whose windows respect max_tokens. A single item
+            that does not fit is returned as-is and split later at the
+            plain-text stage.
+        """
         doc_items = doc_chunk.meta.doc_items
         num_items = len(doc_items)
         if num_items <= 1:
