@@ -1440,7 +1440,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             self._source_recorder.bind_item(el, inline_group)
 
         # Process all child elements, adding them as children of the inline group
-        my_nodes = nodes or el.childNodes
+        my_nodes = nodes if nodes is not None else el.childNodes
         for node in my_nodes:
             if isinstance(node, Element):
                 # Recursively dispatch child elements with the inline group as parent

@@ -2457,3 +2457,14 @@ def test_default_resolution_sets_page_coordinate_space():
         warnings.simplefilter("always")
         DoclingDocument.validate_document(doc)
     assert [w for w in caught if "clamping" in str(w.message)] == []
+
+
+def test_empty_list_item_does_not_replay_siblings():
+    xml = """<doclang version="0.7"><list>
+<ldiv/><content>Alpha</content>
+<ldiv/><location value="1"/><location value="2"/>
+<location value="3"/><location value="4"/>
+<ldiv/><content>Beta</content>
+</list></doclang>"""
+    doc = DocLangDocDeserializer().deserialize_str(xml)
+    assert sorted(it.text for it in doc.texts if it.text.strip()) == ["Alpha", "Beta"]
