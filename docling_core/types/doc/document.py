@@ -4926,6 +4926,7 @@ class DoclingDocument(BaseModel):
         self,
         *,
         add_named_groups: bool = False,
+        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
     ) -> str:
         """Export to DocLang.
 
@@ -4933,12 +4934,15 @@ class DoclingDocument(BaseModel):
             add_named_groups: When True, a plain ``GroupItem`` is emitted as a
                 ``<group name="...">`` element instead of being transparent, so
                 the grouping survives a round trip.
+            image_mode: How picture images are included: ``PLACEHOLDER`` emits no
+                picture source, ``REFERENCED`` the pictures' existing image URIs and
+                ``EMBEDDED`` the images as data URIs.
         """
         from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 
         serializer = DocLangDocSerializer(
             doc=self,
-            params=DocLangParams(add_named_groups=add_named_groups),
+            params=DocLangParams(add_named_groups=add_named_groups, image_mode=image_mode),
         )
         return serializer.serialize().text
 
@@ -4947,11 +4951,12 @@ class DoclingDocument(BaseModel):
         filename: str | Path,
         *,
         add_named_groups: bool = False,
+        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
     ) -> None:
-        """Save the document as DocLang."""
+        """Save the document as DocLang (see ``export_to_doclang`` for the options)."""
         if isinstance(filename, str):
             filename = Path(filename)
-        out = self.export_to_doclang(add_named_groups=add_named_groups)
+        out = self.export_to_doclang(add_named_groups=add_named_groups, image_mode=image_mode)
         filename.write_text(f"{out}\n", encoding="utf-8")
 
     def save_as_doclang_archive(
@@ -4961,19 +4966,34 @@ class DoclingDocument(BaseModel):
         artifacts_dir: Path | None = None,
         validate: bool = False,
         add_named_groups: bool = False,
+        include_namespace: bool = False,
+        image_mode: ImageRefMode = ImageRefMode.REFERENCED,
     ) -> None:
         """Save the document as a DocLang OPC archive (``.dclx``).
 
         Picture and page images are always stored outside the markup, under
         ``assets/`` and ``pages/`` in the archive respectively.
 
+        ``image_mode`` controls the picture images: ``REFERENCED`` (default) stores each
+        picture's image (cropped from its page image if it has none of its own) under
+        ``assets/`` and references it from the picture, ``PLACEHOLDER`` stores and
+        references none. ``EMBEDDED`` is not supported, as the archive keeps images
+        outside the markup. Page images are stored in either case.
+
         ``add_named_groups`` emits plain ``GroupItem``s as ``<group name="...">``
         elements so the grouping survives a round trip.
+
+        ``include_namespace`` declares the DocLang namespace on the root element. It is
+        required for ``validate`` to pass, as the schema only declares the namespaced root.
+        Note that ``validate`` also runs the Schematron rules, which need a Schematron backend
+        to be installed for ``doclang``.
         """
         from doclang import pack
 
         from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 
+        if image_mode not in (ImageRefMode.REFERENCED, ImageRefMode.PLACEHOLDER):
+            raise ValueError(f"Unsupported image_mode for a DocLang archive: {image_mode}")
         if isinstance(filename, str):
             filename = Path(filename)
 
@@ -4983,7 +5003,7 @@ class DoclingDocument(BaseModel):
 
             doc = self._make_copy_with_refmode(
                 artifacts_dir=assets_dir,
-                image_mode=ImageRefMode.REFERENCED,
+                image_mode=image_mode,
                 page_no=None,
                 reference_path=staging_root,
             )
@@ -4991,8 +5011,9 @@ class DoclingDocument(BaseModel):
             serializer = DocLangDocSerializer(
                 doc=doc,
                 params=DocLangParams(
-                    image_mode=ImageRefMode.REFERENCED,
+                    image_mode=image_mode,
                     add_named_groups=add_named_groups,
+                    include_namespace=include_namespace,
                 ),
             )
             document_path = staging_root / "document.dclg.xml"

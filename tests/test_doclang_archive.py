@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from docling_core.types.doc import DoclingDocument, ImageRef
+from docling_core.types.doc import DoclingDocument, ImageRef, ImageRefMode
 from tests.test_data_gen_flag import GEN_TEST_DATA
 
 DOC_LANG_ARCHIVE_DIR = Path("tests/data/doc/doclang_archive")
@@ -91,6 +91,62 @@ def test_save_as_doclang_archive(save_fixture_doc: DoclingDocument, tmp_path: Pa
         xml = archive.read("document.xml").decode("utf-8")
         assert "base64" not in xml
         assert 'uri="assets/' in xml
+
+
+def test_save_as_doclang_archive_with_namespace(save_fixture_doc: DoclingDocument, tmp_path: Path) -> None:
+    from doclang import SchematronBackendNotFound, ValidationError
+
+    from docling_core.transforms.serializer._doclang_utils import DOCLANG_NAMESPACE
+
+    def document_xml(dclx: Path) -> str:
+        with zipfile.ZipFile(dclx) as archive:
+            return archive.read("document.xml").decode("utf-8")
+
+    # by default, no namespace is declared (unchanged output)
+    plain = tmp_path / "plain.dclx"
+    save_fixture_doc.save_as_doclang_archive(plain)
+    assert f'xmlns="{DOCLANG_NAMESPACE}"' not in document_xml(plain)
+
+    namespaced = tmp_path / "namespaced.dclx"
+    save_fixture_doc.save_as_doclang_archive(namespaced, include_namespace=True)
+    assert f'xmlns="{DOCLANG_NAMESPACE}"' in document_xml(namespaced)
+
+    # the namespaced archive loads like the plain one
+    loaded = DoclingDocument.load_from_doclang_archive(namespaced, artifacts_dir=tmp_path / "namespaced_artifacts")
+    loaded_plain = DoclingDocument.load_from_doclang_archive(plain, artifacts_dir=tmp_path / "plain_artifacts")
+    assert loaded.export_to_markdown() == loaded_plain.export_to_markdown()
+
+    # validation needs the namespace (and a Schematron backend)
+    try:
+        save_fixture_doc.save_as_doclang_archive(tmp_path / "validated.dclx", include_namespace=True, validate=True)
+    except SchematronBackendNotFound:
+        pytest.skip("no Schematron backend installed for doclang")
+    with pytest.raises(ValidationError):
+        save_fixture_doc.save_as_doclang_archive(tmp_path / "invalid.dclx", validate=True)
+
+
+def test_save_as_doclang_archive_image_mode(save_fixture_doc: DoclingDocument, tmp_path: Path) -> None:
+    # placeholder: no picture images stored or referenced, page images still stored
+    dclx = tmp_path / "placeholder.dclx"
+    save_fixture_doc.save_as_doclang_archive(dclx, image_mode=ImageRefMode.PLACEHOLDER)
+    with zipfile.ZipFile(dclx) as archive:
+        names = archive.namelist()
+        assert "pages/1.png" in names
+        assert "pages/2.png" in names
+        assert not any(name.startswith("assets/") for name in names)
+        assert "<src" not in archive.read("document.xml").decode("utf-8")
+
+    with pytest.raises(ValueError):
+        save_fixture_doc.save_as_doclang_archive(tmp_path / "embedded.dclx", image_mode=ImageRefMode.EMBEDDED)
+
+
+def test_export_to_doclang_image_mode(save_fixture_doc: DoclingDocument, tmp_path: Path) -> None:
+    assert "<src" not in save_fixture_doc.export_to_doclang()
+    assert 'uri="data:image/png;base64' in save_fixture_doc.export_to_doclang(image_mode=ImageRefMode.EMBEDDED)
+
+    saved = tmp_path / "embedded.dclg.xml"
+    save_fixture_doc.save_as_doclang(saved, image_mode=ImageRefMode.EMBEDDED)
+    assert 'uri="data:image/png;base64' in saved.read_text(encoding="utf-8")
 
 
 def test_load_from_doclang_archive(tmp_path: Path) -> None:
