@@ -2497,6 +2497,22 @@ def test_mixed_content_footnote_keeps_label_and_provenance():
     assert runs[0].formatting is not None and runs[0].formatting.script == Script.SUPER
 
 
+def test_nested_formatting_tag_accumulates_style():
+    """<bold>a <italic>b</italic></bold>: "a" keeps bold, "b" keeps bold *and* italic."""
+    doc = _deserialize('<doclang version="0.7"><text>x <bold>a <italic>b</italic></bold></text></doclang>')
+    runs = {t.text.strip(): t.formatting for t in doc.texts if t.text}
+    assert runs["x"] is None
+    assert runs["a"] is not None and runs["a"].bold and not runs["a"].italic
+    assert runs["b"] is not None and runs["b"].bold and runs["b"].italic
+
+    # Round trip must stay valid DocLang (no <text> nested inside <text>).
+    xml = _serialize(doc)
+    doc2 = _deserialize(xml)
+    runs2 = {t.text.strip(): t.formatting for t in doc2.texts if t.text}
+    assert runs2["a"].bold and not runs2["a"].italic
+    assert runs2["b"].bold and runs2["b"].italic
+
+
 @pytest.mark.parametrize(
     ("label", "layer"),
     [

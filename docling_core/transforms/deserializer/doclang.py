@@ -104,6 +104,18 @@ _INLINE_HOST_LABELS: frozenset[DocItemLabel] = frozenset(
     {DocItemLabel.FOOTNOTE, DocItemLabel.PAGE_HEADER, DocItemLabel.PAGE_FOOTER}
 )
 
+# Formatting tags that can themselves hold mixed content, e.g. <bold>a <italic>b</italic></bold>.
+_FORMATTING_TAG_VALUES: frozenset[str] = frozenset(
+    {
+        DocLangToken.BOLD.value,
+        DocLangToken.ITALIC.value,
+        DocLangToken.UNDERLINE.value,
+        DocLangToken.STRIKETHROUGH.value,
+        DocLangToken.SUBSCRIPT.value,
+        DocLangToken.SUPERSCRIPT.value,
+    }
+)
+
 
 def _utf8_byte_length(text: str) -> int:
     """Return UTF-8 byte length of ``text`` without retaining the encoded buffer."""
@@ -1437,6 +1449,52 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     self._source_recorder.bind_item(ldiv_el, item)
 
     # ------------- Inline groups -------------
+    @staticmethod
+    def _merge_formatting_tag(nm: str, base: Formatting | None) -> Formatting:
+        """Apply a formatting tag's own style onto (a copy of) the accumulated formatting."""
+        formatting = base.model_copy(deep=True) if base is not None else Formatting()
+        if nm == DocLangToken.BOLD.value:
+            formatting.bold = True
+        elif nm == DocLangToken.ITALIC.value:
+            formatting.italic = True
+        elif nm == DocLangToken.UNDERLINE.value:
+            formatting.underline = True
+        elif nm == DocLangToken.STRIKETHROUGH.value:
+            formatting.strikethrough = True
+        elif nm == DocLangToken.SUBSCRIPT.value:
+            formatting.script = Script.SUB
+        elif nm == DocLangToken.SUPERSCRIPT.value:
+            formatting.script = Script.SUPER
+        return formatting
+
+    def _parse_inline_runs(
+        self,
+        *,
+        doc: DoclingDocument,
+        nodes: Sequence[Node],
+        parent: NodeItem | None,
+        formatting: Formatting | None,
+    ) -> None:
+        """Add text runs for ``nodes``, carrying ``formatting`` through nested formatting tags."""
+        for node in nodes:
+            if isinstance(node, Element):
+                if node.tagName in _FORMATTING_TAG_VALUES:
+                    # Accumulate this tag's style and keep descending, so e.g. <bold>a
+                    # <italic>b</italic></bold> gives "a" bold and "b" bold+italic.
+                    merged = self._merge_formatting_tag(node.tagName, formatting)
+                    self._parse_inline_runs(doc=doc, nodes=node.childNodes, parent=parent, formatting=merged)
+                else:
+                    self._dispatch_element(doc=doc, el=node, parent=parent)
+            elif isinstance(node, Text):
+                text_content = node.data.strip()
+                if text_content:
+                    doc.add_text(
+                        label=DocItemLabel.TEXT,
+                        text=text_content,
+                        parent=parent,
+                        formatting=formatting,
+                    )
+
     def _parse_inline_group(
         self,
         *,
@@ -1444,6 +1502,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         el: Element,
         parent: NodeItem | None,
         nodes: Sequence[Node] | None = None,
+        formatting: Formatting | None = None,
     ) -> InlineGroup:
         """Parse <inline> elements into InlineGroup objects."""
         # Create the inline group
@@ -1451,21 +1510,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         if nodes is None:
             self._source_recorder.bind_item(el, inline_group)
 
-        # Process all child elements, adding them as children of the inline group
         my_nodes = nodes or el.childNodes
-        for node in my_nodes:
-            if isinstance(node, Element):
-                # Recursively dispatch child elements with the inline group as parent
-                self._dispatch_element(doc=doc, el=node, parent=inline_group)
-            elif isinstance(node, Text):
-                # Handle direct text content
-                text_content = node.data.strip()
-                if text_content:
-                    doc.add_text(
-                        label=DocItemLabel.TEXT,
-                        text=text_content,
-                        parent=inline_group,
-                    )
+        self._parse_inline_runs(doc=doc, nodes=my_nodes, parent=inline_group, formatting=formatting)
         return inline_group
 
     def _parse_mixed_text_like(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
@@ -1474,7 +1520,10 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         if el.tagName in _INLINE_HOST_LABELS:
             node = self._parse_inline_host(doc=doc, el=el, parent=parent, label=DocItemLabel(el.tagName))
         else:
-            node = self._parse_inline_group(doc=doc, el=el, parent=parent)
+            # If the mixed-content element is itself a formatting tag (e.g. <bold> with a
+            # leading text run before a nested <italic>), its own style must not be dropped.
+            formatting = self._merge_formatting_tag(el.tagName, None) if el.tagName in _FORMATTING_TAG_VALUES else None
+            node = self._parse_inline_group(doc=doc, el=el, parent=parent, formatting=formatting)
         if (content_layer := self._extract_layer(el=el)) is not None:
             # Runs carry no layer of their own; without this, furniture runs would leak into the body.
             for it, _ in doc.iterate_items(root=node, with_groups=True, included_content_layers=set(ContentLayer)):
