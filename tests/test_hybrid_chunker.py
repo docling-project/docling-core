@@ -821,3 +821,40 @@ def test_chunk_raises_on_missing_semchunk(monkeypatch):
 
     with pytest.raises(ImportError, match="semchunk"):
         list(chunker.chunk(dl_doc=dl_doc))
+
+
+class _CountingSerializerProxy:
+    """Wraps a serializer and counts serialize calls."""
+
+    def __init__(self, inner):
+        self._inner = inner
+        self.serialize_calls = 0
+
+    def serialize(self, *args, **kwargs):
+        self.serialize_calls += 1
+        return self._inner.serialize(*args, **kwargs)
+
+
+def test_split_by_doc_items_serializes_each_item_once():
+    """_split_by_doc_items serializes each item exactly once (regression for #807)."""
+    num_items = 200
+    doc = DoclingDocument(name="t")
+    doc.add_heading(text="Chapter 1", level=1)
+    grp = doc.add_list_group(name="l")
+    for i in range(num_items):
+        doc.add_list_item(text=f"list item number {i} with some content", parent=grp)
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=MAX_TOKENS),
+        merge_peers=False,
+    )
+    ser = chunker.serializer_provider.get_serializer(doc)
+
+    # the whole list lands in a single chunk with num_items doc items
+    hier_chunk = next(iter(chunker._inner_chunker.chunk(doc)))
+    assert len(hier_chunk.meta.doc_items) == num_items
+
+    proxy = _CountingSerializerProxy(ser)
+    chunker._split_by_doc_items(hier_chunk, proxy)
+
+    assert proxy.serialize_calls == num_items
