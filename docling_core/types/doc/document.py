@@ -445,6 +445,137 @@ class DoclingDocument(BaseModel):
 
         self._normalize_references()
 
+    def _furniture_sort_key(self, item: NodeItem, index: int) -> tuple[bool, tuple[int, int, float, int]]:
+        """Classify a furniture item as header or footer and give it a stable visual order."""
+        prov = item.prov[0] if isinstance(item, DocItem) and item.prov else None
+        page = self.pages.get(prov.page_no) if prov is not None else None
+        if prov is None or page is None:
+            # keep unlocated furniture before the body, in its source order
+            return False, (0, 0, 0.0, index)
+        bbox = prov.bbox.to_top_left_origin(page_height=page.size.height)
+        is_footer = (bbox.t + bbox.b) / 2 > page.size.height / 2
+        # treat nearby baselines as one visual line, so that left-to-right order wins
+        visual_line = round(bbox.t / 12.0)
+        return is_footer, (prov.page_no, visual_line, bbox.l, index)
+
+    def _migrate_furniture_to_body(self) -> int:
+        """Move the children of the deprecated furniture tree into body.
+
+        Headers are placed before the body content, footers after it. As being in the furniture tree
+        used to mark items as furniture, any of them (or their descendants) in the body layer are moved
+        to the furniture layer.
+
+        :return: The number of migrated furniture children.
+        """
+
+        def set_furniture_layer(item: NodeItem) -> None:
+            if item.content_layer == ContentLayer.BODY:
+                item.content_layer = ContentLayer.FURNITURE
+            for child_ref in item.children:
+                set_furniture_layer(child_ref.resolve(doc=self))
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            furniture = self.furniture
+        if not furniture.children:
+            return 0
+
+        headers: list[tuple[tuple[int, int, float, int], RefItem]] = []
+        footers: list[tuple[tuple[int, int, float, int], RefItem]] = []
+        for index, ref in enumerate(furniture.children):
+            item = ref.resolve(doc=self)
+            is_footer, key = self._furniture_sort_key(item=item, index=index)
+            (footers if is_footer else headers).append((key, ref))
+            item.parent = self.body.get_ref()
+            set_furniture_layer(item)
+
+        self.body.children = [
+            *(ref for _, ref in sorted(headers, key=lambda x: x[0])),
+            *self.body.children,
+            *(ref for _, ref in sorted(footers, key=lambda x: x[0])),
+        ]
+        num_migrated = len(furniture.children)
+        furniture.children = []
+        return num_migrated
+
+    def _repair_referenced_orphans(self) -> int:
+        """Add orphaned captions, footnotes and references to the children of their referencing parent.
+
+        Only orphans whose parent references them via ``captions``, ``footnotes`` or ``references``
+        are repaired, as this is where they unambiguously belong.
+
+        :return: The number of repaired orphans.
+        """
+        num_repaired = 0
+        for node in self._iterate_all_nodes():
+            if not isinstance(node, FloatingItem):
+                continue
+            node_ref = node.get_ref()
+            for ref in [*node.captions, *node.footnotes, *node.references]:
+                try:
+                    item = ref.resolve(doc=self)
+                except (IndexError, AttributeError):
+                    continue
+                if item.parent == node_ref and ref not in node.children:
+                    node.children.append(ref)
+                    num_repaired += 1
+        return num_repaired
+
+    def _migrate_non_list_item_list_children(self) -> int:
+        """Wrap each non-ListItem child of a ListGroup into a new, empty ListItem.
+
+        The child keeps its position in the list, e.g. a list directly nested in a list becomes a
+        sublist of a new list item. Children whose parent does not point back to the list are skipped.
+
+        :return: The number of wrapped children.
+        """
+        to_wrap: list[tuple[ListGroup, NodeItem]] = []
+        for node in self._iterate_all_nodes():
+            if isinstance(node, ListGroup):
+                for ref in node.children:
+                    child = ref.resolve(doc=self)
+                    if not isinstance(child, ListItem) and child.parent == node.get_ref():
+                        to_wrap.append((node, child))
+
+        for list_group, child in to_wrap:
+            list_item = ListItem(
+                self_ref="#",
+                text="",
+                orig="",
+                marker="",
+                content_layer=child.content_layer,
+            )
+            item_ref = self._append_item(item=list_item, parent_ref=list_group.get_ref())
+            list_group.children.insert(list_group.children.index(child.get_ref()), item_ref)
+            self._move_subtree(old_subroot=child, new_subroot=list_item)
+        return len(to_wrap)
+
+    def _remove_empty_groups(self) -> int:
+        """Remove groups without children, whether listed by their parent or not.
+
+        Groups still claimed as parent by some item (an orphan) are kept. As a removal can make
+        another group removable, this is repeated until no removable group is left.
+
+        :return: The number of removed groups.
+        """
+        num_removed = 0
+        while True:
+            claimed = {node.parent.cref for node in self._iterate_all_nodes() if node.parent is not None}
+            refs = [
+                group.get_ref()
+                for group in self.groups
+                if group.parent is not None and not group.children and group.self_ref not in claimed
+            ]
+            if not refs:
+                return num_removed
+
+            lookup: dict[str, dict[int, int]] = {"groups": {int(ref.cref.split("/")[2]): -1 for ref in refs}}
+            for index in sorted(lookup["groups"], reverse=True):
+                del self.groups[index]
+            for node in self._iterate_all_nodes():
+                self._update_node_with_lookup(node=node, refs_to_be_deleted=refs, lookup=lookup)
+            num_removed += len(refs)
+
     class _KVMigrData(BaseModel):
         value_crefs: list[str] = []
         key_cell: GraphCell = GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="", orig="")
@@ -1042,7 +1173,10 @@ class DoclingDocument(BaseModel):
                 _logger.debug(f"deleting item in doc for {item_label} for {item_index}")
                 del self.__getattribute__(item_label)[item_index]
 
-        self._update_breadth_first_with_lookup(node=self.body, refs_to_be_deleted=refs, lookup=lookup)
+        # Update all nodes, not only those reachable from body via children: orphaned items
+        # (e.g. captions whose parent does not list them as children) must be renumbered too
+        for node in self._iterate_all_nodes():
+            self._update_node_with_lookup(node=node, refs_to_be_deleted=refs, lookup=lookup)
 
     # Update the references
     def _update_ref_with_lookup(self, item_label: str, item_index: int, lookup: dict[str, dict[int, int]]) -> RefItem:
@@ -1080,13 +1214,32 @@ class DoclingDocument(BaseModel):
 
         return new_refitems
 
-    def _update_breadth_first_with_lookup(
+    def _iterate_all_nodes(self) -> Iterable[NodeItem]:
+        """Iterate over body, furniture and all items, regardless of tree reachability."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            furniture = self.furniture
+        yield self.body
+        yield furniture
+        for item_list in (
+            self.groups,
+            self.texts,
+            self.pictures,
+            self.tables,
+            self.key_value_items,
+            self.form_items,
+            self.field_regions,
+            self.field_items,
+        ):
+            yield from item_list
+
+    def _update_node_with_lookup(
         self,
         node: NodeItem,
         refs_to_be_deleted: list[RefItem],
         lookup: dict[str, dict[int, int]],
     ):
-        """Update breadth first with lookup."""
+        """Update the references of a single node with lookup."""
         # Update the comments references on any DocItem
         if isinstance(node, DocItem):
             node.comments = [ref_item for ref_item in node.comments if ref_item not in refs_to_be_deleted]
@@ -1120,6 +1273,18 @@ class DoclingDocument(BaseModel):
                             lookup=lookup,
                         )
 
+        # Update the item references of key-value and form graph cells
+        if isinstance(node, KeyValueItem | FormItem):
+            for graph_cell in node.graph.cells:
+                if graph_cell.item_ref is None or len(path := graph_cell.item_ref._split_ref_to_path()) != 3:
+                    continue
+                if int(path[2]) in lookup.get(path[1], {}):  # the referenced item was deleted
+                    graph_cell.item_ref = None
+                else:
+                    graph_cell.item_ref = self._update_ref_with_lookup(
+                        item_label=path[1], item_index=int(path[2]), lookup=lookup
+                    )
+
         # Update the self_ref reference
         if node.parent is not None:
             path = node.parent._split_ref_to_path()
@@ -1139,10 +1304,6 @@ class DoclingDocument(BaseModel):
             refs_to_be_deleted=refs_to_be_deleted,
             lookup=lookup,
         )
-
-        for i, child_ref in enumerate(node.children):
-            node = child_ref.resolve(self)
-            self._update_breadth_first_with_lookup(node=node, refs_to_be_deleted=refs_to_be_deleted, lookup=lookup)
 
     def _shift_up(self, *, old_subroot: NodeItem) -> None:
         """Move a subtree up in the document tree, removing the old subroot.
@@ -5407,6 +5568,7 @@ class DoclingDocument(BaseModel):
                     misplaced_list_items.append([item])
             prev = item
 
+        # moving relies on each item's parent listing it, which validate_document ensures
         for curr_list_items in reversed(misplaced_list_items):
             # add group
             new_group = ListGroup(self_ref="#")
@@ -5415,22 +5577,9 @@ class DoclingDocument(BaseModel):
                 sibling=curr_list_items[0],
             )
 
-            # delete list items from document (should not be affected by group addition)
-            self.delete_items(node_items=list(curr_list_items))
-
-            # add list items to new group
+            # move the list items into the new group, keeping their refs, fields and children
             for li in curr_list_items:
-                self.add_list_item(
-                    text=li.text,
-                    enumerated=li.enumerated,
-                    marker=li.marker,
-                    orig=li.orig,
-                    prov=li.prov[0] if li.prov else None,
-                    parent=new_group,
-                    content_layer=li.content_layer,
-                    formatting=li.formatting,
-                    hyperlink=li.hyperlink,
-                )
+                self._move_subtree(old_subroot=li, new_subroot=new_group)
         return self
 
     class _DocIndex(BaseModel):
@@ -5571,6 +5720,11 @@ class DoclingDocument(BaseModel):
                             for fn in idx_item.footnotes
                             if fn.cref in orig_ref_to_new_ref
                         ]
+                    if isinstance(idx_item, KeyValueItem | FormItem):
+                        for graph_cell in idx_item.graph.cells:
+                            if graph_cell.item_ref is not None:
+                                mapped_cref = orig_ref_to_new_ref.get(graph_cell.item_ref.cref)
+                                graph_cell.item_ref = RefItem(cref=mapped_cref) if mapped_cref is not None else None
 
             # update pages
             new_max_page = None
@@ -5642,10 +5796,20 @@ class DoclingDocument(BaseModel):
         def validate_furniture(doc: DoclingDocument):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=DeprecationWarning)
-                has_furniture_children = len(doc.furniture.children) > 0
-            if has_furniture_children:
+                furniture = doc.furniture
+            if furniture.children:
                 _handle(
-                    ValueError(f"Deprecated furniture node {doc.furniture.self_ref} has children"),
+                    ValueError(f"Deprecated furniture node {furniture.self_ref} has children"),
+                )
+
+        def validate_key_value_and_form_items(doc: DoclingDocument):
+            for kv_item in doc.key_value_items:
+                _handle(
+                    ValueError(f"Key-value item {kv_item.self_ref} is to be migrated to a field region"),
+                )
+            for form_item in doc.form_items:
+                _handle(
+                    ValueError(f"Form item {form_item.self_ref} is to be migrated to a field region"),
                 )
 
         def validate_list_group(doc: DoclingDocument, item: ListGroup):
@@ -5674,7 +5838,26 @@ class DoclingDocument(BaseModel):
                     ValueError(f"Group {item.self_ref} has no children"),
                 )
 
+        def validate_orphan(doc: DoclingDocument, item: NodeItem):
+            if item.parent is None:
+                return
+            try:
+                with warnings.catch_warnings():
+                    # the parent may be the deprecated furniture node
+                    warnings.simplefilter("ignore", category=DeprecationWarning)
+                    parent = item.parent.resolve(doc)
+            except (IndexError, AttributeError):
+                _handle(
+                    ValueError(f"{item.self_ref} has non-existent parent {item.parent.cref}"),
+                )
+                return
+            if item.get_ref() not in parent.children:
+                _handle(
+                    ValueError(f"{item.self_ref} is not a child of its parent {item.parent.cref}"),
+                )
+
         validate_furniture(self)
+        validate_key_value_and_form_items(self)
 
         for item, _ in self.iterate_items(
             with_groups=True,
@@ -5684,11 +5867,14 @@ class DoclingDocument(BaseModel):
             if isinstance(item, ListGroup):
                 validate_list_group(self, item)
 
-            elif isinstance(item, GroupItem):
-                validate_group(self, item)
-
             elif isinstance(item, ListItem):
                 validate_list_item(self, item)
+
+        # orphans (and orphaned empty groups) are not reachable via the tree, so check all items
+        for item in self._iterate_all_nodes():
+            validate_orphan(self, item)
+            if isinstance(item, GroupItem):
+                validate_group(self, item)
 
     def add_table_cell(self, table_item: TableItem, cell: TableCell) -> None:
         """Add a table cell to the table."""

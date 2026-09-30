@@ -38,6 +38,7 @@ from docling_core.types.doc import (
     ImageRef,
     ImageRefMode,
     KeyValueItem,
+    ListGroup,
     ListItem,
     NodeItem,
     Orientation,
@@ -1768,6 +1769,267 @@ def test_misplaced_list_items():
         assert doc == exp_doc
 
 
+def test_delete_items_renumbers_orphaned_items():
+    # The caption is referenced by the picture but is not one of its children, so it is not
+    # reachable from body via children. Deleting an item before it must still renumber it.
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "orphaned_items",
+        "body": {
+            "self_ref": "#/body",
+            "children": [{"$ref": "#/texts/0"}, {"$ref": "#/pictures/0"}],
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        "texts": [
+            {
+                "self_ref": "#/texts/0",
+                "parent": {"$ref": "#/body"},
+                "label": "list_item",
+                "orig": "item",
+                "text": "item",
+                "enumerated": False,
+                "marker": "-",
+            },
+            {
+                "self_ref": "#/texts/1",
+                "parent": {"$ref": "#/pictures/0"},
+                "label": "caption",
+                "orig": "caption",
+                "text": "caption",
+            },
+        ],
+        "pictures": [
+            {
+                "self_ref": "#/pictures/0",
+                "parent": {"$ref": "#/body"},
+                "label": "picture",
+                "captions": [{"$ref": "#/texts/1"}],
+            }
+        ],
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+
+    # loading moves the misplaced list item into a new list, without renumbering anything
+    assert [it.text for it in doc.texts] == ["item", "caption"]
+    assert isinstance(doc.texts[0].parent.resolve(doc), ListGroup)
+
+    # the caption is an orphan, which the rules detect
+    with pytest.raises(ValueError, match="#/texts/1 is not a child of its parent #/pictures/0"):
+        doc._validate_rules()
+    with pytest.warns(UserWarning, match="#/texts/1 is not a child of its parent #/pictures/0"):
+        doc._validate_rules(raise_on_error=False)
+
+    # deleting the list (and so the list item) renumbers the orphaned caption too
+    doc.delete_items(node_items=[doc.groups[0]])
+    doc._validate_unique_refs()
+    for item in doc.texts:
+        assert item.get_ref().resolve(doc) is item
+    assert [it.text for it in doc.texts] == ["caption"]
+    assert doc.pictures[0].captions[0].resolve(doc).text == "caption"
+    assert doc.texts[0].parent.cref == "#/pictures/0"
+
+    # a dangling parent is reported, not crashed on
+    doc.texts[0].parent = RefItem(cref="#/pictures/1")
+    with pytest.raises(ValueError, match="#/texts/0 has non-existent parent #/pictures/1"):
+        doc._validate_rules()
+
+
+def test_validate_rules_key_value_and_form_items():
+    doc = DoclingDocument(name="")
+    doc.add_key_values(graph=GraphData(cells=[], links=[]))
+    doc.add_form(graph=GraphData(cells=[], links=[]))
+
+    with pytest.raises(ValueError, match="Key-value item #/key_value_items/0 is to be migrated to a field region"):
+        doc._validate_rules()
+    with pytest.warns(UserWarning) as record:
+        doc._validate_rules(raise_on_error=False)
+    messages = [str(w.message) for w in record]
+    assert "Key-value item #/key_value_items/0 is to be migrated to a field region" in messages
+    assert "Form item #/form_items/0 is to be migrated to a field region" in messages
+
+    doc._migrate_to_field_regions()
+    doc._validate_rules()
+
+
+def test_graph_cell_item_refs_follow_renumbering():
+    def build() -> tuple[DoclingDocument, KeyValueItem]:
+        doc = DoclingDocument(name="")
+        a = doc.add_text(label=DocItemLabel.TEXT, text="a")
+        b = doc.add_text(label=DocItemLabel.TEXT, text="b")
+        cells = [
+            GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="b", orig="b", item_ref=b.get_ref()),
+            GraphCell(label=GraphCellLabel.VALUE, cell_id=1, text="a", orig="a", item_ref=a.get_ref()),
+        ]
+        return doc, doc.add_key_values(graph=GraphData(cells=cells, links=[]))
+
+    # deletion: refs are renumbered, refs to deleted items dropped
+    doc, kv = build()
+    doc.delete_items(node_items=[doc.texts[0]])
+    assert [c.item_ref.cref if c.item_ref else None for c in kv.graph.cells] == ["#/texts/0", None]
+    assert kv.graph.cells[0].item_ref.resolve(doc).text == "b"
+
+    # normalization: refs follow the reordering
+    doc, _ = build()
+    doc.body.children = [doc.body.children[1], doc.body.children[0], doc.body.children[2]]  # b, a, kv
+    doc._normalize_references()
+    assert [t.text for t in doc.texts] == ["b", "a"]
+    cells = doc.key_value_items[0].graph.cells
+    assert [c.item_ref.resolve(doc).text for c in cells] == ["b", "a"]
+
+
+def test_delete_items_renumbers_furniture():
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "legacy_furniture",
+        "furniture": {
+            "self_ref": "#/furniture",
+            "children": [{"$ref": "#/texts/1"}],
+            "content_layer": "furniture",
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        "body": {"self_ref": "#/body", "children": [{"$ref": "#/texts/0"}], "name": "_root_", "label": "unspecified"},
+        "texts": [
+            {"self_ref": "#/texts/0", "parent": {"$ref": "#/body"}, "label": "text", "orig": "text", "text": "text"},
+            {
+                "self_ref": "#/texts/1",
+                "parent": {"$ref": "#/furniture"},
+                "content_layer": "furniture",
+                "label": "page_header",
+                "orig": "header",
+                "text": "header",
+            },
+        ],
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+    doc.delete_items(node_items=[doc.texts[0]])
+
+    assert doc.texts[0].self_ref == "#/texts/0"
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        assert [ref.resolve(doc).text for ref in doc.furniture.children] == ["header"]
+
+
+def test_migrate_furniture_to_body():
+    def text(idx: int, parent: str, label: str, top: float | None = None) -> dict:
+        item: dict = {
+            "self_ref": f"#/texts/{idx}",
+            "parent": {"$ref": parent},
+            "label": label,
+            "orig": label,
+            "text": label,
+        }
+        if top is not None:
+            item["prov"] = [
+                {
+                    "page_no": 1,
+                    "bbox": {"l": 10, "t": top, "r": 90, "b": top + 5, "coord_origin": "TOPLEFT"},
+                    "charspan": [0, len(label)],
+                }
+            ]
+        return item
+
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "legacy_furniture",
+        "furniture": {
+            "self_ref": "#/furniture",
+            "children": [{"$ref": "#/texts/1"}, {"$ref": "#/texts/2"}],
+            "content_layer": "furniture",
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        "body": {
+            "self_ref": "#/body",
+            "children": [{"$ref": "#/texts/0"}],
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        "texts": [
+            text(0, "#/body", "text", top=50),
+            text(1, "#/furniture", "page_footer", top=90),
+            text(2, "#/furniture", "page_header", top=5),
+        ],
+        "pages": {"1": {"page_no": 1, "size": {"width": 100, "height": 100}}},
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+    assert [ref.cref for ref in doc.body.children] == ["#/texts/0"]  # not migrated on load
+
+    assert doc._migrate_furniture_to_body() == 2
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        assert doc.furniture.children == []
+
+    assert [ref.resolve(doc).text for ref in doc.body.children] == ["page_header", "text", "page_footer"]
+    assert all(it.parent.cref == "#/body" for it in doc.texts)
+    assert [it.content_layer for it in doc.texts] == [
+        ContentLayer.BODY,
+        ContentLayer.FURNITURE,
+        ContentLayer.FURNITURE,
+    ]
+
+
+def test_misplaced_list_items_keep_children_and_refs():
+    # a list item outside a list, with a picture as child and a graph cell pointing to it
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "misplaced_with_children",
+        "body": {
+            "self_ref": "#/body",
+            "children": [{"$ref": "#/texts/0"}, {"$ref": "#/texts/1"}, {"$ref": "#/key_value_items/0"}],
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        "texts": [
+            {
+                "self_ref": "#/texts/0",
+                "parent": {"$ref": "#/body"},
+                "children": [{"$ref": "#/pictures/0"}],
+                "label": "list_item",
+                "orig": "item",
+                "text": "item",
+                "enumerated": False,
+                "marker": "-",
+            },
+            {"self_ref": "#/texts/1", "parent": {"$ref": "#/body"}, "label": "text", "orig": "text", "text": "text"},
+        ],
+        "pictures": [{"self_ref": "#/pictures/0", "parent": {"$ref": "#/texts/0"}, "label": "picture"}],
+        "key_value_items": [
+            {
+                "self_ref": "#/key_value_items/0",
+                "parent": {"$ref": "#/body"},
+                "label": "key_value_region",
+                "graph": {
+                    "cells": [
+                        {
+                            "label": "key",
+                            "cell_id": 0,
+                            "text": "item",
+                            "orig": "item",
+                            "item_ref": {"$ref": "#/texts/0"},
+                        }
+                    ],
+                    "links": [],
+                },
+            }
+        ],
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+
+    # the list item is moved into a new list, keeping its ref, its child and the refs to it
+    item = doc.texts[0]
+    assert item.text == "item" and isinstance(item.parent.resolve(doc), ListGroup)
+    assert [ref.cref for ref in doc.body.children] == ["#/groups/0", "#/texts/1", "#/key_value_items/0"]
+    assert len(doc.pictures) == 1 and doc.pictures[0].parent == item.get_ref()
+    assert [ref.cref for ref in item.children] == ["#/pictures/0"]
+    assert doc.key_value_items[0].graph.cells[0].item_ref.resolve(doc) is item
+
+
 def test_moving_within_same_parent():
     doc = DoclingDocument(name="")
     doc.add_text(label=DocItemLabel.TEXT, text="bar")
@@ -2389,6 +2651,124 @@ def test_meta_migration_warnings():
         _ = doc.pictures[0].annotations
     with pytest.warns(DeprecationWarning):
         _ = doc.tables[0].annotations
+
+
+def test_migrate_non_list_item_list_children():
+    doc = DoclingDocument(name="")
+    outer = doc.add_list_group()
+    doc.add_list_item(text="first", parent=outer)
+    inner = doc.add_list_group(parent=outer)
+    doc.add_list_item(text="nested", parent=inner)
+    text = doc.add_text(label=DocItemLabel.TEXT, text="stray", parent=outer)
+    with pytest.raises(ValueError, match="contains non-ListItem"):
+        doc._validate_rules()
+
+    assert doc._migrate_non_list_item_list_children() == 2
+
+    # the wrapped children keep their positions, each under a new, empty list item
+    first, wrap_inner, wrap_text = (ref.resolve(doc) for ref in outer.children)
+    assert first.text == "first"
+    for wrapper, child in ((wrap_inner, inner), (wrap_text, text)):
+        assert isinstance(wrapper, ListItem) and wrapper.text == ""
+        assert wrapper.parent == outer.get_ref()
+        assert [ref.resolve(doc) for ref in wrapper.children] == [child]
+        assert child.parent == wrapper.get_ref()
+    doc._validate_rules()
+    assert doc._migrate_non_list_item_list_children() == 0  # idempotent
+
+
+def test_empty_groups():
+    def group(idx: int, label: str, parent: str, children: list[str] | None = None) -> dict:
+        return {
+            "self_ref": f"#/groups/{idx}",
+            "parent": {"$ref": parent},
+            "children": [{"$ref": c} for c in children or []],
+            "label": label,
+            "name": "group",
+        }
+
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "empty_groups",
+        "body": {
+            "self_ref": "#/body",
+            "children": [{"$ref": "#/groups/0"}, {"$ref": "#/groups/1"}, {"$ref": "#/groups/4"}],
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        "groups": [
+            group(0, "list", "#/body"),  # empty, linked
+            group(1, "list", "#/body", ["#/texts/0"]),  # not empty
+            group(2, "list", "#/body"),  # empty, orphaned
+            group(3, "list", "#/groups/2"),  # empty, orphaned, claiming #/groups/2 as parent
+            group(4, "inline", "#/body"),  # empty, linked
+            group(5, "unspecified", "#/body"),  # empty, orphaned, but claimed by an orphan with content
+        ],
+        "texts": [
+            {"self_ref": "#/texts/0", "parent": {"$ref": "#/groups/1"}, "label": "list_item", "orig": "a", "text": "a"},
+            {"self_ref": "#/texts/1", "parent": {"$ref": "#/groups/5"}, "label": "text", "orig": "b", "text": "b"},
+        ],
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+
+    # detected: every empty group, also lists and orphaned ones
+    with pytest.warns(UserWarning) as record:
+        doc._validate_rules(raise_on_error=False)
+    empty = sorted(str(w.message) for w in record if str(w.message).endswith("has no children"))
+    assert empty == [f"Group #/groups/{i} has no children" for i in (0, 2, 3, 4, 5)]
+
+    assert doc._remove_empty_groups() == 4
+    assert [g.label.value for g in doc.groups] == ["list", "unspecified"]
+    assert [ref.cref for ref in doc.body.children] == ["#/groups/0"]
+    assert [ref.cref for ref in doc.groups[0].children] == ["#/texts/0"]
+    assert doc.texts[0].parent.cref == "#/groups/0"
+    assert doc.texts[1].parent.cref == "#/groups/1"  # the claimed group is kept (and renumbered)
+    doc._validate_unique_refs()
+    assert doc._remove_empty_groups() == 0  # idempotent
+
+
+def test_repair_referenced_orphans():
+    def text(idx: int, label: str) -> dict:
+        return {
+            "self_ref": f"#/texts/{idx}",
+            "parent": {"$ref": "#/pictures/0"},
+            "label": label,
+            "orig": label,
+            "text": label,
+        }
+
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "referenced_orphans",
+        "body": {
+            "self_ref": "#/body",
+            "children": [{"$ref": "#/pictures/0"}],
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        # all three are orphans; only the caption and the footnote are referenced by the picture
+        "texts": [text(0, "caption"), text(1, "footnote"), text(2, "text")],
+        "pictures": [
+            {
+                "self_ref": "#/pictures/0",
+                "parent": {"$ref": "#/body"},
+                "label": "picture",
+                "captions": [{"$ref": "#/texts/0"}],
+                "footnotes": [{"$ref": "#/texts/1"}],
+            }
+        ],
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+
+    assert doc._repair_referenced_orphans() == 2
+    assert [ref.cref for ref in doc.pictures[0].children] == ["#/texts/0", "#/texts/1"]
+    assert doc._repair_referenced_orphans() == 0  # idempotent
+
+    # the unreferenced orphan is left as is
+    with pytest.raises(ValueError, match="#/texts/2 is not a child of its parent #/pictures/0"):
+        doc._validate_rules()
 
 
 @pytest.mark.parametrize(
