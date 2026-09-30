@@ -15,6 +15,7 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
     HierarchicalChunker,
 )
 from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
+from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
 from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
 from docling_core.transforms.serializer.html import HTMLTableSerializer
@@ -858,3 +859,45 @@ def test_split_by_doc_items_serializes_each_item_once():
     chunker._split_by_doc_items(hier_chunk, proxy)
 
     assert proxy.serialize_calls == num_items
+
+
+class _MergingNewlineTokenizer(BaseTokenizer):
+    """Deterministic tokenizer whose per-item counts under-estimate joined text.
+
+    Counting is word-based, but each newline followed by a list-marker dash
+    merges into a single token. Summing per-item counts therefore
+    under-estimates the joined window, forcing the shrink-back path in
+    _split_by_doc_items.
+    """
+
+    max_tokens: int
+
+    def count_tokens(self, text: str) -> int:
+        return len(text.split(" ")) + text.count("\n-")
+
+    def get_max_tokens(self) -> int:
+        return self.max_tokens
+
+    def get_tokenizer(self):
+        return self
+
+
+def test_split_by_doc_items_shrinks_back_when_estimate_under_counts():
+    """Windows stay within max_tokens even when the running estimate under-counts."""
+    doc = DoclingDocument(name="t")
+    grp = doc.add_list_group(name="l")
+    for i in range(12):
+        doc.add_list_item(text=f"w{i}", parent=grp)
+
+    chunker = HybridChunker(
+        tokenizer=_MergingNewlineTokenizer(max_tokens=10),
+        merge_peers=False,
+    )
+    ser = chunker.serializer_provider.get_serializer(doc)
+    hier_chunk = next(iter(chunker._inner_chunker.chunk(doc)))
+    chunks = chunker._split_by_doc_items(hier_chunk, ser)
+
+    assert sum(len(c.meta.doc_items) for c in chunks) == 12
+    assert max(len(c.meta.doc_items) for c in chunks) > 2
+    for c in chunks:
+        assert chunker._count_chunk_tokens(c) <= chunker.max_tokens
