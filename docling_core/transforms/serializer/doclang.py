@@ -690,9 +690,29 @@ class DocLangListSerializer(BaseModel, BaseListSerializer):
         child_segments: list[tuple[str, int | None]] = []
 
         excluded = doc_serializer.get_excluded_refs(**kwargs)
-        for child_ref in item.children:
-            child = child_ref.resolve(doc)
+        children = [child_ref.resolve(doc) for child_ref in item.children]
+        first_entry = next((i for i, ch in enumerate(children) if isinstance(ch, ListItem | ListGroup)), 0)
 
+        # Non-list-item children before the first entry are emitted before the
+        # <list> so they keep their reading order. Only for top-level lists: in a
+        # nested list they would land inside the parent <list>.
+        leading_texts: list[str] = []
+        if list_level == 0:
+            for child in children[:first_entry]:
+                if child.self_ref in my_visited or child.self_ref in excluded:
+                    continue
+                my_visited.add(child.self_ref)
+                lead_res = doc_serializer.serialize(
+                    item=child,
+                    is_inline_scope=is_inline_scope,
+                    visited=my_visited,
+                    **kwargs,
+                )
+                if lead_res.text:
+                    leading_texts.append(lead_res.text)
+                item_results.append(lead_res)
+
+        for child in children:
             # If a nested list group is present directly under this list group,
             # emit it as a sibling (no <list_item> wrapper).
             if isinstance(child, ListGroup):
@@ -711,7 +731,10 @@ class DocLangListSerializer(BaseModel, BaseListSerializer):
                 item_results.append(sub_res)
                 continue
 
-            # Normal case: ListItem under ListGroup
+            # Normal case: ListItem under ListGroup. Other children between or
+            # after the items are left to the document serializer, which emits
+            # them after the list: splitting the list into threaded fragments
+            # would not round-trip (the deserializer merges them, see #794).
             if not isinstance(child, ListItem):
                 continue
             if child.self_ref in my_visited or child.self_ref in excluded:
@@ -753,10 +776,12 @@ class DocLangListSerializer(BaseModel, BaseListSerializer):
                 item_results.append(sub_res)
 
         delim = _get_delim(params=params)
+        leading = "".join(f"{text}{delim}" for text in leading_texts)
         if not child_segments:
-            return create_ser_result(text="", span_source=item_results)
+            return create_ser_result(text=leading, span_source=item_results)
 
-        ordered = item.first_item_is_enumerated(doc)
+        first_child = children[first_entry] if children else None
+        ordered = isinstance(first_child, ListItem) and first_child.enumerated
         list_close = f"</{DocLangToken.LIST.value}>"
         spans_pages = any(
             child_segments[i][1] is not None
@@ -775,7 +800,7 @@ class DocLangListSerializer(BaseModel, BaseListSerializer):
                 else DocLangVocabulary._create_list_token(ordered=False)
             )
             text_res = _wrap_token(text=text_res, open_token=open_token)
-            return create_ser_result(text=text_res, span_source=item_results)
+            return create_ser_result(text=f"{leading}{text_res}", span_source=item_results)
 
         thread_id = _allocate_thread_id(doc_serializer, item)
         out_parts: list[str] = []
@@ -812,7 +837,7 @@ class DocLangListSerializer(BaseModel, BaseListSerializer):
             block_text = delim.join(current_block)
             out_parts.append(f"{list_open}{block_text}{delim}{list_close}")
 
-        return create_ser_result(text="".join(out_parts), span_source=item_results)
+        return create_ser_result(text=leading + "".join(out_parts), span_source=item_results)
 
 
 class DocLangTextSerializer(BaseModel, BaseTextSerializer):
