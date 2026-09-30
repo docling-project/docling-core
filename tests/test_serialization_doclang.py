@@ -2979,3 +2979,53 @@ def test_list_middle_non_item_child_keeps_position():
 
     txt = serialize_doclang(doc, params=_LIST_ORDER_PARAMS)
     assert _roundtrip_reading_order(txt) == _reading_order(doc)
+
+
+def _page_prov(page_no: int) -> ProvenanceItem:
+    return ProvenanceItem(
+        page_no=page_no,
+        bbox=BoundingBox.from_tuple((10, 10, 400, 50), origin=CoordOrigin.TOPLEFT),
+        charspan=(0, 1),
+    )
+
+
+def _doc_cross_page_list_with_leading_heading(*, with_pre: bool) -> DoclingDocument:
+    """Heading on page 1 as the first child of a list whose items are on pages 2 and 3."""
+    doc = DoclingDocument(name="t")
+    for page_no in (1, 2, 3):
+        doc.add_page(page_no=page_no, size=Size(width=512, height=512))
+    if with_pre:
+        doc.add_text(label=DocItemLabel.TEXT, text="PRE", prov=_page_prov(1))
+    lst = doc.add_list_group()
+    doc.add_heading(text="H", parent=lst, prov=_page_prov(1))
+    doc.add_list_item(text="a", parent=lst, prov=_page_prov(2))
+    doc.add_list_item(text="b", parent=lst, prov=_page_prov(3))
+    return doc
+
+
+def _text_pages(doc: DoclingDocument) -> list[tuple[str, list[int]]]:
+    return [
+        (item.text, [prov.page_no for prov in item.prov])
+        for item, _ in doc.iterate_items()
+        if isinstance(item, TextItem)
+    ]
+
+
+@pytest.mark.parametrize("with_pre", [False, True])
+def test_cross_page_list_leading_child_keeps_its_page(with_pre: bool):
+    """A leading child on an earlier page than the first item keeps its page break."""
+    doc = _doc_cross_page_list_with_leading_heading(with_pre=with_pre)
+
+    txt = serialize_doclang(
+        doc, params=DocLangParams(include_version=False, add_location=False, pretty_indentation=None)
+    )
+    pre = "<text>PRE</text>" if with_pre else ""
+    assert txt == (
+        f'<doclang>{pre}<heading level="2">H</heading><page_break/>'
+        '<list><thread thread_id="1"/><ldiv/>a</list><page_break/>'
+        '<list><thread thread_id="1"/><ldiv/>b</list></doclang>'
+    )
+
+    txt = serialize_doclang(doc)
+    doc2 = DocLangDocDeserializer().deserialize_str(txt)
+    assert _text_pages(doc2) == _text_pages(doc)

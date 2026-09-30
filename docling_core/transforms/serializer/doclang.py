@@ -154,6 +154,28 @@ def _allocate_thread_id(doc_serializer: BaseDocSerializer, node: NodeItem) -> st
     raise TypeError("DocLang threading requires DocLangDocSerializer")
 
 
+def _join_with_page_breaks(
+    doc_serializer: BaseDocSerializer,
+    segments: list[tuple[str, int | None]],
+    *,
+    next_page: int | None,
+    delim: str,
+) -> str:
+    """Join segments, adding a page break wherever the page changes, up to ``next_page``."""
+    out: list[str] = []
+    prev_page: int | None = None
+    for text, page_no in [*segments, ("", next_page)]:
+        if prev_page is not None and page_no is not None and page_no != prev_page:
+            _suppress_document_page_break(doc_serializer, prev_page=prev_page, next_page=page_no)
+            pb = _PageBreakNode(self_ref=f"#/pb/{len(out)}", prev_page=prev_page, next_page=page_no)
+            out.append(_create_page_break_markup(pb))
+        if text:
+            out.append(f"{text}{delim}")
+        if page_no is not None:
+            prev_page = page_no
+    return "".join(out)
+
+
 def _primary_page_no(node: NodeItem) -> int | None:
     """Return the primary page number for a document item, if known."""
     if isinstance(node, DocItem) and node.prov:
@@ -735,12 +757,13 @@ class DocLangListSerializer(BaseModel, BaseListSerializer):
 
         excluded = doc_serializer.get_excluded_refs(**kwargs)
         children = [child_ref.resolve(doc) for child_ref in item.children]
+        # Index of the first list entry; 0 (no leading children) if there is none.
         first_entry = next((i for i, ch in enumerate(children) if isinstance(ch, ListItem | ListGroup)), 0)
 
         # Non-list-item children before the first entry are emitted before the
         # <list> so they keep their reading order. Only for top-level lists: in a
         # nested list they would land inside the parent <list>.
-        leading_texts: list[str] = []
+        leading_segments: list[tuple[str, int | None]] = []
         if list_level == 0:
             for child in children[:first_entry]:
                 if child.self_ref in my_visited or child.self_ref in excluded:
@@ -753,7 +776,7 @@ class DocLangListSerializer(BaseModel, BaseListSerializer):
                     **kwargs,
                 )
                 if lead_res.text:
-                    leading_texts.append(lead_res.text)
+                    leading_segments.append((lead_res.text, _primary_page_no(child)))
                 item_results.append(lead_res)
 
         for child in children:
@@ -775,10 +798,8 @@ class DocLangListSerializer(BaseModel, BaseListSerializer):
                 item_results.append(sub_res)
                 continue
 
-            # Normal case: ListItem under ListGroup. Other children between or
-            # after the items are left to the document serializer, which emits
-            # them after the list: splitting the list into threaded fragments
-            # would not round-trip (the deserializer merges them, see #794).
+            # Normal case: ListItem under ListGroup. Other non-item children are
+            # emitted after the list by the document serializer (see #794).
             if not isinstance(child, ListItem):
                 continue
             if child.self_ref in my_visited or child.self_ref in excluded:
@@ -820,7 +841,8 @@ class DocLangListSerializer(BaseModel, BaseListSerializer):
                 item_results.append(sub_res)
 
         delim = _get_delim(params=params)
-        leading = "".join(f"{text}{delim}" for text in leading_texts)
+        first_page = next((page_no for _, page_no in child_segments if page_no is not None), None)
+        leading = _join_with_page_breaks(doc_serializer, leading_segments, next_page=first_page, delim=delim)
         if not child_segments:
             return create_ser_result(text=leading, span_source=item_results)
 
