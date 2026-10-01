@@ -2571,6 +2571,37 @@ def test_roundtrip_furniture_inline_group():
     assert {it.content_layer for it in items} == {ContentLayer.FURNITURE}
 
 
+@pytest.mark.parametrize(
+    ("body", "expected"),
+    [
+        ("Wiley & Sons", ["Wiley & Sons"]),
+        ("$q < 0$ and p <0.05 and $a<\\ln b$", ["$q < 0$ and p <0.05 and $a<\\ln b$"]),
+        ("x]]> y", ["x]]> y"]),
+        ("a\x18b", ["ab"]),
+        ("<![CDATA[a & b < c]]> & d", ["a & b < c", "& d"]),
+    ],
+)
+def test_repair_unescaped_text(body: str, expected: list[str]):
+    xml = f"<doclang><text>{body}</text></doclang>"
+    with pytest.raises(ValueError, match="Invalid DocLang XML"):
+        DocLangDocDeserializer().deserialize_str(xml)
+    doc = DocLangDocDeserializer().deserialize_str(xml, repair_unescaped_text=True)
+    assert [t.text for t in doc.texts] == expected
+
+
+@pytest.mark.parametrize("kwargs", [{}, {"repair_unescaped_text": False}])
+def test_repair_unescaped_text_is_opt_in(kwargs):
+    with pytest.raises(ValueError, match="Invalid DocLang XML"):
+        DocLangDocDeserializer().deserialize_str("<doclang><text>a & b</text></doclang>", **kwargs)
+
+
+def test_repair_keeps_well_formed_markup_and_entities():
+    xml = '<doclang><text>a &amp; &#60; &#x3E;<![CDATA[ & < ]]></text><heading level="1">H</heading></doclang>'
+    plain = DocLangDocDeserializer().deserialize_str(xml)
+    repaired = DocLangDocDeserializer().deserialize_str(xml, repair_unescaped_text=True)
+    assert repaired.export_to_dict() == plain.export_to_dict()
+
+
 def test_empty_list_item_does_not_replay_siblings():
     xml = """<doclang version="0.7"><list>
 <ldiv/><content>Alpha</content>

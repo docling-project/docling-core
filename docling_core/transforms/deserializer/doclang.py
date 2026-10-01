@@ -3,6 +3,7 @@
 Aligned to the DocLang specification version ``_DOCLANG_VERSION``.
 """
 
+import re
 from collections.abc import Callable, Sequence
 from itertools import groupby
 from pathlib import Path
@@ -123,6 +124,27 @@ def _utf8_byte_length(text: str) -> int:
     return len(text.encode("utf-8"))
 
 
+_CDATA_SECTION_RE = re.compile(r"(<!\[CDATA\[.*?\]\]>)", re.DOTALL)
+_XML_ILLEGAL_CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+_BARE_AMP_RE = re.compile(r"&(?!(?:[A-Za-z][\w.-]*|#[0-9]+|#x[0-9A-Fa-f]+);)")
+_BARE_LT_RE = re.compile(r"<(?![A-Za-z_:/!?])")
+
+
+def _repair_unescaped_xml_text(text: str) -> str:
+    """Escape characters that can only be text, leaving markup and CDATA untouched.
+
+    Fixes bare ``&``, a ``<`` that cannot start markup, a stray ``]]>``, and drops
+    control characters that XML 1.0 forbids. A ``<`` followed by a name character
+    is never touched, so no tag structure is guessed.
+    """
+    parts = _CDATA_SECTION_RE.split(_XML_ILLEGAL_CTRL_RE.sub("", text))
+    for i in range(0, len(parts), 2):  # even indices are outside CDATA sections
+        part = _BARE_AMP_RE.sub("&amp;", parts[i])
+        part = _BARE_LT_RE.sub("&lt;", part)
+        parts[i] = part.replace("]]>", "]]&gt;")
+    return "".join(parts)
+
+
 def _enforce_doclang_dom_budgets(
     root: Element,
     *,
@@ -205,6 +227,9 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             max_xml_depth: Optional override for ``settings.max_doclang_xml_depth``.
             max_xml_elements: Optional override for ``settings.max_doclang_xml_elements``.
             source_map: Optional recorder output populated with XPath-to-semantic bindings.
+            repair_unescaped_text: If ``True``, repair unescaped text (bare ``&``, a ``<`` that
+                cannot start markup, a stray ``]]>``, illegal control characters) before parsing.
+                Tag structure is never altered. Default ``False``: input must be well-formed XML.
 
         Returns:
             A populated `DoclingDocument` parsed from the input.
@@ -217,6 +242,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         self._max_xml_elements = int(kwargs.get("max_xml_elements", settings.max_doclang_xml_elements))
         self._source_recorder = _DocLangSourceRecorder(kwargs.get("source_map"))
 
+        if kwargs.get("repair_unescaped_text", False):
+            text = _repair_unescaped_xml_text(text)
         root = self._parse_xml_string(text)
         if root.tagName != DocLangToken.DOCUMENT.value:
             candidates = root.getElementsByTagName(DocLangToken.DOCUMENT.value)
