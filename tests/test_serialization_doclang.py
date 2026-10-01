@@ -59,7 +59,7 @@ from tests.doclang_validation import (
     validate_dclg_xml,
 )
 from tests.test_data_gen_flag import GEN_TEST_DATA
-from tests.test_serialization import verify
+from tests.test_serialization import _legacy_graph_doc, verify
 
 
 def verify_doclang(exp_file: Path, actual: str) -> None:
@@ -2811,3 +2811,49 @@ def test_inline_group_nested_word_boundary_when_minimized():
     root = ET.fromstring(txt)
     heading_el = root[0]
     assert "".join(heading_el.itertext()).split() == ["Heading", "text", "bold"]
+
+
+@pytest.mark.parametrize("form", [False, True], ids=["key-value", "form"])
+def test_legacy_graph_item(form):
+    doc = _legacy_graph_doc(form=form)
+    txt = serialize_doclang(doc)
+    assert txt.strip() == (
+        "<doclang>\n"
+        "  <text>Before</text>\n"
+        "  <field_region>\n"
+        "    <field_item>\n"
+        "      <key>Name</key>\n"
+        "      <value>John Doe</value>\n"
+        "      <value>Jane Doe</value>\n"
+        "    </field_item>\n"
+        "  </field_region>\n"
+        "  <text>After</text>\n"
+        "</doclang>"
+    )
+
+
+@pytest.mark.parametrize("form", [False, True], ids=["key-value", "form"])
+@pytest.mark.parametrize("with_prov", [False, True], ids=["no-prov", "prov"])
+def test_legacy_graph_matches_migrated_field_regions(form, with_prov):
+    doc = _legacy_graph_doc(form=form, with_prov=with_prov)
+    migrated = _legacy_graph_doc(form=form, with_prov=with_prov)
+    migrated._migrate_to_field_regions()
+    assert serialize_doclang(doc) == serialize_doclang(migrated)
+
+
+def test_legacy_graph_minimized():
+    doc = _legacy_graph_doc()
+    txt = serialize_doclang(doc, params=DocLangParams(include_version=False, pretty_indentation=None))
+    assert txt == (
+        "<doclang>"
+        "<text>Before</text>"
+        "<field_region>"
+        "<field_item>"
+        "<key>Name</key>"
+        "<value>John Doe</value>"
+        "<value>Jane Doe</value>"
+        "</field_item>"
+        "</field_region>"
+        "<text>After</text>"
+        "</doclang>"
+    )
