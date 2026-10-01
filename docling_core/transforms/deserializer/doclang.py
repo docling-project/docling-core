@@ -1202,7 +1202,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 marker=marker_text,
                 prov_list=prov_list,
             )
-            self._parse_inline_group(doc=doc, el=el, parent=li, nodes=body_nodes)
+            if body_nodes:
+                self._parse_inline_group(doc=doc, el=el, parent=li, nodes=body_nodes)
 
     def _is_simple_virtual_text_nodes(self, nodes: Sequence[Node]) -> bool:
         """True when virtual-text body is plain text (optionally via ``<content>``)."""
@@ -1537,7 +1538,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         if nodes is None:
             self._source_recorder.bind_item(el, inline_group)
 
-        my_nodes = nodes or el.childNodes
+        my_nodes = nodes if nodes is not None else el.childNodes
         self._parse_inline_runs(doc=doc, nodes=my_nodes, parent=inline_group, formatting=formatting)
         return inline_group
 
