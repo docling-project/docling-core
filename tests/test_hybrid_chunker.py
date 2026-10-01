@@ -8,6 +8,7 @@ from transformers import AutoTokenizer
 
 import docling_core.transforms.chunker.hybrid_chunker as _hybrid_mod
 from docling_core.transforms.chunker.base import BaseChunker
+from docling_core.transforms.chunker.doc_chunk import DocMeta
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
     ChunkingSerializerProvider,
@@ -953,3 +954,16 @@ def test_merge_chunks_reanchors_when_estimate_over_counts():
     assert max(len(c.meta.doc_items) for c in merged) > 1
     for c in merged:
         assert chunker._count_chunk_tokens(c) <= chunker.max_tokens
+
+
+def test_doc_meta_excluded_embed_keeps_contextualize_window_invariant():
+    """Pin the contract that _merge_chunks_with_matching_metadata relies on for its constant meta cost.
+
+    The running token estimate treats the merged-meta cost as constant across
+    windows, which only holds while doc_items and origin stay excluded from the
+    embedding serialization (DocMeta.excluded_embed). A change to excluded_embed
+    must fail loudly here instead of silently drifting merged windows past
+    max_tokens.
+    """
+    assert "doc_items" in DocMeta.excluded_embed
+    assert "origin" in DocMeta.excluded_embed
