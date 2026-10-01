@@ -1200,6 +1200,8 @@ class HTMLDocSerializer(DocSerializer):
                         img_text = f'<img src="{page_img.uri}">'
                         html_parts.append(f"<figure>{img_text}</figure>")
 
+                    elif (page_img is not None) and self.params.image_mode == ImageRefMode.REFERENCED:
+                        html_parts.append(f'<figure><img src="{quote(str(page_img.uri))}"></figure>')
                     elif (page_img is not None) and (page_img._pil is not None):
                         html_parts.append(_serialize_page_img(page_img=page_img._pil))
                     else:
