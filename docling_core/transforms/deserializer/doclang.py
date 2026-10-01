@@ -227,10 +227,9 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             max_xml_depth: Optional override for ``settings.max_doclang_xml_depth``.
             max_xml_elements: Optional override for ``settings.max_doclang_xml_elements``.
             source_map: Optional recorder output populated with XPath-to-semantic bindings.
-            strict: If ``True`` (default), the input must be well-formed XML. If
-                ``False``, unescaped text characters (bare ``&``, a ``<`` that cannot
-                start markup, a stray ``]]>``, illegal control characters) are
-                repaired before parsing. Tag structure is never altered.
+            repair_unescaped_text: If ``True``, repair unescaped text (bare ``&``, a ``<`` that
+                cannot start markup, a stray ``]]>``, illegal control characters) before parsing.
+                Tag structure is never altered. Default ``False``: input must be well-formed XML.
 
         Returns:
             A populated `DoclingDocument` parsed from the input.
@@ -243,7 +242,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         self._max_xml_elements = int(kwargs.get("max_xml_elements", settings.max_doclang_xml_elements))
         self._source_recorder = _DocLangSourceRecorder(kwargs.get("source_map"))
 
-        if kwargs.get("strict") is False:
+        if kwargs.get("repair_unescaped_text", False):
             text = _repair_unescaped_xml_text(text)
         root = self._parse_xml_string(text)
         if root.tagName != DocLangToken.DOCUMENT.value:
