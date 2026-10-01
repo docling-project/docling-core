@@ -905,7 +905,7 @@ def test_split_by_doc_items_shrinks_back_when_estimate_under_counts():
 
 
 def test_doc_meta_excluded_embed_keeps_contextualize_window_invariant():
-    """Pin the contract that _split_by_doc_items relies on for its constant meta cost.
+    """Pin the constant meta cost contract used by the split and merge estimates.
 
     The running token estimate treats the chunk-meta cost as constant across
     windows, which only holds while doc_items and origin stay excluded from the
