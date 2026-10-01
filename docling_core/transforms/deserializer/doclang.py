@@ -97,6 +97,25 @@ from docling_core.utils.settings import settings
 
 __all__ = ["DocLangDocDeserializer", "DocLangSourceMap", "DocLangSourceTarget"]
 
+# Labels whose text-like tag must keep its label when its content is mixed (text + formatting runs).
+# TEXT is absent on purpose: a bare InlineGroup is serialized as ``<text>``, so it maps back to one.
+# FORMULA is absent because a formula cannot hold prose runs.
+_INLINE_HOST_LABELS: frozenset[DocItemLabel] = frozenset(
+    {DocItemLabel.FOOTNOTE, DocItemLabel.PAGE_HEADER, DocItemLabel.PAGE_FOOTER}
+)
+
+# Formatting tags that can themselves hold mixed content, e.g. <bold>a <italic>b</italic></bold>.
+_FORMATTING_TAG_VALUES: frozenset[str] = frozenset(
+    {
+        DocLangToken.BOLD.value,
+        DocLangToken.ITALIC.value,
+        DocLangToken.UNDERLINE.value,
+        DocLangToken.STRIKETHROUGH.value,
+        DocLangToken.SUBSCRIPT.value,
+        DocLangToken.SUPERSCRIPT.value,
+    }
+)
+
 
 def _utf8_byte_length(text: str) -> int:
     """Return UTF-8 byte length of ``text`` without retaining the encoded buffer."""
@@ -428,7 +447,12 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 }:
                     return None
                 elif tmp := self._get_children_simple_text_block(el):
+                    if result is not None:
+                        return None
                     result = tmp
+                elif self._get_text(el).strip():
+                    # The child holds text but is itself mixed content.
+                    return None
             elif isinstance(el, Text) and el.data.strip():  # TODO should still support whitespace-only
                 if result is None:
                     result = el.data if element.tagName == DocLangToken.CONTENT.value else el.data.strip()
@@ -445,7 +469,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         thread_id = self._extract_thread_id(el)
         simple_text = self._get_children_simple_text_block(el)
         if len(element_children) > 1 or (simple_text is None and thread_id is None):
-            self._parse_inline_group(doc=doc, el=el, parent=parent)
+            self._parse_mixed_text_like(doc=doc, el=el, parent=parent)
             return
 
         prov_list = self._extract_provenance(doc=doc, el=el)
@@ -1425,6 +1449,52 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     self._source_recorder.bind_item(ldiv_el, item)
 
     # ------------- Inline groups -------------
+    @staticmethod
+    def _merge_formatting_tag(nm: str, base: Formatting | None) -> Formatting:
+        """Apply a formatting tag's own style onto (a copy of) the accumulated formatting."""
+        formatting = base.model_copy(deep=True) if base is not None else Formatting()
+        if nm == DocLangToken.BOLD.value:
+            formatting.bold = True
+        elif nm == DocLangToken.ITALIC.value:
+            formatting.italic = True
+        elif nm == DocLangToken.UNDERLINE.value:
+            formatting.underline = True
+        elif nm == DocLangToken.STRIKETHROUGH.value:
+            formatting.strikethrough = True
+        elif nm == DocLangToken.SUBSCRIPT.value:
+            formatting.script = Script.SUB
+        elif nm == DocLangToken.SUPERSCRIPT.value:
+            formatting.script = Script.SUPER
+        return formatting
+
+    def _parse_inline_runs(
+        self,
+        *,
+        doc: DoclingDocument,
+        nodes: Sequence[Node],
+        parent: NodeItem | None,
+        formatting: Formatting | None,
+    ) -> None:
+        """Add text runs for ``nodes``, carrying ``formatting`` through nested formatting tags."""
+        for node in nodes:
+            if isinstance(node, Element):
+                if node.tagName in _FORMATTING_TAG_VALUES:
+                    # Accumulate this tag's style and keep descending, so e.g. <bold>a
+                    # <italic>b</italic></bold> gives "a" bold and "b" bold+italic.
+                    merged = self._merge_formatting_tag(node.tagName, formatting)
+                    self._parse_inline_runs(doc=doc, nodes=node.childNodes, parent=parent, formatting=merged)
+                else:
+                    self._dispatch_element(doc=doc, el=node, parent=parent)
+            elif isinstance(node, Text):
+                text_content = node.data.strip()
+                if text_content:
+                    doc.add_text(
+                        label=DocItemLabel.TEXT,
+                        text=text_content,
+                        parent=parent,
+                        formatting=formatting,
+                    )
+
     def _parse_inline_group(
         self,
         *,
@@ -1432,28 +1502,61 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         el: Element,
         parent: NodeItem | None,
         nodes: Sequence[Node] | None = None,
-    ) -> None:
+        formatting: Formatting | None = None,
+    ) -> InlineGroup:
         """Parse <inline> elements into InlineGroup objects."""
         # Create the inline group
         inline_group = doc.add_inline_group(parent=parent)
         if nodes is None:
             self._source_recorder.bind_item(el, inline_group)
 
-        # Process all child elements, adding them as children of the inline group
         my_nodes = nodes if nodes is not None else el.childNodes
-        for node in my_nodes:
-            if isinstance(node, Element):
-                # Recursively dispatch child elements with the inline group as parent
-                self._dispatch_element(doc=doc, el=node, parent=inline_group)
-            elif isinstance(node, Text):
-                # Handle direct text content
-                text_content = node.data.strip()
-                if text_content:
-                    doc.add_text(
-                        label=DocItemLabel.TEXT,
-                        text=text_content,
-                        parent=inline_group,
-                    )
+        self._parse_inline_runs(doc=doc, nodes=my_nodes, parent=inline_group, formatting=formatting)
+        return inline_group
+
+    def _parse_mixed_text_like(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
+        """Parse a text-like element with mixed content (text + formatting runs)."""
+        node: NodeItem
+        if el.tagName in _INLINE_HOST_LABELS:
+            node = self._parse_inline_host(doc=doc, el=el, parent=parent, label=DocItemLabel(el.tagName))
+        else:
+            # If the mixed-content element is itself a formatting tag (e.g. <bold> with a
+            # leading text run before a nested <italic>), its own style must not be dropped.
+            formatting = self._merge_formatting_tag(el.tagName, None) if el.tagName in _FORMATTING_TAG_VALUES else None
+            node = self._parse_inline_group(doc=doc, el=el, parent=parent, formatting=formatting)
+        if (content_layer := self._extract_layer(el=el)) is not None:
+            # Runs carry no layer of their own; without this, furniture runs would leak into the body.
+            for it, _ in doc.iterate_items(root=node, with_groups=True, included_content_layers=set(ContentLayer)):
+                it.content_layer = content_layer
+
+    def _parse_inline_host(
+        self,
+        *,
+        doc: DoclingDocument,
+        el: Element,
+        parent: NodeItem | None,
+        label: DocItemLabel,
+    ) -> TextItem:
+        """Parse a labeled text-like element with mixed content as an empty host item holding an InlineGroup.
+
+        This is the shape the serializer writes back as ``<footnote>...runs...</footnote>``, so the host's
+        label, provenance and layer survive the round trip.
+        """
+        prov_list = self._extract_provenance(doc=doc, el=el)
+        content_layer = self._extract_layer(el=el)
+        item = doc.add_text(
+            label=label,
+            text="",
+            parent=parent,
+            prov=(prov_list[0] if prov_list else None),
+            content_layer=content_layer,
+        )
+        self._apply_initial_text_provenance(item, text="", prov_list=prov_list)
+        _, body_nodes = self._split_element_children_head_body(el)
+        self._parse_inline_group(doc=doc, el=el, parent=item, nodes=body_nodes)
+        self._apply_custom_meta_from_element(item=item, el=el)
+        self._source_recorder.bind_item(el, item)
+        return item
 
     # ------------- Floating items (table / picture) -------------
 
