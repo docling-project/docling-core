@@ -2580,3 +2580,4 @@ def test_empty_list_item_does_not_replay_siblings():
 </list></doclang>"""
     doc = DocLangDocDeserializer().deserialize_str(xml)
     assert sorted(it.text for it in doc.texts if it.text.strip()) == ["Alpha", "Beta"]
+    assert [g for g in doc.groups if not g.children] == []
