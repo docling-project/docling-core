@@ -285,7 +285,7 @@ class DocLangParams(CommonParams):
 
 def _create_layer_token(
     *,
-    item: DocItem,
+    item: NodeItem,
     params: DocLangParams,
 ) -> str:
     """Create `<layer value="..."/>` in element head."""
@@ -347,6 +347,7 @@ def _element_head_prefix(
     caption_text: str | None = None,
     custom_text: str | None = None,
     include_href: bool = True,
+    include_layer: bool = True,
     include_item_meta_head: bool = True,
     thread_id: str | None = None,
 ) -> str:
@@ -358,7 +359,7 @@ def _element_head_prefix(
         parts.append(DocLangVocabulary._create_threading_token(thread_id=thread_id))
     if include_href and (href_uri := _text_item_hyperlink_uri(item)):
         parts.append(_create_href_token(uri=href_uri))
-    if layer_token := _create_layer_token(item=item, params=params):
+    if include_layer and (layer_token := _create_layer_token(item=item, params=params)):
         parts.append(layer_token)
     if params.add_location:
         if loc := _create_location_tokens_for_item(item=item, doc=doc, xres=params.xsize, yres=params.ysize):
@@ -1102,6 +1103,8 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                     caption_text=caption_head or None,
                     custom_text=custom_head or None,
                     include_href=include_href,
+                    # An inline run inherits its host's layer; a head token here is invalid mid-content.
+                    include_layer=not is_inline_scope,
                     thread_id=thread_id,
                 )
             )
@@ -1775,6 +1778,18 @@ class DocLangInlineSerializer(BaseInlineSerializer):
         my_visited = visited if visited is not None else set()
         params = DocLangParams(**kwargs)
         parts: list[SerializationResult] = []
+        parent_item = item.parent.resolve(doc) if item.parent else None
+        if parent_item is None:
+            should_wrap = True
+        elif isinstance(parent_item, ListItem):
+            should_wrap = not params.use_virtual_text or _list_item_has_segment_siblings(item=parent_item, doc=doc)
+        elif isinstance(parent_item, TextItem):
+            should_wrap = False
+        else:
+            should_wrap = True
+        # The runs emit no layer of their own, so the <text> wrapper carries the group's.
+        if should_wrap and (layer_token := _create_layer_token(item=item, params=params)):
+            parts.append(create_ser_result(text=layer_token))
         if params.add_location:
             # Check if parent is ListItem with provenance - use that instead of children
             parent_item = item.parent.resolve(doc) if item.parent else None
@@ -1830,15 +1845,6 @@ class DocLangInlineSerializer(BaseInlineSerializer):
         if text_res:
             text_res = f"{text_res}{delim}"
 
-        parent_item = item.parent.resolve(doc) if item.parent else None
-        if parent_item is None:
-            should_wrap = True
-        elif isinstance(parent_item, ListItem):
-            should_wrap = not params.use_virtual_text or _list_item_has_segment_siblings(item=parent_item, doc=doc)
-        elif isinstance(parent_item, TextItem):
-            should_wrap = False
-        else:
-            should_wrap = True
         if should_wrap:
             # if "unwrapped", wrap in <text>...</text>
             if text_res or not params.suppress_empty_elements:
