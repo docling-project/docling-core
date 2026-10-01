@@ -2569,3 +2569,15 @@ def test_roundtrip_furniture_inline_group():
     items = [it for it, _ in doc2.iterate_items(with_groups=True, included_content_layers=set(ContentLayer))][1:]
     assert [it.label for it in items] == [GroupLabel.INLINE, DocItemLabel.TEXT, DocItemLabel.TEXT]
     assert {it.content_layer for it in items} == {ContentLayer.FURNITURE}
+
+
+def test_empty_list_item_does_not_replay_siblings():
+    xml = """<doclang version="0.7"><list>
+<ldiv/><content>Alpha</content>
+<ldiv/><location value="1"/><location value="2"/>
+<location value="3"/><location value="4"/>
+<ldiv/><content>Beta</content>
+</list></doclang>"""
+    doc = DocLangDocDeserializer().deserialize_str(xml)
+    assert sorted(it.text for it in doc.texts if it.text.strip()) == ["Alpha", "Beta"]
+    assert [g for g in doc.groups if not g.children] == []
