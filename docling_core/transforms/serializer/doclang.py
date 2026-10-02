@@ -1500,19 +1500,15 @@ class DocLangTableSerializer(BaseTableSerializer):
             return DocLangToken.UCEL
         if cont_left:
             return DocLangToken.LCEL
-        if has_content:
-            if cell.column_header and cell.row_header:
-                return DocLangToken.CORN
-            if cell.column_header:
-                return DocLangToken.CHED
-            if cell.row_header:
-                return DocLangToken.RHED
-            if cell.row_section:
-                return DocLangToken.SROW
-            return DocLangToken.FCEL
         if cell.column_header and cell.row_header:
             return DocLangToken.CORN
-        return DocLangToken.ECEL
+        if cell.column_header:
+            return DocLangToken.CHED
+        if cell.row_header:
+            return DocLangToken.RHED
+        if cell.row_section:
+            return DocLangToken.SROW
+        return DocLangToken.FCEL if has_content else DocLangToken.ECEL
 
     def _emit_otsl(
         self,
