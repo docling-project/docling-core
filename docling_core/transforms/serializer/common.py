@@ -518,6 +518,10 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         return create_ser_result(text=delim.join([p.text for p in parts if p.text]), span_source=parts)
 
     # making some assumptions about the kwargs it can pass
+    def _skip_in_walk(self, *, node: NodeItem, root: NodeItem | None) -> bool:
+        """Whether the node is left out when walking the tree from ``root``, as it is serialized elsewhere."""
+        return False
+
     @override
     def get_parts(
         self,
@@ -545,7 +549,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             traverse_pictures=params.traverse_pictures,
             add_page_breaks=self.requires_page_break(),
         ):
-            if node.self_ref in my_visited:
+            if node.self_ref in my_visited or self._skip_in_walk(node=node, root=item):
                 continue
             else:
                 my_visited.add(node.self_ref)

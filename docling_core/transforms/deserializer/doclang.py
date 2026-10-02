@@ -1945,6 +1945,17 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         footnotes: list[TextItem] = []
         for node in el.childNodes:
             if isinstance(node, Element) and (label := labels.get(node.tagName)) is not None:
+                inline_tags = _FORMATTING_TAG_VALUES | {DocLangToken.BR.value, DocLangToken.CONTENT.value}
+                nested = [
+                    n
+                    for n in node.childNodes
+                    if isinstance(n, Element) and not self._is_element_head_tag(n) and n.tagName not in inline_tags
+                ]
+                if nested:
+                    # nested content (e.g. a field region): a host item whose body is parsed like any container's
+                    item = self._parse_container_host(doc=doc, el=node, label=label)
+                    (captions if label == DocItemLabel.CAPTION else footnotes).append(item)
+                    continue
                 text = self._get_text(node).strip()
                 if text:
                     prov_list = self._extract_provenance(doc=doc, el=node)
@@ -1958,6 +1969,21 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     self._source_recorder.bind_item(node, item)
                     (captions if label == DocItemLabel.CAPTION else footnotes).append(item)
         return captions, footnotes
+
+    def _parse_container_host(self, *, doc: DoclingDocument, el: Element, label: DocItemLabel) -> TextItem:
+        """Parse a text-like element holding block content as a host item with that content nested under it."""
+        prov_list = self._extract_provenance(doc=doc, el=el)
+        item = doc.add_text(
+            label=label,
+            text="",
+            prov=(prov_list[0] if prov_list else None),
+            content_layer=self._extract_layer(el=el),
+        )
+        self._apply_initial_text_provenance(item, text="", prov_list=prov_list)
+        _, body_nodes = self._split_element_children_head_body(el)
+        self._dispatch_body_nodes(doc=doc, body_nodes=body_nodes, parent=item)
+        self._source_recorder.bind_item(el, item)
+        return item
 
     def _parse_code_group(
         self, *, doc: DoclingDocument, el: Element, code_el: Element, parent: NodeItem | None

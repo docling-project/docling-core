@@ -433,12 +433,42 @@ def _serialize_satellite(
     content_type: ContentType,
     doc: DoclingDocument,
     params: DocLangParams,
+    doc_serializer: BaseDocSerializer,
+    **kwargs: Any,
 ) -> str:
-    """Serialize a caption or footnote of a floating item as a standalone element."""
+    """Serialize a caption or footnote of a floating item as a standalone element.
+
+    The element holds the item's head, its own text and its nested content (e.g. a field
+    region), the latter serialized like any other child.
+    """
     head = _element_head_prefix(item=item, doc=doc, params=params)
     content = _escape_text(item.text, params) if item.text and content_type in params.content_types else ""
-    text = f"{head}{content}"
+    nested = ""
+    if item.children and content_type in params.content_types:
+        excluded = doc_serializer.get_excluded_refs(**kwargs)
+        nested = ""
+        for child_ref in item.children:
+            child = child_ref.resolve(doc)
+            # field containers are never in the label filter, and are exempt from the exclusion
+            if child.self_ref in excluded and not isinstance(child, FieldRegionItem | FieldItem):
+                continue
+            nested += doc_serializer.serialize(item=child, **kwargs).text
+    text = f"{head}{content}{nested}"
     return _wrap(text=text, wrap_tag=tag.value) if text else ""
+
+
+def _first_leaf_prov(node: NodeItem, doc: DoclingDocument) -> ProvenanceItem | None:
+    """The provenance of the first leaf item (one without children) below the node.
+
+    Container items (e.g. field regions and items) are skipped, as they carry no location of
+    their own in DocLang.
+    """
+    if not node.children:
+        return node.prov[0] if isinstance(node, DocItem) and node.prov else None
+    for child_ref in node.children:
+        if (prov := _first_leaf_prov(child_ref.resolve(doc), doc)) is not None:
+            return prov
+    return None
 
 
 def _top_left_bbox(prov: ProvenanceItem, doc: DoclingDocument) -> BoundingBox | None:
@@ -463,11 +493,11 @@ def _satellite_placement(
     host, or (when overlapping it vertically) entirely to its right; if it overlaps
     the host in both directions, if its bbox center is lower. Returns this decision
     together with the satellite's reading-order sort key, or ``None`` if the position
-    cannot be determined.
+    cannot be determined. A satellite without provenance is placed by its first nested leaf item.
     """
-    if not sat.prov or not host.prov:
+    sat_prov = sat.prov[0] if sat.prov else _first_leaf_prov(sat, doc)
+    if sat_prov is None or not host.prov:
         return None
-    sat_prov = sat.prov[0]
     if (sat_bbox := _top_left_bbox(sat_prov, doc)) is None:
         return None
     key = (sat_prov.page_no, sat_bbox.t, sat_bbox.l)
@@ -518,14 +548,26 @@ def _serialize_floating_satellites(
         captions = _resolve_satellites(refs=item.captions, doc_serializer=doc_serializer, doc=doc, **kwargs)
         for cap in captions[1:]:
             text = _serialize_satellite(
-                item=cap, tag=DocLangToken.TEXT, content_type=ContentType.REF_CAPTION, doc=doc, params=params
+                item=cap,
+                tag=DocLangToken.TEXT,
+                content_type=ContentType.REF_CAPTION,
+                doc=doc,
+                params=params,
+                doc_serializer=doc_serializer,
+                **kwargs,
             )
             sats.append((cap, text, False))
     if params.add_referenced_footnote:
         footnotes = _resolve_satellites(refs=item.footnotes, doc_serializer=doc_serializer, doc=doc, **kwargs)
         for ftn in footnotes:
             text = _serialize_satellite(
-                item=ftn, tag=DocLangToken.FOOTNOTE, content_type=ContentType.REF_FOOTNOTE, doc=doc, params=params
+                item=ftn,
+                tag=DocLangToken.FOOTNOTE,
+                content_type=ContentType.REF_FOOTNOTE,
+                doc=doc,
+                params=params,
+                doc_serializer=doc_serializer,
+                **kwargs,
             )
             sats.append((ftn, text, True))
 
@@ -1957,6 +1999,44 @@ class DocLangDocSerializer(DocSerializer):
     _suppressed_page_breaks: set[tuple[int, int]] = PrivateAttr(default_factory=set)
     _next_thread_id: int = PrivateAttr(default=1)
     _thread_id_by_ref: dict[str, str] = PrivateAttr(default_factory=dict)
+    _satellite_refs_cache: tuple[set[str], set[str]] | None = PrivateAttr(default=None)
+
+    def _satellite_refs(self) -> tuple[set[str], set[str]]:
+        """The refs of the satellites serialized by their floating item, and those nested in them.
+
+        Satellites are the footnotes and the extra captions (the first caption goes in the host's head).
+        """
+        if self._satellite_refs_cache is None:
+            satellites: set[str] = set()
+            nested: set[str] = set()
+            for host, _ in self.doc.iterate_items(
+                with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
+            ):
+                if not isinstance(host, FloatingItem):
+                    continue
+                for ref in [*host.captions[1:], *host.footnotes]:
+                    if isinstance(sat := ref.resolve(self.doc), TextItem):
+                        satellites.add(sat.self_ref)
+                        nested.update(
+                            n.self_ref
+                            for n, _ in self.doc.iterate_items(
+                                root=sat,
+                                with_groups=True,
+                                traverse_pictures=True,
+                                included_content_layers=set(ContentLayer),
+                            )
+                            if n.self_ref != sat.self_ref
+                        )
+            self._satellite_refs_cache = (satellites, nested)
+        return self._satellite_refs_cache
+
+    @override
+    def _skip_in_walk(self, *, node: NodeItem, root: NodeItem | None) -> bool:
+        """Skip the content nested in a satellite unless walking from within it: its floating item emits it."""
+        satellites, nested = self._satellite_refs()
+        if node.self_ref not in nested:
+            return False
+        return root is None or (root.self_ref not in nested and root.self_ref not in satellites)
 
     def allocate_thread_id(self, node: NodeItem) -> str:
         """Return a spec-unique positive ``thread_id`` for a fragmented component."""
@@ -2061,6 +2141,8 @@ class DocLangDocSerializer(DocSerializer):
                 content_type=ContentType.REF_FOOTNOTE,
                 doc=self.doc,
                 params=params,
+                doc_serializer=self,
+                **kwargs,
             )
             if text_res:
                 results.append(create_ser_result(text=text_res))
