@@ -1735,6 +1735,83 @@ def test_picture_layer_can_be_disabled():
     assert "<layer" not in no_layer_result
 
 
+def test_background_text_emits_watermark_label_at_end():
+    """Watermarks are ``<text>`` on the background layer, last in reading order."""
+    doc = DoclingDocument(name="watermark_text")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    body_prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((10, 10, 90, 20), origin=CoordOrigin.TOPLEFT),
+        charspan=(0, 4),
+    )
+    wm_prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((5, 40, 95, 60), origin=CoordOrigin.TOPLEFT),
+        charspan=(0, 5),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="Body", prov=body_prov)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="DRAFT",
+        prov=wm_prov,
+        content_layer=ContentLayer.BACKGROUND,
+    )
+
+    result = serialize_doclang(
+        doc,
+        params=DocLangParams(include_version=False, pretty_indentation=None),
+    )
+    body_i = result.find("<text>")
+    wm_i = result.find('<text><label value="watermark"/>')
+    assert body_i != -1
+    assert wm_i != -1
+    assert wm_i > body_i
+    assert '<label value="watermark"/><layer value="background"/>' in result
+    assert result.rfind("</text>") > wm_i
+    assert result.find("DRAFT") > wm_i
+
+
+def test_background_picture_emits_watermark_label_at_end():
+    """Watermark pictures stay ``<picture>`` with the same head as watermark text."""
+    doc = DoclingDocument(name="watermark_picture")
+    doc.add_page(page_no=1, size=Size(width=100, height=100), image=None)
+    body_prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((10, 10, 90, 20), origin=CoordOrigin.TOPLEFT),
+        charspan=(0, 4),
+    )
+    wm_prov = ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox.from_tuple((20, 30, 80, 90), origin=CoordOrigin.TOPLEFT),
+        charspan=(0, 0),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="Body", prov=body_prov)
+    pic = doc.add_picture(prov=wm_prov, content_layer=ContentLayer.BACKGROUND)
+    pic.meta = PictureMeta(
+        classification=PictureClassificationMetaField(
+            predictions=[
+                PictureClassificationPrediction(class_name="watermark", confidence=1.0)
+            ]
+        )
+    )
+
+    result = serialize_doclang(
+        doc,
+        params=DocLangParams(
+            include_version=False,
+            pretty_indentation=None,
+            emit_picture_layer=False,
+        ),
+    )
+    body_i = result.find("<text>")
+    wm_i = result.find('<picture><label value="watermark"/>')
+    assert body_i != -1
+    assert wm_i != -1
+    assert wm_i > body_i
+    assert '<label value="watermark"/><layer value="background"/>' in result
+    assert result.rfind("</picture>") > wm_i
+
+
 def test_empty_picture_preserved_by_default():
     """Without suppress_empty_elements the empty picture is preserved."""
     doc = DoclingDocument(name="test")
