@@ -2612,3 +2612,40 @@ def test_empty_list_item_does_not_replay_siblings():
     doc = DocLangDocDeserializer().deserialize_str(xml)
     assert sorted(it.text for it in doc.texts if it.text.strip()) == ["Alpha", "Beta"]
     assert [g for g in doc.groups if not g.children] == []
+
+
+@pytest.mark.parametrize("markup", ["<text></text>", "<text>\n  </text>"])
+def test_empty_text_is_an_empty_text_item(markup: str) -> None:
+    doc = DocLangDocDeserializer().deserialize_str(f'<doclang version="0.7">\n<text>a</text>\n{markup}\n</doclang>')
+
+    assert [t.text for t in doc.texts] == ["a", ""]
+    assert not doc.groups
+
+
+def test_empty_text_keeps_its_locations_and_layer() -> None:
+    locs = "".join(f'<location value="{v}"/>' for v in (10, 20, 30, 40))
+    doc = DocLangDocDeserializer().deserialize_str(
+        f'<doclang version="0.7"><text><layer value="furniture"/>{locs}</text></doclang>'
+    )
+
+    (item,) = doc.texts
+    assert item.text == ""
+    assert item.content_layer.value == "furniture"
+    assert len(item.prov) == 1 and item.prov[0].bbox.l < item.prov[0].bbox.r
+    assert not doc.groups
+
+
+def test_empty_formula_is_kept() -> None:
+    doc = DocLangDocDeserializer().deserialize_str('<doclang version="0.7"><formula></formula><formula/></doclang>')
+
+    assert [type(t).__name__ for t in doc.texts] == ["FormulaItem", "FormulaItem"]
+    assert all(t.text == "" for t in doc.texts)
+    assert not doc.groups
+
+
+def test_empty_code_is_kept() -> None:
+    doc = DocLangDocDeserializer().deserialize_str('<doclang version="0.7"><code></code><code/></doclang>')
+
+    assert [type(t).__name__ for t in doc.texts] == ["CodeItem", "CodeItem"]
+    assert all(t.text == "" for t in doc.texts)
+    assert not doc.groups
