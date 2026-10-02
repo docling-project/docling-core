@@ -530,8 +530,6 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         # Handle code separately (language + content extraction)
         if nm == DocLangToken.CODE.value:
             code_text, lang_label = self._extract_code_content_and_language(el)
-            if not code_text.strip():
-                return
             if (
                 thread_id
                 and (existing := self._get_thread_item(thread_id, host=nm)) is not None
@@ -631,8 +629,6 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             self._apply_custom_meta_from_element(item=item, el=el)
 
         elif nm == DocLangToken.FORMULA.value:
-            if not text.strip():
-                return
             if (
                 thread_id
                 and (existing := self._get_thread_item(thread_id, host=nm)) is not None

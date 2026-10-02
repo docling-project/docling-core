@@ -2635,8 +2635,17 @@ def test_empty_text_keeps_its_locations_and_layer() -> None:
     assert not doc.groups
 
 
-def test_empty_formula_is_skipped() -> None:
+def test_empty_formula_is_kept() -> None:
     doc = DocLangDocDeserializer().deserialize_str('<doclang version="0.7"><formula></formula><formula/></doclang>')
 
-    assert not doc.texts
+    assert [type(t).__name__ for t in doc.texts] == ["FormulaItem", "FormulaItem"]
+    assert all(t.text == "" for t in doc.texts)
+    assert not doc.groups
+
+
+def test_empty_code_is_kept() -> None:
+    doc = DocLangDocDeserializer().deserialize_str('<doclang version="0.7"><code></code><code/></doclang>')
+
+    assert [type(t).__name__ for t in doc.texts] == ["CodeItem", "CodeItem"]
+    assert all(t.text == "" for t in doc.texts)
     assert not doc.groups
