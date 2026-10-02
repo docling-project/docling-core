@@ -2850,3 +2850,16 @@ def test_table_footnote_with_nested_field_region():
     assert nested_ftn.find("field_region/field_item/key") is not None
     assert "".join(plain_ftn.itertext()).strip().endswith("Plain note.")
     assert len(list(root.iter("field_region"))) == 1  # not emitted a second time next to the group
+
+    # the nested content survives a round trip, under its footnote
+    ser_txt = serialize_doclang(doc)
+    doc2 = DocLangDocDeserializer().deserialize_str(ser_txt)
+    (table2,) = doc2.tables
+    nested2 = [ftn.resolve(doc2) for ftn in table2.footnotes if not ftn.resolve(doc2).text]
+    assert len(nested2) == 1
+    regions2 = [
+        it for it, _ in doc2.iterate_items(root=nested2[0], with_groups=True) if it.label == DocItemLabel.FIELD_REGION
+    ]
+    assert len(regions2) == 1
+    assert [t.text for t in doc2.texts if t.label in (DocItemLabel.FIELD_KEY, DocItemLabel.FIELD_VALUE)] == ["K:", "V"]
+    assert serialize_doclang(doc2) == ser_txt
