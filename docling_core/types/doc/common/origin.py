@@ -57,6 +57,7 @@ class DocumentOrigin(BaseModel):
         "text/csv",
         "text/markdown",
         "text/vtt",
+        "application/rtf",
     ]
 
     @field_validator("binary_hash", mode="before")
