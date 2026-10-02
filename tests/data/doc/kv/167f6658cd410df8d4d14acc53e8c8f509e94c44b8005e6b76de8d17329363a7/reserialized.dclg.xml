@@ -540,6 +540,7 @@
     16 Claims, 5 Drawing Sheets
   </text>
   <text>
+    <label value="watermark"/>
     <layer value="background"/>
     <location value="268"/>
     <location value="191"/>

@@ -309,13 +309,22 @@ def _text_item_content_type_active(item: TextItem, params: DocLangParams) -> boo
     return ContentType.TEXT_OTHER in params.content_types
 
 
+def _picture_is_watermark(item: DocItem) -> bool:
+    """True when the picture's classification label is ``watermark``."""
+    if not isinstance(item, PictureItem) or not item.meta or not item.meta.classification:
+        return False
+    return item.meta.classification.get_main_prediction().class_name == "watermark"
+
+
 def _create_layer_token(
     *,
     item: NodeItem,
     params: DocLangParams,
 ) -> str:
     """Create `<layer value="..."/>` in element head."""
-    if isinstance(item, PictureItem) and not params.emit_picture_layer:
+    # Training usually skips picture layers, but watermark pictures still need
+    # ``<layer value="background"/>`` (same structure as watermark text).
+    if isinstance(item, PictureItem) and not params.emit_picture_layer and not _picture_is_watermark(item):
         return ""
     if params.layer_mode == LayerMode.ALWAYS or (
         params.layer_mode == LayerMode.AUTO and item.content_layer != ContentLayer.BODY
@@ -633,6 +642,23 @@ def _element_label_for_serialization(
     if raw_label is None or raw_label == _DOCLANG_LABEL_UNDEFINED:
         return None
     return raw_label
+
+
+def _watermark_head_label(*, item: DocItem, params: DocLangParams) -> str | None:
+    """Optional ``<label value="watermark"/>`` on background-layer body text.
+
+    DocLang has no watermark wrapper. A watermark stays ``<text>`` (or
+    ``<picture>``, whose label comes from classification ``watermark``) with
+    ``content_layer=background``. Specialized text labels (headers, field keys,
+    …) keep their own wrappers and are left alone.
+    """
+    if not isinstance(item, TextItem) or isinstance(item, CodeItem | FormulaItem):
+        return None
+    if item.content_layer != ContentLayer.BACKGROUND:
+        return None
+    if item.label != DocItemLabel.TEXT:
+        return None
+    return _element_label_for_serialization(raw_label="watermark", params=params)
 
 
 def _picture_classification_label_value(item: PictureItem) -> str | None:
@@ -1163,13 +1189,14 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
             )
 
         include_href = not is_inline_scope
+        head_label = code_label or _watermark_head_label(item=item, params=params)
         if not skip_location:
             parts.append(
                 _element_head_prefix(
                     item=item,
                     doc=doc,
                     params=params,
-                    label_value=code_label,
+                    label_value=head_label,
                     caption_text=caption_head or None,
                     custom_text=custom_head or None,
                     include_href=include_href,
@@ -1179,8 +1206,8 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 )
             )
         else:
-            if code_label:
-                parts.append(_create_label_token(value=code_label))
+            if head_label:
+                parts.append(_create_label_token(value=head_label))
             if thread_id:
                 parts.append(DocLangVocabulary._create_threading_token(thread_id=thread_id))
             if include_href and (href_uri := _text_item_hyperlink_uri(item)):
