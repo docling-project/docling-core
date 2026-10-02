@@ -158,76 +158,96 @@ class HybridChunker(BaseChunker):
             other_len=total - text_length,
         )
 
-    def _make_chunk_from_doc_items(
-        self,
-        doc_chunk: DocChunk,
-        window_start: int,
-        window_end: int,
-        doc_serializer: BaseDocSerializer,
-    ):
-        doc_items = doc_chunk.meta.doc_items[window_start : window_end + 1]
-        meta = DocMeta(
-            doc_items=doc_items,
-            headings=doc_chunk.meta.headings,
-            origin=doc_chunk.meta.origin,
-        )
-        window_text = (
-            doc_chunk.text
-            if len(doc_chunk.meta.doc_items) == 1
-            # TODO: merging should ideally be done by the serializer:
-            else self.delim.join(
-                [
-                    res_text
-                    for doc_item in doc_items
-                    if (res_text := doc_serializer.serialize(item=doc_item).text)
-                    and not isinstance(doc_item, TitleItem | SectionHeaderItem)
-                ]
-            )
-        )
-        new_chunk = DocChunk(text=window_text, meta=meta)
-        return new_chunk
-
     def _split_by_doc_items(self, doc_chunk: DocChunk, doc_serializer: BaseDocSerializer) -> list[DocChunk]:
-        chunks = []
-        window_start = 0
-        window_end = 0  # an inclusive index
-        num_items = len(doc_chunk.meta.doc_items)
-        while window_end < num_items:
-            new_chunk = self._make_chunk_from_doc_items(
-                doc_chunk=doc_chunk,
-                window_start=window_start,
-                window_end=window_end,
-                doc_serializer=doc_serializer,
+        """Split a chunk along doc-item boundaries, keeping each window within max_tokens.
+
+        Each item is serialized once and its token count cached. Windows are
+        grown with a running token estimate, re-anchored by exact counts at
+        overflow points, and shrunk back to the largest fitting window when the
+        estimate under-counts. The resulting windows match the previous
+        implementation exactly, since the largest window that fits is unique.
+
+        Args:
+            doc_chunk: The chunk to split, containing one or more doc items.
+            doc_serializer: Serializer for the document, used to obtain per-item text.
+
+        Returns:
+            A list of chunks whose windows respect max_tokens. A single item
+            that does not fit is returned as-is and split later at the
+            plain-text stage.
+        """
+        doc_items = doc_chunk.meta.doc_items
+        num_items = len(doc_items)
+        if num_items <= 1:
+            meta = DocMeta(
+                doc_items=doc_items,
+                headings=doc_chunk.meta.headings,
+                origin=doc_chunk.meta.origin,
             )
-            if self._count_chunk_tokens(doc_chunk=new_chunk) <= self.max_tokens:
-                if window_end < num_items - 1:
-                    window_end += 1
-                    # Still room left to add more to this chunk AND still at least one
-                    # item left
-                    continue
-                else:
-                    # All the items in the window fit into the chunk and there are no
-                    # other items left
-                    window_end = num_items  # signalizing the last loop
-            elif window_start == window_end:
-                # Only one item in the window and it doesn't fit into the chunk. So
-                # we'll just make it a chunk for now and it will get split in the
-                # plain text splitter.
+            return [DocChunk(text=doc_chunk.text, meta=meta)]
+
+        item_texts: list[str] = []
+        item_token_counts: list[int] = []
+        for doc_item in doc_items:
+            res_text = doc_serializer.serialize(item=doc_item).text
+            text = res_text if (res_text and not isinstance(doc_item, TitleItem | SectionHeaderItem)) else ""
+            item_texts.append(text)
+            item_token_counts.append(self.tokenizer.count_tokens(text=text))
+
+        # token cost of the delimiter between two joined items
+        delim_tokens = (
+            self.tokenizer.count_tokens(text=f"a{self.delim}b")
+            - self.tokenizer.count_tokens(text="a")
+            - self.tokenizer.count_tokens(text="b")
+        )
+
+        def build_window(window_start: int, window_end: int) -> DocChunk:
+            meta = DocMeta(
+                doc_items=doc_items[window_start : window_end + 1],
+                headings=doc_chunk.meta.headings,
+                origin=doc_chunk.meta.origin,
+            )
+            window_text = self.delim.join([t for t in item_texts[window_start : window_end + 1] if t])
+            return DocChunk(text=window_text, meta=meta)
+
+        def window_count(window_start: int, window_end: int) -> int:
+            return self._count_chunk_tokens(doc_chunk=build_window(window_start, window_end))
+
+        # constant across windows: doc_items and origin are excluded from the embed
+        # serialization (DocMeta.excluded_embed), so contextualize() only sees
+        # headings/captions, which are the same for every window in this chunk
+        meta_overhead = window_count(0, 0) - self.tokenizer.count_tokens(text=build_window(0, 0).text)
+
+        chunks: list[DocChunk] = []
+        window_start = 0
+        while window_start < num_items:
+            window_end = window_start
+            running = 0
+            while window_end < num_items:
+                running += item_token_counts[window_end] + (delim_tokens if window_end > window_start else 0)
+                if running + meta_overhead > self.max_tokens:
+                    exact = window_count(window_start, window_end)
+                    if exact <= self.max_tokens:
+                        # the estimate overshot; re-anchor it on the exact count
+                        running = exact - meta_overhead
+                        window_end += 1
+                        continue
+                    break
                 window_end += 1
-                window_start = window_end
-            else:
-                # Multiple items in the window but they don't fit into the chunk.
-                # However, the existing items must have fit or we wouldn't have
-                # gotten here. So we put everything but the last item into the chunk
-                # and then start a new window INCLUDING the current window end.
-                new_chunk = self._make_chunk_from_doc_items(
-                    doc_chunk=doc_chunk,
-                    window_start=window_start,
-                    window_end=window_end - 1,
-                    doc_serializer=doc_serializer,
-                )
-                window_start = window_end
-            chunks.append(new_chunk)
+
+            if window_end == window_start:
+                # a single item doesn't fit: emit it as-is and let the
+                # plain-text splitter deal with it later
+                chunks.append(build_window(window_start, window_start))
+                window_start += 1
+                continue
+
+            end = window_end
+            while end - 1 > window_start and window_count(window_start, end - 1) > self.max_tokens:
+                end -= 1
+            chunks.append(build_window(window_start, end - 1))
+            window_start = end
+
         return chunks
 
     def _split_using_plain_text(

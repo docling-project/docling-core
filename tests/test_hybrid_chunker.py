@@ -8,6 +8,7 @@ from transformers import AutoTokenizer
 
 import docling_core.transforms.chunker.hybrid_chunker as _hybrid_mod
 from docling_core.transforms.chunker.base import BaseChunker
+from docling_core.transforms.chunker.doc_chunk import DocMeta
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
     ChunkingSerializerProvider,
@@ -15,6 +16,7 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
     HierarchicalChunker,
 )
 from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
+from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
 from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
 from docling_core.transforms.serializer.html import HTMLTableSerializer
@@ -821,3 +823,95 @@ def test_chunk_raises_on_missing_semchunk(monkeypatch):
 
     with pytest.raises(ImportError, match="semchunk"):
         list(chunker.chunk(dl_doc=dl_doc))
+
+
+class _CountingSerializerProxy:
+    """Wraps a serializer and counts serialize calls."""
+
+    def __init__(self, inner):
+        self._inner = inner
+        self.serialize_calls = 0
+
+    def serialize(self, *args, **kwargs):
+        self.serialize_calls += 1
+        return self._inner.serialize(*args, **kwargs)
+
+
+def test_split_by_doc_items_serializes_each_item_once():
+    """_split_by_doc_items serializes each item exactly once."""
+    num_items = 200
+    doc = DoclingDocument(name="t")
+    doc.add_heading(text="Chapter 1", level=1)
+    grp = doc.add_list_group(name="l")
+    for i in range(num_items):
+        doc.add_list_item(text=f"list item number {i} with some content", parent=grp)
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=MAX_TOKENS),
+        merge_peers=False,
+    )
+    ser = chunker.serializer_provider.get_serializer(doc)
+
+    # the whole list lands in a single chunk with num_items doc items
+    hier_chunk = next(iter(chunker._inner_chunker.chunk(doc)))
+    assert len(hier_chunk.meta.doc_items) == num_items
+
+    proxy = _CountingSerializerProxy(ser)
+    chunker._split_by_doc_items(hier_chunk, proxy)
+
+    assert proxy.serialize_calls == num_items
+
+
+class _MergingNewlineTokenizer(BaseTokenizer):
+    """Deterministic tokenizer whose per-item counts under-estimate joined text.
+
+    Counting is word-based, but each newline followed by a list-marker dash
+    merges into a single token. Summing per-item counts therefore
+    under-estimates the joined window, forcing the shrink-back path in
+    _split_by_doc_items.
+    """
+
+    max_tokens: int
+
+    def count_tokens(self, text: str) -> int:
+        return len(text.split(" ")) + text.count("\n-")
+
+    def get_max_tokens(self) -> int:
+        return self.max_tokens
+
+    def get_tokenizer(self):
+        return self
+
+
+def test_split_by_doc_items_shrinks_back_when_estimate_under_counts():
+    """Windows stay within max_tokens even when the running estimate under-counts."""
+    doc = DoclingDocument(name="t")
+    grp = doc.add_list_group(name="l")
+    for i in range(12):
+        doc.add_list_item(text=f"w{i}", parent=grp)
+
+    chunker = HybridChunker(
+        tokenizer=_MergingNewlineTokenizer(max_tokens=10),
+        merge_peers=False,
+    )
+    ser = chunker.serializer_provider.get_serializer(doc)
+    hier_chunk = next(iter(chunker._inner_chunker.chunk(doc)))
+    chunks = chunker._split_by_doc_items(hier_chunk, ser)
+
+    assert sum(len(c.meta.doc_items) for c in chunks) == 12
+    assert max(len(c.meta.doc_items) for c in chunks) > 2
+    for c in chunks:
+        assert chunker._count_chunk_tokens(c) <= chunker.max_tokens
+
+
+def test_doc_meta_excluded_embed_keeps_contextualize_window_invariant():
+    """Pin the contract that _split_by_doc_items relies on for its constant meta cost.
+
+    The running token estimate treats the chunk-meta cost as constant across
+    windows, which only holds while doc_items and origin stay excluded from the
+    embedding serialization (DocMeta.excluded_embed). A change to excluded_embed
+    must fail loudly here instead of silently drifting chunk boundaries past
+    max_tokens.
+    """
+    assert "doc_items" in DocMeta.excluded_embed
+    assert "origin" in DocMeta.excluded_embed
