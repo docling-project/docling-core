@@ -61,7 +61,7 @@ $$E=mc^2$$
 
 <!-- missing-form-item -->
 
-Some formatting chops: **bold** *italic* underline ~~strikethrough~~ subscript superscript [hyperlink](.) &amp; [~~***everything at the same time.***~~](https://github.com/DS4SD/docling)
+Some formatting chops: **bold** *italic* underline ~~strikethrough~~ <sub>subscript</sub> <sup>superscript</sup> [hyperlink](.) &amp; [~~***everything at the same time.***~~](https://github.com/DS4SD/docling)
 
 1. (i) Item 1 in A
 2. (ii) Item 2 in A
