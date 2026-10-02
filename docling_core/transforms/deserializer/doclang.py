@@ -488,14 +488,10 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         return result
 
     def _is_empty_text_block(self, element: Element) -> bool:
-        """Return True when ``element`` has no text and no children other than location/layer/label."""
+        """Return True when ``element`` has no text and no children other than element-head metadata tags."""
         for node in element.childNodes:
             if isinstance(node, Element):
-                if node.tagName not in {
-                    DocLangToken.LOCATION.value,
-                    DocLangToken.LAYER.value,
-                    DocLangToken.LABEL.value,
-                } and not self._is_element_head_tag(node):
+                if not self._is_element_head_tag(node):
                     return False
             elif isinstance(node, Text) and node.data.strip():
                 return False
@@ -635,6 +631,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             self._apply_custom_meta_from_element(item=item, el=el)
 
         elif nm == DocLangToken.FORMULA.value:
+            if not text.strip():
+                return
             if (
                 thread_id
                 and (existing := self._get_thread_item(thread_id, host=nm)) is not None

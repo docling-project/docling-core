@@ -2633,3 +2633,10 @@ def test_empty_text_keeps_its_locations_and_layer() -> None:
     assert item.content_layer.value == "furniture"
     assert len(item.prov) == 1 and item.prov[0].bbox.l < item.prov[0].bbox.r
     assert not doc.groups
+
+
+def test_empty_formula_is_skipped() -> None:
+    doc = DocLangDocDeserializer().deserialize_str('<doclang version="0.7"><formula></formula><formula/></doclang>')
+
+    assert not doc.texts
+    assert not doc.groups
