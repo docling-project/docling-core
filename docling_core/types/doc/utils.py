@@ -304,21 +304,19 @@ def otsl_parse_texts(texts: list[str], tokens: list[str]) -> tuple[list["TableCe
     def count_right(tokens: list[list[str]], c_idx: int, r_idx: int, which_tokens: list[str]) -> int:
         span = 0
         c_idx_iter = c_idx
-        while tokens[r_idx][c_idx_iter] in which_tokens:
+        while c_idx_iter < len(tokens[r_idx]) and tokens[r_idx][c_idx_iter] in which_tokens:
             c_idx_iter += 1
             span += 1
-            if c_idx_iter >= len(tokens[r_idx]):
-                return span
         return span
 
     def count_down(tokens: list[list[str]], c_idx: int, r_idx: int, which_tokens: list[str]) -> int:
         span = 0
         r_idx_iter = r_idx
-        while tokens[r_idx_iter][c_idx] in which_tokens:
+        while (
+            r_idx_iter < len(tokens) and c_idx < len(tokens[r_idx_iter]) and tokens[r_idx_iter][c_idx] in which_tokens
+        ):
             r_idx_iter += 1
             span += 1
-            if r_idx_iter >= len(tokens):
-                return span
         return span
 
     for i, text in enumerate(texts):
