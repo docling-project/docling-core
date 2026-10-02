@@ -1,7 +1,7 @@
 """Define classes for LaTeX serialization."""
 
 import re
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, Optional, Union
 
 from pydantic import AnyUrl, BaseModel
@@ -25,6 +25,7 @@ from docling_core.transforms.serializer.common import (
     DocSerializer,
     _get_annotation_text,
     create_ser_result,
+    hyperlink_uri,
 )
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
@@ -605,12 +606,12 @@ class LaTeXDocSerializer(DocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: AnyUrl | Path,
+        hyperlink: AnyUrl | PurePath,
         **kwargs: Any,
     ) -> str:
         """Return LaTeX hyperlink command (requires ``hyperref`` package)."""
         # Escape special characters in URL argument to avoid raw `#`, `%`, `_`, etc.
-        url_arg = _escape_latex(str(hyperlink))
+        url_arg = _escape_latex(hyperlink_uri(hyperlink))
         return f"\\href{{{url_arg}}}{{{text}}}"
 
     @override
@@ -709,7 +710,7 @@ class LaTeXDocSerializer(DocSerializer):
         text: str,
         *,
         formatting: Formatting | None = None,
-        hyperlink: AnyUrl | Path | None = None,
+        hyperlink: AnyUrl | PurePath | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply LaTeX escaping before formatting/hyperlinks."""

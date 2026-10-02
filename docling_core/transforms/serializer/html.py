@@ -6,7 +6,7 @@ import logging
 from enum import Enum
 from html.parser import HTMLParser
 from io import BytesIO
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, Optional, Union
 from urllib.parse import quote
 from xml.etree.ElementTree import SubElement, tostring
@@ -37,6 +37,7 @@ from docling_core.transforms.serializer.common import (
     _get_annotation_text,
     _should_use_legacy_annotations,
     create_ser_result,
+    hyperlink_uri,
 )
 from docling_core.transforms.serializer.html_styles import (
     _get_css_for_single_column,
@@ -1118,11 +1119,11 @@ class HTMLDocSerializer(DocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: AnyUrl | Path,
+        hyperlink: AnyUrl | PurePath,
         **kwargs: Any,
     ) -> str:
         """Apply HTML-specific hyperlink serialization."""
-        return f'<a href="{hyperlink!s}">{text}</a>'
+        return f'<a href="{hyperlink_uri(hyperlink)}">{text}</a>'
 
     @override
     def serialize_doc(

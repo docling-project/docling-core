@@ -7,7 +7,7 @@ import warnings
 from abc import abstractmethod
 from collections.abc import Iterable
 from functools import cached_property
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Annotated, Any, Optional, Union
 
 from pydantic import (
@@ -183,6 +183,28 @@ def create_ser_result(
         text=text,
         spans=spans,
     )
+
+
+def hyperlink_uri(hyperlink: AnyUrl | PurePath) -> str:
+    """Render a hyperlink destination as a portable URI string.
+
+    A `Path` hyperlink that a parser read out of a document is a native path, so
+    on Windows `str()` yields backslash separators and the exported destination
+    stops being a portable URI. `Path.as_posix()` normalizes separators to `/`
+    and leaves everything else untouched, so `?`/`#` delimiters, percent escapes
+    and spaces keep their meaning. URLs are unaffected by definition.
+
+    Args:
+        hyperlink: The hyperlink destination. `PurePath` (rather than `Path`) is
+            accepted so foreign spellings such as `PureWindowsPath` can be
+            normalized directly in tests; `AnyUrl` values are returned unchanged.
+
+    Returns:
+        A portable URI string with `/` path separators.
+    """
+    if isinstance(hyperlink, PurePath):
+        return hyperlink.as_posix()
+    return str(hyperlink)
 
 
 class CommonParams(BaseModel):
@@ -572,7 +594,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         text: str,
         *,
         formatting: Formatting | None = None,
-        hyperlink: AnyUrl | Path | None = None,
+        hyperlink: AnyUrl | PurePath | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply some text post-processing steps."""
@@ -629,7 +651,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: AnyUrl | Path,
+        hyperlink: AnyUrl | PurePath,
         **kwargs: Any,
     ) -> str:
         """Hook for hyperlink serialization."""

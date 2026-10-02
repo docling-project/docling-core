@@ -34,6 +34,7 @@ from docling_core.transforms.serializer.common import (
     _PageBreakSerResult,
     _should_use_legacy_annotations,
     create_ser_result,
+    hyperlink_uri,
 )
 from docling_core.types.doc import (
     BaseMeta,
@@ -1252,11 +1253,11 @@ class MarkdownDocSerializer(DocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: AnyUrl | Path,
+        hyperlink: AnyUrl | PurePath,
         **kwargs: Any,
     ):
         """Apply Markdown-specific hyperlink serialization."""
-        return f"[{text}]({hyperlink!s})"
+        return f"[{text}]({hyperlink_uri(hyperlink)})"
 
     @classmethod
     def _escape_underscores(cls, text: str):
@@ -1290,7 +1291,7 @@ class MarkdownDocSerializer(DocSerializer):
         escape_html: bool = True,
         escape_underscores: bool = True,
         formatting: Formatting | None = None,
-        hyperlink: AnyUrl | Path | None = None,
+        hyperlink: AnyUrl | PurePath | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply some text post-processing steps."""
