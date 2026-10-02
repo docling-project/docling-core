@@ -8,6 +8,7 @@ from transformers import AutoTokenizer
 
 import docling_core.transforms.chunker.hybrid_chunker as _hybrid_mod
 from docling_core.transforms.chunker.base import BaseChunker
+from docling_core.transforms.chunker.doc_chunk import DocMeta
 from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingDocSerializer,
     ChunkingSerializerProvider,
@@ -15,6 +16,7 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
     HierarchicalChunker,
 )
 from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
+from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
 from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
 from docling_core.transforms.serializer.html import HTMLTableSerializer
@@ -821,3 +823,147 @@ def test_chunk_raises_on_missing_semchunk(monkeypatch):
 
     with pytest.raises(ImportError, match="semchunk"):
         list(chunker.chunk(dl_doc=dl_doc))
+
+
+class _WordCountTokenizer(BaseTokenizer):
+    """Deterministic word-counting tokenizer with additive per-chunk counts."""
+
+    max_tokens: int
+    calls: int = 0
+    chars: int = 0
+
+    def count_tokens(self, text: str) -> int:
+        self.calls += 1
+        self.chars += len(text)
+        return len(text.split())
+
+    def get_max_tokens(self) -> int:
+        return self.max_tokens
+
+    def get_tokenizer(self):
+        return self
+
+
+class _UnderCountingTokenizer(BaseTokenizer):
+    """Word-counting tokenizer whose per-chunk counts under-estimate joined text.
+
+    A chunk that starts with "paragraph" counts one token less than its words,
+    while the joined window only loses that token once. Summing per-chunk counts
+    therefore under-estimates the joined window, forcing the shrink-back path in
+    _merge_chunks_with_matching_metadata.
+    """
+
+    max_tokens: int
+
+    def count_tokens(self, text: str) -> int:
+        return len(text.split()) - (1 if text.startswith("paragraph") else 0)
+
+    def get_max_tokens(self) -> int:
+        return self.max_tokens
+
+    def get_tokenizer(self):
+        return self
+
+
+def _paragraph_doc(num_paragraphs: int) -> DoclingDocument:
+    doc = DoclingDocument(name="t")
+    doc.add_heading(text="Chapter 1", level=1)
+    for i in range(num_paragraphs):
+        doc.add_text(label="paragraph", text=f"paragraph number {i} explains the results in some detail.")
+    return doc
+
+
+def _chunks_before_merge(chunker, doc):
+    ser = chunker.serializer_provider.get_serializer(doc)
+    res = [x for c in chunker._inner_chunker.chunk(doc) for x in chunker._split_by_doc_items(c, doc_serializer=ser)]
+    return [x for c in res for x in chunker._split_using_plain_text(c, doc_serializer=ser)]
+
+
+def test_merge_chunks_tokenizes_linearly():
+    """_merge_chunks_with_matching_metadata must not re-tokenize the growing window per step.
+
+    The old implementation re-tokenized the whole joined window on every
+    iteration, i.e. ~N·w/2 chunk-sized counts for N chunks in windows of w.
+    The new one counts each chunk once plus one exact check per window.
+    """
+    doc = _paragraph_doc(200)
+    tok = _WordCountTokenizer(max_tokens=500)
+    chunker = HybridChunker(tokenizer=tok, merge_peers=False)
+    chunks = _chunks_before_merge(chunker, doc)
+    doc_words = sum(len(c.text.split()) for c in chunks)
+
+    tok.calls = 0
+    tok.chars = 0
+    merged = chunker._merge_chunks_with_matching_metadata(chunks)
+
+    assert sum(len(c.meta.doc_items) for c in merged) == len(chunks)
+    assert max(len(c.meta.doc_items) for c in merged) > 1  # windows merged, not singles
+    for c in merged:
+        assert chunker._count_chunk_tokens(c) <= chunker.max_tokens
+    # tokenization work stays proportional to the document (~25x vs ~170x with
+    # the old implementation)
+    assert tok.chars <= 40 * doc_words
+
+
+def test_merge_chunks_shrinks_back_when_estimate_under_counts():
+    """Merged windows stay within max_tokens even when the running estimate under-counts."""
+    doc = _paragraph_doc(30)
+    tok = _UnderCountingTokenizer(max_tokens=100)
+    chunker = HybridChunker(tokenizer=tok, merge_peers=False)
+    chunks = _chunks_before_merge(chunker, doc)
+
+    merged = chunker._merge_chunks_with_matching_metadata(chunks)
+
+    assert sum(len(c.meta.doc_items) for c in merged) == 30
+    assert max(len(c.meta.doc_items) for c in merged) > 1
+    for c in merged:
+        assert chunker._count_chunk_tokens(c) <= chunker.max_tokens
+
+
+class _OverCountingTokenizer(BaseTokenizer):
+    """Word-counting tokenizer whose per-chunk counts over-estimate joined text.
+
+    A chunk that starts with "paragraph" counts one token more than its words,
+    while the joined window only gains that token once. Summing per-chunk counts
+    therefore over-estimates the joined window, forcing the re-anchor path in
+    _merge_chunks_with_matching_metadata.
+    """
+
+    max_tokens: int
+
+    def count_tokens(self, text: str) -> int:
+        return len(text.split()) + (1 if text.startswith("paragraph") else 0)
+
+    def get_max_tokens(self) -> int:
+        return self.max_tokens
+
+    def get_tokenizer(self):
+        return self
+
+
+def test_merge_chunks_reanchors_when_estimate_over_counts():
+    """Merged windows stay within max_tokens even when the running estimate over-counts."""
+    doc = _paragraph_doc(30)
+    tok = _OverCountingTokenizer(max_tokens=100)
+    chunker = HybridChunker(tokenizer=tok, merge_peers=False)
+    chunks = _chunks_before_merge(chunker, doc)
+
+    merged = chunker._merge_chunks_with_matching_metadata(chunks)
+
+    assert sum(len(c.meta.doc_items) for c in merged) == 30
+    assert max(len(c.meta.doc_items) for c in merged) > 1
+    for c in merged:
+        assert chunker._count_chunk_tokens(c) <= chunker.max_tokens
+
+
+def test_doc_meta_excluded_embed_keeps_contextualize_window_invariant():
+    """Pin the contract that _merge_chunks_with_matching_metadata relies on for its constant meta cost.
+
+    The running token estimate treats the merged-meta cost as constant across
+    windows, which only holds while doc_items and origin stay excluded from the
+    embedding serialization (DocMeta.excluded_embed). A change to excluded_embed
+    must fail loudly here instead of silently drifting merged windows past
+    max_tokens.
+    """
+    assert "doc_items" in DocMeta.excluded_embed
+    assert "origin" in DocMeta.excluded_embed
