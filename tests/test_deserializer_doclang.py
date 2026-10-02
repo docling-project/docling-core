@@ -2041,7 +2041,7 @@ def _kv_annot_fixture_dirs() -> list[Path]:
 
 
 def _serialize_kv_annot_fixture(doc: DoclingDocument) -> str:
-    text = DocLangDocSerializer(doc=doc, params=DocLangParams(include_version=False)).serialize().text
+    text = DocLangDocSerializer(doc=doc, params=DocLangParams(include_version=False, traverse_pictures=True)).serialize().text
     if not GEN_TEST_DATA:
         assert_valid_dclg_xml(text)
     return text

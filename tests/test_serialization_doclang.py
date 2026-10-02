@@ -241,7 +241,7 @@ def test_doclang_meta():
 
     ser = DocLangDocSerializer(
         doc=doc,
-        params=DocLangParams(include_version=False, image_mode=ImageRefMode.EMBEDDED),
+        params=DocLangParams(include_version=False, image_mode=ImageRefMode.EMBEDDED, traverse_pictures=True),
     )
     actual = ser.serialize().text
     verify_doclang(exp_file=src.with_suffix(".gt.dclg.xml"), actual=actual)
@@ -1393,7 +1393,7 @@ def test_kv_migration_annot_scenario():
         doc._migrate_to_field_regions()
         exp_json = subdir / "output.json"
         _verify_doc(doc=doc, exp_json=exp_json)
-        ser_txt = serialize_doclang(doc)
+        ser_txt = serialize_doclang(doc, DocLangParams(include_version=False, traverse_pictures=True))
         exp_file = subdir / "output.dclg.xml"
         verify_doclang(exp_file=exp_file, actual=ser_txt)
 
@@ -1402,6 +1402,7 @@ def test_kv_migration_annot_scenario():
             params=DocLangParams(
                 include_version=False,
                 add_content=False,
+                traverse_pictures=True,
             ),
         )
         ser_txt = ser.serialize().text
@@ -1502,7 +1503,7 @@ def test_suppress_content_filtered_text_shells():
         classification=PictureClassificationMetaField(
             predictions=[
                 PictureClassificationPrediction(
-                    label=PictureClassificationLabel.LOGO,
+                    class_name=PictureClassificationLabel.LOGO.value,
                     confidence=0.9,
                 )
             ]
@@ -1601,7 +1602,7 @@ def test_suppress_content_filtered_picture_shell():
         classification=PictureClassificationMetaField(
             predictions=[
                 PictureClassificationPrediction(
-                    label=PictureClassificationLabel.LOGO,
+                    class_name=PictureClassificationLabel.LOGO.value,
                     confidence=0.9,
                 )
             ]
@@ -1654,7 +1655,7 @@ def test_picture_box_on_layout_only_without_label():
         classification=PictureClassificationMetaField(
             predictions=[
                 PictureClassificationPrediction(
-                    label=PictureClassificationLabel.LOGO,
+                    class_name=PictureClassificationLabel.LOGO.value,
                     confidence=0.9,
                 )
             ]
@@ -1694,7 +1695,7 @@ def test_picture_layout_boxes_without_classification():
         classification=PictureClassificationMetaField(
             predictions=[
                 PictureClassificationPrediction(
-                    label=PictureClassificationLabel.LOGO,
+                    class_name=PictureClassificationLabel.LOGO.value,
                     confidence=0.9,
                 )
             ]
@@ -1731,7 +1732,7 @@ def test_picture_layer_can_be_disabled():
         classification=PictureClassificationMetaField(
             predictions=[
                 PictureClassificationPrediction(
-                    label=PictureClassificationLabel.LOGO,
+                    class_name=PictureClassificationLabel.LOGO.value,
                     confidence=0.9,
                 )
             ]

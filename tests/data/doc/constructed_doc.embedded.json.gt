@@ -931,7 +931,8 @@
         "italic": false,
         "underline": false,
         "strikethrough": false,
-        "script": "baseline"
+        "script": "baseline",
+        "handwritten": false
       }
     },
     {
@@ -950,7 +951,8 @@
         "italic": true,
         "underline": false,
         "strikethrough": false,
-        "script": "baseline"
+        "script": "baseline",
+        "handwritten": false
       }
     },
     {
@@ -969,7 +971,8 @@
         "italic": false,
         "underline": true,
         "strikethrough": false,
-        "script": "baseline"
+        "script": "baseline",
+        "handwritten": false
       }
     },
     {
@@ -988,7 +991,8 @@
         "italic": false,
         "underline": false,
         "strikethrough": true,
-        "script": "baseline"
+        "script": "baseline",
+        "handwritten": false
       }
     },
     {
@@ -1007,7 +1011,8 @@
         "italic": false,
         "underline": false,
         "strikethrough": false,
-        "script": "sub"
+        "script": "sub",
+        "handwritten": false
       }
     },
     {
@@ -1026,7 +1031,8 @@
         "italic": false,
         "underline": false,
         "strikethrough": false,
-        "script": "super"
+        "script": "super",
+        "handwritten": false
       }
     },
     {
@@ -1070,7 +1076,8 @@
         "italic": true,
         "underline": true,
         "strikethrough": true,
-        "script": "baseline"
+        "script": "baseline",
+        "handwritten": false
       },
       "hyperlink": "https://github.com/DS4SD/docling"
     },
