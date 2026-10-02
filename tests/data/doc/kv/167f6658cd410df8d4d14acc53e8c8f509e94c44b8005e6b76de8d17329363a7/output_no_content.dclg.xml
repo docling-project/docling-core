@@ -492,6 +492,7 @@
     <location value="446"/>
   </text>
   <text>
+    <label value="watermark"/>
     <layer value="background"/>
     <location value="268"/>
     <location value="191"/>
