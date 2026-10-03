@@ -48,7 +48,7 @@ from docling_core.types.doc.document import (
     TableData,
     TextItem,
 )
-from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc.labels import DocItemLabel, GroupLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -395,6 +395,34 @@ def test_md_list_item_marker_auto_non_ascii(marker, expected):
     actual = MarkdownDocSerializer(doc=doc).serialize().text
 
     assert actual == expected
+
+
+def test_md_list_item_inline_groups():
+    doc = DoclingDocument(name="inline_groups_in_list_items")
+    group = doc.add_list_group()
+    item = doc.add_list_item(text="", parent=group)
+    text = doc.add_group(label=GroupLabel.INLINE, parent=item)
+    doc.add_text(label=DocItemLabel.TEXT, text="Intro with", parent=text)
+    doc.add_text(label=DocItemLabel.TEXT, text="a link", parent=text, hyperlink="https://example.org")
+    doc.add_list_item(text="nested", parent=doc.add_list_group(parent=item))
+    after = doc.add_group(label=GroupLabel.INLINE, parent=item)
+    doc.add_text(label=DocItemLabel.TEXT, text="After the list, see", parent=after)
+    doc.add_text(label=DocItemLabel.TEXT, text="the docs", parent=after, hyperlink="https://example.org")
+    plain = doc.add_list_item(text="Plain item", parent=group)
+    para = doc.add_group(label=GroupLabel.INLINE, parent=plain)
+    doc.add_text(label=DocItemLabel.TEXT, text="Second paragraph, see", parent=para)
+    doc.add_text(label=DocItemLabel.TEXT, text="the docs", parent=para, hyperlink="https://example.org")
+
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+
+    # Only the inline group holding the text of a list item stays on the item line.
+    assert actual == (
+        "- Intro with [a link](https://example.org/)\n"
+        "    - nested\n"
+        "After the list, see [the docs](https://example.org/)\n"
+        "- Plain item\n"
+        "Second paragraph, see [the docs](https://example.org/)"
+    )
 
 
 def test_md_mark_meta_true():
