@@ -821,3 +821,27 @@ def test_chunk_raises_on_missing_semchunk(monkeypatch):
 
     with pytest.raises(ImportError, match="semchunk"):
         list(chunker.chunk(dl_doc=dl_doc))
+
+
+@pytest.mark.parametrize("merge_peers", [False, True])
+def test_chunk_preserves_inline_formatting_within_token_limit(merge_peers):
+    doc = DoclingDocument(name="inline")
+    doc.add_heading(text="Setup", level=1)
+    para = doc.add_inline_group()
+    items = [
+        doc.add_text(label=DocItemLabel.TEXT, text="Install with", parent=para),
+        doc.add_code(text="pip install x", parent=para),
+        doc.add_text(label=DocItemLabel.TEXT, text="first.", parent=para),
+    ]
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=MAX_TOKENS),
+        merge_peers=merge_peers,
+    )
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    assert len(chunks) == 1
+    assert chunks[0].text == "Install with `pip install x` first."
+    assert chunks[0].meta.headings == ["Setup"]
+    assert [item.self_ref for item in chunks[0].meta.doc_items] == [item.self_ref for item in items]
+    assert chunker.tokenizer.count_tokens(chunker.contextualize(chunks[0])) <= MAX_TOKENS
