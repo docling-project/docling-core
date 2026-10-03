@@ -1105,6 +1105,18 @@ class MarkdownFormSerializer(BaseFormSerializer):
 class MarkdownListSerializer(BaseModel, BaseListSerializer):
     """Markdown-specific list serializer."""
 
+    @staticmethod
+    def _is_other_list_item_content(group: InlineGroup, doc: DoclingDocument) -> bool:
+        """Whether an inline group is content of a list item other than its text.
+
+        The text of a list item with formatting or hyperlinks is an inline group, the
+        first child of a list item with an empty text. Any other inline group of a list
+        item, e.g. text after a sub-list, is not appended to the line of the previous
+        part.
+        """
+        parent = group.parent.resolve(doc) if group.parent else None
+        return isinstance(parent, ListItem) and not (parent.text == "" and parent.children[0].cref == group.self_ref)
+
     @override
     def serialize(
         self,
@@ -1135,7 +1147,8 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 and p.text
                 and p.spans
                 and p.spans[0].item.parent
-                and isinstance(p.spans[0].item.parent.resolve(doc), InlineGroup)
+                and isinstance(group := p.spans[0].item.parent.resolve(doc), InlineGroup)
+                and not self._is_other_list_item_content(group, doc)
             ):
                 my_parts[-1].text = f"{my_parts[-1].text}{p.text}"  # append to last
                 my_parts[-1].spans.extend(p.spans)
