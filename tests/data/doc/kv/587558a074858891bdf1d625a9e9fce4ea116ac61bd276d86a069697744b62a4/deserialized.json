@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "name": "Document",
   "furniture": {
     "self_ref": "#/furniture",
@@ -7553,7 +7553,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/1",
@@ -7570,7 +7572,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/2",
@@ -7587,7 +7591,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/3",
@@ -7604,7 +7610,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/4",
@@ -7621,7 +7629,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/5",
@@ -7638,7 +7648,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/6",
@@ -7655,7 +7667,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/7",
@@ -7672,7 +7686,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/8",
@@ -7689,7 +7705,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/9",
@@ -7706,7 +7724,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/10",
@@ -7723,7 +7743,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/11",
@@ -7740,7 +7762,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/12",
@@ -7757,7 +7781,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/13",
@@ -7774,7 +7800,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/14",
@@ -7791,7 +7819,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/15",
@@ -7808,7 +7838,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/16",
@@ -7825,7 +7857,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/17",
@@ -7857,7 +7891,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/18",
@@ -7898,7 +7934,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/19",
@@ -7960,7 +7998,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/20",
@@ -7998,7 +8038,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/21",
@@ -8027,7 +8069,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/22",
@@ -8062,7 +8106,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/23",
@@ -8097,7 +8143,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/24",
@@ -8114,7 +8162,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/25",
@@ -8134,7 +8184,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/26",
@@ -8151,7 +8203,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/27",
@@ -8168,7 +8222,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/28",
@@ -8185,7 +8241,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/29",
@@ -8202,7 +8260,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/30",
@@ -8219,7 +8279,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/31",
@@ -8236,7 +8298,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/32",
@@ -8253,7 +8317,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/33",
@@ -8270,7 +8336,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/34",
@@ -8287,7 +8355,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/35",
@@ -8304,7 +8374,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/36",
@@ -8321,7 +8393,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/37",
@@ -8338,7 +8412,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/38",
@@ -8355,7 +8431,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/39",
@@ -8372,7 +8450,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/40",
@@ -8389,7 +8469,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     }
   ],
   "pages": {

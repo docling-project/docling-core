@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "name": "Document",
   "furniture": {
     "self_ref": "#/furniture",
@@ -6666,7 +6666,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/1",
@@ -6683,7 +6685,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/2",
@@ -6700,7 +6704,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/3",
@@ -6717,7 +6723,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/4",
@@ -6734,7 +6742,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/5",
@@ -6751,7 +6761,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/6",
@@ -6768,7 +6780,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/7",
@@ -6785,7 +6799,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/8",
@@ -6802,7 +6818,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/9",
@@ -6819,7 +6837,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/10",
@@ -6836,7 +6856,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/11",
@@ -6853,7 +6875,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/12",
@@ -6873,7 +6897,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/13",
@@ -6890,7 +6916,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/14",
@@ -6910,7 +6938,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/15",
@@ -6927,7 +6957,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/16",
@@ -6944,7 +6976,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/17",
@@ -6967,7 +7001,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/18",
@@ -6984,7 +7020,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/19",
@@ -7001,7 +7039,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/20",
@@ -7018,7 +7058,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/21",
@@ -7035,7 +7077,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/22",
@@ -7052,7 +7096,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/23",
@@ -7069,7 +7115,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/24",
@@ -7086,7 +7134,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/25",
@@ -7103,7 +7153,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/26",
@@ -7120,7 +7172,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/27",
@@ -7137,7 +7191,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/28",
@@ -7154,7 +7210,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/29",
@@ -7171,7 +7229,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/30",
@@ -7188,7 +7248,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/31",
@@ -7205,7 +7267,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/32",
@@ -7222,7 +7286,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/33",
@@ -7239,7 +7305,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/34",
@@ -7256,7 +7324,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/35",
@@ -7273,7 +7343,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/36",
@@ -7290,7 +7362,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/37",
@@ -7307,7 +7381,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/38",
@@ -7324,7 +7400,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/39",
@@ -7341,7 +7419,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/40",
@@ -7358,7 +7438,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/41",
@@ -7375,7 +7457,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/42",
@@ -7392,7 +7476,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/43",
@@ -7409,7 +7495,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/44",
@@ -7426,7 +7514,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/45",
@@ -7443,7 +7533,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/46",
@@ -7460,7 +7552,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/47",
@@ -7477,7 +7571,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/48",
@@ -7494,7 +7590,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/49",
@@ -7511,7 +7609,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/50",
@@ -7528,7 +7628,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/51",
@@ -7545,7 +7647,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/52",
@@ -7562,7 +7666,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/53",
@@ -7579,7 +7685,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/54",
@@ -7596,7 +7704,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/55",
@@ -7613,7 +7723,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/56",
@@ -7630,7 +7742,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/57",
@@ -7647,7 +7761,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/58",
@@ -7664,7 +7780,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/59",
@@ -7681,7 +7799,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/60",
@@ -7698,7 +7818,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/61",
@@ -7715,7 +7837,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/62",
@@ -7732,7 +7856,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/63",
@@ -7749,7 +7875,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/64",
@@ -7766,7 +7894,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/65",
@@ -7783,7 +7913,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/66",
@@ -7800,7 +7932,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/67",
@@ -7817,7 +7951,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/68",
@@ -7834,7 +7970,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/69",
@@ -7851,7 +7989,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/70",
@@ -7868,7 +8008,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/71",
@@ -7885,7 +8027,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/72",
@@ -7902,7 +8046,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/73",
@@ -7919,7 +8065,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/74",
@@ -7936,7 +8084,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/75",
@@ -7953,7 +8103,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/76",
@@ -7970,7 +8122,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/77",
@@ -7987,7 +8141,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/78",
@@ -8004,7 +8160,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/79",
@@ -8021,7 +8179,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/80",
@@ -8038,7 +8198,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/81",
@@ -8055,7 +8217,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/82",
@@ -8072,7 +8236,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/83",
@@ -8089,7 +8255,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/84",
@@ -8106,7 +8274,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/85",
@@ -8123,7 +8293,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/86",
@@ -8140,7 +8312,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/87",
@@ -8157,7 +8331,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/88",
@@ -8174,7 +8350,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     }
   ],
   "pages": {

@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "name": "167f6658cd410df8d4d14acc53e8c8f509e94c44b8005e6b76de8d17329363a7",
   "furniture": {
     "self_ref": "#/furniture",
@@ -4698,7 +4698,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/1",
@@ -4715,7 +4717,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/2",
@@ -4732,7 +4736,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/3",
@@ -4764,7 +4770,9 @@
             122
           ]
         }
-      ]
+      ],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/4",
@@ -4781,7 +4789,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/5",
@@ -4798,7 +4808,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/6",
@@ -4815,7 +4827,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/7",
@@ -4832,7 +4846,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/8",
@@ -4849,7 +4865,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/9",
@@ -4866,7 +4884,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/10",
@@ -4883,7 +4903,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/11",
@@ -4915,7 +4937,9 @@
             47
           ]
         }
-      ]
+      ],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/12",
@@ -4947,7 +4971,9 @@
             47
           ]
         }
-      ]
+      ],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/13",
@@ -4979,7 +5005,9 @@
             99
           ]
         }
-      ]
+      ],
+      "required": false,
+      "options": []
     }
   ],
   "pages": {

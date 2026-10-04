@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "name": "Document",
   "furniture": {
     "self_ref": "#/furniture",
@@ -1959,7 +1959,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/1",
@@ -1979,7 +1981,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/2",
@@ -1999,7 +2003,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/3",
@@ -2019,7 +2025,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/4",
@@ -2039,7 +2047,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/5",
@@ -2059,7 +2069,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/6",
@@ -2079,7 +2091,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/7",
@@ -2099,7 +2113,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/8",
@@ -2119,7 +2135,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/9",
@@ -2139,7 +2157,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     }
   ],
   "pages": {

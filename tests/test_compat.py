@@ -243,6 +243,104 @@ class TestProjectorCoverage:
 # ---------------------------------------------------------------------------
 
 
+class TestProjector_1_11_to_1_10:
+    """Tests for the 1.11 → 1.10 downgrade projector."""
+
+    def _apply(self, data: dict) -> dict:
+        from docling_core.compat import _project_1_11_to_1_10
+
+        return _project_1_11_to_1_10(data)
+
+    def _field_item(self, **extra) -> dict:
+        item = {
+            "self_ref": "#/field_items/0",
+            "parent": {"$ref": "#/body"},
+            "children": [],
+            "content_layer": "body",
+            "label": "field_item",
+            "prov": [],
+        }
+        item.update(extra)
+        return item
+
+    def test_strips_the_four_new_keys(self):
+        data = {
+            **_minimal_doc_dict("1.11.0"),
+            "field_items": [
+                self._field_item(
+                    control="radio",
+                    description="Pick a delivery option",
+                    required=True,
+                    options=["standard", "express"],
+                )
+            ],
+        }
+        (item,) = self._apply(data)["field_items"]
+        for key in ("control", "description", "required", "options"):
+            assert key not in item
+
+    def test_keeps_every_other_field_item_key(self):
+        data = {
+            **_minimal_doc_dict("1.11.0"),
+            "field_items": [self._field_item(control="checkbox", required=True)],
+        }
+        (item,) = self._apply(data)["field_items"]
+        assert item["self_ref"] == "#/field_items/0"
+        assert item["label"] == "field_item"
+        assert item["parent"] == {"$ref": "#/body"}
+        assert item["children"] == []
+        assert item["content_layer"] == "body"
+
+    def test_leaves_a_document_without_field_items_alone(self):
+        result = self._apply(_minimal_doc_dict("1.11.0"))
+        assert result["field_items"] == []
+
+    def test_version_set_to_1_10(self):
+        result = self._apply(_minimal_doc_dict("1.11.0"))
+        assert result["version"] == "1.10.0"
+
+    def test_page_level_widget_state_survives(self):
+        """The projector must not touch the PdfWidget data this metadata derives from."""
+        pages = {
+            "1": {
+                "page_no": 1,
+                "size": {"width": 612.0, "height": 792.0},
+                "widgets": [{"widget_field_name": "agree", "widget_field_flags": 2}],
+            }
+        }
+        data = {**_minimal_doc_dict("1.11.0"), "pages": pages}
+        assert self._apply(data)["pages"] == pages
+
+    def test_a_populated_document_validates_against_the_1_10_schema(self):
+        """A real document carrying the new metadata must still satisfy 1.10.
+
+        The generic coverage test only exercises a minimal dict, so it would
+        pass even if this projector stripped nothing.  This asserts the strip
+        explicitly, on a document built through the public helper.
+        """
+        from docling_core.types.doc import DoclingDocument, FieldControl
+
+        doc = DoclingDocument(name="form")
+        region = doc.add_field_region()
+        doc.add_field_item(
+            parent=region,
+            control=FieldControl.CHOICE,
+            description="Country of residence",
+            required=True,
+            options=["US", "DE"],
+        )
+        assert doc.field_items[0].control is FieldControl.CHOICE
+
+        projected = self._apply(json.loads(doc.model_dump_json(by_alias=True)))
+
+        schema = json.loads((Path(__file__).parent.parent / "docs/schemas/DoclingDocument_1_10.json").read_text())
+        jsonschema.validate(instance=projected, schema=schema)
+
+        (item,) = projected["field_items"]
+        for key in ("control", "description", "required", "options"):
+            assert key not in item
+
+
 class TestProjector_1_10_to_1_9:
     """Tests for the 1.10 → 1.9 downgrade projector."""
 
