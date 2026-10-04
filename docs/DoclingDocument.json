@@ -825,6 +825,20 @@
       "title": "EntityMention",
       "type": "object"
     },
+    "FieldControl": {
+      "description": "The kind of control a form field presents to whoever fills it in.\n\nThis is the document-level reading of the control, not the raw PDF entry:\nan AcroForm ``/Btn`` field resolves to ``CHECKBOX``, ``RADIO`` or\n``BUTTON`` depending on its flags, and the untouched ``/FT`` name stays\navailable on ``PdfWidget.widget_field_type``.",
+      "enum": [
+        "text",
+        "checkbox",
+        "radio",
+        "choice",
+        "signature",
+        "button",
+        "other"
+      ],
+      "title": "FieldControl",
+      "type": "string"
+    },
     "FieldHeadingItem": {
       "additionalProperties": false,
       "properties": {
@@ -963,6 +977,7 @@
     },
     "FieldItem": {
       "additionalProperties": false,
+      "description": "One form field: the control, its metadata, and its key/value children.\n\nNote:\n    Whether the field is editable is carried by its value, as\n    ``FieldValueItem.kind``, and is deliberately not repeated here.",
       "properties": {
         "self_ref": {
           "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
@@ -1042,6 +1057,42 @@
             "$ref": "#/$defs/FineRef"
           },
           "title": "Comments",
+          "type": "array"
+        },
+        "control": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FieldControl"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "required": {
+          "default": false,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "options": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Options",
           "type": "array"
         }
       },
@@ -4494,7 +4545,7 @@
       "type": "string"
     },
     "version": {
-      "default": "1.11.0",
+      "default": "1.12.0",
       "pattern": "^(?P<major>0|[1-9]\\d*)\\.(?P<minor>0|[1-9]\\d*)\\.(?P<patch>0|[1-9]\\d*)(?:-(?P<prerelease>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
       "title": "Version",
       "type": "string"

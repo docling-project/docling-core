@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "name": "Document",
   "furniture": {
     "self_ref": "#/furniture",
@@ -553,7 +553,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/1",
@@ -570,7 +572,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/2",
@@ -599,7 +603,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/3",
@@ -625,7 +631,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     }
   ],
   "pages": {
