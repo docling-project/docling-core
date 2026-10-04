@@ -2226,6 +2226,25 @@ def test_multi_prov_text_emits_thread():
         assert "<page_break" not in ser_txt
 
 
+def test_multi_prov_text_serialization_leaves_document_unchanged():
+    """Serializing a multi-prov item must not rewrite the document's provenance.
+
+    The per-fragment rebasing of ``charspan`` happens on the copy built for each
+    fragment; mutating the provenance held by the document makes a second
+    serialization of the same document emit the first fragment's text for every
+    fragment.
+    """
+    doc = _doc_multi_prov_text()
+    item = doc.texts[0]
+    spans_before = [p.charspan for p in item.prov]
+
+    serializer = DocLangDocSerializer(doc=doc, params=DocLangParams(include_version=False))
+    first = serializer.serialize().text
+
+    assert [p.charspan for p in item.prov] == spans_before
+    assert serializer.serialize().text == first
+
+
 @doclang_validator
 def test_thread_ids_unique_across_fragmented_components():
     """Each fragmented component receives a distinct document-scoped ``thread_id``."""
