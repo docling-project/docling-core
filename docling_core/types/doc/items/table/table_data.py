@@ -155,7 +155,9 @@ class TableData(BaseModel):  # TBD
         if not indices:
             return []
 
-        indices = sorted(indices, reverse=True)
+        # Deduplicate: repeated indices would remove the row that shifted
+        # into the previously removed position instead of being a no-op.
+        indices = sorted(set(indices), reverse=True)
 
         refs_to_remove = []
         all_removed_cells = []
