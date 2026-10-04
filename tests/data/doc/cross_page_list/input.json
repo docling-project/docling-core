@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "name": "cross_page_list",
   "furniture": {
     "self_ref": "#/furniture",
