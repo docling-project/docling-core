@@ -134,12 +134,12 @@ class TableData(BaseModel):  # TBD
         # Overwrite cells in table data for which there is actual cell content.
         for cell in self.table_cells:
             for i in range(
-                min(cell.start_row_offset_idx, self.num_rows),
-                min(cell.end_row_offset_idx, self.num_rows),
+                max(0, min(cell.start_row_offset_idx, self.num_rows)),
+                max(0, min(cell.end_row_offset_idx, self.num_rows)),
             ):
                 for j in range(
-                    min(cell.start_col_offset_idx, self.num_cols),
-                    min(cell.end_col_offset_idx, self.num_cols),
+                    max(0, min(cell.start_col_offset_idx, self.num_cols)),
+                    max(0, min(cell.end_col_offset_idx, self.num_cols)),
                 ):
                     table_data[i][j] = cell
 
