@@ -243,6 +243,47 @@ class TestProjectorCoverage:
 # ---------------------------------------------------------------------------
 
 
+class TestSchemaSnapshotRendering:
+    """The snapshot written for the current version must come from the models.
+
+    Copying ``docs/DoclingDocument.json`` instead would snapshot whatever
+    schema that artefact last held -- which, in the pre-commit hook order, is
+    the *previous* version -- producing a file named for the new version but
+    describing the old one.
+    """
+
+    @staticmethod
+    def _render() -> str:
+        """Call ``_render_model_schema`` from the check script.
+
+        ``scripts/`` is not an importable package, so load the file directly
+        rather than mutating ``sys.path``.
+        """
+        import importlib.util
+
+        path = Path(__file__).parent.parent / "scripts" / "check_compat_projectors.py"
+        spec = importlib.util.spec_from_file_location("_check_compat_projectors", path)
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return str(module._render_model_schema())
+
+    def test_renderer_cannot_drift_from_the_docs_generator(self):
+        """The check script and generate_docs must emit identical bytes."""
+        from docling_core.utils.generate_jsonschema import generate_json_schema
+
+        # Exactly what generate_docs writes for DoclingDocument.
+        expected = json.dumps(generate_json_schema("DoclingDocument"), ensure_ascii=False, indent=2)
+        assert self._render() == expected
+
+    def test_rendered_schema_describes_the_current_models(self):
+        """The renderer reports the live model, not a cached artefact."""
+        from docling_core.types.doc.items.form import FieldItem
+
+        schema = json.loads(self._render())
+        assert set(schema["$defs"]["FieldItem"]["properties"]) == set(FieldItem.model_fields)
+
+
 class TestProjector_1_10_to_1_9:
     """Tests for the 1.10 → 1.9 downgrade projector."""
 
