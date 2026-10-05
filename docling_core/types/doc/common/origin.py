@@ -26,6 +26,7 @@ class DocumentOrigin(BaseModel):
 
     _extra_mimetypes: typing.ClassVar[list[str]] = [
         "application/epub+zip",
+        "application/rtf",
         "application/vnd.apple.pages",
         "application/vnd.apple.numbers",
         "application/vnd.apple.keynote",
@@ -57,7 +58,6 @@ class DocumentOrigin(BaseModel):
         "text/csv",
         "text/markdown",
         "text/vtt",
-        "application/rtf",
     ]
 
     @field_validator("binary_hash", mode="before")
