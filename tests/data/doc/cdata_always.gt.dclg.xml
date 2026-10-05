@@ -126,15 +126,20 @@ Affiliation 2]]></content>
     <strikethrough><![CDATA[strikethrough]]></strikethrough>
     <subscript><![CDATA[subscript]]></subscript>
     <superscript><![CDATA[superscript]]></superscript>
-<![CDATA[hyperlink]]>    
+    <text>
+      <href uri="."/>
+<![CDATA[hyperlink]]>    </text>
 <![CDATA[&]]>    
-    <strikethrough>
-      <underline>
-        <italic>
-          <bold><![CDATA[everything at the same time.]]></bold>
-        </italic>
-      </underline>
-    </strikethrough>
+    <text>
+      <href uri="https://github.com/DS4SD/docling"/>
+      <strikethrough>
+        <underline>
+          <italic>
+            <bold><![CDATA[everything at the same time.]]></bold>
+          </italic>
+        </underline>
+      </strikethrough>
+    </text>
   </text>
   <list class="ordered">
     <ldiv>

@@ -1,8 +1,10 @@
 import re
 from collections.abc import Callable
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 import pytest
+from pydantic import AnyUrl
 
 from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 from docling_core.transforms.serializer.doclang import (
@@ -2569,6 +2571,103 @@ def test_roundtrip_furniture_inline_group():
     items = [it for it, _ in doc2.iterate_items(with_groups=True, included_content_layers=set(ContentLayer))][1:]
     assert [it.label for it in items] == [GroupLabel.INLINE, DocItemLabel.TEXT, DocItemLabel.TEXT]
     assert {it.content_layer for it in items} == {ContentLayer.FURNITURE}
+
+
+@pytest.mark.parametrize("pretty_indentation", [None, "  "])
+@pytest.mark.parametrize(
+    "formatting",
+    [
+        None,
+        Formatting(bold=True, italic=True, underline=True, strikethrough=True),
+        Formatting(script=Script.SUPER),
+        Formatting(script=Script.SUB),
+    ],
+)
+def test_roundtrip_inline_hyperlinks_preserves_text_and_formatting(pretty_indentation, formatting):
+    doc = DoclingDocument(name="linked-runs")
+    group = doc.add_inline_group()
+    expected = [
+        ("see ", None, None),
+        (" the docs ", AnyUrl("https://example.org/docs?a=1&b=2"), formatting),
+        (", or ", None, None),
+        ("help", AnyUrl("https://example.org/help"), Formatting(italic=True)),
+        ("!", None, None),
+    ]
+    for text, target, style in expected:
+        doc.add_text(label=DocItemLabel.TEXT, text=text, parent=group, hyperlink=target, formatting=style)
+    params = DocLangParams(pretty_indentation=pretty_indentation)
+    for _ in range(2):
+        xml = DocLangDocSerializer(doc=doc, params=params).serialize().text
+        doc = DocLangDocDeserializer().deserialize_str(xml)
+        assert [(run.text, run.hyperlink, run.formatting) for run in doc.texts] == expected
+        (restored_group,) = doc.groups
+        assert restored_group.label == GroupLabel.INLINE
+        assert [ref.resolve(doc) for ref in restored_group.children] == doc.texts
+        assert all(run.parent.cref == restored_group.self_ref for run in doc.texts)
+        assert_valid_dclg_xml(xml)
+
+
+@pytest.mark.parametrize("pretty_indentation", [None, "  "])
+@pytest.mark.parametrize("linked_text", ["docs", " \t ", "a\n b\t", 'a & b < c ]]> "d"'])
+def test_roundtrip_inline_hyperlink_keeps_explicit_whitespace_and_escaped_text(pretty_indentation, linked_text):
+    doc = DoclingDocument(name="whitespace-links")
+    inline = doc.add_inline_group()
+    target = AnyUrl("https://example.org/docs")
+    doc.add_text(label=DocItemLabel.TEXT, text=" \t ", parent=inline)
+    doc.add_text(
+        label=DocItemLabel.TEXT, text=linked_text, parent=inline, hyperlink=target, formatting=Formatting(bold=True)
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="\n ", parent=inline)
+    params = DocLangParams(pretty_indentation=pretty_indentation)
+    for _ in range(2):
+        xml = DocLangDocSerializer(doc=doc, params=params).serialize().text
+        doc = DocLangDocDeserializer().deserialize_str(xml)
+        assert [(run.text, run.hyperlink) for run in doc.texts] == [
+            (" \t ", None),
+            (linked_text, target),
+            ("\n ", None),
+        ]
+        assert doc.texts[1].formatting == Formatting(bold=True)
+        assert_valid_dclg_xml(xml)
+
+
+@pytest.mark.parametrize("pretty_indentation", [None, "  "])
+@pytest.mark.parametrize("host_kind", ["paragraph", "list", "footnote", "header"])
+def test_roundtrip_inline_hyperlink_in_text_host(pretty_indentation, host_kind):
+    doc = DoclingDocument(name="linked-host")
+    layer = ContentLayer.FURNITURE if host_kind == "header" else ContentLayer.BODY
+    if host_kind == "list":
+        host = doc.add_list_item(text="", parent=doc.add_list_group())
+    else:
+        label = {
+            "paragraph": DocItemLabel.TEXT,
+            "footnote": DocItemLabel.FOOTNOTE,
+            "header": DocItemLabel.PAGE_HEADER,
+        }[host_kind]
+        host = doc.add_text(label=label, text="", content_layer=layer)
+    inline = doc.add_inline_group(parent=host, content_layer=layer)
+    doc.add_text(label=DocItemLabel.TEXT, text="see ", parent=inline, content_layer=layer)
+    target = AnyUrl("https://example.org/docs")
+    doc.add_text(label=DocItemLabel.TEXT, text="docs", parent=inline, hyperlink=target, content_layer=layer)
+    doc.add_text(label=DocItemLabel.TEXT, text=".", parent=inline, content_layer=layer)
+    xml = DocLangDocSerializer(doc=doc, params=DocLangParams(pretty_indentation=pretty_indentation)).serialize().text
+    restored = DocLangDocDeserializer().deserialize_str(xml)
+    runs = [run for run in restored.texts if run.text]
+    assert [(run.text, run.hyperlink) for run in runs] == [("see ", None), ("docs", target), (".", None)]
+    assert {run.content_layer for run in runs} == {layer}
+    assert_valid_dclg_xml(xml)
+
+
+@pytest.mark.parametrize("target", [AnyUrl("https://example.org/docs?a=1&b=2"), Path('relative?x="quoted"&y=<value>')])
+def test_deserialize_standalone_hyperlink_with_formatting(target):
+    uri = escape(str(target), {'"': "&quot;"})
+    xml = f'<doclang version="0.7"><text><href uri="{uri}"/><bold><italic>docs</italic></bold></text></doclang>'
+    doc = DocLangDocDeserializer().deserialize_str(xml)
+    assert len(doc.texts) == 1
+    assert doc.texts[0].text == "docs"
+    assert doc.texts[0].hyperlink == target
+    assert doc.texts[0].formatting == Formatting(bold=True, italic=True)
+    assert_valid_dclg_xml(xml)
 
 
 @pytest.mark.parametrize(

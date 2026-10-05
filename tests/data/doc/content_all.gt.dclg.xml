@@ -133,15 +133,21 @@ Affiliation 2</content>
     <strikethrough>strikethrough</strikethrough>
     <subscript>subscript</subscript>
     <superscript>superscript</superscript>
-hyperlink
+    <text>
+      <href uri="."/>
+      hyperlink
+    </text>
 <![CDATA[&]]>    
-    <strikethrough>
-      <underline>
-        <italic>
-          <bold>everything at the same time.</bold>
-        </italic>
-      </underline>
-    </strikethrough>
+    <text>
+      <href uri="https://github.com/DS4SD/docling"/>
+      <strikethrough>
+        <underline>
+          <italic>
+            <bold>everything at the same time.</bold>
+          </italic>
+        </underline>
+      </strikethrough>
+    </text>
   </text>
   <list class="ordered">
     <ldiv>
