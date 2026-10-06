@@ -284,7 +284,6 @@ class TestSchemaSnapshotRendering:
         assert set(schema["$defs"]["FieldItem"]["properties"]) == set(FieldItem.model_fields)
 
 
-
 class TestProjector_1_11_to_1_10:
     """Tests for the 1.11 → 1.10 downgrade projector."""
 
