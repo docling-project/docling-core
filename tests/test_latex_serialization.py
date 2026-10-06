@@ -153,9 +153,10 @@ def test_inline_group_no_duplication():
     # Formatted section heading via InlineGroup
     heading = doc.add_heading(text="", level=1)
     ig = doc.add_inline_group(parent=heading)
+    # Runs carry their own boundary whitespace; the serializer no longer invents a separator.
     doc.add_text(
         label="text",
-        text="Partially formatted",
+        text="Partially formatted ",
         formatting=Formatting(italic=True),
         parent=ig,
     )
@@ -166,7 +167,7 @@ def test_inline_group_no_duplication():
     li = doc.add_list_item(text="", parent=lg)
     ig2 = doc.add_inline_group(parent=li)
     doc.add_text(label="text", text="Term", formatting=Formatting(bold=True), parent=ig2)
-    doc.add_text(label="text", text=": definition", parent=ig2)
+    doc.add_text(label="text", text=" : definition", parent=ig2)
 
     body = LaTeXDocSerializer(doc=doc).serialize().text.split("\\begin{document}")[1]
 

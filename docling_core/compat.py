@@ -198,6 +198,36 @@ def list_projectors() -> list[tuple[int, int]]:
 # the serialised dict without error.  Full semantic fidelity is not always
 # possible; the goal is a document that validates rather than crashes.
 
+# --- 1.11 → 1.10 ----------------------------------------------------------
+# Schema 1.11 (docling-core v2.86.0): InlineGroup runs carry their own
+# significant whitespace and serializers concatenate them faithfully.
+#
+# The 1.11 and 1.10 schemas are structurally identical -- no new fields,
+# labels, or lists.  The only difference is *semantic*: a 1.11 run's text
+# contains its boundary whitespace, whereas a 1.10 client re-inserts a
+# single " " between runs at serialization time.  A 1.10 client therefore
+# parses a 1.11 dict without error; it just renders the boundary twice
+# (e.g. "bold  tail"), the documented, harmless double-space case.  1.10
+# cannot represent a tight run boundary, so there is nothing to project
+# structurally -- only the version stamp is lowered so the old client's
+# version-compatibility gate accepts the document.
+# ---------------------------------------------------------------------------
+
+
+@register_projector(from_minor=11, to_minor=10)
+def _project_1_11_to_1_10(data: dict) -> dict:
+    """Downgrade a schema 1.11 document dict to schema 1.10.
+
+    1.11 and 1.10 share an identical structure; the difference is only in how
+    inline-run whitespace is represented. A 1.10 client validates the dict
+    as-is and re-applies its own single-space join between runs, so the sole
+    transform is re-stamping the version.
+    """
+    data = dict(data)
+    data["version"] = "1.10.0"
+    return data
+
+
 # --- 1.10 → 1.9 -----------------------------------------------------------
 # Schema 1.10 (docling-core v2.69.0, PR #519):
 #   • Added FieldRegionItem, FieldHeadingItem, FieldItem, FieldValueItem

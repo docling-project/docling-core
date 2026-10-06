@@ -259,7 +259,7 @@ def test_text_output_collapses_formatting_and_marks_truncation(tmp_path: Path, c
 
     assert main(["show", str(path), "/formula[1]", "-B", "1", "-n"]) == 0
     output = capsys.readouterr().out
-    assert "/code[1]-public  class Main {}" in output
+    assert "/code[1]-public class Main {}" in output
     assert "/formula[1]:$$E = mc^2$$" in output
     assert "/d:" not in output
     assert "\n--\n" not in output

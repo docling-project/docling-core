@@ -1891,7 +1891,9 @@ def test_otsl_xml_sensitive_virtual_and_explicit_text_cells():
     doc = _deserialize(doclang)
 
     assert doc.tables[0].data.grid[0][0].text == "virtual & <cell> \"quoted\" 'apostrophe'"
-    assert doc.tables[0].data.grid[0][1].text == "nested & <cell>bold & styled"
+    # The source writes `<bold> bold &amp; styled</bold>`; that leading space is a significant
+    # run boundary under the inline whitespace contract, so it survives.
+    assert doc.tables[0].data.grid[0][1].text == "nested & <cell> bold & styled"
     assert isinstance(doc.tables[0].data.grid[0][1], RichTableCell)
 
 
@@ -2578,7 +2580,8 @@ def test_roundtrip_furniture_inline_group():
         ("$q < 0$ and p <0.05 and $a<\\ln b$", ["$q < 0$ and p <0.05 and $a<\\ln b$"]),
         ("x]]> y", ["x]]> y"]),
         ("a\x18b", ["ab"]),
-        ("<![CDATA[a & b < c]]> & d", ["a & b < c", "& d"]),
+        # The run after the CDATA section owns its leading space under the whitespace contract.
+        ("<![CDATA[a & b < c]]> & d", ["a & b < c", " & d"]),
     ],
 )
 def test_repair_unescaped_text(body: str, expected: list[str]):
@@ -2649,3 +2652,9 @@ def test_empty_code_is_kept() -> None:
     assert [type(t).__name__ for t in doc.texts] == ["CodeItem", "CodeItem"]
     assert all(t.text == "" for t in doc.texts)
     assert not doc.groups
+
+
+# NOTE: the whitespace-contract branch originally carried a second, loop-shaped test with this
+# exact name. main already covers the same regression with the parametrized case above, and that
+# case asserts over non-empty runs, which is what the inline-host shape produces. Keeping both
+# would have silently shadowed main's version, so only main's is kept.
