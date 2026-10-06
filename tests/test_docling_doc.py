@@ -3274,3 +3274,28 @@ def test_document_validation_clamps_table_cell_bbox() -> None:
     messages = [str(warning.message) for warning in caught]
     assert any("Table cell bbox coordinate l on page 1 is outside page bounds" in message for message in messages)
     assert any("Table cell bbox coordinate r on page 1 is outside page bounds" in message for message in messages)
+
+
+def test_table_remove_rows_duplicate_indices_are_noops():
+    # a repeated row index used to remove the row that shifted into the
+    # vacated position, deleting two rows for one requested index
+    table_cells = [
+        TableCell(
+            text=f"r{i}c{j}",
+            start_row_offset_idx=i,
+            end_row_offset_idx=i + 1,
+            start_col_offset_idx=j,
+            end_col_offset_idx=j + 1,
+        )
+        for i in range(4)
+        for j in range(2)
+    ]
+    data = TableData(num_rows=4, num_cols=2, table_cells=table_cells)
+
+    doc = DoclingDocument(name="t")
+    table = doc.add_table(data=data)
+    table.data.remove_rows(indices=[1, 1])
+
+    assert table.data.num_rows == 3
+    texts = [c.text for row in table.data.grid for c in row]
+    assert texts == ["r0c0", "r0c1", "r2c0", "r2c1", "r3c0", "r3c1"]
