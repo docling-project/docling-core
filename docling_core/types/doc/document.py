@@ -5567,7 +5567,7 @@ class DoclingDocument(BaseModel):
         if not isinstance(texts, list) or not isinstance(groups, list):
             return data
 
-        def resolve_run(child: Any) -> Optional[dict]:
+        def resolve_run(child: Any) -> dict | None:
             """Return the text item dict for an inline run reference, else None."""
             if not isinstance(child, dict):
                 return None
