@@ -3274,3 +3274,104 @@ def test_document_validation_clamps_table_cell_bbox() -> None:
     messages = [str(warning.message) for warning in caught]
     assert any("Table cell bbox coordinate l on page 1 is outside page bounds" in message for message in messages)
     assert any("Table cell bbox coordinate r on page 1 is outside page bounds" in message for message in messages)
+
+
+def test_table_grid_negative_offsets_do_not_corrupt_rows():
+    # Cells with negative offsets used to hit Python negative indexing in
+    # TableData.grid and silently overwrite rows/columns counted from the
+    # end of the table instead of being ignored like other out-of-grid
+    # offsets.
+    data = TableData(
+        num_rows=2,
+        num_cols=2,
+        table_cells=[
+            TableCell(
+                text="A",
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+            ),
+            TableCell(
+                text="B",
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=1,
+                end_col_offset_idx=2,
+            ),
+            TableCell(
+                text="C",
+                start_row_offset_idx=1,
+                end_row_offset_idx=2,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+            ),
+            TableCell(
+                text="D",
+                start_row_offset_idx=1,
+                end_row_offset_idx=2,
+                start_col_offset_idx=1,
+                end_col_offset_idx=2,
+            ),
+            TableCell(
+                text="GHOST",
+                start_row_offset_idx=-1,
+                end_row_offset_idx=0,
+                start_col_offset_idx=0,
+                end_col_offset_idx=2,
+            ),
+        ],
+    )
+    grid = data.grid
+    assert [c.text for row in grid for c in row] == ["A", "B", "C", "D"]
+
+    doc = DoclingDocument(name="t")
+    doc.add_table(data=data)
+    md = doc.export_to_markdown()
+    assert "GHOST" not in md
+
+
+def test_table_grid_negative_col_offset_does_not_corrupt_last_col():
+    data = TableData(
+        num_rows=2,
+        num_cols=2,
+        table_cells=[
+            TableCell(
+                text="A",
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+            ),
+            TableCell(
+                text="B",
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=1,
+                end_col_offset_idx=2,
+            ),
+            TableCell(
+                text="C",
+                start_row_offset_idx=1,
+                end_row_offset_idx=2,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+            ),
+            TableCell(
+                text="D",
+                start_row_offset_idx=1,
+                end_row_offset_idx=2,
+                start_col_offset_idx=1,
+                end_col_offset_idx=2,
+            ),
+            TableCell(
+                text="GHOST",
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=-1,
+                end_col_offset_idx=0,
+            ),
+        ],
+    )
+    grid = data.grid
+    assert [c.text for row in grid for c in row] == ["A", "B", "C", "D"]
