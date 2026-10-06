@@ -174,7 +174,7 @@ class TestProjectorCoverage:
 
         If the snapshot file is missing, the test fails with a clear message
         directing the contributor to run ``scripts/check_compat_projectors.py``
-        which auto-generates any missing snapshot from ``docs/DoclingDocument.json``.
+        which auto-generates any missing snapshot from the live models.
         """
         snapshot_path = _SCHEMAS_DIR / f"DoclingDocument_1_{to_minor}.json"
         assert snapshot_path.exists(), (
