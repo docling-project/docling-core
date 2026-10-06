@@ -26,7 +26,7 @@ from docling_core.types.doc.document import (
 )
 
 # (name, runs) where a run is (text, formatting, hyperlink)
-Run = tuple[str, Optional[Formatting], Optional[str]]
+Run = tuple[str, Formatting | None, str | None]
 
 _BOLD = Formatting(bold=True)
 _ITALIC = Formatting(italic=True)

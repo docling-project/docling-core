@@ -2358,7 +2358,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             table_cells=table_cells,
         )
 
-    def _extract_text_with_formatting(self, el: Element, *, trim: bool = True) -> tuple[str, Optional[Formatting]]:
+    def _extract_text_with_formatting(self, el: Element, *, trim: bool = True) -> tuple[str, Formatting | None]:
         """Extract text content and formatting from an element.
 
         If the element contains a single formatting child (bold, italic, etc.),
