@@ -1528,7 +1528,20 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         """Add text runs for ``nodes``, carrying ``formatting`` through nested formatting tags."""
         for node in nodes:
             if isinstance(node, Element):
-                if node.tagName in _FORMATTING_TAG_VALUES:
+                if node.tagName == DocLangToken.CONTENT.value:
+                    # <content> is the explicit whitespace-preserving text wrapper: it is a run,
+                    # not a nested item, so it inherits the formatting accumulated on the way in.
+                    # Dispatching it would drop that formatting (<bold><content>x </content></bold>
+                    # would come back unformatted).
+                    text_content = self._collect_text(node)
+                    if text_content:
+                        doc.add_text(
+                            label=DocItemLabel.TEXT,
+                            text=text_content,
+                            parent=parent,
+                            formatting=formatting,
+                        )
+                elif node.tagName in _FORMATTING_TAG_VALUES:
                     # Accumulate this tag's style and keep descending, so e.g. <bold>a
                     # <italic>b</italic></bold> gives "a" bold and "b" bold+italic.
                     merged = self._merge_formatting_tag(node.tagName, formatting)
