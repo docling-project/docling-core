@@ -2580,7 +2580,8 @@ def test_roundtrip_furniture_inline_group():
         ("$q < 0$ and p <0.05 and $a<\\ln b$", ["$q < 0$ and p <0.05 and $a<\\ln b$"]),
         ("x]]> y", ["x]]> y"]),
         ("a\x18b", ["ab"]),
-        ("<![CDATA[a & b < c]]> & d", ["a & b < c", "& d"]),
+        # The run after the CDATA section owns its leading space under the whitespace contract.
+        ("<![CDATA[a & b < c]]> & d", ["a & b < c", " & d"]),
     ],
 )
 def test_repair_unescaped_text(body: str, expected: list[str]):
@@ -2653,16 +2654,7 @@ def test_empty_code_is_kept() -> None:
     assert not doc.groups
 
 
-def test_leading_text_before_lone_formatting_tag_is_preserved() -> None:
-    """Regression: the leading run was silently dropped for text + one formatting child."""
-    cases = {
-        "<text>2<superscript>nd</superscript></text>": ["2", "nd"],
-        "<text>plain <bold>b</bold></text>": ["plain", "b"],
-        "<footnote>see <italic>ibid</italic></footnote>": ["see", "ibid"],
-        # guards for the shapes that already worked
-        "<text><superscript>nd</superscript> place</text>": ["nd", "place"],
-        "<text>H<subscript>2</subscript>O</text>": ["H", "2", "O"],
-    }
-    for frag, expected in cases.items():
-        doc = DocLangDocDeserializer().deserialize_str(f'<doclang version="0.7">{frag}</doclang>')
-        assert [t.text.strip() for t in doc.texts] == expected, frag
+# NOTE: the whitespace-contract branch originally carried a second, loop-shaped test with this
+# exact name. main already covers the same regression with the parametrized case above, and that
+# case asserts over non-empty runs, which is what the inline-host shape produces. Keeping both
+# would have silently shadowed main's version, so only main's is kept.
