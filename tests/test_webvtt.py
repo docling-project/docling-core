@@ -174,6 +174,27 @@ def test_vtt_cue_commponents() -> None:
     assert str(cue_span) == expected_str
 
 
+def test_timestamp_from_seconds_rounding() -> None:
+    """Test that from_seconds carries fractional rounding across all boundaries.
+
+    A fraction in [0.9995, 1) rounds up to a full second; the second must carry
+    into minutes and hours correctly instead of emitting an invalid '1000' ms value.
+    """
+    cases = [
+        # (input_seconds, expected_raw)
+        (3.9994, "00:00:03.999"),  # just below boundary — stays at 999 ms
+        (3.9996, "00:00:04.000"),  # rounds up: ms carry into seconds
+        (59.9996, "00:01:00.000"),  # ms carry propagates seconds → minutes
+        (3599.9996, "01:00:00.000"),  # ms carry propagates all the way to hours
+        (7139.9996, "01:59:00.000"),  # 1h 58m 59.9996s → 1h 59m 0s
+        (0.0, "00:00:00.000"),
+        (3723.456, "01:02:03.456"),
+    ]
+    for secs, expected in cases:
+        ts = WebVTTTimestamp.from_seconds(secs)
+        assert ts.raw == expected, f"from_seconds({secs!r}) → {ts.raw!r}, want {expected!r}"
+
+
 def test_webvttcueblock_parse() -> None:
     """Test the method parse of _WebVTTCueBlock class."""
     raw: str = "04:02.500 --> 04:05.000\nJ’ai commencé le basket à l'âge de 13, 14 ans\n"  # noqa: RUF001

@@ -123,10 +123,10 @@ class WebVTTTimestamp(BaseModel):
         Returns:
             A WebVTT timestamp instance.
         """
-        hours = int(seconds // 3600)
-        minutes = int((seconds % 3600) // 60)
-        secs = int(seconds % 60)
-        millis: int = round((seconds % 1) * 1000)
+        total_millis = round(seconds * 1000)
+        hours, rest = divmod(total_millis, 3_600_000)
+        minutes, rest = divmod(rest, 60_000)
+        secs, millis = divmod(rest, 1_000)
 
         return cls(raw=f"{hours:02d}:{minutes:02d}:{secs:02d}.{millis:03d}")
 
