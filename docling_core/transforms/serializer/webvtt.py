@@ -2,7 +2,7 @@
 
 import logging
 import re
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Annotated, Any, get_args
 
 from pydantic import AnyUrl, BaseModel, Field
@@ -500,7 +500,7 @@ class WebVTTDocSerializer(DocSerializer):
         text: str,
         *,
         formatting: Formatting | None = None,
-        hyperlink: AnyUrl | Path | None = None,
+        hyperlink: AnyUrl | PurePath | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply some text post-processing steps by adding formatting tags.

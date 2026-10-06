@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 from collections.abc import Callable
 from enum import Enum
 from itertools import groupby
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Annotated, Any, Optional, Union, cast
 
 from defusedxml.ElementTree import fromstring
@@ -66,6 +66,7 @@ from docling_core.transforms.serializer.common import (
     _PageBreakNode,
     _PageBreakSerResult,
     create_ser_result,
+    hyperlink_uri,
 )
 from docling_core.types.doc import (
     BaseMeta,
@@ -328,7 +329,7 @@ def _create_href_token(*, uri: str) -> str:
 
 def _text_item_hyperlink_uri(item: DocItem) -> str | None:
     if isinstance(item, TextItem) and item.hyperlink is not None:
-        return str(item.hyperlink)
+        return hyperlink_uri(item.hyperlink)
     return None
 
 
@@ -2075,7 +2076,7 @@ class DocLangDocSerializer(DocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: AnyUrl | Path,
+        hyperlink: AnyUrl | PurePath,
         **kwargs: Any,
     ) -> str:
         r"""Hyperlinks are emitted as ``<href uri=\"...\"/>`` in element head, not inline."""
@@ -2412,7 +2413,7 @@ class DocLangDocSerializer(DocSerializer):
         text: str,
         *,
         formatting: Formatting | None = None,
-        hyperlink: AnyUrl | Path | None = None,
+        hyperlink: AnyUrl | PurePath | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply DocLang text post-processing including RTL direction."""

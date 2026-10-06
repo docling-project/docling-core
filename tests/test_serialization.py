@@ -17,6 +17,7 @@ from docling_core.transforms.serializer.html import (
     HTMLParams,
     HTMLTableSerializer,
 )
+from docling_core.transforms.serializer.latex import LaTeXDocSerializer
 from docling_core.transforms.serializer.markdown import (
     CaptionPlacement,
     MarkdownDocSerializer,
@@ -1724,6 +1725,80 @@ def test_referenced_image_data_uri_is_not_encoded():
     doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=uri))
 
     assert doc.export_to_markdown(image_mode=ImageRefMode.REFERENCED) == "<!-- image -->"
+
+
+@pytest.mark.parametrize(
+    ("hyperlink", "expected"),
+    [
+        # The plain relative link from the report (native and POSIX spelling).
+        (Path("sub/next.html"), "sub/next.html"),
+        (PurePosixPath("sub/next.html"), "sub/next.html"),
+        # A Windows spelling normalizes on every host -- a native POSIX Path
+        # treats '\' as a legal filename character, so the foreign spelling
+        # must be expressed with PureWindowsPath to stay host-independent.
+        (PureWindowsPath("sub\\next.html"), "sub/next.html"),
+        # Fragment and query delimiters are part of the URL, not of the path, and must
+        # not be percent-encoded the way an image path would be.
+        (Path("sub/next.html#section"), "sub/next.html#section"),
+        (Path("sub/next.html?x=1#section"), "sub/next.html?x=1#section"),
+        # Spaces and existing escapes stay as they are.
+        (Path("dir with space/x.html"), "dir with space/x.html"),
+        (Path("a%20b/x.html"), "a%20b/x.html"),
+        # A URL is untouched, including its own backslash-free spelling.
+        (AnyUrl("https://example.com/a/b?q=1#f"), "https://example.com/a/b?q=1#f"),
+    ],
+)
+def test_hyperlink_uri_is_portable(hyperlink: AnyUrl | PurePath, expected: str):
+    """Test that `hyperlink_uri` emits a portable destination on every host."""
+    from docling_core.transforms.serializer.common import hyperlink_uri
+
+    assert hyperlink_uri(hyperlink) == expected
+
+
+@pytest.mark.parametrize(
+    ("hyperlink", "expected_md", "expected_html"),
+    [
+        (Path("sub/next.html"), "[next page](sub/next.html)", '<a href="sub/next.html">'),
+        (
+            Path("sub/next.html#section"),
+            "[next page](sub/next.html#section)",
+            '<a href="sub/next.html#section">',
+        ),
+        (
+            Path("sub/next.html?x=1#section"),
+            "[next page](sub/next.html?x=1#section)",
+            '<a href="sub/next.html?x=1#section">',
+        ),
+    ],
+)
+def test_relative_hyperlink_export_uses_forward_slashes(hyperlink: AnyUrl | Path, expected_md: str, expected_html: str):
+    """Test that Markdown and HTML export a relative hyperlink with `/` separators."""
+    doc = DoclingDocument(name="x")
+    doc.add_text(label=DocItemLabel.TEXT, text="next page", hyperlink=hyperlink)
+
+    assert doc.export_to_markdown().strip() == expected_md
+    html = doc.export_to_html(image_mode=ImageRefMode.PLACEHOLDER)
+    assert expected_html in html
+
+
+def test_relative_hyperlink_export_doclang_uses_forward_slashes():
+    """Test that DocLang exports a relative hyperlink with `/` separators."""
+    doc = DoclingDocument(name="x")
+    doc.add_text(label=DocItemLabel.TEXT, text="next page", hyperlink=Path("sub/next.html"))
+
+    doclang = doc.export_to_doclang()
+    assert '<href uri="sub/next.html"/>' in doclang
+    assert "sub\\next.html" not in doclang
+
+
+@pytest.mark.xfail(reason="LaTeX backslash-escapes '#' inside href URL args; pre-existing, out of scope")
+def test_relative_hyperlink_export_latex_keeps_fragment():
+    """LaTeX should keep the '#' fragment delimiter in a hyperlink destination."""
+    doc = DoclingDocument(name="x")
+    doc.add_text(label=DocItemLabel.TEXT, text="next page", hyperlink=Path("sub/next.html#section"))
+
+    tex = LaTeXDocSerializer(doc=doc).serialize().text
+    assert "\\href{sub/next.html#section}" in tex
 
 
 def test_export_to_markdown_image_dir_saves_and_references_images(sample_doc, tmp_path):
