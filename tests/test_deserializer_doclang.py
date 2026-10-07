@@ -2649,3 +2649,53 @@ def test_empty_code_is_kept() -> None:
     assert [type(t).__name__ for t in doc.texts] == ["CodeItem", "CodeItem"]
     assert all(t.text == "" for t in doc.texts)
     assert not doc.groups
+
+
+def _cdata(text: str) -> str:
+    return f"<![CDATA[{text.replace(']]>', ']]]]><![CDATA[>')}]]>"
+
+
+def test_custom_field_text_roundtrip() -> None:
+    # custom content (here with markup and CDATA) must round-trip as text
+    # and must not leak into the text of the host element
+    value = "<opt><formula>a</formula><formula><![CDATA[b < c]]></formula></opt>"
+    xml = (
+        '<doclang version="0.7"><formula><custom>'
+        f"<acme__alt>{_cdata(value)}</acme__alt></custom>a b c</formula></doclang>"
+    )
+
+    doc = DocLangDocDeserializer().deserialize_str(xml)
+
+    (item,) = doc.texts
+    assert item.text == "a b c"
+    assert item.meta is not None
+    assert item.meta.get_custom_part() == {"acme__alt": value}
+
+    doc2 = DocLangDocDeserializer().deserialize_str(DocLangDocSerializer(doc=doc).serialize().text)
+    assert doc2.texts[0].text == "a b c"
+    assert doc2.texts[0].meta is not None
+    assert doc2.texts[0].meta.get_custom_part() == {"acme__alt": value}
+
+
+def test_custom_field_structured_roundtrip() -> None:
+    opt1 = "<formula>a</formula><formula><![CDATA[b < c]]></formula>"
+    opt2 = "another option"
+    xml = (
+        '<doclang version="0.7"><formula><custom><docling__alt_repr>'
+        f"<docling__alt_opt>{_cdata(opt1)}</docling__alt_opt>"
+        f"<docling__alt_opt>{_cdata(opt2)}</docling__alt_opt>"
+        "</docling__alt_repr><acme__tag>x</acme__tag><acme__tag>y</acme__tag></custom>a b c</formula></doclang>"
+    )
+    expected = {"docling__alt_repr": {"docling__alt_opt": [opt1, opt2]}, "acme__tag": ["x", "y"]}
+
+    doc = DocLangDocDeserializer().deserialize_str(xml)
+
+    (item,) = doc.texts
+    assert item.text == "a b c"
+    assert item.meta is not None
+    assert item.meta.get_custom_part() == expected
+
+    doc2 = DocLangDocDeserializer().deserialize_str(DocLangDocSerializer(doc=doc).serialize().text)
+    assert doc2.texts[0].meta is not None
+    assert doc2.texts[0].meta.get_custom_part() == expected
+    assert DocLangDocSerializer(doc=doc2).serialize().text == DocLangDocSerializer(doc=doc).serialize().text

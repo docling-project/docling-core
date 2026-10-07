@@ -1309,6 +1309,15 @@ class DocLangMetaSerializer(BaseModel, BaseMetaSerializer):
             span_source=item if isinstance(item, DocItem) else [],
         )
 
+    def _serialize_custom_value(self, *, tag: str, value: Any, params: DocLangParams) -> str:
+        """Serialize a custom field value: dicts as child elements, lists as repeated elements."""
+        if isinstance(value, dict):
+            inner = "".join(self._serialize_custom_value(tag=str(k), value=v, params=params) for k, v in value.items())
+            return _wrap(text=inner, wrap_tag=tag)
+        if isinstance(value, (list, tuple)):
+            return "".join(self._serialize_custom_value(tag=tag, value=v, params=params) for v in value)
+        return _wrap(text=_escape_text(str(value or ""), params), wrap_tag=tag)
+
     def _serialize_meta_field(self, meta: BaseMeta, name: str, params: DocLangParams) -> str | None:
         if (field_val := getattr(meta, name)) is not None:
             if name in {MetaFieldName.SUMMARY, MetaFieldName.DESCRIPTION}:
@@ -1325,8 +1334,7 @@ class DocLangMetaSerializer(BaseModel, BaseMetaSerializer):
             # elif tmp := str(field_val or ""):
             #     txt = tmp
             elif name not in {v.value for v in MetaFieldName}:
-                escaped_text = _escape_text(str(field_val or ""), params)
-                txt = _wrap(text=escaped_text, wrap_tag=name)
+                txt = self._serialize_custom_value(tag=name, value=field_val, params=params)
             return txt
         return None
 

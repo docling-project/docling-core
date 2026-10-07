@@ -1849,6 +1849,19 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             return namespace, name
         return None
 
+    def _custom_field_value(self, el: Element) -> Any:
+        """Read a custom field element: its text, or a dict of child tag -> value.
+
+        A tag that occurs once in the element maps to its value, a repeated tag to a list of values.
+        """
+        children = [c for c in el.childNodes if isinstance(c, Element) and c.tagName != DocLangToken.CONTENT.value]
+        if not children:
+            return self._get_text(el)
+        grouped: dict[str, list[Any]] = {}
+        for child in children:
+            grouped.setdefault(child.tagName, []).append(self._custom_field_value(child))
+        return {tag: vals[0] if len(vals) == 1 else vals for tag, vals in grouped.items()}
+
     def _apply_custom_meta_field_element(self, *, item: DocItem, field_el: Element) -> None:
         """Map one ``<custom>`` child element onto ``item.meta``."""
         tag = field_el.tagName
@@ -1867,7 +1880,12 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 picture_meta.molecule = MoleculeMetaField(smi=smi)
         elif parsed := self._split_namespace_field_tag(tag):
             namespace, name = parsed
-            meta.set_custom_field(namespace=namespace, name=name, value=value)
+            field_value = self._custom_field_value(field_el)
+            key = MetaUtils.create_meta_field_name(namespace=namespace, name=name)
+            if (existing := meta.get_custom_part().get(key)) is not None:
+                # repeated top-level tag: collect the values in a list
+                field_value = [*existing, field_value] if isinstance(existing, list) else [existing, field_value]
+            meta.set_custom_field(namespace=namespace, name=name, value=field_value)
 
     def _apply_meta_from_head_nodes(self, *, item: NodeItem, head_nodes: Sequence[Node]) -> None:
         """Restore item meta from element-head property elements."""
@@ -2400,7 +2418,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     out.append(node.data if el.tagName == DocLangToken.CONTENT.value else node.data.strip())
             elif isinstance(node, Element):
                 nm = node.tagName
-                if nm in {DocLangToken.LOCATION.value}:
+                if nm in {DocLangToken.LOCATION.value, DocLangToken.CUSTOM.value}:
                     continue
                 if nm == DocLangToken.BR.value:
                     out.append("\n")
