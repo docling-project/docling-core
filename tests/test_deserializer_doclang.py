@@ -2678,7 +2678,7 @@ def test_custom_field_text_roundtrip() -> None:
 
 
 def test_custom_field_structured_roundtrip() -> None:
-    opt1 = "<formula>a</formula><formula><![CDATA[b < c]]></formula>"
+    opt1 = "<formula>a</formula>\n<formula><![CDATA[b < c]]></formula>"
     opt2 = "another option"
     xml = (
         '<doclang version="0.7"><formula><custom><docling__alt_repr>'
@@ -2698,4 +2698,6 @@ def test_custom_field_structured_roundtrip() -> None:
     doc2 = DocLangDocDeserializer().deserialize_str(DocLangDocSerializer(doc=doc).serialize().text)
     assert doc2.texts[0].meta is not None
     assert doc2.texts[0].meta.get_custom_part() == expected
-    assert DocLangDocSerializer(doc=doc2).serialize().text == DocLangDocSerializer(doc=doc).serialize().text
+    out = DocLangDocSerializer(doc=doc2).serialize().text
+    assert out == DocLangDocSerializer(doc=doc).serialize().text
+    assert "<content>" not in out  # nested values are not wrapped just for containing newlines
