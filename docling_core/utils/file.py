@@ -58,8 +58,43 @@ def _ip_in_allowlist(ip: ipaddress.IPv4Address | ipaddress.IPv6Address, allowlis
     return False
 
 
+def _is_address_safe(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    """Check whether a single resolved IP address is globally routable.
+
+    IPv4-mapped IPv6 addresses (e.g. ::ffff:127.0.0.1) are unwrapped and
+    evaluated as their underlying IPv4 address.
+
+    Args:
+        ip: The IP address to evaluate.
+
+    Returns:
+        True if the address is safe to connect to, False otherwise.
+    """
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+        ip = ip.ipv4_mapped
+
+    if settings.allowed_private_ips and _ip_in_allowlist(ip, settings.allowed_private_ips):
+        return True
+
+    return ip.is_global and not (
+        ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified
+    )
+
+
 def _is_safe_url(url: str) -> bool:
-    """Return whether a URL resolves to a globally routable address."""
+    """Check whether every address a URL's hostname resolves to is globally routable.
+
+    Both IPv4 and IPv6 addresses are resolved and checked. All resolved
+    addresses must pass; a single unsafe address causes the URL to be rejected.
+
+    Args:
+        url: The URL to validate.
+
+    Returns:
+        True if the URL is safe to fetch, False otherwise.
+    """
+    import socket
+
     try:
         parsed = urlparse(url)
         hostname = parsed.hostname
@@ -69,25 +104,27 @@ def _is_safe_url(url: str) -> bool:
 
         try:
             ip = ipaddress.ip_address(hostname)
+            return _is_address_safe(ip)
         except ValueError:
-            import socket
+            pass
 
+        try:
+            results = socket.getaddrinfo(hostname, None, socket.AF_UNSPEC, socket.SOCK_STREAM)
+        except (socket.gaierror, socket.herror):
+            return False
+
+        if not results:
+            return False
+
+        for _family, _type, _proto, _canonname, sockaddr in results:
             try:
-                ip_str = socket.gethostbyname(hostname)
-                ip = ipaddress.ip_address(ip_str)
-            except (socket.gaierror, socket.herror):
+                ip = ipaddress.ip_address(sockaddr[0])
+            except ValueError:
                 return False
-        if settings.allowed_private_ips and _ip_in_allowlist(ip, settings.allowed_private_ips):
-            return True
+            if not _is_address_safe(ip):
+                return False
 
-        return ip.is_global and not (
-            ip.is_private
-            or ip.is_loopback
-            or ip.is_link_local
-            or ip.is_reserved
-            or ip.is_multicast
-            or ip.is_unspecified
-        )
+        return True
     except Exception:
         return False
 
