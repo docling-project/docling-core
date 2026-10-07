@@ -5088,6 +5088,8 @@ class DoclingDocument(BaseModel):
         *,
         add_named_groups: bool = False,
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        xsize: int | None = None,
+        ysize: int | None = None,
     ) -> str:
         """Export to DocLang.
 
@@ -5098,14 +5100,24 @@ class DoclingDocument(BaseModel):
             image_mode: How picture images are included: ``PLACEHOLDER`` emits no
                 picture source, ``REFERENCED`` the pictures' existing image URIs and
                 ``EMBEDDED`` the images as data URIs.
+            xsize: Width of the location coordinate grid (default: DocLang default resolution).
+            ysize: Height of the location coordinate grid (default: DocLang default resolution).
         """
         from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 
         serializer = DocLangDocSerializer(
             doc=self,
-            params=DocLangParams(add_named_groups=add_named_groups, image_mode=image_mode),
+            params=DocLangParams(
+                add_named_groups=add_named_groups,
+                image_mode=image_mode,
+                **self._doclang_resolution_kwargs(xsize=xsize, ysize=ysize),
+            ),
         )
         return serializer.serialize().text
+
+    @staticmethod
+    def _doclang_resolution_kwargs(*, xsize: int | None, ysize: int | None) -> dict[str, int]:
+        return {k: v for k, v in (("xsize", xsize), ("ysize", ysize)) if v is not None}
 
     def save_as_doclang(
         self,
@@ -5113,11 +5125,13 @@ class DoclingDocument(BaseModel):
         *,
         add_named_groups: bool = False,
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        xsize: int | None = None,
+        ysize: int | None = None,
     ) -> None:
         """Save the document as DocLang (see ``export_to_doclang`` for the options)."""
         if isinstance(filename, str):
             filename = Path(filename)
-        out = self.export_to_doclang(add_named_groups=add_named_groups, image_mode=image_mode)
+        out = self.export_to_doclang(add_named_groups=add_named_groups, image_mode=image_mode, xsize=xsize, ysize=ysize)
         filename.write_text(f"{out}\n", encoding="utf-8")
 
     def save_as_doclang_archive(
@@ -5129,6 +5143,8 @@ class DoclingDocument(BaseModel):
         add_named_groups: bool = False,
         include_namespace: bool = False,
         image_mode: ImageRefMode = ImageRefMode.REFERENCED,
+        xsize: int | None = None,
+        ysize: int | None = None,
     ) -> None:
         """Save the document as a DocLang OPC archive (``.dclx``).
 
@@ -5143,6 +5159,8 @@ class DoclingDocument(BaseModel):
 
         ``add_named_groups`` emits plain ``GroupItem``s as ``<group name="...">``
         elements so the grouping survives a round trip.
+
+        ``xsize`` / ``ysize`` set the location coordinate grid (default: DocLang default resolution).
 
         ``include_namespace`` declares the DocLang namespace on the root element. It is
         required for ``validate`` to pass, as the schema only declares the namespaced root.
@@ -5175,6 +5193,7 @@ class DoclingDocument(BaseModel):
                     image_mode=image_mode,
                     add_named_groups=add_named_groups,
                     include_namespace=include_namespace,
+                    **self._doclang_resolution_kwargs(xsize=xsize, ysize=ysize),
                 ),
             )
             document_path = staging_root / "document.dclg.xml"
