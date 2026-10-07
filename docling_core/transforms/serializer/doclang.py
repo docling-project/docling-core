@@ -643,11 +643,15 @@ def _replace_xml_illegal_character(match: re.Match[str]) -> str:
     return f"[U+{ord(match.group()):04X}]"
 
 
-def _escape_text(text: str, params: DocLangParams) -> str:
-    """Escape text for DocLang while preserving XML 1.0 validity."""
+def _escape_text(text: str, params: DocLangParams, *, wrap_multiline: bool = True) -> str:
+    """Escape text for DocLang while preserving XML 1.0 validity.
+
+    With ``wrap_multiline=False``, text is only put in a content wrapper if its edge whitespace needs
+    preserving, not merely because it spans several lines.
+    """
     text = _XML_10_ILLEGAL_CHARACTER_RE.sub(_replace_xml_illegal_character, text)
     do_wrap = params.content_wrapping_mode == WrapMode.ALWAYS or (
-        params.content_wrapping_mode == WrapMode.AUTO and (text != text.strip() or "\n" in text)
+        params.content_wrapping_mode == WrapMode.AUTO and (text != text.strip() or (wrap_multiline and "\n" in text))
     )
     if params.escape_mode == EscapeMode.ALWAYS or (
         params.escape_mode == EscapeMode.AUTO and any(c in text for c in ['"', "'", "&", "<", ">"])
@@ -1309,6 +1313,17 @@ class DocLangMetaSerializer(BaseModel, BaseMetaSerializer):
             span_source=item if isinstance(item, DocItem) else [],
         )
 
+    def _serialize_custom_value(self, *, tag: str, value: Any, params: DocLangParams, nested: bool = False) -> str:
+        """Serialize a custom field value: dicts as child elements, lists as repeated elements."""
+        if isinstance(value, dict):
+            inner = "".join(
+                self._serialize_custom_value(tag=str(k), value=v, params=params, nested=True) for k, v in value.items()
+            )
+            return _wrap(text=inner, wrap_tag=tag)
+        if isinstance(value, (list, tuple)):
+            return "".join(self._serialize_custom_value(tag=tag, value=v, params=params, nested=nested) for v in value)
+        return _wrap(text=_escape_text(str(value or ""), params, wrap_multiline=not nested), wrap_tag=tag)
+
     def _serialize_meta_field(self, meta: BaseMeta, name: str, params: DocLangParams) -> str | None:
         if (field_val := getattr(meta, name)) is not None:
             if name in {MetaFieldName.SUMMARY, MetaFieldName.DESCRIPTION}:
@@ -1325,8 +1340,7 @@ class DocLangMetaSerializer(BaseModel, BaseMetaSerializer):
             # elif tmp := str(field_val or ""):
             #     txt = tmp
             elif name not in {v.value for v in MetaFieldName}:
-                escaped_text = _escape_text(str(field_val or ""), params)
-                txt = _wrap(text=escaped_text, wrap_tag=name)
+                txt = self._serialize_custom_value(tag=name, value=field_val, params=params)
             return txt
         return None
 
