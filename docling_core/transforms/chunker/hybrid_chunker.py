@@ -158,6 +158,22 @@ class HybridChunker(BaseChunker):
             other_len=total - text_length,
         )
 
+    def _estimate_delimiter_tokens(self) -> int:
+        """Calibrate the token contribution of joining two texts."""
+        return (
+            self.tokenizer.count_tokens(text=f"a{self.delim}b")
+            - self.tokenizer.count_tokens(text="a")
+            - self.tokenizer.count_tokens(text="b")
+        )
+
+    def _estimate_meta_tokens(self, doc_chunk: DocChunk, text_tokens: int) -> int:
+        """Estimate context overhead using an already counted chunk text.
+
+        This estimate can be reused while embedded metadata stays unchanged;
+        exact window counts still account for tokenization at text boundaries.
+        """
+        return self._count_chunk_tokens(doc_chunk=doc_chunk) - text_tokens
+
     def _split_by_doc_items(self, doc_chunk: DocChunk, doc_serializer: BaseDocSerializer) -> list[DocChunk]:
         """Split a chunk along doc-item boundaries, keeping each window within max_tokens.
 
@@ -195,11 +211,7 @@ class HybridChunker(BaseChunker):
             item_token_counts.append(self.tokenizer.count_tokens(text=text))
 
         # token cost of the delimiter between two joined items
-        delim_tokens = (
-            self.tokenizer.count_tokens(text=f"a{self.delim}b")
-            - self.tokenizer.count_tokens(text="a")
-            - self.tokenizer.count_tokens(text="b")
-        )
+        delim_tokens = self._estimate_delimiter_tokens()
 
         def build_window(window_start: int, window_end: int) -> DocChunk:
             meta = DocMeta(
@@ -216,7 +228,7 @@ class HybridChunker(BaseChunker):
         # constant across windows: doc_items and origin are excluded from the embed
         # serialization (DocMeta.excluded_embed), so contextualize() only sees
         # headings/captions, which are the same for every window in this chunk
-        meta_overhead = window_count(0, 0) - self.tokenizer.count_tokens(text=build_window(0, 0).text)
+        meta_overhead = self._estimate_meta_tokens(build_window(0, 0), item_token_counts[0])
 
         chunks: list[DocChunk] = []
         window_start = 0
@@ -360,11 +372,7 @@ class HybridChunker(BaseChunker):
         num_chunks = len(chunks)
 
         # token cost of the delimiter between two joined chunk texts
-        delim_tokens = (
-            self.tokenizer.count_tokens(text=f"a{self.delim}b")
-            - self.tokenizer.count_tokens(text="a")
-            - self.tokenizer.count_tokens(text="b")
-        )
+        delim_tokens = self._estimate_delimiter_tokens()
         chunk_token_counts = [self.tokenizer.count_tokens(text=chk.text) for chk in chunks]
 
         def build_candidate(window_start: int, window_end: int) -> DocChunk:
@@ -387,7 +395,7 @@ class HybridChunker(BaseChunker):
 
             # constant token cost of the merged meta (headings, origin) around
             # the joined text; all candidates in this window share it
-            meta_overhead = self._count_chunk_tokens(doc_chunk=first_chunk) - chunk_token_counts[window_start]
+            meta_overhead = self._estimate_meta_tokens(first_chunk, chunk_token_counts[window_start])
 
             window_end = window_start + 1
             fit_end = window_start
