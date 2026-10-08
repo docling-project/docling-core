@@ -7,10 +7,13 @@ import socket
 import tempfile
 from io import BytesIO
 from pathlib import Path
-from typing import Optional, Union, cast
+from typing import Optional, Union
 from urllib.parse import urlparse
 
 import requests
+import urllib3.connection
+import urllib3.connectionpool
+import urllib3.util.connection
 from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
 from typing_extensions import deprecated
 
@@ -170,6 +173,106 @@ def resolve_remote_filename(
     raise ValueError("Could not derive a safe filename")
 
 
+class _SafeHTTPConnection(urllib3.connection.HTTPConnection):
+    def _new_conn(self) -> socket.socket:
+        return _safe_connect(self._dns_host, self.port, self.timeout, self.source_address, self.socket_options)
+
+
+class _SafeHTTPSConnection(urllib3.connection.HTTPSConnection):
+    def _new_conn(self) -> socket.socket:
+        return _safe_connect(self._dns_host, self.port, self.timeout, self.source_address, self.socket_options)
+
+
+class _SafeHTTPConnectionPool(urllib3.connectionpool.HTTPConnectionPool):
+    ConnectionCls = _SafeHTTPConnection
+
+
+class _SafeHTTPSConnectionPool(urllib3.connectionpool.HTTPSConnectionPool):
+    ConnectionCls = _SafeHTTPSConnection
+
+
+_SAFE_POOL_CLASSES: dict[str, type] = {
+    "http": _SafeHTTPConnectionPool,
+    "https": _SafeHTTPSConnectionPool,
+}
+
+
+class _SafeConnectionAdapter(requests.adapters.HTTPAdapter):
+    """HTTPAdapter that validates resolved addresses before connecting.
+
+    Prevents DNS rebinding by overriding the connection class used for each
+    pool. The custom connection class resolves the hostname, validates every
+    resulting address, and connects in a single step, so the address that is
+    checked is the same address that the socket connects to.
+
+    Both direct connections (init_poolmanager) and proxy-tunnelled connections
+    (proxy_manager_for) are protected, so that a globally-configured
+    HTTPS_PROXY / HTTP_PROXY cannot be used to bypass the SSRF guard.
+    """
+
+    def init_poolmanager(self, *args, **kwargs):
+        super().init_poolmanager(*args, **kwargs)
+        self.poolmanager.pool_classes_by_scheme = _SAFE_POOL_CLASSES
+
+    def proxy_manager_for(self, proxy: str, **proxy_kwargs):
+        manager = super().proxy_manager_for(proxy, **proxy_kwargs)
+        manager.pool_classes_by_scheme = _SAFE_POOL_CLASSES
+        return manager
+
+
+def _safe_connect(
+    host: str,
+    port: int,
+    timeout,
+    source_address,
+    socket_options,
+) -> socket.socket:
+    """Resolve host, validate every resulting address, and open the socket.
+
+    Serves as a guard against DNS rebinding, where a hostname resolves to
+    a safe address at pre-flight check time but to a different address when
+    the socket is opened. Resolving and connecting here in one step ensures
+    the validated address is the one used.
+    """
+    family = urllib3.util.connection.allowed_gai_family()
+    try:
+        results = socket.getaddrinfo(host, port, family, socket.SOCK_STREAM)
+    except (socket.gaierror, socket.herror) as exc:
+        raise ValueError(f"Could not resolve host at connect time: {host}") from exc
+
+    if not results:
+        raise ValueError(f"No addresses returned for host: {host}")
+
+    err = None
+    for af, socktype, proto, _canonname, sockaddr in results:
+        addr_str = str(sockaddr[0]).strip("[]")
+        try:
+            ip = ipaddress.ip_address(addr_str)
+        except ValueError:
+            raise ValueError(f"Unexpected address at connect time: {addr_str}")
+        if not _is_address_safe(ip):
+            raise ValueError(f"Connect-time address is not allowed: {addr_str}")
+        sock = None
+        try:
+            sock = socket.socket(af, socktype, proto)
+            urllib3.util.connection._set_socket_options(sock, socket_options)
+            if timeout is not urllib3.util.connection._DEFAULT_TIMEOUT:
+                sock.settimeout(timeout)
+            if source_address:
+                sock.bind(source_address)
+            sock.connect(sockaddr)
+            err = None
+            return sock
+        except OSError as e:
+            err = e
+            if sock is not None:
+                sock.close()
+
+    if err is not None:
+        raise err
+    raise OSError("getaddrinfo returned an empty list")
+
+
 def resolve_source_to_stream(
     source: Path | AnyHttpUrl | str,
     headers: dict[str, str] | None = None,
@@ -244,88 +347,53 @@ def resolve_source_to_stream(
                     if not _is_safe_url(redirect_url):
                         raise ValueError(f"Redirect target is not allowed: {redirect_url}")
 
-        import urllib3.util.connection
+        with requests.Session() as session:
+            session.max_redirects = _MAX_REDIRECTS
+            session.hooks["response"].append(_check_redirect_safety)
+            session.mount("https://", _SafeConnectionAdapter())
+            session.mount("http://", _SafeConnectionAdapter())
 
-        _real_create_connection = urllib3.util.connection.create_connection
+            with session.get(
+                url_str,
+                stream=True,
+                headers=req_headers,
+                allow_redirects=True,
+            ) as res:
+                res.raise_for_status()
 
-        def _safe_create_connection(
-            address: tuple[str, int],
-            timeout=urllib3.util.connection._DEFAULT_TIMEOUT,
-            source_address=None,
-            socket_options=None,
-        ):
-            """Resolve the target hostname, validate every resulting address, and connect.
+                response_headers = dict(res.headers)
+                fname = resolve_remote_filename(http_url=http_url, response_headers=response_headers)
 
-            Serves as a guard against DNS rebinding, where a hostname resolves to
-            a safe address at pre-flight check time but to a different address when
-            the socket is opened.
-            """
-            host = address[0].strip("[]")
-            port = address[1]
-            family = urllib3.util.connection.allowed_gai_family()
-            try:
-                results = socket.getaddrinfo(host, port, family, socket.SOCK_STREAM)
-            except (socket.gaierror, socket.herror) as exc:
-                raise ValueError(f"Could not resolve host at connect time: {host}") from exc
-            for _fam, _type, _proto, _cname, sockaddr in results:
-                addr_str = cast(str, sockaddr[0]).strip("[]")
-                try:
-                    ip = ipaddress.ip_address(addr_str)
-                except ValueError:
-                    raise ValueError(f"Unexpected address at connect time: {addr_str}")
-                if not _is_address_safe(ip):
-                    raise ValueError(f"Connect-time address is not allowed: {addr_str}")
-            return _real_create_connection(address, timeout, source_address, socket_options)
+                if max_file_size is not None:
+                    content_length = res.headers.get("Content-Length")
+                    if content_length is not None:
+                        try:
+                            content_length_value = int(content_length)
+                        except ValueError:
+                            content_length_value = None
 
-        urllib3.util.connection.create_connection = _safe_create_connection
-        try:
-            with requests.Session() as session:
-                session.max_redirects = _MAX_REDIRECTS
-                session.hooks["response"].append(_check_redirect_safety)
-
-                with session.get(
-                    url_str,
-                    stream=True,
-                    headers=req_headers,
-                    allow_redirects=True,
-                ) as res:
-                    res.raise_for_status()
-
-                    response_headers = dict(res.headers)
-                    fname = resolve_remote_filename(http_url=http_url, response_headers=response_headers)
-
-                    if max_file_size is not None:
-                        content_length = res.headers.get("Content-Length")
-                        if content_length is not None:
-                            try:
-                                content_length_value = int(content_length)
-                            except ValueError:
-                                content_length_value = None
-
-                            if content_length_value is not None and content_length_value > max_file_size:
-                                raise FileSizeLimitExceededError(
-                                    filename=fname,
-                                    size=content_length_value,
-                                    limit=max_file_size,
-                                )
-
-                    stream = BytesIO()
-                    downloaded = 0
-                    for chunk in res.iter_content(chunk_size=_DOWNLOAD_CHUNK_SIZE):
-                        if not chunk:
-                            continue
-                        downloaded += len(chunk)
-                        if max_file_size is not None and downloaded > max_file_size:
+                        if content_length_value is not None and content_length_value > max_file_size:
                             raise FileSizeLimitExceededError(
                                 filename=fname,
-                                size=downloaded,
+                                size=content_length_value,
                                 limit=max_file_size,
                             )
-                        stream.write(chunk)
-                    stream.seek(0)
-                    doc_stream = DocumentStream(name=fname, stream=stream)
-        finally:
-            urllib3.util.connection.create_connection = _real_create_connection
+
+                stream = BytesIO()
+                downloaded = 0
+                for chunk in res.iter_content(chunk_size=_DOWNLOAD_CHUNK_SIZE):
+                    if not chunk:
+                        continue
+                    downloaded += len(chunk)
+                    if max_file_size is not None and downloaded > max_file_size:
+                        raise FileSizeLimitExceededError(
+                            filename=fname,
+                            size=downloaded,
+                            limit=max_file_size,
+                        )
+                    stream.write(chunk)
+                stream.seek(0)
+                doc_stream = DocumentStream(name=fname, stream=stream)
     except ValidationError:
         if isinstance(source, str) and "://" in source:
             scheme = source.split("://", 1)[0].lower()

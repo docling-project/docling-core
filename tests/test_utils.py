@@ -511,3 +511,28 @@ def test_connect_time_validation_blocks_dns_rebinding(monkeypatch):
 
     with pytest.raises(ValueError, match="Connect-time address is not allowed"):
         resolve_source_to_stream("https://example.com/file")
+
+
+def test_proxy_env_does_not_bypass_ssrf():
+    """A proxy configured via environment variable must not bypass SSRF protection.
+
+    proxy_manager_for() is called by requests when HTTP_PROXY / HTTPS_PROXY is
+    set. Verify that _SafeConnectionAdapter injects the safe pool classes into
+    the ProxyManager it creates, so that a private target is still rejected even
+    when the request is routed through a proxy.
+    """
+    from docling_core.utils.file import (
+        _SAFE_POOL_CLASSES,
+        _SafeConnectionAdapter,
+    )
+
+    # Initialise the adapter the same way requests does internally (10 pools, size 10).
+    adapter = _SafeConnectionAdapter()
+    adapter.init_poolmanager(connections=10, maxsize=10)
+
+    # Simulate what requests does when HTTPS_PROXY=http://proxy:8080 is set.
+    manager = adapter.proxy_manager_for("http://proxy.example.com:8080")
+
+    assert manager.pool_classes_by_scheme is _SAFE_POOL_CLASSES, (
+        "proxy_manager_for must inject the safe pool classes into the ProxyManager"
+    )
