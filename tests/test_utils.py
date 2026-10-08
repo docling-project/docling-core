@@ -541,8 +541,12 @@ def test_connect_time_validation_connects_to_validated_address(monkeypatch):
 
     call_count = 0
 
+    real_getaddrinfo = socket.getaddrinfo
+
     def rebinding_getaddrinfo(host, port, *args, **kwargs):
         nonlocal call_count
+        if host != "rebind.example":
+            return real_getaddrinfo(host, port, *args, **kwargs)
         call_count += 1
         addr = "192.0.2.1" if call_count <= 2 else "127.0.0.1"
         return [(socket.AF_INET, socket.SOCK_STREAM, 0, "", (addr, port or 0))]

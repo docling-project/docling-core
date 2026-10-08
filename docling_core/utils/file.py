@@ -11,10 +11,9 @@ from typing import Optional, Union
 from urllib.parse import urlparse
 
 import requests
-import urllib3.connection
-import urllib3.connectionpool
-import urllib3.util.connection
 from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
+from requests.adapters import HTTPAdapter
+from requests.utils import select_proxy
 from typing_extensions import deprecated
 
 from docling_core.types.doc.utils import relative_path
@@ -173,99 +172,66 @@ def resolve_remote_filename(
     raise ValueError("Could not derive a safe filename")
 
 
-class _SafeHTTPConnection(urllib3.connection.HTTPConnection):
-    def _new_conn(self) -> socket.socket:
-        return _safe_connect(self._dns_host, self.port, self.timeout, self.source_address, self.socket_options)
+def _resolve_safe_addresses(host: str, port: int | None) -> list[str]:
+    """Resolve a host once and return its addresses, rejecting it if any is not allowed.
 
+    Args:
+        host: The hostname or IP address to resolve.
+        port: The port to resolve for.
 
-class _SafeHTTPSConnection(urllib3.connection.HTTPSConnection):
-    def _new_conn(self) -> socket.socket:
-        return _safe_connect(self._dns_host, self.port, self.timeout, self.source_address, self.socket_options)
-
-
-class _SafeHTTPConnectionPool(urllib3.connectionpool.HTTPConnectionPool):
-    ConnectionCls = _SafeHTTPConnection
-
-
-class _SafeHTTPSConnectionPool(urllib3.connectionpool.HTTPSConnectionPool):
-    ConnectionCls = _SafeHTTPSConnection
-
-
-_SAFE_POOL_CLASSES: dict[str, type] = {
-    "http": _SafeHTTPConnectionPool,
-    "https": _SafeHTTPSConnectionPool,
-}
-
-
-class _SafeConnectionAdapter(requests.adapters.HTTPAdapter):
-    """HTTPAdapter that validates resolved addresses before connecting.
-
-    Prevents DNS rebinding by overriding the connection class used for each
-    pool. The custom connection class resolves the hostname, validates every
-    resulting address, and connects in a single step, so the address that is
-    checked is the same address that the socket connects to.
-
-    Only direct connections are covered. Proxied requests connect to the
-    proxy, which resolves the target itself, so they rely on the pre-flight
-    check alone.
+    Returns:
+        The resolved addresses, in resolver order.
     """
-
-    def init_poolmanager(self, *args, **kwargs):
-        super().init_poolmanager(*args, **kwargs)
-        self.poolmanager.pool_classes_by_scheme = _SAFE_POOL_CLASSES
-
-
-def _safe_connect(
-    host: str,
-    port: int,
-    timeout,
-    source_address,
-    socket_options,
-) -> socket.socket:
-    """Resolve host, validate every resulting address, and open the socket.
-
-    Serves as a guard against DNS rebinding, where a hostname resolves to
-    a safe address at pre-flight check time but to a different address when
-    the socket is opened. Resolving and connecting here in one step ensures
-    the validated address is the one used.
-    """
-    family = urllib3.util.connection.allowed_gai_family()
     try:
-        results = socket.getaddrinfo(host, port, family, socket.SOCK_STREAM)
+        results = socket.getaddrinfo(host, port, socket.AF_UNSPEC, socket.SOCK_STREAM)
     except (socket.gaierror, socket.herror) as exc:
         raise ValueError(f"Could not resolve host at connect time: {host}") from exc
 
-    if not results:
-        raise ValueError(f"No addresses returned for host: {host}")
-
-    err = None
-    for af, socktype, proto, _canonname, sockaddr in results:
-        addr_str = str(sockaddr[0]).strip("[]")
+    addresses = []
+    for _family, _type, _proto, _canonname, sockaddr in results:
+        addr_str = str(sockaddr[0])
         try:
             ip = ipaddress.ip_address(addr_str)
         except ValueError:
-            raise ValueError(f"Unexpected address at connect time: {addr_str}")
+            raise ValueError(f"Unexpected address at connect time: {addr_str}") from None
         if not _is_address_safe(ip):
             raise ValueError(f"Connect-time address is not allowed: {addr_str}")
-        sock = None
-        try:
-            sock = socket.socket(af, socktype, proto)
-            urllib3.util.connection._set_socket_options(sock, socket_options)
-            if timeout is not urllib3.util.connection._DEFAULT_TIMEOUT:
-                sock.settimeout(timeout)
-            if source_address:
-                sock.bind(source_address)
-            sock.connect(sockaddr)
-            err = None
-            return sock
-        except OSError as e:
-            err = e
-            if sock is not None:
-                sock.close()
+        addresses.append(addr_str)
 
-    if err is not None:
-        raise err
-    raise OSError("getaddrinfo returned an empty list")
+    if not addresses:
+        raise ValueError(f"No addresses returned for host: {host}")
+    return addresses
+
+
+class _SafeConnectionAdapter(HTTPAdapter):
+    """HTTPAdapter that connects directly to a validated address.
+
+    Prevents DNS rebinding: the host is resolved and validated once, and the
+    connection pool is opened to the validated IP itself, so no later DNS
+    lookup can change the target. The original hostname is kept for the
+    ``Host`` header and for TLS (SNI and certificate verification).
+
+    Proxied requests connect to the proxy, which resolves the target itself,
+    so they rely on the pre-flight check alone.
+    """
+
+    def get_connection_with_tls_context(self, request, verify, proxies=None, cert=None):
+        if select_proxy(request.url, proxies):
+            return super().get_connection_with_tls_context(request, verify, proxies, cert)
+
+        host_params, pool_kwargs = self.build_connection_pool_key_attributes(request, verify, cert)
+        host = host_params["host"]
+        address = _resolve_safe_addresses(host, host_params["port"])[0]
+        if host_params["scheme"] == "https":
+            pool_kwargs = {**pool_kwargs, "server_hostname": host, "assert_hostname": host}
+        request.headers["Host"] = urlparse(request.url).netloc.rpartition("@")[2]
+
+        return self.poolmanager.connection_from_host(
+            host=address,
+            port=host_params["port"],
+            scheme=host_params["scheme"],
+            pool_kwargs=pool_kwargs,
+        )
 
 
 def resolve_source_to_stream(
