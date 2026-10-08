@@ -1,12 +1,13 @@
 """Text-bearing document items: TextItem and subclasses."""
 
 import typing
-from pathlib import Path
+from pathlib import PurePosixPath
 from typing import TYPE_CHECKING, Optional, Union
 
-from pydantic import AnyUrl, Field
+from pydantic import AnyUrl, Field, field_validator
 from typing_extensions import deprecated
 
+from docling_core.types.doc.base import coerce_pure_posix_path
 from docling_core.types.doc.common.formatting import Formatting
 from docling_core.types.doc.common.scalars import LevelNumber
 from docling_core.types.doc.items.node import DocItem
@@ -40,7 +41,18 @@ class TextItem(DocItem):
     text: str  # sanitized representation
 
     formatting: Formatting | None = None
-    hyperlink: AnyUrl | Path | None = Field(union_mode="left_to_right", default=None)
+    hyperlink: AnyUrl | PurePosixPath | None = Field(union_mode="left_to_right", default=None)
+
+    @field_validator("hyperlink", mode="before")
+    @classmethod
+    def _normalize_hyperlink_path(cls, value):
+        """Store path-like hyperlinks with POSIX separators.
+
+        Hyperlinks are URLs: a concrete ``Path`` would serialize them with
+        OS-native separators (backslashes on Windows), producing documents
+        whose links differ per platform.
+        """
+        return coerce_pure_posix_path(value)
 
     @deprecated("Use export_to_doctags() instead.")
     def export_to_document_tokens(self, *args, **kwargs):
