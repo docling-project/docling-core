@@ -205,19 +205,14 @@ class _SafeConnectionAdapter(requests.adapters.HTTPAdapter):
     resulting address, and connects in a single step, so the address that is
     checked is the same address that the socket connects to.
 
-    Both direct connections (init_poolmanager) and proxy-tunnelled connections
-    (proxy_manager_for) are protected, so that a globally-configured
-    HTTPS_PROXY / HTTP_PROXY cannot be used to bypass the SSRF guard.
+    Only direct connections are covered. Proxied requests connect to the
+    proxy, which resolves the target itself, so they rely on the pre-flight
+    check alone.
     """
 
     def init_poolmanager(self, *args, **kwargs):
         super().init_poolmanager(*args, **kwargs)
         self.poolmanager.pool_classes_by_scheme = _SAFE_POOL_CLASSES
-
-    def proxy_manager_for(self, proxy: str, **proxy_kwargs):
-        manager = super().proxy_manager_for(proxy, **proxy_kwargs)
-        manager.pool_classes_by_scheme = _SAFE_POOL_CLASSES
-        return manager
 
 
 def _safe_connect(

@@ -513,26 +513,57 @@ def test_connect_time_validation_blocks_dns_rebinding(monkeypatch):
         resolve_source_to_stream("https://example.com/file")
 
 
-def test_proxy_env_does_not_bypass_ssrf():
-    """A proxy configured via environment variable must not bypass SSRF protection.
+def test_connect_time_validation_connects_to_validated_address(monkeypatch):
+    """The socket must go to the validated address, not to a later DNS answer.
 
-    proxy_manager_for() is called by requests when HTTP_PROXY / HTTPS_PROXY is
-    set. Verify that _SafeConnectionAdapter injects the safe pool classes into
-    the ProxyManager it creates, so that a private target is still rejected even
-    when the request is routed through a proxy.
+    The resolver answers with a public IP for the pre-flight and connect-time
+    lookups, and with loopback afterwards. A loopback-only server must never be
+    reached.
     """
-    from docling_core.utils.file import (
-        _SAFE_POOL_CLASSES,
-        _SafeConnectionAdapter,
-    )
+    import http.server
+    import threading
 
-    # Initialise the adapter the same way requests does internally (10 pools, size 10).
-    adapter = _SafeConnectionAdapter()
-    adapter.init_poolmanager(connections=10, maxsize=10)
+    hits = []
 
-    # Simulate what requests does when HTTPS_PROXY=http://proxy:8080 is set.
-    manager = adapter.proxy_manager_for("http://proxy.example.com:8080")
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            hits.append(self.path)
+            self.send_response(200)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
 
-    assert manager.pool_classes_by_scheme is _SAFE_POOL_CLASSES, (
-        "proxy_manager_for must inject the safe pool classes into the ProxyManager"
-    )
+        def log_message(self, *args):
+            pass
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+    port = server.server_address[1]
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+
+    call_count = 0
+
+    def rebinding_getaddrinfo(host, port, *args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        addr = "192.0.2.1" if call_count <= 2 else "127.0.0.1"
+        return [(socket.AF_INET, socket.SOCK_STREAM, 0, "", (addr, port or 0))]
+
+    monkeypatch.setattr(socket, "getaddrinfo", rebinding_getaddrinfo)
+    # 192.0.2.0/24 is non-routable in practice; patch it as safe and make the
+    # connect fail fast instead of waiting for a timeout.
+    monkeypatch.setattr("docling_core.utils.file._is_address_safe", lambda ip: str(ip) == "192.0.2.1")
+    real_connect = socket.socket.connect
+
+    def fast_fail_connect(self, sockaddr):
+        if sockaddr[0] == "192.0.2.1":
+            raise ConnectionRefusedError("unreachable in test")
+        return real_connect(self, sockaddr)
+
+    monkeypatch.setattr(socket.socket, "connect", fast_fail_connect)
+
+    try:
+        with pytest.raises(Exception):
+            resolve_source_to_stream(f"http://rebind.example:{port}/file")
+    finally:
+        server.shutdown()
+
+    assert hits == []
