@@ -489,3 +489,25 @@ def test_resolve_source_stops_when_stream_exceeds_limit(monkeypatch):
 
     with pytest.raises(ValueError, match="maximum allowed size"):
         resolve_source_to_stream("https://example.com/file", max_file_size=5)
+
+
+def test_connect_time_validation_blocks_dns_rebinding(monkeypatch):
+    """A DNS rebinding attempt must be rejected at connect time.
+
+    The first getaddrinfo call (made by _is_safe_url) returns a public IP so
+    the pre-flight check passes. The second call (made by urllib3's
+    create_connection) returns loopback, simulating a DNS server that gives
+    different answers to successive queries.
+    """
+    call_count = 0
+
+    def rebinding_getaddrinfo(host, port, *args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        addr = "1.1.1.1" if call_count == 1 else "127.0.0.1"
+        return [(socket.AF_INET, socket.SOCK_STREAM, 0, "", (addr, port or 0))]
+
+    monkeypatch.setattr(socket, "getaddrinfo", rebinding_getaddrinfo)
+
+    with pytest.raises(ValueError, match="Connect-time address is not allowed"):
+        resolve_source_to_stream("https://example.com/file")

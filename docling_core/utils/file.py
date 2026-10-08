@@ -3,10 +3,11 @@
 import ipaddress
 import logging
 import re
+import socket
 import tempfile
 from io import BytesIO
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, cast
 from urllib.parse import urlparse
 
 import requests
@@ -84,17 +85,12 @@ def _is_address_safe(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
 def _is_safe_url(url: str) -> bool:
     """Check whether every address a URL's hostname resolves to is globally routable.
 
-    Both IPv4 and IPv6 addresses are resolved and checked. All resolved
-    addresses must pass; a single unsafe address causes the URL to be rejected.
-
     Args:
         url: The URL to validate.
 
     Returns:
         True if the URL is safe to fetch, False otherwise.
     """
-    import socket
-
     try:
         parsed = urlparse(url)
         hostname = parsed.hostname
@@ -248,54 +244,88 @@ def resolve_source_to_stream(
                     if not _is_safe_url(redirect_url):
                         raise ValueError(f"Redirect target is not allowed: {redirect_url}")
 
-        # Use context managers so the session and the streamed response are
-        # always released, including on the size-limit abort paths below where
-        # the response body is left unconsumed.
-        with requests.Session() as session:
-            session.max_redirects = _MAX_REDIRECTS
-            session.hooks["response"].append(_check_redirect_safety)
+        import urllib3.util.connection
 
-            with session.get(
-                url_str,
-                stream=True,
-                headers=req_headers,
-                allow_redirects=True,
-            ) as res:
-                res.raise_for_status()
+        _real_create_connection = urllib3.util.connection.create_connection
 
-                response_headers = dict(res.headers)
-                fname = resolve_remote_filename(http_url=http_url, response_headers=response_headers)
+        def _safe_create_connection(
+            address: tuple[str, int],
+            timeout=urllib3.util.connection._DEFAULT_TIMEOUT,
+            source_address=None,
+            socket_options=None,
+        ):
+            """Resolve the target hostname, validate every resulting address, and connect.
 
-                if max_file_size is not None:
-                    content_length = res.headers.get("Content-Length")
-                    if content_length is not None:
-                        try:
-                            content_length_value = int(content_length)
-                        except ValueError:
-                            content_length_value = None
+            Serves as a guard against DNS rebinding, where a hostname resolves to
+            a safe address at pre-flight check time but to a different address when
+            the socket is opened.
+            """
+            host = address[0].strip("[]")
+            port = address[1]
+            family = urllib3.util.connection.allowed_gai_family()
+            try:
+                results = socket.getaddrinfo(host, port, family, socket.SOCK_STREAM)
+            except (socket.gaierror, socket.herror) as exc:
+                raise ValueError(f"Could not resolve host at connect time: {host}") from exc
+            for _fam, _type, _proto, _cname, sockaddr in results:
+                addr_str = cast(str, sockaddr[0]).strip("[]")
+                try:
+                    ip = ipaddress.ip_address(addr_str)
+                except ValueError:
+                    raise ValueError(f"Unexpected address at connect time: {addr_str}")
+                if not _is_address_safe(ip):
+                    raise ValueError(f"Connect-time address is not allowed: {addr_str}")
+            return _real_create_connection(address, timeout, source_address, socket_options)
 
-                        if content_length_value is not None and content_length_value > max_file_size:
+        urllib3.util.connection.create_connection = _safe_create_connection
+        try:
+            with requests.Session() as session:
+                session.max_redirects = _MAX_REDIRECTS
+                session.hooks["response"].append(_check_redirect_safety)
+
+                with session.get(
+                    url_str,
+                    stream=True,
+                    headers=req_headers,
+                    allow_redirects=True,
+                ) as res:
+                    res.raise_for_status()
+
+                    response_headers = dict(res.headers)
+                    fname = resolve_remote_filename(http_url=http_url, response_headers=response_headers)
+
+                    if max_file_size is not None:
+                        content_length = res.headers.get("Content-Length")
+                        if content_length is not None:
+                            try:
+                                content_length_value = int(content_length)
+                            except ValueError:
+                                content_length_value = None
+
+                            if content_length_value is not None and content_length_value > max_file_size:
+                                raise FileSizeLimitExceededError(
+                                    filename=fname,
+                                    size=content_length_value,
+                                    limit=max_file_size,
+                                )
+
+                    stream = BytesIO()
+                    downloaded = 0
+                    for chunk in res.iter_content(chunk_size=_DOWNLOAD_CHUNK_SIZE):
+                        if not chunk:
+                            continue
+                        downloaded += len(chunk)
+                        if max_file_size is not None and downloaded > max_file_size:
                             raise FileSizeLimitExceededError(
                                 filename=fname,
-                                size=content_length_value,
+                                size=downloaded,
                                 limit=max_file_size,
                             )
-
-                stream = BytesIO()
-                downloaded = 0
-                for chunk in res.iter_content(chunk_size=_DOWNLOAD_CHUNK_SIZE):
-                    if not chunk:
-                        continue
-                    downloaded += len(chunk)
-                    if max_file_size is not None and downloaded > max_file_size:
-                        raise FileSizeLimitExceededError(
-                            filename=fname,
-                            size=downloaded,
-                            limit=max_file_size,
-                        )
-                    stream.write(chunk)
-                stream.seek(0)
-                doc_stream = DocumentStream(name=fname, stream=stream)
+                        stream.write(chunk)
+                    stream.seek(0)
+                    doc_stream = DocumentStream(name=fname, stream=stream)
+        finally:
+            urllib3.util.connection.create_connection = _real_create_connection
     except ValidationError:
         if isinstance(source, str) and "://" in source:
             scheme = source.split("://", 1)[0].lower()
