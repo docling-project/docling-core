@@ -1356,6 +1356,51 @@ def test_save_to_disk(sample_doc):
     assert True
 
 
+def _doc_with_page_image() -> DoclingDocument:
+    doc = DoclingDocument(name="paged")
+    page_image = PILImage.new(mode="RGB", size=(20, 30), color=(255, 255, 255))
+    doc.add_page(page_no=1, size=Size(width=20, height=30), image=ImageRef.from_pil(image=page_image, dpi=72))
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="hello",
+        prov=ProvenanceItem(page_no=1, bbox=BoundingBox(l=1, t=1, r=10, b=10), charspan=(0, 5)),
+    )
+    return doc
+
+
+def test_save_as_html_split_page_view_references_page_images(tmp_path: Path):
+    # Regression for docling-project/docling#2022: the split page view embedded
+    # the page images as base64 in REFERENCED mode.
+    filename = tmp_path / "paged.html"
+    _doc_with_page_image().save_as_html(
+        filename=filename,
+        artifacts_dir=Path("artifacts"),
+        image_mode=ImageRefMode.REFERENCED,
+        split_page_view=True,
+    )
+
+    html = filename.read_text(encoding="utf-8")
+    page_images = list((tmp_path / "artifacts").glob("page_000001_*.png"))
+    assert len(page_images) == 1
+    assert f'<figure><img src="artifacts/{page_images[0].name}"></figure>' in html
+    assert "data:image" not in html
+
+
+def test_export_to_html_split_page_view_saves_page_images_to_image_dir(tmp_path: Path):
+    image_dir = tmp_path / "images"
+    html = _doc_with_page_image().export_to_html(
+        image_mode=ImageRefMode.REFERENCED,
+        split_page_view=True,
+        image_dir=image_dir,
+        image_uri_prefix="images/",
+    )
+
+    page_images = list(image_dir.glob("page_000001_*.png"))
+    assert len(page_images) == 1
+    assert f'<figure><img src="images/{page_images[0].name}"></figure>' in html
+    assert "data:image" not in html
+
+
 def test_save_as_json_encoding_options(tmp_path: Path):
     polish_text = "Należy wówczas zetrzeć warstwę"
     doc = DoclingDocument(name="non_ascii")
