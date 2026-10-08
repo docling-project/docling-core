@@ -211,6 +211,10 @@ class _SafeConnectionAdapter(HTTPAdapter):
     lookup can change the target. The original hostname is kept for the
     ``Host`` header and for TLS (SNI and certificate verification).
 
+    Only the first resolved address is used, with no fallback to the others.
+    A dual-stack host whose first address is unreachable (e.g. IPv6 without
+    a working route) fails instead of falling back to another address family.
+
     Proxied requests connect to the proxy, which resolves the target itself,
     so they rely on the pre-flight check alone.
     """
