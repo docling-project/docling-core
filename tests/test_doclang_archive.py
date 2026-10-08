@@ -149,6 +149,23 @@ def test_export_to_doclang_image_mode(save_fixture_doc: DoclingDocument, tmp_pat
     assert 'uri="data:image/png;base64' in saved.read_text(encoding="utf-8")
 
 
+def test_doclang_resolution(save_fixture_doc: DoclingDocument, tmp_path: Path) -> None:
+    default = save_fixture_doc.export_to_doclang()
+    custom = save_fixture_doc.export_to_doclang(xsize=2048, ysize=1024)
+    assert '<default_resolution width="2048" height="1024"/>' in custom
+    assert '<default_resolution width="2048" height="1024"/>' not in default
+    assert default != custom
+
+    out = tmp_path / "doc.dclg.xml"
+    save_fixture_doc.save_as_doclang(out, xsize=2048, ysize=1024)
+    assert '<default_resolution width="2048" height="1024"/>' in out.read_text(encoding="utf-8")
+
+    archive = tmp_path / "doc.dclx"
+    save_fixture_doc.save_as_doclang_archive(archive, xsize=2048, ysize=1024)
+    with zipfile.ZipFile(archive) as zf:
+        assert '<default_resolution width="2048" height="1024"/>' in zf.read("document.xml").decode("utf-8")
+
+
 def test_load_from_doclang_archive(tmp_path: Path) -> None:
     loaded = DoclingDocument.load_from_doclang_archive(
         LOAD_FIXTURE_DCLX,
