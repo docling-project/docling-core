@@ -3,6 +3,7 @@
 import ipaddress
 import logging
 import re
+import socket
 import tempfile
 from io import BytesIO
 from pathlib import Path
@@ -11,6 +12,8 @@ from urllib.parse import urlparse
 
 import requests
 from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
+from requests.adapters import HTTPAdapter
+from requests.utils import select_proxy
 from typing_extensions import deprecated
 
 from docling_core.types.doc.utils import relative_path
@@ -58,8 +61,38 @@ def _ip_in_allowlist(ip: ipaddress.IPv4Address | ipaddress.IPv6Address, allowlis
     return False
 
 
+def _is_address_safe(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    """Check whether a single resolved IP address is globally routable.
+
+    IPv4-mapped IPv6 addresses (e.g. ::ffff:127.0.0.1) are unwrapped and
+    evaluated as their underlying IPv4 address.
+
+    Args:
+        ip: The IP address to evaluate.
+
+    Returns:
+        True if the address is safe to connect to, False otherwise.
+    """
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+        ip = ip.ipv4_mapped
+
+    if settings.allowed_private_ips and _ip_in_allowlist(ip, settings.allowed_private_ips):
+        return True
+
+    return ip.is_global and not (
+        ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified
+    )
+
+
 def _is_safe_url(url: str) -> bool:
-    """Return whether a URL resolves to a globally routable address."""
+    """Check whether every address a URL's hostname resolves to is globally routable.
+
+    Args:
+        url: The URL to validate.
+
+    Returns:
+        True if the URL is safe to fetch, False otherwise.
+    """
     try:
         parsed = urlparse(url)
         hostname = parsed.hostname
@@ -69,25 +102,27 @@ def _is_safe_url(url: str) -> bool:
 
         try:
             ip = ipaddress.ip_address(hostname)
+            return _is_address_safe(ip)
         except ValueError:
-            import socket
+            pass
 
+        try:
+            results = socket.getaddrinfo(hostname, None, socket.AF_UNSPEC, socket.SOCK_STREAM)
+        except (socket.gaierror, socket.herror):
+            return False
+
+        if not results:
+            return False
+
+        for _family, _type, _proto, _canonname, sockaddr in results:
             try:
-                ip_str = socket.gethostbyname(hostname)
-                ip = ipaddress.ip_address(ip_str)
-            except (socket.gaierror, socket.herror):
+                ip = ipaddress.ip_address(sockaddr[0])
+            except ValueError:
                 return False
-        if settings.allowed_private_ips and _ip_in_allowlist(ip, settings.allowed_private_ips):
-            return True
+            if not _is_address_safe(ip):
+                return False
 
-        return ip.is_global and not (
-            ip.is_private
-            or ip.is_loopback
-            or ip.is_link_local
-            or ip.is_reserved
-            or ip.is_multicast
-            or ip.is_unspecified
-        )
+        return True
     except Exception:
         return False
 
@@ -135,6 +170,72 @@ def resolve_remote_filename(
         return fname
 
     raise ValueError("Could not derive a safe filename")
+
+
+def _resolve_safe_addresses(host: str, port: int | None) -> list[str]:
+    """Resolve a host once and return its addresses, rejecting it if any is not allowed.
+
+    Args:
+        host: The hostname or IP address to resolve.
+        port: The port to resolve for.
+
+    Returns:
+        The resolved addresses, in resolver order.
+    """
+    try:
+        results = socket.getaddrinfo(host, port, socket.AF_UNSPEC, socket.SOCK_STREAM)
+    except (socket.gaierror, socket.herror) as exc:
+        raise ValueError(f"Could not resolve host at connect time: {host}") from exc
+
+    addresses = []
+    for _family, _type, _proto, _canonname, sockaddr in results:
+        addr_str = str(sockaddr[0])
+        try:
+            ip = ipaddress.ip_address(addr_str)
+        except ValueError:
+            raise ValueError(f"Unexpected address at connect time: {addr_str}") from None
+        if not _is_address_safe(ip):
+            raise ValueError(f"Connect-time address is not allowed: {addr_str}")
+        addresses.append(addr_str)
+
+    if not addresses:
+        raise ValueError(f"No addresses returned for host: {host}")
+    return addresses
+
+
+class _SafeConnectionAdapter(HTTPAdapter):
+    """HTTPAdapter that connects directly to a validated address.
+
+    Prevents DNS rebinding: the host is resolved and validated once, and the
+    connection pool is opened to the validated IP itself, so no later DNS
+    lookup can change the target. The original hostname is kept for the
+    ``Host`` header and for TLS (SNI and certificate verification).
+
+    Only the first resolved address is used, with no fallback to the others.
+    A dual-stack host whose first address is unreachable (e.g. IPv6 without
+    a working route) fails instead of falling back to another address family.
+
+    Proxied requests connect to the proxy, which resolves the target itself,
+    so they rely on the pre-flight check alone.
+    """
+
+    def get_connection_with_tls_context(self, request, verify, proxies=None, cert=None):
+        if select_proxy(request.url, proxies):
+            return super().get_connection_with_tls_context(request, verify, proxies, cert)
+
+        host_params, pool_kwargs = self.build_connection_pool_key_attributes(request, verify, cert)
+        host = host_params["host"]
+        address = _resolve_safe_addresses(host, host_params["port"])[0]
+        if host_params["scheme"] == "https":
+            pool_kwargs = {**pool_kwargs, "server_hostname": host, "assert_hostname": host}
+        request.headers["Host"] = urlparse(request.url).netloc.rpartition("@")[2]
+
+        return self.poolmanager.connection_from_host(
+            host=address,
+            port=host_params["port"],
+            scheme=host_params["scheme"],
+            pool_kwargs=pool_kwargs,
+        )
 
 
 def resolve_source_to_stream(
@@ -211,12 +312,11 @@ def resolve_source_to_stream(
                     if not _is_safe_url(redirect_url):
                         raise ValueError(f"Redirect target is not allowed: {redirect_url}")
 
-        # Use context managers so the session and the streamed response are
-        # always released, including on the size-limit abort paths below where
-        # the response body is left unconsumed.
         with requests.Session() as session:
             session.max_redirects = _MAX_REDIRECTS
             session.hooks["response"].append(_check_redirect_safety)
+            session.mount("https://", _SafeConnectionAdapter())
+            session.mount("http://", _SafeConnectionAdapter())
 
             with session.get(
                 url_str,
