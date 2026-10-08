@@ -102,7 +102,13 @@ from docling_core.types.doc.common.source import BaseSource, SourceType, TrackSo
 from docling_core.types.doc.doctags import DocTagsDocument, DocTagsPage
 from docling_core.types.doc.items.code import CodeItem
 from docling_core.types.doc.items.content import ContentItem
-from docling_core.types.doc.items.form import FieldHeadingItem, FieldItem, FieldRegionItem, FieldValueItem
+from docling_core.types.doc.items.form import (
+    FieldControl,
+    FieldHeadingItem,
+    FieldItem,
+    FieldRegionItem,
+    FieldValueItem,
+)
 from docling_core.types.doc.items.group import GroupItem, InlineGroup, ListGroup, OrderedList, UnorderedList
 from docling_core.types.doc.items.key_value import FormItem, GraphCell, GraphData, GraphLink, KeyValueItem
 from docling_core.types.doc.items.node import DocItem, FloatingItem, NodeItem
@@ -2280,14 +2286,33 @@ class DoclingDocument(BaseModel):
         parent: NodeItem | None = None,
         content_layer: ContentLayer | None = None,
         *,
+        control: FieldControl | None = None,
+        description: str | None = None,
+        required: bool = False,
+        options: list[str] | None = None,
         source: SourceType | None = None,
     ) -> FieldItem:
-        """add_kv_entry."""
+        """Add one form field to the document.
+
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param control: Optional[FieldControl]: the kind of control, when known
+        :param description: Optional[str]: producer-supplied description of what
+            to enter, e.g. an AcroForm /TU tooltip
+        :param required: bool: whether a value must be supplied
+        :param options: Optional[list[str]]: the values a CHOICE or RADIO
+            control accepts
+        """
         _parent = parent or self.body
         cref = f"#/field_items/{len(self.field_items)}"
         item = FieldItem(
             self_ref=cref,
             parent=_parent.get_ref(),
+            control=control,
+            description=description,
+            required=required,
+            options=list(options) if options else [],
         )
         if prov:
             item.prov.append(prov)

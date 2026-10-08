@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "name": "fedf68d45c1acd279f7c34fd5b4cbae80677138bdc1d03b2869466e0cf4e89e9",
   "furniture": {
     "self_ref": "#/furniture",
@@ -1845,7 +1845,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/1",
@@ -1862,7 +1864,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/2",
@@ -1879,7 +1883,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/3",
@@ -1911,7 +1917,9 @@
             21
           ]
         }
-      ]
+      ],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/4",
@@ -1943,7 +1951,9 @@
             23
           ]
         }
-      ]
+      ],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/5",
@@ -1975,7 +1985,9 @@
             22
           ]
         }
-      ]
+      ],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/6",
@@ -1992,7 +2004,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     },
     {
       "self_ref": "#/field_items/7",
@@ -2009,7 +2023,9 @@
       ],
       "content_layer": "body",
       "label": "field_item",
-      "prov": []
+      "prov": [],
+      "required": false,
+      "options": []
     }
   ],
   "pages": {
