@@ -6,7 +6,7 @@ import warnings
 from collections import deque
 from copy import deepcopy
 from io import BytesIO
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Optional, Union
 from unittest.mock import Mock
 
@@ -807,7 +807,7 @@ def test_image_ref():
         "uri": "./tests/data/image.png",
     }
     image = ImageRef.model_validate(data_path)
-    assert isinstance(image.uri, Path)
+    assert isinstance(image.uri, PurePath)
 
 
 def test_image_ref_from_pil_png_compression():

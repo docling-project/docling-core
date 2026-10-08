@@ -15,7 +15,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO, StringIO
-from pathlib import Path
+from pathlib import Path, PurePath, PurePosixPath
 from typing import (
     Annotated,
     Any,
@@ -3556,7 +3556,7 @@ class DoclingDocument(BaseModel):
                     ):
                         local_path = Path(unquote(item.image.uri.path))
                         result.append(local_path)
-                    elif isinstance(item.image.uri, Path):
+                    elif isinstance(item.image.uri, PurePath):
                         result.append(item.image.uri)
 
         return result
@@ -3577,7 +3577,7 @@ class DoclingDocument(BaseModel):
                         tmp_image = PILImage.open(str(unquote(item.image.uri.path)))
                         item.image = ImageRef.from_pil(tmp_image, dpi=item.image.dpi)
 
-                    elif isinstance(item.image.uri, Path):
+                    elif isinstance(item.image.uri, PurePath):
                         tmp_image = PILImage.open(str(item.image.uri))
                         item.image = ImageRef.from_pil(tmp_image, dpi=item.image.dpi)
 
@@ -3589,7 +3589,7 @@ class DoclingDocument(BaseModel):
         loc_path: Path,
         reference_path: Path | None,
         uri_prefix: str | None = None,
-    ) -> AnyUrl | Path:
+    ) -> AnyUrl | PurePosixPath:
         """Save *img* to *loc_path* and return the URI to store on the ImageRef.
 
         Uses a BytesIO intermediate buffer so that the write is compatible with
@@ -3621,12 +3621,12 @@ class DoclingDocument(BaseModel):
             combined = f"{uri_prefix}{loc_path.name}"
             if "://" in uri_prefix:
                 return AnyUrl(combined)
-            return Path(combined)
+            return PurePosixPath(Path(combined).as_posix())
         if is_remote_path(loc_path) or is_remote_path(reference_path):
             return AnyUrl(str(loc_path))
         if reference_path is not None:
-            return relative_path(reference_path.resolve(), loc_path.resolve())
-        return loc_path
+            return PurePosixPath(relative_path(reference_path.resolve(), loc_path.resolve()).as_posix())
+        return PurePosixPath(loc_path.as_posix())
 
     def _with_pictures_refs(
         self,
@@ -5088,8 +5088,6 @@ class DoclingDocument(BaseModel):
         *,
         add_named_groups: bool = False,
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
-        xsize: int | None = None,
-        ysize: int | None = None,
     ) -> str:
         """Export to DocLang.
 
@@ -5100,24 +5098,14 @@ class DoclingDocument(BaseModel):
             image_mode: How picture images are included: ``PLACEHOLDER`` emits no
                 picture source, ``REFERENCED`` the pictures' existing image URIs and
                 ``EMBEDDED`` the images as data URIs.
-            xsize: Width of the location coordinate grid (default: DocLang default resolution).
-            ysize: Height of the location coordinate grid (default: DocLang default resolution).
         """
         from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 
         serializer = DocLangDocSerializer(
             doc=self,
-            params=DocLangParams(
-                add_named_groups=add_named_groups,
-                image_mode=image_mode,
-                **self._doclang_resolution_kwargs(xsize=xsize, ysize=ysize),
-            ),
+            params=DocLangParams(add_named_groups=add_named_groups, image_mode=image_mode),
         )
         return serializer.serialize().text
-
-    @staticmethod
-    def _doclang_resolution_kwargs(*, xsize: int | None, ysize: int | None) -> dict[str, int]:
-        return {k: v for k, v in (("xsize", xsize), ("ysize", ysize)) if v is not None}
 
     def save_as_doclang(
         self,
@@ -5125,13 +5113,11 @@ class DoclingDocument(BaseModel):
         *,
         add_named_groups: bool = False,
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
-        xsize: int | None = None,
-        ysize: int | None = None,
     ) -> None:
         """Save the document as DocLang (see ``export_to_doclang`` for the options)."""
         if isinstance(filename, str):
             filename = Path(filename)
-        out = self.export_to_doclang(add_named_groups=add_named_groups, image_mode=image_mode, xsize=xsize, ysize=ysize)
+        out = self.export_to_doclang(add_named_groups=add_named_groups, image_mode=image_mode)
         filename.write_text(f"{out}\n", encoding="utf-8")
 
     def save_as_doclang_archive(
@@ -5143,8 +5129,6 @@ class DoclingDocument(BaseModel):
         add_named_groups: bool = False,
         include_namespace: bool = False,
         image_mode: ImageRefMode = ImageRefMode.REFERENCED,
-        xsize: int | None = None,
-        ysize: int | None = None,
     ) -> None:
         """Save the document as a DocLang OPC archive (``.dclx``).
 
@@ -5159,8 +5143,6 @@ class DoclingDocument(BaseModel):
 
         ``add_named_groups`` emits plain ``GroupItem``s as ``<group name="...">``
         elements so the grouping survives a round trip.
-
-        ``xsize`` / ``ysize`` set the location coordinate grid (default: DocLang default resolution).
 
         ``include_namespace`` declares the DocLang namespace on the root element. It is
         required for ``validate`` to pass, as the schema only declares the namespaced root.
@@ -5193,7 +5175,6 @@ class DoclingDocument(BaseModel):
                     image_mode=image_mode,
                     add_named_groups=add_named_groups,
                     include_namespace=include_namespace,
-                    **self._doclang_resolution_kwargs(xsize=xsize, ysize=ysize),
                 ),
             )
             document_path = staging_root / "document.dclg.xml"
