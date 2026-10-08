@@ -2619,6 +2619,34 @@ def test_filter_pages_filtered_out_parent():
         doc.filter(page_nrs={2})
 
 
+def test_filter_pages_inherits_location_for_unlocated_descendants():
+    doc = DoclingDocument(name="inline")
+    for page_no in (1, 2):
+        doc.add_page(page_no=page_no, size=Size(width=100, height=100))
+    parent = doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="",
+        prov=ProvenanceItem(page_no=1, bbox=BoundingBox(l=0, t=0, r=10, b=10), charspan=(0, 0)),
+    )
+    inline = doc.add_inline_group(parent=parent)
+    doc.add_text(label=DocItemLabel.TEXT, text="inherited", parent=inline)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="explicit page 2",
+        parent=inline,
+        prov=ProvenanceItem(page_no=2, bbox=BoundingBox(l=0, t=0, r=10, b=10), charspan=(0, 15)),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="unlocated root")
+
+    page_one = doc.filter(page_nrs={1})
+    assert [item.text for item in page_one.texts] == ["", "inherited"]
+    assert [item.text for item in page_one.filter(page_nrs={1}).texts] == ["", "inherited"]
+
+    with pytest.warns(UserWarning, match="using ancestor #/body instead"):
+        page_two = doc.filter(page_nrs={2})
+    assert [item.text for item in page_two.texts] == ["explicit page 2"]
+
+
 def test_filter_invalid_pages():
     doc = _create_doc_for_filtering()
     with pytest.raises(

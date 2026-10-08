@@ -2480,6 +2480,21 @@ def test_leading_text_before_lone_formatting_tag_is_preserved(frag: str, expecte
     assert [t.text.strip() for t in doc.texts if t.text] == expected
 
 
+def test_filter_doclang_virtual_list_retains_inline_text_and_formula():
+    xml = (
+        '<doclang version="0.7"><list><ldiv/>'
+        '<location value="57"/><location value="36"/>'
+        '<location value="437"/><location value="466"/>'
+        "31.<formula>-17x^6</formula>37.<formula>11x^2 - 5x + 5</formula>"
+        "</list></doclang>"
+    )
+    doc = _deserialize(xml, validate=False)
+
+    page = doc.filter(page_nrs={1})
+    assert page.export_to_markdown() == doc.export_to_markdown()
+    assert [item.text for item in page.texts] == [item.text for item in doc.texts]
+
+
 def test_mixed_content_footnote_keeps_label_and_provenance():
     doc = _deserialize(
         '<doclang version="0.7"><footnote>'
