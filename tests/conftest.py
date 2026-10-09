@@ -467,6 +467,53 @@ def rich_table_doc(_rich_table_doc: DoclingDocument) -> DoclingDocument:
     return _rich_table_doc.model_copy(deep=True)
 
 
+@pytest.fixture
+def spanned_rich_cell_doc() -> DoclingDocument:
+    """Document with a 2x3 table whose column header 'Partner' is a RichTableCell spanning columns 1 and 2."""
+    doc = DoclingDocument(name="spanned_rich_cell")
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=3))
+    group = doc.add_group(name="header", parent=table)
+    doc.add_text(label=DocItemLabel.PARAGRAPH, text="Partner", parent=group)
+
+    doc.add_table_cell(
+        table,
+        TableCell(
+            text="",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            column_header=True,
+        ),
+    )
+    doc.add_table_cell(
+        table,
+        RichTableCell(
+            text="",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=3,
+            col_span=2,
+            column_header=True,
+            ref=group.get_ref(),
+        ),
+    )
+    for j, text in enumerate(["Status", "Done", "Open"]):
+        doc.add_table_cell(
+            table,
+            TableCell(
+                text=text,
+                start_row_offset_idx=1,
+                end_row_offset_idx=2,
+                start_col_offset_idx=j,
+                end_col_offset_idx=j + 1,
+            ),
+        )
+
+    return doc
+
+
 def _mixed_hierarchy_doc_impl() -> DoclingDocument:
     doc = DoclingDocument(name="")
 

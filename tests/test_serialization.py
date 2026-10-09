@@ -9,6 +9,7 @@ from xml.etree import ElementTree as ET
 import pytest
 from pydantic import AnyUrl
 
+from docling_core.transforms.chunker.hierarchical_chunker import ChunkingDocSerializer, TripletTableSerializer
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
@@ -487,6 +488,22 @@ def test_md_rich_table(rich_table_doc):
     ser = MarkdownDocSerializer(doc=rich_table_doc)
     actual = ser.serialize().text
     verify(exp_file=exp_file, actual=actual)
+
+
+def test_md_spanned_rich_cell_repeated(spanned_rich_cell_doc):
+    """A column-spanning RichTableCell is repeated in every column it covers."""
+    doc = spanned_rich_cell_doc
+    ser = MarkdownDocSerializer(doc=doc, params=MarkdownParams(compact_tables=True))
+    actual = ser.serialize(item=doc.tables[0]).text
+    assert actual == "|  | Partner | Partner |\n| - | - | - |\n| Status | Done | Open |"
+
+
+def test_triplet_spanned_rich_cell_repeated(spanned_rich_cell_doc):
+    """A column-spanning RichTableCell header reaches the triplets of every column it covers."""
+    doc = spanned_rich_cell_doc
+    ser = ChunkingDocSerializer(doc=doc, table_serializer=TripletTableSerializer())
+    actual = ser.serialize(item=doc.tables[0], visited=set()).text
+    assert actual == "Status, Partner = Done. Status, Partner = Open"
 
 
 def test_md_single_row_table():

@@ -98,6 +98,15 @@ class TableItem(FloatingItem):
 
         grid = self.data.grid
 
+        # A spanning cell occupies all its grid positions as the same object: resolve
+        # it once, since resolving rich cells consumes the shared `visited` refs.
+        cell_texts: dict[int, str] = {}
+
+        def _cell_text(cell: TableCell) -> str:
+            if (text := cell_texts.get(id(cell))) is None:
+                text = cell_texts[id(cell)] = cell._get_text(doc=doc, **kwargs)
+            return text
+
         # Count how many rows are column headers
         num_headers = 0
         for row_idx, row in enumerate(grid):
@@ -117,13 +126,13 @@ class TableItem(FloatingItem):
             columns = ["" for _ in range(self.data.num_cols)]
             for i in range(num_headers):
                 for j, cell in enumerate(grid[i]):
-                    col_name = cell._get_text(doc=doc, **kwargs)
+                    col_name = _cell_text(cell)
                     if columns[j] != "":
                         col_name = f".{col_name}"
                     columns[j] += col_name
 
         # Create table data
-        table_data = [[cell._get_text(doc=doc, **kwargs) for cell in row] for row in grid[num_headers:]]
+        table_data = [[_cell_text(cell) for cell in row] for row in grid[num_headers:]]
 
         # Create DataFrame
         table = pd.DataFrame(table_data, columns=columns)

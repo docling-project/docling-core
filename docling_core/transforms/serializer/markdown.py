@@ -819,21 +819,26 @@ class MarkdownTableSerializer(BaseTableSerializer):
                     res_parts.append(ann_res)
 
             rows = []
+            # A spanning cell occupies all its grid positions as the same object:
+            # serialize it once, since serializing rich cells consumes `visited` refs.
+            rendered_cells: dict[int, str] = {}
             for row in item.data.grid:
                 rendered_row = []
                 for col in row:
-                    if isinstance(col, RichTableCell):
-                        ref_item = col.ref.resolve(doc=doc)
-                        inner_kwargs = {**kwargs, "_nested_in_table": True, "in_table_cell": True}
-                        cell_text = doc_serializer.serialize(
-                            item=ref_item,
-                            **inner_kwargs,
-                        ).text
-                    else:
-                        cell_text = col.text or ""
-                    # Newlines and pipes must be escaped in every cell so the
-                    # markdown table stays valid.
-                    rendered_row.append(cell_text.replace("\n", " ").replace("|", "&#124;"))
+                    if (cell_text := rendered_cells.get(id(col))) is None:
+                        if isinstance(col, RichTableCell):
+                            ref_item = col.ref.resolve(doc=doc)
+                            inner_kwargs = {**kwargs, "_nested_in_table": True, "in_table_cell": True}
+                            cell_text = doc_serializer.serialize(
+                                item=ref_item,
+                                **inner_kwargs,
+                            ).text
+                        else:
+                            cell_text = col.text or ""
+                        # Newlines and pipes must be escaped in every cell so the
+                        # markdown table stays valid.
+                        cell_text = rendered_cells[id(col)] = cell_text.replace("\n", " ").replace("|", "&#124;")
+                    rendered_row.append(cell_text)
                 rows.append(rendered_row)
             if len(rows) > 0:
                 # Resolve the column headers to the single row GFM allows
