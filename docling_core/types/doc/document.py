@@ -5566,6 +5566,15 @@ class DoclingDocument(BaseModel):
         return self
 
     @model_validator(mode="after")
+    def _validate_field_items(self) -> Self:
+        """A field item has at most one key (it can have several values)."""
+        for item in self.field_items:
+            num_keys = sum(1 for ref in item.children if ref.resolve(self).label == DocItemLabel.FIELD_KEY)
+            if num_keys > 1:
+                raise ValueError(f"Field item {item.self_ref} has {num_keys} keys, at most one is allowed")
+        return self
+
+    @model_validator(mode="after")
     def validate_misplaced_list_items(self) -> Self:
         """validate_misplaced_list_items."""
         # find list items without list parent, putting successive ones together
