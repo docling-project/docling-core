@@ -50,8 +50,10 @@ from docling_core.types.doc.document import (
     GraphData,
     GraphLink,
     ImageRef,
+    ListItem,
     RichTableCell,
     TableCell,
+    TextItem,
 )
 from docling_core.types.doc.labels import GraphCellLabel, GraphLinkLabel
 from tests.doclang_validation import (
@@ -2863,3 +2865,167 @@ def test_table_footnote_with_nested_field_region():
     assert len(regions2) == 1
     assert [t.text for t in doc2.texts if t.label in (DocItemLabel.FIELD_KEY, DocItemLabel.FIELD_VALUE)] == ["K:", "V"]
     assert serialize_doclang(doc2) == ser_txt
+
+
+_LIST_ORDER_PARAMS = DocLangParams(include_version=False, pretty_indentation=None)
+
+
+def _reading_order(doc: DoclingDocument) -> list[str]:
+    """Texts of the document's text items in reading order."""
+    return [item.text for item, _ in doc.iterate_items() if isinstance(item, TextItem)]
+
+
+def _roundtrip_reading_order(txt: str) -> list[str]:
+    return _reading_order(DocLangDocDeserializer().deserialize_str(txt))
+
+
+def test_list_leading_non_item_child_stays_before_list():
+    """A non-list-item child before the first item is emitted before ``<list>`` (#794)."""
+    doc = DoclingDocument(name="t")
+    lst = doc.add_list_group()
+    doc.add_heading(text="H1", parent=lst)
+    doc.add_text(label=DocItemLabel.TEXT, text="T1", parent=lst)
+    doc.add_list_item(text="one", parent=lst)
+    doc.add_list_item(text="two", parent=lst)
+    doc.add_text(label=DocItemLabel.TEXT, text="AFTER")
+
+    txt = serialize_doclang(doc, params=_LIST_ORDER_PARAMS)
+    assert txt == (
+        '<doclang><heading level="2">H1</heading><text>T1</text>'
+        "<list><ldiv/>one<ldiv/>two</list><text>AFTER</text></doclang>"
+    )
+    assert _roundtrip_reading_order(txt) == _reading_order(doc)
+
+
+def test_list_trailing_non_item_child_stays_right_after_list():
+    """A non-list-item child after the last item follows ``</list>`` directly."""
+    doc = DoclingDocument(name="t")
+    lst = doc.add_list_group()
+    doc.add_list_item(text="one", parent=lst)
+    doc.add_list_item(text="two", parent=lst)
+    doc.add_text(label=DocItemLabel.TEXT, text="T1", parent=lst)
+    doc.add_text(label=DocItemLabel.TEXT, text="T2", parent=lst)
+    doc.add_text(label=DocItemLabel.TEXT, text="AFTER")
+
+    txt = serialize_doclang(doc, params=_LIST_ORDER_PARAMS)
+    assert txt == (
+        "<doclang><list><ldiv/>one<ldiv/>two</list><text>T1</text><text>T2</text><text>AFTER</text></doclang>"
+    )
+    assert _roundtrip_reading_order(txt) == _reading_order(doc)
+
+
+def test_ordered_list_with_leading_non_item_child_stays_ordered():
+    """A leading non-item child must not turn an ordered list into an unordered one."""
+    doc = DoclingDocument(name="t")
+    lst = doc.add_list_group()
+    doc.add_heading(text="H1", parent=lst)
+    doc.add_list_item(text="one", parent=lst, enumerated=True)
+    doc.add_list_item(text="two", parent=lst, enumerated=True)
+
+    txt = serialize_doclang(doc, params=_LIST_ORDER_PARAMS)
+    assert txt == (
+        '<doclang><heading level="2">H1</heading><list class="ordered"><ldiv/>one<ldiv/>two</list></doclang>'
+    )
+    doc2 = DocLangDocDeserializer().deserialize_str(txt)
+    assert [item.enumerated for item, _ in doc2.iterate_items() if isinstance(item, ListItem)] == [True, True]
+
+
+def test_list_with_only_non_item_children():
+    """A list group without list items emits no ``<list>`` and keeps its children in order."""
+    doc = DoclingDocument(name="t")
+    lst = doc.add_list_group()
+    doc.add_heading(text="H1", parent=lst)
+    doc.add_text(label=DocItemLabel.TEXT, text="T1", parent=lst)
+    doc.add_text(label=DocItemLabel.TEXT, text="AFTER")
+
+    txt = serialize_doclang(doc, params=_LIST_ORDER_PARAMS)
+    assert txt == '<doclang><heading level="2">H1</heading><text>T1</text><text>AFTER</text></doclang>'
+
+
+def test_nested_list_with_leading_non_item_child_emitted_once():
+    """Nested lists keep the previous placement; the child is emitted exactly once.
+
+    Emitting the child before a nested ``<list>`` would put it inside the parent
+    ``<list>``, where the deserializer absorbs it into the preceding list item.
+    """
+    doc = DoclingDocument(name="t")
+    outer = doc.add_list_group()
+    doc.add_list_item(text="one", parent=outer)
+    inner = doc.add_list_group(parent=outer)
+    doc.add_heading(text="H1", parent=inner)
+    doc.add_list_item(text="one.a", parent=inner)
+    doc.add_list_item(text="two", parent=outer)
+
+    txt = serialize_doclang(doc, params=_LIST_ORDER_PARAMS)
+    assert txt == (
+        "<doclang><list><ldiv/><text>one</text><list><ldiv/>one.a</list><ldiv/>two</list>"
+        '<heading level="2">H1</heading></doclang>'
+    )
+
+
+@pytest.mark.xfail(
+    reason=(
+        "Non-list-item child between list items is still emitted after the list: "
+        "threaded fragments are merged back into one ListGroup by the deserializer (see #794)"
+    ),
+    strict=True,
+)
+def test_list_middle_non_item_child_keeps_position():
+    doc = DoclingDocument(name="t")
+    lst = doc.add_list_group()
+    doc.add_list_item(text="one", parent=lst)
+    doc.add_heading(text="H1", parent=lst)
+    doc.add_list_item(text="two", parent=lst)
+
+    txt = serialize_doclang(doc, params=_LIST_ORDER_PARAMS)
+    assert _roundtrip_reading_order(txt) == _reading_order(doc)
+
+
+def _page_prov(page_no: int) -> ProvenanceItem:
+    return ProvenanceItem(
+        page_no=page_no,
+        bbox=BoundingBox.from_tuple((10, 10, 400, 50), origin=CoordOrigin.TOPLEFT),
+        charspan=(0, 1),
+    )
+
+
+def _doc_cross_page_list_with_leading_heading(*, with_pre: bool) -> DoclingDocument:
+    """Heading on page 1 as the first child of a list whose items are on pages 2 and 3."""
+    doc = DoclingDocument(name="t")
+    for page_no in (1, 2, 3):
+        doc.add_page(page_no=page_no, size=Size(width=512, height=512))
+    if with_pre:
+        doc.add_text(label=DocItemLabel.TEXT, text="PRE", prov=_page_prov(1))
+    lst = doc.add_list_group()
+    doc.add_heading(text="H", parent=lst, prov=_page_prov(1))
+    doc.add_list_item(text="a", parent=lst, prov=_page_prov(2))
+    doc.add_list_item(text="b", parent=lst, prov=_page_prov(3))
+    return doc
+
+
+def _text_pages(doc: DoclingDocument) -> list[tuple[str, list[int]]]:
+    return [
+        (item.text, [prov.page_no for prov in item.prov])
+        for item, _ in doc.iterate_items()
+        if isinstance(item, TextItem)
+    ]
+
+
+@pytest.mark.parametrize("with_pre", [False, True])
+def test_cross_page_list_leading_child_keeps_its_page(with_pre: bool):
+    """A leading child on an earlier page than the first item keeps its page break."""
+    doc = _doc_cross_page_list_with_leading_heading(with_pre=with_pre)
+
+    txt = serialize_doclang(
+        doc, params=DocLangParams(include_version=False, add_location=False, pretty_indentation=None)
+    )
+    pre = "<text>PRE</text>" if with_pre else ""
+    assert txt == (
+        f'<doclang>{pre}<heading level="2">H</heading><page_break/>'
+        '<list><thread thread_id="1"/><ldiv/>a</list><page_break/>'
+        '<list><thread thread_id="1"/><ldiv/>b</list></doclang>'
+    )
+
+    txt = serialize_doclang(doc)
+    doc2 = DocLangDocDeserializer().deserialize_str(txt)
+    assert _text_pages(doc2) == _text_pages(doc)
