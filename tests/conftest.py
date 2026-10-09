@@ -467,6 +467,36 @@ def rich_table_doc(_rich_table_doc: DoclingDocument) -> DoclingDocument:
     return _rich_table_doc.model_copy(deep=True)
 
 
+@pytest.fixture(scope="function")
+def col_span_rich_table_doc() -> DoclingDocument:
+    """Table whose header cell "Partner" is a RichTableCell spanning columns 1 and 2."""
+    doc = DoclingDocument(name="")
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=3))
+    group = doc.add_group(parent=table, label=GroupLabel.UNSPECIFIED)
+    doc.add_text(parent=group, label=DocItemLabel.TEXT, text="Partner")
+
+    def cell(text: str, row: int, col: int, col_span: int = 1, **kwargs) -> dict:
+        return dict(
+            text=text,
+            start_row_offset_idx=row,
+            end_row_offset_idx=row + 1,
+            start_col_offset_idx=col,
+            end_col_offset_idx=col + col_span,
+            col_span=col_span,
+            **kwargs,
+        )
+
+    doc.add_table_cell(table_item=table, cell=TableCell(**cell("", 0, 0, column_header=True)))
+    doc.add_table_cell(
+        table_item=table,
+        cell=RichTableCell(**cell("", 0, 1, col_span=2, column_header=True), ref=group.get_ref()),
+    )
+    doc.add_table_cell(table_item=table, cell=TableCell(**cell("Status", 1, 0)))
+    doc.add_table_cell(table_item=table, cell=TableCell(**cell("Done", 1, 1)))
+    doc.add_table_cell(table_item=table, cell=TableCell(**cell("Open", 1, 2)))
+    return doc
+
+
 def _mixed_hierarchy_doc_impl() -> DoclingDocument:
     doc = DoclingDocument(name="")
 

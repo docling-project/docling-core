@@ -301,8 +301,6 @@ class LaTeXTableSerializer(BaseTableSerializer):
                 ann_res = doc_serializer.serialize_annotations(item=item, **kwargs)
                 if ann_res.text:
                     res_parts.append(ann_res)
-            # The grid repeats a spanning cell in every position it covers. Serialize a rich
-            # cell once: serialized again through the shared `visited` set it comes back empty.
             rich_texts: dict[tuple[int, int], str] = {}
             for row in item.data.grid:
                 body_row: list[str] = []

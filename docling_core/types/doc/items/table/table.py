@@ -111,8 +111,6 @@ class TableItem(FloatingItem):
             else:
                 break
 
-        # The grid repeats a spanning cell in every position it covers. Resolve it once:
-        # a RichTableCell resolved again through the shared `visited` set comes back empty.
         texts: dict[tuple[int, int], str] = {}
 
         def text_of(cell: TableCell) -> str:

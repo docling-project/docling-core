@@ -819,8 +819,6 @@ class MarkdownTableSerializer(BaseTableSerializer):
                     res_parts.append(ann_res)
 
             rows = []
-            # The grid repeats a spanning cell in every position it covers. Serialize a rich
-            # cell once: serialized again through the shared `visited` set it comes back empty.
             rich_texts: dict[tuple[int, int], str] = {}
             for row in item.data.grid:
                 rendered_row = []

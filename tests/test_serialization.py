@@ -9,6 +9,7 @@ from xml.etree import ElementTree as ET
 import pytest
 from pydantic import AnyUrl
 
+from docling_core.transforms.chunker.hierarchical_chunker import TripletTableSerializer
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
@@ -52,7 +53,6 @@ from docling_core.types.doc.document import (
 from docling_core.types.doc.labels import DocItemLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
-from .test_utils import build_spanning_header_table_doc
 
 
 def verify(exp_file: Path, actual: str):
@@ -1969,11 +1969,24 @@ def test_export_and_save_markdown_caption_placement(tmp_path, placement):
     assert doc.export_to_markdown() == doc.export_to_markdown(caption_placement="standard")
 
 
-def test_md_column_spanning_rich_cell_keeps_text_in_every_column():
-    """Markdown repeats a spanning cell's text in every column it covers. A
-    RichTableCell must behave like a plain TableCell with the same span."""
-    plain = MarkdownDocSerializer(doc=build_spanning_header_table_doc(rich=False)).serialize().text
-    rich = MarkdownDocSerializer(doc=build_spanning_header_table_doc(rich=True)).serialize().text
+def test_md_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_table_doc):
+    params = MarkdownParams(compact_tables=True)
+    actual = MarkdownDocSerializer(doc=col_span_rich_table_doc, params=params).serialize().text
+    assert actual == "|  | Partner | Partner |\n| - | - | - |\n| Status | Done | Open |"
 
-    assert plain.splitlines()[0].count("Partner") == 2
-    assert rich == plain
+    # same table with the spanning header as a plain TableCell
+    plain_doc = col_span_rich_table_doc.model_copy(deep=True)
+    plain_doc.tables[0].data.table_cells = [
+        TableCell(**cell.model_dump(exclude={"ref", "text"}), text="Partner")
+        if isinstance(cell, RichTableCell)
+        else cell
+        for cell in plain_doc.tables[0].data.table_cells
+    ]
+    plain_doc.delete_items(node_items=[ref.resolve(plain_doc) for ref in plain_doc.tables[0].children])
+    assert actual == MarkdownDocSerializer(doc=plain_doc, params=params).serialize().text
+
+
+def test_triplet_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_table_doc):
+    ser = MarkdownDocSerializer(doc=col_span_rich_table_doc, table_serializer=TripletTableSerializer())
+    actual = ser.serialize().text
+    assert actual == "Status, Partner = Done. Status, Partner = Open"
