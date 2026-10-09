@@ -192,11 +192,64 @@ def list_projectors() -> list[tuple[int, int]]:
 # ---------------------------------------------------------------------------
 # Projectors — one per schema minor bump within docling-core v2.x
 # ---------------------------------------------------------------------------
-# These cover every schema version step from the current schema (1.10) down
+# These cover every schema version step from the current schema (1.11) down
 # to the oldest v2.x schema (1.5).  Each projector represents the *minimal*
 # structural downgrade that allows an old client's Pydantic model to parse
 # the serialised dict without error.  Full semantic fidelity is not always
 # possible; the goal is a document that validates rather than crashes.
+
+# --- 1.11 → 1.10 ----------------------------------------------------------
+# Schema 1.11 (docling-core v2.102.0, PR #735):
+#   • Added AttachmentItem (new DocItem subtype with label "attachment").
+#   • Added top-level DoclingDocument.attachments: list[AttachmentItem].
+#   • Added DocItemLabel.ATTACHMENT enum value.
+#
+# Downgrade strategy:
+#   • Drop top-level "attachments" key (unknown to 1.10, extra="forbid"
+#     would crash old clients... actually DoclingDocument allows? No -
+#     old model has extra forbid? It has no attachments field, so strip).
+#   • Strip dangling "#/attachments/..." refs from body/furniture/groups
+#     children so old clients never resolve into removed items.
+# ---------------------------------------------------------------------------
+
+
+@register_projector(from_minor=11, to_minor=10)
+def _project_1_11_to_1_10(data: dict) -> dict:
+    """Downgrade a schema 1.11 document dict to schema 1.10.
+
+    Handles:
+    - Removes top-level ``attachments`` list (unknown to 1.10 clients).
+    - Strips dangling ``#/attachments/`` refs from body/furniture/groups.
+    """
+    data = dict(data)
+
+    data.pop("attachments", None)
+
+    def _is_attachment_ref(c: object) -> bool:
+        if not isinstance(c, dict):
+            return False
+        for key in ("cref", "$ref"):
+            val = c.get(key)
+            if isinstance(val, str) and val.startswith("#/attachments/"):
+                return True
+        return False
+
+    def _strip_attachment_refs(node: dict) -> dict:
+        node = dict(node)
+        children = node.get("children")
+        if isinstance(children, list):
+            node["children"] = [c for c in children if not _is_attachment_ref(c)]
+        return node
+
+    for key in ("body", "furniture"):
+        if isinstance(data.get(key), dict):
+            data[key] = _strip_attachment_refs(data[key])
+    if isinstance(data.get("groups"), list):
+        data["groups"] = [_strip_attachment_refs(g) if isinstance(g, dict) else g for g in data["groups"]]
+
+    data["version"] = "1.10.0"
+    return data
+
 
 # --- 1.10 → 1.9 -----------------------------------------------------------
 # Schema 1.10 (docling-core v2.69.0, PR #519):

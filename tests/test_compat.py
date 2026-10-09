@@ -243,6 +243,45 @@ class TestProjectorCoverage:
 # ---------------------------------------------------------------------------
 
 
+class TestProjector_1_11_to_1_10:
+    """Tests for the 1.11 → 1.10 downgrade projector."""
+
+    def _apply(self, data: dict) -> dict:
+        from docling_core.compat import _project_1_11_to_1_10
+
+        return _project_1_11_to_1_10(data)
+
+    def test_strips_attachments(self):
+        data = {
+            **_minimal_doc_dict("1.11.0"),
+            "attachments": [
+                {
+                    "self_ref": "#/attachments/0",
+                    "parent": {"$ref": "#/body"},
+                    "children": [],
+                    "content_layer": "body",
+                    "label": "attachment",
+                    "name": "report.pdf",
+                    "mime_type": "application/pdf",
+                    "prov": [],
+                }
+            ],
+        }
+        result = self._apply(data)
+        assert "attachments" not in result
+        assert result["version"] == "1.10.0"
+
+    def test_strips_dangling_attachment_refs(self):
+        data = _minimal_doc_dict("1.11.0")
+        data["body"]["children"] = [{"$ref": "#/attachments/0"}, {"$ref": "#/texts/0"}]
+        result = self._apply(data)
+        assert result["body"]["children"] == [{"$ref": "#/texts/0"}]
+
+    def test_version_set_to_1_10(self):
+        result = self._apply(_minimal_doc_dict("1.11.0"))
+        assert result["version"] == "1.10.0"
+
+
 class TestProjector_1_10_to_1_9:
     """Tests for the 1.10 → 1.9 downgrade projector."""
 
@@ -528,16 +567,18 @@ class TestProjector_1_6_to_1_5:
 class TestChainProjection:
     """Verify that project_to() correctly chains multiple projectors."""
 
-    def test_chain_1_10_to_1_5(self):
-        """project_to should apply 5 projectors in sequence (1.10->1.5)."""
+    def test_chain_1_11_to_1_5(self):
+        """project_to should apply 6 projectors in sequence (1.11->1.5)."""
         doc = DoclingDocument(name="chain_test")
         result = project_to(doc, target_version="1.5.0")
         assert result.version == "1.5.0"
 
-    def test_chain_1_10_to_1_9(self):
+    def test_chain_1_11_to_1_10(self):
         doc = DoclingDocument(name="chain_test")
-        result = project_to(doc, target_version="1.9.0")
-        assert result.version == "1.9.0"
+        doc.add_attachment(name="a.pdf", mime_type="application/pdf")
+        result = project_to(doc, target_version="1.10.0")
+        assert result.version == "1.10.0"
+        assert result.attachments == []
 
     def test_chain_with_field_items(self):
         """A document with field-related items projects cleanly to 1.9."""
