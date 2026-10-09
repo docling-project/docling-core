@@ -15,7 +15,11 @@ from docling_core.transforms.serializer.html import HTMLDocSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
 from docling_core.types.doc import ContentLayer, DocItemLabel, DoclingDocument, PictureItem, TableData, TextItem
 
-from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_rich_table_doc
+from .test_utils import (
+    assert_or_generate_json_ground_truth,
+    build_single_cell_rich_table_doc,
+    build_spanning_header_table_doc,
+)
 
 
 def test_chunk():
@@ -326,3 +330,20 @@ def test_contextualize_excludes_fields_when_alias_differs_from_attribute_name():
     assert "drop me" not in result
     assert "keep me" in result
     assert "body" in result
+
+
+def test_triplet_table_serializer_keeps_text_of_column_spanning_rich_cell():
+    """A RichTableCell spanning several columns must carry its text into every
+    column it covers, like a plain TableCell with the same span does.
+
+    `TableData.grid` holds the spanning cell in each covered position. Resolving it
+    once per position through the shared `visited` set used to leave every position
+    but the first empty, so the triplets of the spanned columns lost their header.
+    """
+    chunker = HierarchicalChunker()
+
+    plain = [c.text for c in chunker.chunk(build_spanning_header_table_doc(rich=False))]
+    rich = [c.text for c in chunker.chunk(build_spanning_header_table_doc(rich=True))]
+
+    assert plain == ["Status, Partner = Done. Status, Partner = Open"]
+    assert rich == plain

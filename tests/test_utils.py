@@ -10,7 +10,7 @@ from pydantic import Field
 from requests import Response, Session
 
 from docling_core.types.doc import DocItemLabel, DoclingDocument, TableData
-from docling_core.types.doc.document import GroupLabel, RichTableCell
+from docling_core.types.doc.document import GroupLabel, RichTableCell, TableCell
 from docling_core.utils.alias import AliasModel
 from docling_core.utils.file import (
     _MAX_REDIRECTS,
@@ -56,6 +56,41 @@ def build_single_cell_rich_table_doc(text: str) -> DoclingDocument:
             text="",
         ),
     )
+    return doc
+
+
+def build_spanning_header_table_doc(rich: bool) -> DoclingDocument:
+    """Build a doc with a 2x3 table whose header cell "Partner" spans columns 1 and 2.
+
+    With ``rich=True`` the header is a RichTableCell ref to a text group, otherwise a
+    plain TableCell with the same text. Everything else is identical, so the two
+    docs must serialize the same.
+    """
+    doc = DoclingDocument(name="spanning_header_table")
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=3))
+
+    def cell(text: str, row: int, col: int, col_span: int = 1, **kwargs) -> dict:
+        return dict(
+            text=text,
+            start_row_offset_idx=row,
+            end_row_offset_idx=row + 1,
+            start_col_offset_idx=col,
+            end_col_offset_idx=col + col_span,
+            col_span=col_span,
+            **kwargs,
+        )
+
+    doc.add_table_cell(table_item=table, cell=TableCell(**cell("", 0, 0, column_header=True)))
+    header = cell("" if rich else "Partner", 0, 1, col_span=2, column_header=True)
+    if rich:
+        wrapper = doc.add_group(parent=table, label=GroupLabel.UNSPECIFIED)
+        doc.add_text(parent=wrapper, label=DocItemLabel.TEXT, text="Partner")
+        doc.add_table_cell(table_item=table, cell=RichTableCell(**header, ref=wrapper.get_ref()))
+    else:
+        doc.add_table_cell(table_item=table, cell=TableCell(**header))
+    doc.add_table_cell(table_item=table, cell=TableCell(**cell("Status", 1, 0)))
+    doc.add_table_cell(table_item=table, cell=TableCell(**cell("Done", 1, 1)))
+    doc.add_table_cell(table_item=table, cell=TableCell(**cell("Open", 1, 2)))
     return doc
 
 

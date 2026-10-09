@@ -819,16 +819,22 @@ class MarkdownTableSerializer(BaseTableSerializer):
                     res_parts.append(ann_res)
 
             rows = []
+            # The grid repeats a spanning cell in every position it covers. Serialize a rich
+            # cell once: serialized again through the shared `visited` set it comes back empty.
+            rich_texts: dict[tuple[int, int], str] = {}
             for row in item.data.grid:
                 rendered_row = []
                 for col in row:
                     if isinstance(col, RichTableCell):
-                        ref_item = col.ref.resolve(doc=doc)
-                        inner_kwargs = {**kwargs, "_nested_in_table": True, "in_table_cell": True}
-                        cell_text = doc_serializer.serialize(
-                            item=ref_item,
-                            **inner_kwargs,
-                        ).text
+                        key = (col.start_row_offset_idx, col.start_col_offset_idx)
+                        if key not in rich_texts:
+                            ref_item = col.ref.resolve(doc=doc)
+                            inner_kwargs = {**kwargs, "_nested_in_table": True, "in_table_cell": True}
+                            rich_texts[key] = doc_serializer.serialize(
+                                item=ref_item,
+                                **inner_kwargs,
+                            ).text
+                        cell_text = rich_texts[key]
                     else:
                         cell_text = col.text or ""
                     # Newlines and pipes must be escaped in every cell so the

@@ -111,19 +111,29 @@ class TableItem(FloatingItem):
             else:
                 break
 
+        # The grid repeats a spanning cell in every position it covers. Resolve it once:
+        # a RichTableCell resolved again through the shared `visited` set comes back empty.
+        texts: dict[tuple[int, int], str] = {}
+
+        def text_of(cell: TableCell) -> str:
+            key = (cell.start_row_offset_idx, cell.start_col_offset_idx)
+            if key not in texts:
+                texts[key] = cell._get_text(doc=doc, **kwargs)
+            return texts[key]
+
         # Create the column names from all col_headers
         columns: list[str] | None = None
         if num_headers > 0:
             columns = ["" for _ in range(self.data.num_cols)]
             for i in range(num_headers):
                 for j, cell in enumerate(grid[i]):
-                    col_name = cell._get_text(doc=doc, **kwargs)
+                    col_name = text_of(cell)
                     if columns[j] != "":
                         col_name = f".{col_name}"
                     columns[j] += col_name
 
         # Create table data
-        table_data = [[cell._get_text(doc=doc, **kwargs) for cell in row] for row in grid[num_headers:]]
+        table_data = [[text_of(cell) for cell in row] for row in grid[num_headers:]]
 
         # Create DataFrame
         table = pd.DataFrame(table_data, columns=columns)

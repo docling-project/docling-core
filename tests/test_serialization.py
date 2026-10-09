@@ -52,6 +52,7 @@ from docling_core.types.doc.document import (
 from docling_core.types.doc.labels import DocItemLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
+from .test_utils import build_spanning_header_table_doc
 
 
 def verify(exp_file: Path, actual: str):
@@ -1966,3 +1967,13 @@ def test_export_and_save_markdown_caption_placement(tmp_path, placement):
     # default is unchanged
     assert doc.export_to_markdown().index("THE CAPTION") < doc.export_to_markdown().index("<!-- image -->")
     assert doc.export_to_markdown() == doc.export_to_markdown(caption_placement="standard")
+
+
+def test_md_column_spanning_rich_cell_keeps_text_in_every_column():
+    """Markdown repeats a spanning cell's text in every column it covers. A
+    RichTableCell must behave like a plain TableCell with the same span."""
+    plain = MarkdownDocSerializer(doc=build_spanning_header_table_doc(rich=False)).serialize().text
+    rich = MarkdownDocSerializer(doc=build_spanning_header_table_doc(rich=True)).serialize().text
+
+    assert plain.splitlines()[0].count("Partner") == 2
+    assert rich == plain

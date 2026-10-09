@@ -14,6 +14,7 @@ from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import DoclingDocument, Formatting
 
 from .test_data_gen_flag import GEN_TEST_DATA
+from .test_utils import build_spanning_header_table_doc
 
 
 def verify_or_update(exp_file: Path, actual: str):
@@ -177,3 +178,13 @@ def test_inline_group_no_duplication():
     # The content must be inside the LaTeX command, not on a standalone line
     assert "\\section{\\textit{Partially formatted} heading}" in body
     assert "\\item \\textbf{Term} : definition" in body
+
+
+def test_latex_column_spanning_rich_cell_keeps_text_in_every_column():
+    """The LaTeX table has no span support and repeats a spanning cell's text in
+    every column it covers. A RichTableCell must behave like a plain TableCell."""
+    plain = LaTeXDocSerializer(doc=build_spanning_header_table_doc(rich=False)).serialize().text
+    rich = LaTeXDocSerializer(doc=build_spanning_header_table_doc(rich=True)).serialize().text
+
+    assert plain.count("Partner") == 2
+    assert rich == plain
