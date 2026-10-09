@@ -17,7 +17,7 @@ The kind of check is chosen by the extension (`.json`; `.dclx`, `.dclg`, `.xml`,
 first existing of `X.dclx`, `X.dclg`, `X.dclg.xml`, `X.xml`, and any of those is matched with `X.json`. Several files can be given. `--only` / `--skip` take check slugs or dotted
 prefixes (`dclx`, `json.rules`), repeatable or comma-separated. Unknown names, or an `--only` whose checks are all
 skipped, are errors. `--report` selects what is printed: `files` (default) the results of each file, `checks` counts
-(ok / warn / fail / skip) per check over all files, `checks-with-files` the same plus the files behind the warn and fail
+(ok / warn / fail) per check over all files, `checks-with-files` the same plus the files behind the warn and fail
 counts. `-q` prints only failures (with `--report files`). `--output json` prints machine-readable results, also for the
 checks reports.
 
@@ -27,7 +27,6 @@ checks reports.
 |---|---|---|
 | `fail` | a defect | 1 |
 | `warn` | a lint or diagnostic that may be legitimate | 0 |
-| `skip` | the check could not run (e.g. Schematron is not installed) | 0 |
 
 The last line is `RESULT: FAILED`, `RESULT: WARN (n warning(s))` or `RESULT: OK`.
 
@@ -47,7 +46,8 @@ There is deliberately no JSON -> DocLang -> JSON check as a failure: it would fl
 ## Notes
 
 - Grid: bboxes are compared on the document's DocLang grid (`<default_resolution>`, 512 when absent).
-- Schematron needs the `doclang[schematron-saxon]` extra; without it that check is skipped.
+- Schematron needs the `doclang[schematron-saxon]` extra. Without it `dclx.schematron` fails with a hint, so a run never
+  passes with a check silently missing; use `--skip dclx.schematron` to run without it.
 - `DoclingDocument._validate_rules` is used as is, so rules added there show up here. A deserialized DCLX is also
   re-validated through the model (`DoclingDocument.model_validate`), because the deserializer builds documents through the
   API, which does not run the model validators; that is part of `dclx.rules`.

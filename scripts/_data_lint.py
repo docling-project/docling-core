@@ -17,7 +17,6 @@ Status
 ``ok``    the check passed
 ``fail``  a defect (non-zero exit code)
 ``warn``  a lint / suspicious pattern that may be legitimate (never affects the exit code)
-``skip``  the check could not run (e.g. Schematron is not installed)
 """
 
 from __future__ import annotations
@@ -43,7 +42,7 @@ _MAX_DETAILS = 12
 @dataclass
 class Result:
     check: str
-    status: str  # ok | fail | warn | skip
+    status: str  # ok | fail | warn
     message: str = ""
     details: list[str] = field(default_factory=list)
 
@@ -58,7 +57,7 @@ CHECKS: dict[str, tuple[str, str]] = {
     "json.serialize": ("json", "the document serializes to DocLang"),
     "json.empty-list-wrapper": ("json", "empty list items that only wrap content (heuristic, warns)"),
     "dclx.xsd": ("dclx", "XSD validity of document.xml"),
-    "dclx.schematron": ("dclx", "Schematron validity of document.xml (skipped without the backend)"),
+    "dclx.schematron": ("dclx", "Schematron validity of document.xml (needs the doclang[schematron-saxon] extra)"),
     "dclx.deserialize": ("dclx", "the DocLang deserializes without warnings"),
     "dclx.rules": ("dclx", "model validation and _validate_rules on the deserialized document"),
     "dclx.roundtrip": ("dclx", "DCLX -> document -> DCLX gives the same DocLang"),
@@ -248,7 +247,15 @@ def _validate_xml(xml: str, sel: Selection) -> list[Result]:
                 errs = [str(x)[:200] for x in list(e.xsd_errors) + list(e.schematron_errors)]
                 out.append(Result(name, "fail", f"{len(errs)} error(s)", errs[:_MAX_DETAILS]))
             except Exception as e:
-                out.append(Result(name, "skip", f"{type(e).__name__}: {str(e)[:200]}"))
+                # not a validation error: the check could not run (e.g. no Schematron backend). Do not pass silently.
+                out.append(
+                    Result(
+                        name,
+                        "fail",
+                        f"could not run: {type(e).__name__}: {str(e)[:200]} "
+                        f"(for Schematron install doclang[schematron-saxon], or skip it with --skip {name})",
+                    )
+                )
         return out
 
 
@@ -499,9 +506,9 @@ def _print_per_check(jobs: list[tuple[str, list[Result]]], list_files: bool) -> 
         print("no checks ran")
         return
     width = max(len(slug) for slug in counts)
-    print(f"{'check':{width}}  {'ok':>5} {'warn':>5} {'fail':>5} {'skip':>5}")
+    print(f"{'check':{width}}  {'ok':>5} {'warn':>5} {'fail':>5}")
     for slug, c in counts.items():
-        print(f"{slug:{width}}  {c['ok']:>5} {c['warn']:>5} {c['fail']:>5} {c['skip']:>5}")
+        print(f"{slug:{width}}  {c['ok']:>5} {c['warn']:>5} {c['fail']:>5}")
     if list_files:
         for slug, items in flagged.items():
             for status in ("fail", "warn"):
@@ -560,7 +567,7 @@ def main(argv: list[str] | None = None) -> int:
         "--report",
         choices=["files", "checks", "checks-with-files"],
         default="files",
-        help="files: the results of each file (default); checks: counts (ok / warn / fail / skip) per check over "
+        help="files: the results of each file (default); checks: counts (ok / warn / fail) per check over "
         "all files; checks-with-files: the same, plus the files behind each warn / fail count",
     )
     ap.add_argument("-q", "--quiet", action="store_true", help="only print failing checks")

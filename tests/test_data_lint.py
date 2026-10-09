@@ -214,7 +214,7 @@ def test_dclx_xsd_failure(checks, tmp_path):
     assert status["dclx.xsd"].details
 
 
-def test_dclx_schematron_is_skipped_without_the_backend(checks, tmp_path, monkeypatch):
+def test_dclx_schematron_fails_without_the_backend(checks, tmp_path, monkeypatch):
     import doclang.validation
 
     _simple_doc().save_as_doclang_archive(tmp_path / "doc.dclx")
@@ -226,9 +226,17 @@ def test_dclx_schematron_is_skipped_without_the_backend(checks, tmp_path, monkey
         return real(path, **kwargs)
 
     monkeypatch.setattr(doclang.validation, "validate", validate)
-    status = {r.check: r.status for r in checks.check_dclx(tmp_path / "doc.dclx", sel=checks.Selection(only=["dclx"]))}
-    assert status["dclx.schematron"] == "skip"
-    assert status["dclx.xsd"] == "ok"
+    status = {r.check: r for r in checks.check_dclx(tmp_path / "doc.dclx", sel=checks.Selection(only=["dclx"]))}
+    assert status["dclx.schematron"].status == "fail"
+    assert "--skip dclx.schematron" in status["dclx.schematron"].message
+    assert status["dclx.xsd"].status == "ok"
+
+    # skipping it explicitly runs without it
+    skipped = {
+        r.check: r.status
+        for r in checks.check_dclx(tmp_path / "doc.dclx", sel=checks.Selection(skip=["dclx.schematron"]))
+    }
+    assert "dclx.schematron" not in skipped and "fail" not in skipped.values()
 
 
 def test_dclx_deserialize_failure(checks, tmp_path):
@@ -311,7 +319,7 @@ def test_cli_report_modes(checks, tmp_path, capsys):
     out = capsys.readouterr().out
     assert "PER CHECK (2 file(s))" in out
     row = next(line for line in out.splitlines() if line.startswith("dclx.roundtrip"))
-    assert row.split()[1:] == ["1", "0", "1", "0"]  # ok, warn, fail, skip
+    assert row.split()[1:] == ["1", "0", "1"]  # ok, warn, fail
     assert "bad.dclx" not in out  # the files are only listed on request
 
     checks.main([*files, "--pair", "--report", "checks-with-files", "--only", "dclx.roundtrip"])
