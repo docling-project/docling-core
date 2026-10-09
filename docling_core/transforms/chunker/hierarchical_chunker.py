@@ -26,6 +26,7 @@ from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownParams,
 )
+from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer
 from docling_core.types import DoclingDocument as DLDocument
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
@@ -41,6 +42,33 @@ from docling_core.types.doc.document import (
 )
 
 _logger = logging.getLogger(__name__)
+
+
+def _heading_text(
+    item: TitleItem | SectionHeaderItem,
+    doc: DoclingDocument,
+    visited: set[str],
+) -> str:
+    """Plain text of a heading, including one held in an ``InlineGroup`` child.
+
+    The Markdown backend gives a heading with more than one inline run a
+    ``text=""`` item plus a single ``InlineGroup`` child holding the runs, so
+    reading ``item.text`` alone yields ``""``. The shape is detected exactly as
+    the LaTeX and DocLang serializers detect it.
+
+    Serialized as plain text on purpose: ``meta.headings`` is metadata, so it
+    carries what the heading says, not how a given format renders its links and
+    emphasis.
+
+    Serializing the group also records it and its runs in ``visited``, which is
+    what keeps them from arriving later as a content item of their own.
+    """
+    if item.text or len(item.children) != 1:
+        return item.text
+    child = item.children[0].resolve(doc)
+    if not isinstance(child, InlineGroup):
+        return item.text
+    return PlainTextDocSerializer(doc=doc).serialize(item=child, is_inline_scope=True, visited=visited).text
 
 
 class TripletTableSerializer(BaseTableSerializer):
@@ -204,6 +232,7 @@ class HierarchicalChunker(BaseChunker):
         """
         my_doc_ser = self.serializer_provider.get_serializer(doc=dl_doc)
         heading_by_level: dict[LevelNumber, TitleItem | SectionHeaderItem] = {}
+        heading_text_by_level: dict[LevelNumber, str] = {}
         heading_emitted: set[str] = set()
         visited: set[str] = set()
         ser_res = create_ser_result()
@@ -235,7 +264,7 @@ class HierarchicalChunker(BaseChunker):
                         text="",
                         meta=DocMeta(
                             doc_items=[heading_by_level[k] for k in sorted_keys],
-                            headings=[heading_by_level[k].text for k in sorted_keys],
+                            headings=[heading_text_by_level[k] for k in sorted_keys],
                         ),
                     )
                     heading_emitted.add(leaf_ref)
@@ -243,9 +272,14 @@ class HierarchicalChunker(BaseChunker):
                 # actually remove shadowed headings
                 for k in keys_to_del:
                     heading_by_level.pop(k, None)
+                    heading_text_by_level.pop(k, None)
 
                 # capture current heading
                 heading_by_level[level] = item
+                # Resolving here also marks an InlineGroup-held heading's runs
+                # visited, so they do not arrive later as a content item and
+                # surface the heading again as a chunk of its own.
+                heading_text_by_level[level] = _heading_text(item, dl_doc, visited)
 
                 continue
             elif isinstance(item, ListGroup | InlineGroup | DocItem) and item.self_ref not in visited:
@@ -267,7 +301,7 @@ class HierarchicalChunker(BaseChunker):
                 continue
             if doc_items := [u.item for u in ser_res.spans]:
                 sorted_keys = sorted(heading_by_level)
-                headings = [heading_by_level[k].text for k in sorted_keys] or None
+                headings = [heading_text_by_level[k] for k in sorted_keys] or None
                 c = DocChunk(
                     text=ser_res.text,
                     meta=DocMeta(
@@ -291,7 +325,7 @@ class HierarchicalChunker(BaseChunker):
                 text="",
                 meta=DocMeta(
                     doc_items=[heading_by_level[k] for k in sorted_keys],
-                    headings=[heading_by_level[k].text for k in sorted_keys],
+                    headings=[heading_text_by_level[k] for k in sorted_keys],
                 ),
             )
             heading_emitted.add(leaf_ref)
