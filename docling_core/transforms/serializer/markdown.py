@@ -72,6 +72,7 @@ from docling_core.types.doc import (
     RichTableCell,
     SectionHeaderItem,
     SummaryMetaField,
+    TableCell,
     TableItem,
     TabularChartMetaField,
     TextItem,
@@ -818,19 +819,33 @@ class MarkdownTableSerializer(BaseTableSerializer):
                 if ann_res.text:
                     res_parts.append(ann_res)
 
-            rows = []
-            for row in item.data.grid:
-                rendered_row = []
-                for col in row:
+            # `TableData.grid` holds a spanning cell in every grid position it
+            # covers, as the same object. Resolve each distinct cell only once
+            # so a spanning RichTableCell is serialized a single time and its
+            # text is repeated in every covered position: resolving it once per
+            # position would find its referenced items already visited and
+            # yield "".
+            cell_texts: dict[int, str] = {}
+
+            def _resolve_cell(col: TableCell) -> str:
+                key = id(col)
+                if key not in cell_texts:
                     if isinstance(col, RichTableCell):
                         ref_item = col.ref.resolve(doc=doc)
                         inner_kwargs = {**kwargs, "_nested_in_table": True, "in_table_cell": True}
-                        cell_text = doc_serializer.serialize(
+                        cell_texts[key] = doc_serializer.serialize(
                             item=ref_item,
                             **inner_kwargs,
                         ).text
                     else:
-                        cell_text = col.text or ""
+                        cell_texts[key] = col.text or ""
+                return cell_texts[key]
+
+            rows = []
+            for row in item.data.grid:
+                rendered_row = []
+                for col in row:
+                    cell_text = _resolve_cell(col)
                     # Newlines and pipes must be escaped in every cell so the
                     # markdown table stays valid.
                     rendered_row.append(cell_text.replace("\n", " ").replace("|", "&#124;"))

@@ -98,6 +98,19 @@ class TableItem(FloatingItem):
 
         grid = self.data.grid
 
+        # `TableData.grid` holds a spanning cell in every grid position it
+        # covers, as the same object. Resolve each distinct cell only once so
+        # a spanning RichTableCell is serialized a single time and its text is
+        # repeated in every covered position: resolving it once per position
+        # would find its referenced items already visited and yield "".
+        cell_texts: dict[int, str] = {}
+
+        def _get_cell_text(cell: TableCell) -> str:
+            key = id(cell)
+            if key not in cell_texts:
+                cell_texts[key] = cell._get_text(doc=doc, **kwargs)
+            return cell_texts[key]
+
         # Count how many rows are column headers
         num_headers = 0
         for row_idx, row in enumerate(grid):
@@ -117,13 +130,13 @@ class TableItem(FloatingItem):
             columns = ["" for _ in range(self.data.num_cols)]
             for i in range(num_headers):
                 for j, cell in enumerate(grid[i]):
-                    col_name = cell._get_text(doc=doc, **kwargs)
+                    col_name = _get_cell_text(cell)
                     if columns[j] != "":
                         col_name = f".{col_name}"
                     columns[j] += col_name
 
         # Create table data
-        table_data = [[cell._get_text(doc=doc, **kwargs) for cell in row] for row in grid[num_headers:]]
+        table_data = [[_get_cell_text(cell) for cell in row] for row in grid[num_headers:]]
 
         # Create DataFrame
         table = pd.DataFrame(table_data, columns=columns)

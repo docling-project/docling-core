@@ -12,8 +12,21 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
     TripletTableSerializer,
 )
 from docling_core.transforms.serializer.html import HTMLDocSerializer
-from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
-from docling_core.types.doc import ContentLayer, DocItemLabel, DoclingDocument, PictureItem, TableData, TextItem
+from docling_core.transforms.serializer.markdown import (
+    MarkdownDocSerializer,
+    MarkdownParams,
+    MarkdownTableSerializer,
+)
+from docling_core.types.doc import (
+    ContentLayer,
+    DocItemLabel,
+    DoclingDocument,
+    PictureItem,
+    RichTableCell,
+    TableCell,
+    TableData,
+    TextItem,
+)
 
 from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_rich_table_doc
 
@@ -326,3 +339,76 @@ def test_contextualize_excludes_fields_when_alias_differs_from_attribute_name():
     assert "drop me" not in result
     assert "keep me" in result
     assert "body" in result
+
+
+def _build_spanning_header_doc(rich_header: bool) -> DoclingDocument:
+    """Build a 2x3 table whose header cell spans two columns.
+
+    Mirrors the reproducer of docling-project/docling#4717.
+    """
+
+    def _cell(text, row, col, col_span=1, **extra):
+        return dict(
+            text=text,
+            start_row_offset_idx=row,
+            end_row_offset_idx=row + 1,
+            start_col_offset_idx=col,
+            end_col_offset_idx=col + col_span,
+            col_span=col_span,
+            **extra,
+        )
+
+    doc = DoclingDocument(name="spanning_header")
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=3))
+    doc.add_table_cell(table, TableCell(**_cell("", 0, 0, column_header=True)))
+    if rich_header:
+        group = doc.add_group(name="header", parent=table)
+        doc.add_text(label=DocItemLabel.PARAGRAPH, text="Partner", parent=group)
+        doc.add_table_cell(
+            table,
+            RichTableCell(**_cell("", 0, 1, col_span=2, column_header=True), ref=group.get_ref()),
+        )
+    else:
+        doc.add_table_cell(table, TableCell(**_cell("Partner", 0, 1, col_span=2, column_header=True)))
+    doc.add_table_cell(table, TableCell(**_cell("Status", 1, 0)))
+    doc.add_table_cell(table, TableCell(**_cell("Done", 1, 1)))
+    doc.add_table_cell(table, TableCell(**_cell("Open", 1, 2)))
+    return doc
+
+
+def test_spanning_rich_cell_text_repeated_in_chunker_and_markdown():
+    """A RichTableCell spanning several columns keeps its text in every covered column.
+
+    Regression test for docling-project/docling#4717: `TableData.grid` holds a
+    spanning cell in every position it covers, and resolving it once per
+    position found its referenced items already visited, so every column after
+    the first serialized as "". The text must now be repeated in every covered
+    column, exactly like a plain TableCell's.
+    """
+    plain_doc = _build_spanning_header_doc(rich_header=False)
+    rich_doc = _build_spanning_header_doc(rich_header=True)
+
+    chunker = HierarchicalChunker(serializer_provider=ChunkingSerializerProvider())
+    expected_chunks = ["Status, Partner = Done. Status, Partner = Open"]
+    assert [c.text for c in chunker.chunk(plain_doc)] == expected_chunks
+    assert [c.text for c in chunker.chunk(rich_doc)] == expected_chunks
+
+    plain_md = MarkdownDocSerializer(doc=plain_doc).serialize().text
+    rich_md = MarkdownDocSerializer(doc=rich_doc).serialize().text
+    assert rich_md == plain_md
+    header_line = rich_md.splitlines()[0]
+    assert header_line.count("Partner") == 2
+
+    assert rich_doc.tables[0].export_to_dataframe(doc=rich_doc).columns.tolist() == [
+        "",
+        "Partner",
+        "Partner",
+    ]
+
+
+def test_single_column_rich_cell_unaffected_by_span_fix():
+    """A single-column RichTableCell still resolves exactly once (no duplication)."""
+    doc = build_single_cell_rich_table_doc("lone rich cell")
+    chunker = HierarchicalChunker(serializer_provider=ChunkingSerializerProvider())
+    assert [c.text for c in chunker.chunk(doc)] == ["lone rich cell"]
+    assert "lone rich cell" in MarkdownDocSerializer(doc=doc).serialize().text
