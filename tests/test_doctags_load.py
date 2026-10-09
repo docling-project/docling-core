@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import pytest
 from PIL import Image as PILImage
 
 from docling_core.types.doc import DoclingDocument
@@ -150,6 +151,31 @@ def test_doctags_load_preserves_angle_brackets_in_text():
     doc = DoclingDocument.load_from_doctags(doctags_doc)
 
     assert [t.text for t in doc.texts] == [original]
+
+
+@pytest.mark.parametrize(
+    "row, expected",
+    [
+        ("<fcel>alpha<fcel><nl>", [(0, 1, "alpha"), (1, 2, "")]),
+        ("<fcel>alpha<fcel>\xa0<nl>", [(0, 1, "alpha"), (1, 2, "")]),
+        ("<fcel><lcel><nl>", [(0, 2, "")]),
+        ("<ched><lcel><nl>", [(0, 2, "")]),
+    ],
+)
+def test_doctags_load_otsl_cell_without_text(row, expected):
+    # Regression for #831: a cell token with no text took the next structural
+    # token ("<nl>", "<lcel>") as its text, and a following <lcel> was missed.
+    doctags = f"<doctag><otsl><fcel>Name<fcel>Value<nl>{row}</otsl></doctag>"
+
+    doctags_doc = DocTagsDocument.from_doctags_and_image_pairs([doctags], None)
+    doc = DoclingDocument.load_from_doctags(doctags_doc)
+
+    cells = [
+        (c.start_col_offset_idx, c.end_col_offset_idx, c.text)
+        for c in doc.tables[0].data.table_cells
+        if c.start_row_offset_idx == 1
+    ]
+    assert cells == expected
 
 
 def test_doctags_inline():
