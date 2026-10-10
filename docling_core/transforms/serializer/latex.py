@@ -301,11 +301,15 @@ class LaTeXTableSerializer(BaseTableSerializer):
                 ann_res = doc_serializer.serialize_annotations(item=item, **kwargs)
                 if ann_res.text:
                     res_parts.append(ann_res)
+            rich_texts: dict[tuple[int, int], str] = {}
             for row in item.data.grid:
                 body_row: list[str] = []
                 for cell in row:
                     if isinstance(cell, RichTableCell):
-                        cell_text = doc_serializer.serialize(item=cell.ref.resolve(doc=doc), **kwargs).text
+                        key = (cell.start_row_offset_idx, cell.start_col_offset_idx)
+                        if key not in rich_texts:
+                            rich_texts[key] = doc_serializer.serialize(item=cell.ref.resolve(doc=doc), **kwargs).text
+                        cell_text = rich_texts[key]
                     else:
                         cell_text = _escape_latex(cell.text) if params.escape_latex else cell.text
                     body_row.append(cell_text.replace("\n", " "))

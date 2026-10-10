@@ -177,3 +177,8 @@ def test_inline_group_no_duplication():
     # The content must be inside the LaTeX command, not on a standalone line
     assert "\\section{\\textit{Partially formatted} heading}" in body
     assert "\\item \\textbf{Term} : definition" in body
+
+
+def test_latex_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_table_doc):
+    actual = LaTeXDocSerializer(doc=col_span_rich_table_doc).serialize().text
+    assert " & Partner & Partner \\\\ \\hline\nStatus & Done & Open \\\\ \\hline" in actual
