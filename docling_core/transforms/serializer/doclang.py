@@ -900,7 +900,10 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
             res: list[SerializationResult] = []
             for idp, prov_ in enumerate(item.prov):
                 item_ = copy.deepcopy(item)
-                item_.prov = [prov_]
+                # Use a copy of the fragment's provenance: rebasing `charspan`
+                # below must not write through to the document being serialized,
+                # or a second serialization emits the first fragment everywhere.
+                item_.prov = [copy.deepcopy(prov_)]
                 item_.text = item.orig[prov_.charspan[0] : prov_.charspan[1]]  # it must be `orig`, not `text` here!
                 item_.orig = item.orig[prov_.charspan[0] : prov_.charspan[1]]
 
