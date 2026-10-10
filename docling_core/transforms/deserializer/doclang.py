@@ -8,12 +8,12 @@ from collections.abc import Callable, Sequence
 from itertools import groupby
 from pathlib import Path
 from typing import Any, ClassVar, Literal, Optional, cast
-from xml.dom.minidom import Element, Node, Text
+from xml.dom.minidom import CDATASection, Element, Node, Text
 from xml.sax.saxutils import escape
 
 from defusedxml.minidom import parseString
 from PIL import Image as PILImage
-from pydantic import AnyUrl, BaseModel, PrivateAttr
+from pydantic import AnyUrl, BaseModel, PrivateAttr, TypeAdapter
 from typing_extensions import override
 
 from docling_core.transforms.deserializer.base import BaseDocDeserializer
@@ -451,6 +451,17 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         return el.tagName == DocLangToken.CONTENT.value  # and el.getAttribute("xml:space") == "preserve"
 
     def _get_children_simple_text_block(self, element: Element) -> str | None:
+        if self._should_preserve_space(element):
+            # Explicit content is one text payload, including whitespace and split CDATA.
+            return self._get_text(element)
+        body_nodes = [
+            node for node in element.childNodes if not (isinstance(node, Element) and self._is_element_head_tag(node))
+        ]
+        if all(
+            isinstance(node, Text) and (isinstance(node, CDATASection) or not node.data.strip()) for node in body_nodes
+        ):
+            # Adjacent CDATA sections are one escaped run; omit pretty-print indentation.
+            return "".join(node.data for node in body_nodes if isinstance(node, CDATASection)).strip() or None
         result = None
         for el in element.childNodes:
             if isinstance(el, Element):
@@ -650,7 +661,17 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         else:
             return
 
+        item.hyperlink = self._extract_hyperlink(el)
         self._source_recorder.bind_item(el, item)
+
+    def _extract_hyperlink(self, el: Element) -> AnyUrl | Path | None:
+        """Read the URI from this element's own head, using the existing link types."""
+        head_nodes, _ = self._split_element_children_head_body(el)
+        for node in head_nodes:
+            if isinstance(node, Element) and node.tagName == DocLangToken.HREF.value:
+                if uri := node.getAttribute(DocLangAttributeKey.URI.value):
+                    return TypeAdapter(AnyUrl | Path).validate_python(uri)
+        return None
 
     def _extract_code_content_and_language(self, el: Element) -> tuple[str, CodeLanguageLabel]:
         """Extract code content and language from a <code> element."""
@@ -2359,11 +2380,9 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         Returns:
             Tuple of (text_content, formatting_object or None)
         """
-        # Get non-whitespace, non-location child elements
+        # Element-head properties do not interrupt the formatting stack in the body.
         child_elements = [
-            node
-            for node in el.childNodes
-            if isinstance(node, Element) and node.tagName not in {DocLangToken.LOCATION.value}
+            node for node in el.childNodes if isinstance(node, Element) and not self._is_element_head_tag(node)
         ]
 
         # Check if we have a single child that is a formatting tag
@@ -2414,7 +2433,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         for node in el.childNodes:
             if isinstance(node, Text):
                 # Skip pure indentation/pretty-print whitespace
-                if node.data.strip():
+                if self._should_preserve_space(el) or node.data.strip():
                     out.append(node.data if el.tagName == DocLangToken.CONTENT.value else node.data.strip())
             elif isinstance(node, Element):
                 nm = node.tagName

@@ -320,7 +320,7 @@ def _create_src_token(*, uri: str) -> str:
 
 def _create_href_token(*, uri: str) -> str:
     """Emit `<href uri="..."/>` in element head."""
-    safe = uri.replace("&", "&amp;").replace('"', "&quot;")
+    safe = uri.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
     return DocLangVocabulary._create_selfclosing_token(
         token=DocLangToken.HREF,
         attrs={DocLangAttributeKey.URI: safe},
@@ -1139,7 +1139,6 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 item=item, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
             )
 
-        include_href = not is_inline_scope
         if not skip_location:
             parts.append(
                 _element_head_prefix(
@@ -1149,7 +1148,6 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                     label_value=code_label,
                     caption_text=caption_head or None,
                     custom_text=custom_head or None,
-                    include_href=include_href,
                     # An inline run inherits its host's layer; a head token here is invalid mid-content.
                     include_layer=not is_inline_scope,
                     thread_id=thread_id,
@@ -1160,7 +1158,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 parts.append(_create_label_token(value=code_label))
             if thread_id:
                 parts.append(DocLangVocabulary._create_threading_token(thread_id=thread_id))
-            if include_href and (href_uri := _text_item_hyperlink_uri(item)):
+            if href_uri := _text_item_hyperlink_uri(item):
                 parts.append(_create_href_token(uri=href_uri))
             if layer_token := _create_layer_token(item=item, params=params):
                 parts.append(layer_token)
@@ -1245,6 +1243,8 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
 
         if wrap_open_token is not None and not (
             is_inline_scope
+            # A linked run needs its own semantic element to scope the href head.
+            and item.hyperlink is None
             and item.label
             in {
                 DocItemLabel.TEXT,

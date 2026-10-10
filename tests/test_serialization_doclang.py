@@ -2178,6 +2178,90 @@ def test_element_head_href_before_layer():
     assert ser_txt.index("<href") < ser_txt.index("<layer")
 
 
+@pytest.mark.parametrize("pretty_indentation", [None, "  "])
+@pytest.mark.parametrize("include_namespace", [False, True])
+def test_inline_hyperlink_scopes_only_the_linked_run(pretty_indentation, include_namespace):
+    doc = DoclingDocument(name="inline-links")
+    inline = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="see ", parent=inline)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="the docs",
+        parent=inline,
+        hyperlink=AnyUrl("https://example.org/docs"),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text=", please.", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="standalone", hyperlink=AnyUrl("https://example.org/alone"))
+    params = DocLangParams(pretty_indentation=pretty_indentation, include_namespace=include_namespace)
+    xml = DocLangDocSerializer(doc=doc, params=params).serialize().text
+    root = ET.fromstring(xml)
+    paragraph, standalone = root
+    assert [child.tag.rsplit("}", 1)[-1] for child in paragraph] == ["content", "text"]
+    assert paragraph[0].text == "see "
+    linked = paragraph[1]
+    assert (linked.tail or "").strip() == ", please."
+    assert linked[0].tag.rsplit("}", 1)[-1] == "href"
+    assert linked[0].attrib == {"uri": "https://example.org/docs"}
+    assert (linked[0].tail or "").strip() == "the docs"
+    assert standalone[0].attrib == {"uri": "https://example.org/alone"}
+
+    # Pin the standalone element against the existing serialization path.
+    control = DoclingDocument(name="standalone")
+    control.add_text(label=DocItemLabel.TEXT, text="standalone", hyperlink=AnyUrl("https://example.org/alone"))
+    control_root = ET.fromstring(DocLangDocSerializer(doc=control, params=params).serialize().text)
+    assert ET.tostring(standalone) == ET.tostring(control_root[0])
+    validate_dclg_xml(xml)
+
+
+@pytest.mark.parametrize("pretty_indentation", [None, "  "])
+def test_inline_hyperlinks_keep_distinct_targets_and_formatting(pretty_indentation):
+    doc = DoclingDocument(name="different-links")
+    inline = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="(", parent=inline)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="first",
+        parent=inline,
+        hyperlink=AnyUrl("https://example.org/first"),
+        formatting=Formatting(bold=True, italic=True),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text=" or ", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="second", parent=inline, hyperlink=AnyUrl("https://example.org/second"))
+    doc.add_text(label=DocItemLabel.TEXT, text=").", parent=inline)
+    xml = DocLangDocSerializer(doc=doc, params=DocLangParams(pretty_indentation=pretty_indentation)).serialize().text
+    paragraph = ET.fromstring(xml)[0]
+    links = paragraph.findall("text")
+    assert [link.find("href").get("uri") for link in links] == [
+        "https://example.org/first",
+        "https://example.org/second",
+    ]
+    assert links[0].find(".//bold").text == "first"
+    assert links[0].find(".//italic") is not None
+    assert (paragraph.text or "").strip() == "("
+    assert paragraph.find("content").text == " or "
+    assert links[1].tail is not None and links[1].tail.strip() == ")."
+    validate_dclg_xml(xml)
+
+
+@pytest.mark.parametrize(
+    "hyperlink",
+    [AnyUrl("https://example.org/docs?a=1&b=2#section"), Path('relative?x="quoted"&y=<value>')],
+)
+@pytest.mark.parametrize("inline", [False, True])
+def test_doclang_hyperlink_attribute_escaping(hyperlink, inline):
+    doc = DoclingDocument(name="escaped-link")
+    parent = doc.add_inline_group() if inline else None
+    doc.add_text(label=DocItemLabel.TEXT, text="linked", parent=parent, hyperlink=hyperlink)
+    xml = DocLangDocSerializer(doc=doc, params=DocLangParams(pretty_indentation=None)).serialize().text
+    hrefs = ET.fromstring(xml).findall(".//href")
+    assert len(hrefs) == 1
+    assert hrefs[0].get("uri") == str(hyperlink)
+    assert "&amp;" in xml
+    if isinstance(hyperlink, Path):
+        assert "&quot;" in xml and "&lt;" in xml
+    validate_dclg_xml(xml)
+
+
 # ===============================
 # Known spec gaps (validator-OK)
 # ===============================
