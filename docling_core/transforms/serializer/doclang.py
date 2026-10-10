@@ -1594,10 +1594,13 @@ class DocLangTableSerializer(BaseTableSerializer):
         (for multi-prov threading); continuation tokens (``lcel``/``ucel``/``xcel``)
         are used at slice edges per the DocLang OTSL rules.
         """
-        if not item.data or not item.data.table_cells:
+        if not item.data:
             return ""
 
         nrows, ncols = item.data.num_rows, item.data.num_cols
+        if not item.data.table_cells and (nrows <= 0 or ncols <= 0):
+            return ""
+
         row_end = nrows if row_end is None else row_end
         col_end = ncols if col_end is None else col_end
 
