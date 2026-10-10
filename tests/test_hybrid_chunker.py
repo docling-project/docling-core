@@ -954,7 +954,7 @@ def _paragraph_doc(num_paragraphs: int) -> DoclingDocument:
     doc = DoclingDocument(name="t")
     doc.add_heading(text="Chapter 1", level=1)
     for i in range(num_paragraphs):
-        doc.add_text(label="paragraph", text=f"paragraph number {i} explains the results in some detail.")
+        doc.add_text(label=DocItemLabel.PARAGRAPH, text=f"paragraph number {i} explains the results in some detail.")
     return doc
 
 
