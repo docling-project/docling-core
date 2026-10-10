@@ -24,7 +24,7 @@ from docling_core.transforms.serializer.base import (
     BaseDocSerializer,
     BaseSerializerProvider,
 )
-from docling_core.types.doc import DoclingDocument, SectionHeaderItem, TableItem, TitleItem
+from docling_core.types.doc import DocItem, DoclingDocument, SectionHeaderItem, TableItem, TitleItem
 
 _SEMCHUNK_AVAILABLE: bool = False
 _SEMCHUNK_IMPORT_ERROR: ImportError | None = None
@@ -161,11 +161,11 @@ class HybridChunker(BaseChunker):
     def _split_by_doc_items(self, doc_chunk: DocChunk, doc_serializer: BaseDocSerializer) -> list[DocChunk]:
         """Split a chunk along doc-item boundaries, keeping each window within max_tokens.
 
-        Each item is serialized once and its token count cached. Windows are
-        grown with a running token estimate, re-anchored by exact counts at
-        overflow points, and shrunk back to the largest fitting window when the
-        estimate under-counts. The resulting windows match the previous
-        implementation exactly, since the largest window that fits is unique.
+        Each item is serialized once and its token count cached. An item
+        without text of its own, such as a caption, is kept with the next item
+        that has text. Windows are grown with a running token estimate,
+        re-anchored by exact counts at overflow points, and shrunk back to the
+        largest fitting window when the estimate under-counts.
 
         Args:
             doc_chunk: The chunk to split, containing one or more doc items.
@@ -173,8 +173,8 @@ class HybridChunker(BaseChunker):
 
         Returns:
             A list of chunks whose windows respect max_tokens. A single item
-            that does not fit is returned as-is and split later at the
-            plain-text stage.
+            (with any items bound to it) that does not fit is returned as-is
+            and split later at the plain-text stage.
         """
         doc_items = doc_chunk.meta.doc_items
         num_items = len(doc_items)
@@ -194,6 +194,26 @@ class HybridChunker(BaseChunker):
             item_texts.append(text)
             item_token_counts.append(self.tokenizer.count_tokens(text=text))
 
+        # An item without text of its own (a caption, whose text is emitted with
+        # its table, or a heading, which goes to the metadata) must not end up in
+        # a window by itself, which would be an empty chunk, or apart from the
+        # item it belongs to. Windows are therefore built from units: each unit
+        # is a run of such items plus the next item with text. Items without
+        # text at the end of the chunk join the last unit.
+        units: list[tuple[int, int]] = []
+        unit_start = 0
+        for idx, text in enumerate(item_texts):
+            if text:
+                units.append((unit_start, idx))
+                unit_start = idx + 1
+        if unit_start < num_items:
+            if units:
+                units[-1] = (units[-1][0], num_items - 1)
+            else:
+                units.append((0, num_items - 1))
+        num_units = len(units)
+        unit_token_counts = [sum(item_token_counts[first : last + 1]) for first, last in units]
+
         # token cost of the delimiter between two joined items
         delim_tokens = (
             self.tokenizer.count_tokens(text=f"a{self.delim}b")
@@ -202,12 +222,13 @@ class HybridChunker(BaseChunker):
         )
 
         def build_window(window_start: int, window_end: int) -> DocChunk:
+            first, last = units[window_start][0], units[window_end][1]
             meta = DocMeta(
-                doc_items=doc_items[window_start : window_end + 1],
+                doc_items=doc_items[first : last + 1],
                 headings=doc_chunk.meta.headings,
                 origin=doc_chunk.meta.origin,
             )
-            window_text = self.delim.join([t for t in item_texts[window_start : window_end + 1] if t])
+            window_text = self.delim.join([t for t in item_texts[first : last + 1] if t])
             return DocChunk(text=window_text, meta=meta)
 
         def window_count(window_start: int, window_end: int) -> int:
@@ -220,11 +241,11 @@ class HybridChunker(BaseChunker):
 
         chunks: list[DocChunk] = []
         window_start = 0
-        while window_start < num_items:
+        while window_start < num_units:
             window_end = window_start
             running = 0
-            while window_end < num_items:
-                running += item_token_counts[window_end] + (delim_tokens if window_end > window_start else 0)
+            while window_end < num_units:
+                running += unit_token_counts[window_end] + (delim_tokens if window_end > window_start else 0)
                 if running + meta_overhead > self.max_tokens:
                     exact = window_count(window_start, window_end)
                     if exact <= self.max_tokens:
@@ -236,7 +257,7 @@ class HybridChunker(BaseChunker):
                 window_end += 1
 
             if window_end == window_start:
-                # a single item doesn't fit: emit it as-is and let the
+                # a single unit doesn't fit: emit it as-is and let the
                 # plain-text splitter deal with it later
                 chunks.append(build_window(window_start, window_start))
                 window_start += 1
@@ -309,8 +330,7 @@ class HybridChunker(BaseChunker):
         if (
             self.repeat_table_header
             and isinstance(doc_serializer, ChunkingDocSerializer)
-            and len(doc_chunk.meta.doc_items) == 1
-            and isinstance(doc_chunk.meta.doc_items[0], TableItem)
+            and self._is_single_table(doc_chunk.meta.doc_items)
         ):
             header_lines, body_lines = doc_serializer.table_serializer.get_header_and_body_lines(
                 table_text=doc_chunk.text
@@ -340,6 +360,19 @@ class HybridChunker(BaseChunker):
             sem_segments = sem_chunker(doc_chunk.text)
             segments = cast(list[str], sem_segments)
         return segments
+
+    @staticmethod
+    def _is_single_table(doc_items: list[DocItem]) -> bool:
+        """Whether the items are one table, possibly with its own captions.
+
+        A caption has no text of its own in a chunk, as it is serialized with
+        its table, so a table and its captions form a single unit.
+        """
+        tables = [it for it in doc_items if isinstance(it, TableItem)]
+        if len(tables) != 1:
+            return False
+        caption_refs = {ref.cref for ref in tables[0].captions}
+        return all(it is tables[0] or it.self_ref in caption_refs for it in doc_items)
 
     def _merge_chunks_with_matching_metadata(self, chunks: list[DocChunk]):
         output_chunks = []

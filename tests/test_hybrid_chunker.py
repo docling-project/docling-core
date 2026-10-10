@@ -698,6 +698,49 @@ def test_table_caption_not_repeated_in_split_chunks():
         )
 
 
+@pytest.mark.parametrize("merge_peers", [True, False])
+@pytest.mark.parametrize("with_intro", [True, False])
+def test_table_caption_stays_with_its_table(with_intro, merge_peers):
+    """Regression test: a caption has no text of its own in a chunk, as it is
+    serialized with its table. It must not form an empty chunk, add a stray
+    delimiter to the merged text, or be listed in the chunk before the table."""
+    doc = DoclingDocument(name="captioned_table")
+    if with_intro:
+        doc.add_text(label=DocItemLabel.TEXT, text="Revenue grew in every region.")
+    num_rows = 20
+    cells = [
+        TableCell(
+            text=text,
+            start_row_offset_idx=row,
+            end_row_offset_idx=row + 1,
+            start_col_offset_idx=col,
+            end_col_offset_idx=col + 1,
+            column_header=row == 0,
+        )
+        for row in range(num_rows + 1)
+        for col, text in enumerate(["Region", "Revenue"] if row == 0 else [f"region {row}", f"{row * 137} thousand"])
+    ]
+    table = doc.add_table(data=TableData(num_rows=num_rows + 1, num_cols=2, table_cells=cells))
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text="Table 1: Revenue by region")
+    table.captions = [caption.get_ref()]
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=MAX_TOKENS),
+        merge_peers=merge_peers,
+    )
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    assert len(chunks) > 1, "Table should be split into multiple chunks"
+    for chunk in chunks:
+        refs = [it.self_ref for it in chunk.meta.doc_items]
+        assert chunk.text, f"Empty chunk for {refs}"
+        assert not chunk.text.startswith(chunker.delim + caption.text), f"Stray delimiter: {chunk.text!r}"
+        if caption.self_ref in refs:
+            assert table.self_ref in refs, f"Caption listed without its table: {chunk.text!r}"
+    caption_chunk = next(c for c in chunks if caption.text in c.text)
+    assert caption.self_ref in [it.self_ref for it in caption_chunk.meta.doc_items]
+
+
 def test_chunk_html_table_serializer(dl_doc_0):
     """Test chunking with HTML table serializer."""
     EXPECTED_OUT_FILE = "tests/data/chunker/0e_out_chunks.json"
