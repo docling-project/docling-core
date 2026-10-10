@@ -158,6 +158,22 @@ class HybridChunker(BaseChunker):
             other_len=total - text_length,
         )
 
+    def _estimate_delimiter_tokens(self) -> int:
+        """Calibrate the token contribution of joining two texts."""
+        return (
+            self.tokenizer.count_tokens(text=f"a{self.delim}b")
+            - self.tokenizer.count_tokens(text="a")
+            - self.tokenizer.count_tokens(text="b")
+        )
+
+    def _estimate_meta_tokens(self, doc_chunk: DocChunk, text_tokens: int) -> int:
+        """Estimate context overhead using an already counted chunk text.
+
+        This estimate can be reused while embedded metadata stays unchanged;
+        exact window counts still account for tokenization at text boundaries.
+        """
+        return self._count_chunk_tokens(doc_chunk=doc_chunk) - text_tokens
+
     def _split_by_doc_items(self, doc_chunk: DocChunk, doc_serializer: BaseDocSerializer) -> list[DocChunk]:
         """Split a chunk along doc-item boundaries, keeping each window within max_tokens.
 
@@ -195,11 +211,7 @@ class HybridChunker(BaseChunker):
             item_token_counts.append(self.tokenizer.count_tokens(text=text))
 
         # token cost of the delimiter between two joined items
-        delim_tokens = (
-            self.tokenizer.count_tokens(text=f"a{self.delim}b")
-            - self.tokenizer.count_tokens(text="a")
-            - self.tokenizer.count_tokens(text="b")
-        )
+        delim_tokens = self._estimate_delimiter_tokens()
 
         def build_window(window_start: int, window_end: int) -> DocChunk:
             meta = DocMeta(
@@ -216,7 +228,7 @@ class HybridChunker(BaseChunker):
         # constant across windows: doc_items and origin are excluded from the embed
         # serialization (DocMeta.excluded_embed), so contextualize() only sees
         # headings/captions, which are the same for every window in this chunk
-        meta_overhead = window_count(0, 0) - self.tokenizer.count_tokens(text=build_window(0, 0).text)
+        meta_overhead = self._estimate_meta_tokens(build_window(0, 0), item_token_counts[0])
 
         chunks: list[DocChunk] = []
         window_start = 0
@@ -342,48 +354,81 @@ class HybridChunker(BaseChunker):
         return segments
 
     def _merge_chunks_with_matching_metadata(self, chunks: list[DocChunk]):
-        output_chunks = []
-        window_start = 0
-        window_end = 0  # an inclusive index
+        """Merge neighboring chunks with matching headings, keeping windows within max_tokens.
+
+        Chunk texts are counted once and windows are grown with a running token
+        estimate, re-anchored by exact counts at overflow points and shrunk back
+        to the largest fitting window when the estimate under-counts. The merged
+        output matches the previous implementation exactly, since the largest
+        window that fits is unique.
+
+        Args:
+            chunks: The chunks to merge, in document order.
+
+        Returns:
+            The merged list of chunks.
+        """
+        output_chunks: list[DocChunk] = []
         num_chunks = len(chunks)
-        while window_end < num_chunks:
-            chunk = chunks[window_end]
-            headings = chunk.meta.headings
-            ready_to_append = False
-            if window_start == window_end:
-                current_headings = headings
-                window_end += 1
-                first_chunk_of_window = chunk
-            else:
-                chks = chunks[window_start : window_end + 1]
-                doc_items = [it for chk in chks for it in chk.meta.doc_items]
-                candidate = DocChunk(
-                    # TODO: merging should ideally be done by the serializer:
-                    text=self.delim.join([chk.text for chk in chks]),
-                    meta=DocMeta(
-                        doc_items=doc_items,
-                        headings=current_headings,
-                        origin=chunk.meta.origin,
-                    ),
-                )
-                if headings == current_headings and self._count_chunk_tokens(doc_chunk=candidate) <= self.max_tokens:
-                    # there is room to include the new chunk so add it to the window and
-                    # continue
+
+        # token cost of the delimiter between two joined chunk texts
+        delim_tokens = self._estimate_delimiter_tokens()
+        chunk_token_counts = [self.tokenizer.count_tokens(text=chk.text) for chk in chunks]
+
+        def build_candidate(window_start: int, window_end: int) -> DocChunk:
+            """Build a merged chunk from the window (window_end is inclusive)."""
+            doc_items = [it for chk in chunks[window_start : window_end + 1] for it in chk.meta.doc_items]
+            return DocChunk(
+                # TODO: merging should ideally be done by the serializer:
+                text=self.delim.join([chk.text for chk in chunks[window_start : window_end + 1]]),
+                meta=DocMeta(
+                    doc_items=doc_items,
+                    headings=chunks[window_start].meta.headings,
+                    origin=chunks[window_end].meta.origin,
+                ),
+            )
+
+        window_start = 0
+        while window_start < num_chunks:
+            first_chunk = chunks[window_start]
+            headings = first_chunk.meta.headings
+
+            # constant token cost of the merged meta (headings, origin) around
+            # the joined text; all candidates in this window share it
+            meta_overhead = self._estimate_meta_tokens(first_chunk, chunk_token_counts[window_start])
+
+            window_end = window_start + 1
+            fit_end = window_start
+            running = chunk_token_counts[window_start]
+            while window_end < num_chunks and chunks[window_end].meta.headings == headings:
+                running += chunk_token_counts[window_end] + delim_tokens
+                if running + meta_overhead <= self.max_tokens:
+                    fit_end = window_end
                     window_end += 1
-                    new_chunk = candidate
-                else:
-                    ready_to_append = True
-            if ready_to_append or window_end == num_chunks:
-                # no more room OR the start of new metadata.  Either way, end the block
-                # and use the current window_end as the start of a new block
-                if window_start + 1 == window_end:
-                    # just one chunk so use it as is
-                    output_chunks.append(first_chunk_of_window)
-                else:
-                    output_chunks.append(new_chunk)
-                # no need to reset window_text, etc. because that will be reset in the
-                # next iteration in the if window_start == window_end block
-                window_start = window_end
+                    continue
+                candidate = build_candidate(window_start, window_end)
+                exact = self._count_chunk_tokens(doc_chunk=candidate)
+                if exact <= self.max_tokens:
+                    # the estimate overshot; re-anchor it on the exact count
+                    running = exact - meta_overhead
+                    fit_end = window_end
+                    window_end += 1
+                    continue
+                break  # the window overflowed
+
+            # exact-verify the largest accepted window, in case the estimate
+            # under-counted (and shrink back if it did)
+            while (
+                fit_end > window_start
+                and self._count_chunk_tokens(doc_chunk=build_candidate(window_start, fit_end)) > self.max_tokens
+            ):
+                fit_end -= 1
+
+            if fit_end == window_start:
+                output_chunks.append(first_chunk)
+            else:
+                output_chunks.append(build_candidate(window_start, fit_end))
+            window_start = fit_end + 1
 
         return output_chunks
 

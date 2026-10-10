@@ -862,7 +862,19 @@ def test_split_by_doc_items_serializes_each_item_once():
     assert proxy.serialize_calls == num_items
 
 
-class _MergingNewlineTokenizer(BaseTokenizer):
+class _TestTokenizer(BaseTokenizer):
+    """Provide the token budget and backend for deterministic test tokenizers."""
+
+    max_tokens: int
+
+    def get_max_tokens(self) -> int:
+        return self.max_tokens
+
+    def get_tokenizer(self):
+        return self
+
+
+class _MergingNewlineTokenizer(_TestTokenizer):
     """Deterministic tokenizer whose per-item counts under-estimate joined text.
 
     Counting is word-based, but each newline followed by a list-marker dash
@@ -871,16 +883,15 @@ class _MergingNewlineTokenizer(BaseTokenizer):
     _split_by_doc_items.
     """
 
-    max_tokens: int
-
     def count_tokens(self, text: str) -> int:
         return len(text.split(" ")) + text.count("\n-")
 
-    def get_max_tokens(self) -> int:
-        return self.max_tokens
 
-    def get_tokenizer(self):
-        return self
+def _assert_chunk_windows(chunker, chunks, expected_items, min_window_items=1):
+    """Check ordered item conservation, window growth, and exact token limits."""
+    assert [it for c in chunks for it in c.meta.doc_items] == expected_items
+    assert max(len(c.meta.doc_items) for c in chunks) > min_window_items
+    assert all(chunker._count_chunk_tokens(c) <= chunker.max_tokens for c in chunks)
 
 
 def test_split_by_doc_items_shrinks_back_when_estimate_under_counts():
@@ -898,14 +909,11 @@ def test_split_by_doc_items_shrinks_back_when_estimate_under_counts():
     hier_chunk = next(iter(chunker._inner_chunker.chunk(doc)))
     chunks = chunker._split_by_doc_items(hier_chunk, ser)
 
-    assert sum(len(c.meta.doc_items) for c in chunks) == 12
-    assert max(len(c.meta.doc_items) for c in chunks) > 2
-    for c in chunks:
-        assert chunker._count_chunk_tokens(c) <= chunker.max_tokens
+    _assert_chunk_windows(chunker, chunks, hier_chunk.meta.doc_items, min_window_items=2)
 
 
 def test_doc_meta_excluded_embed_keeps_contextualize_window_invariant():
-    """Pin the contract that _split_by_doc_items relies on for its constant meta cost.
+    """Pin the constant meta cost contract used by the split and merge estimates.
 
     The running token estimate treats the chunk-meta cost as constant across
     windows, which only holds while doc_items and origin stay excluded from the
@@ -915,3 +923,96 @@ def test_doc_meta_excluded_embed_keeps_contextualize_window_invariant():
     """
     assert "doc_items" in DocMeta.excluded_embed
     assert "origin" in DocMeta.excluded_embed
+
+
+class _WordCountTokenizer(_TestTokenizer):
+    """Deterministic word-counting tokenizer with additive per-chunk counts."""
+
+    calls: int = 0
+    chars: int = 0
+
+    def count_tokens(self, text: str) -> int:
+        self.calls += 1
+        self.chars += len(text)
+        return len(text.split())
+
+
+class _UnderCountingTokenizer(_TestTokenizer):
+    """Word-counting tokenizer whose per-chunk counts under-estimate joined text.
+
+    A chunk that starts with "paragraph" counts one token less than its words,
+    while the joined window only loses that token once. Summing per-chunk counts
+    therefore under-estimates the joined window, forcing the shrink-back path in
+    _merge_chunks_with_matching_metadata.
+    """
+
+    def count_tokens(self, text: str) -> int:
+        return len(text.split()) - (1 if text.startswith("paragraph") else 0)
+
+
+def _paragraph_doc(num_paragraphs: int) -> DoclingDocument:
+    doc = DoclingDocument(name="t")
+    doc.add_heading(text="Chapter 1", level=1)
+    for i in range(num_paragraphs):
+        doc.add_text(label=DocItemLabel.PARAGRAPH, text=f"paragraph number {i} explains the results in some detail.")
+    return doc
+
+
+def _chunks_before_merge(chunker, doc):
+    ser = chunker.serializer_provider.get_serializer(doc)
+    res = [x for c in chunker._inner_chunker.chunk(doc) for x in chunker._split_by_doc_items(c, doc_serializer=ser)]
+    return [x for c in res for x in chunker._split_using_plain_text(c, doc_serializer=ser)]
+
+
+def test_merge_chunks_tokenizes_linearly():
+    """_merge_chunks_with_matching_metadata must not re-tokenize the growing window per step.
+
+    The old implementation re-tokenized the whole joined window on every
+    iteration, i.e. ~N·w/2 chunk-sized counts for N chunks in windows of w.
+    The new one counts each chunk once plus one exact check per window.
+    """
+    doc = _paragraph_doc(200)
+    tok = _WordCountTokenizer(max_tokens=500)
+    chunker = HybridChunker(tokenizer=tok, merge_peers=False)
+    chunks = _chunks_before_merge(chunker, doc)
+    doc_words = sum(len(c.text.split()) for c in chunks)
+
+    tok.calls = 0
+    tok.chars = 0
+    merged = chunker._merge_chunks_with_matching_metadata(chunks)
+
+    _assert_chunk_windows(chunker, merged, [it for c in chunks for it in c.meta.doc_items])
+    # tokenization work stays proportional to the document (~25x vs ~170x with
+    # the old implementation)
+    assert tok.chars <= 40 * doc_words
+
+
+class _OverCountingTokenizer(_TestTokenizer):
+    """Word-counting tokenizer whose per-chunk counts over-estimate joined text.
+
+    A chunk that starts with "paragraph" counts one token more than its words,
+    while the joined window only gains that token once. Summing per-chunk counts
+    therefore over-estimates the joined window, forcing the re-anchor path in
+    _merge_chunks_with_matching_metadata.
+    """
+
+    def count_tokens(self, text: str) -> int:
+        return len(text.split()) + (1 if text.startswith("paragraph") else 0)
+
+
+@pytest.mark.parametrize(
+    "tokenizer_cls",
+    [
+        pytest.param(_UnderCountingTokenizer, id="under-count-shrink"),
+        pytest.param(_OverCountingTokenizer, id="over-count-reanchor"),
+    ],
+)
+def test_merge_chunks_corrects_token_estimate(tokenizer_cls):
+    """Exact checks correct both directions of error in the running estimate."""
+    doc = _paragraph_doc(30)
+    chunker = HybridChunker(tokenizer=tokenizer_cls(max_tokens=100), merge_peers=False)
+    chunks = _chunks_before_merge(chunker, doc)
+
+    merged = chunker._merge_chunks_with_matching_metadata(chunks)
+
+    _assert_chunk_windows(chunker, merged, [it for c in chunks for it in c.meta.doc_items])
