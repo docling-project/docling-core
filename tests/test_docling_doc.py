@@ -1853,6 +1853,20 @@ def test_validate_rules_key_value_and_form_items():
     doc._validate_rules()
 
 
+def test_field_item_with_several_keys_is_invalid():
+    doc = DoclingDocument(name="")
+    region = doc.add_field_region()
+    item = doc.add_field_item(parent=region)
+    doc.add_field_key(text="a", parent=item)
+    doc.add_field_value(text="b", parent=item)
+    doc.add_field_value(text="c", parent=item)  # several values are fine
+    DoclingDocument.model_validate(doc.model_dump(mode="json"))
+
+    doc.add_field_key(text="d", parent=item)  # building through the API does not validate
+    with pytest.raises(ValueError, match="Field item #/field_items/0 has 2 keys, at most one is allowed"):
+        DoclingDocument.model_validate(doc.model_dump(mode="json"))
+
+
 def test_graph_cell_item_refs_follow_renumbering():
     def build() -> tuple[DoclingDocument, KeyValueItem]:
         doc = DoclingDocument(name="")
