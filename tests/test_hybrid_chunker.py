@@ -698,6 +698,50 @@ def test_table_caption_not_repeated_in_split_chunks():
         )
 
 
+def test_table_caption_stripping_keeps_rows_without_repeated_header():
+    """Regression test: with a table caption and omit_header_on_overflow=True, a row
+    emitted without the repeated header must not lose its leading characters when
+    the caption (preamble) is stripped from non-first chunks."""
+    caption_text = "Table 1: Quarterly revenue by region"
+    long_note = " ".join(["growth"] * 40)
+    rows = [["Region", "Notes"], ["North", "stable"], ["South", long_note], ["East", "flat"]]
+
+    doc = DoclingDocument(name="caption_omit_header")
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text=caption_text)
+    cells = [
+        TableCell(
+            text=text,
+            start_row_offset_idx=r,
+            end_row_offset_idx=r + 1,
+            start_col_offset_idx=c,
+            end_col_offset_idx=c + 1,
+            column_header=(r == 0),
+        )
+        for r, row in enumerate(rows)
+        for c, text in enumerate(row)
+    ]
+    doc.add_table(data=TableData(num_rows=len(rows), num_cols=2, table_cells=cells), caption=caption)
+
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=50),
+        repeat_table_header=True,
+        omit_header_on_overflow=True,
+        serializer_provider=CompactMarkdownSerializerProvider(),
+    )
+    with pytest.warns(UserWarning, match="Prefix omitted"):
+        chunks = list(chunker.chunk(dl_doc=doc))
+    texts = [chunk.text for chunk in chunks]
+
+    assert len(texts) > 1, "Table should be split into multiple chunks"
+    # the long row fits only without the header, so it is emitted without it ...
+    long_row = f"| South | {long_note} |"
+    assert any(text.startswith(long_row) for text in texts), texts
+    # ... and no table content is lost
+    assert sum(text.count("growth") for text in texts) == 40, texts
+    assert caption_text in texts[0]
+    assert all(caption_text not in text for text in texts[1:]), texts
+
+
 def test_chunk_html_table_serializer(dl_doc_0):
     """Test chunking with HTML table serializer."""
     EXPECTED_OUT_FILE = "tests/data/chunker/0e_out_chunks.json"

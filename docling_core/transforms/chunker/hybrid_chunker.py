@@ -289,7 +289,7 @@ class HybridChunker(BaseChunker):
           used as a prefix so they are reproduced at the top of every segment.
           Any preamble text that precedes the first table row (e.g. a caption) is
           included in the prefix to account for its token cost, but is stripped
-          from all segments after the first so it does not repeat.
+          from every later segment that repeats the prefix so it does not repeat.
 
         - Semantic splitting: for all other chunks, ``semchunk`` splits the
           text at natural semantic boundaries up to ``available_length`` tokens.
@@ -332,7 +332,10 @@ class HybridChunker(BaseChunker):
             )
             segments = line_chunker.chunk_text(lines=body_lines)
             if preamble:
-                segments = segments[:1] + [s[len(preamble) :] for s in segments[1:]]
+                # Only strip the preamble from segments that actually carry the
+                # repeated prefix: e.g. with omit_header_on_overflow, a segment may
+                # start directly with a table row.
+                segments = segments[:1] + [s[len(preamble) :] if s.startswith(full_prefix) else s for s in segments[1:]]
         else:
             if not _SEMCHUNK_AVAILABLE:
                 raise ImportError(_SEMCHUNK_INSTALL_HINT) from _SEMCHUNK_IMPORT_ERROR
