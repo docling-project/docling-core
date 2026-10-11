@@ -1618,10 +1618,12 @@ class DocLangTableSerializer(BaseTableSerializer):
                         # Individual cells will still be checked for bbox availability
                         need_cell_loc = True
 
+        # `grid` builds the whole grid on every read, so read it once.
+        grid = item.data.grid
         parts: list[str] = []
         for i in range(row_start, row_end):
             for j in range(col_start, col_end):
-                cell = item.data.grid[i][j]
+                cell = grid[i][j]
                 content = cell._get_text(doc=doc, doc_serializer=doc_serializer, **kwargs).strip()
 
                 rowstart = cell.start_row_offset_idx
