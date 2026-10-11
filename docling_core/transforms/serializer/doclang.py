@@ -1015,7 +1015,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 my_visited.update(r.cref for r in group.children)
             for idp, prov_ in enumerate(item.prov):
                 item_ = copy.deepcopy(item)
-                item_.prov = [prov_]
+                item_.prov = [copy.deepcopy(prov_)]  # a copy: the charspan is rewritten below, never on the document
                 item_.text = item.orig[prov_.charspan[0] : prov_.charspan[1]]  # it must be `orig`, not `text` here!
                 item_.orig = item.orig[prov_.charspan[0] : prov_.charspan[1]]
                 sentinel = ""
@@ -1305,6 +1305,8 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
         if (
             (isinstance(item, CodeItem) and ContentType.TEXT_CODE in params.content_types)
             or (isinstance(item, FormulaItem) and ContentType.TEXT_FORMULA in params.content_types)
+            # an inline formula is part of its host's running text: it follows TEXT_OTHER, like the text around it
+            or (isinstance(item, FormulaItem) and is_inline_scope and ContentType.TEXT_OTHER in params.content_types)
             or (not isinstance(item, CodeItem | FormulaItem) and ContentType.TEXT_OTHER in params.content_types)
         ):
             first_child_item = item.children[0].resolve(doc) if item.children else None
@@ -1372,6 +1374,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
         if (
             params.suppress_empty_elements
             and not _text_item_content_type_active(item, params)
+            and not (is_inline_scope and isinstance(item, FormulaItem) and ContentType.TEXT_OTHER in params.content_types)
             and not text_part
             and not caption_head
             and not (params.add_location and item.prov)
@@ -1893,7 +1896,16 @@ class DocLangTableSerializer(BaseTableSerializer):
         for i in range(row_start, row_end):
             for j in range(col_start, col_end):
                 cell = grid[i][j]
-                content = cell._get_text(doc=doc, doc_serializer=doc_serializer, **kwargs).strip()
+                if isinstance(cell, RichTableCell) and ContentType.TABLE_CELL in params.content_types:
+                    # the item a rich cell points to is cell content: serialize it whenever cell content is requested,
+                    # even when the task filter leaves out free text / formulas elsewhere on the page
+                    cell_kwargs = {
+                        **kwargs,
+                        "content_types": set(params.content_types) | {ContentType.TEXT_OTHER, ContentType.TEXT_FORMULA},
+                    }
+                    content = cell._get_text(doc=doc, doc_serializer=doc_serializer, **cell_kwargs).strip()
+                else:
+                    content = cell._get_text(doc=doc, doc_serializer=doc_serializer, **kwargs).strip()
 
                 rowstart = cell.start_row_offset_idx
                 colstart = cell.start_col_offset_idx
@@ -2052,7 +2064,7 @@ class DocLangTableSerializer(BaseTableSerializer):
             for idp, prov_ in enumerate(item.prov):
                 row_start, row_end, col_start, col_end = _table_fragment_bounds(item, idp)
                 item_ = copy.deepcopy(item)
-                item_.prov = [prov_]
+                item_.prov = [copy.deepcopy(prov_)]  # a copy: the charspan is rewritten below, never on the document
                 tres = self._serialize_single_table(
                     item=item_,
                     doc_serializer=doc_serializer,
