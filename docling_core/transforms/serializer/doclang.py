@@ -553,7 +553,14 @@ def _serialize_satellite(
             # field containers are never in the label filter, and are exempt from the exclusion
             if child.self_ref in excluded and not isinstance(child, FieldRegionItem | FieldItem):
                 continue
-            nested += doc_serializer.serialize(item=child, **kwargs).text
+            child_kwargs = kwargs
+            if isinstance(child, InlineGroup):
+                # rich-text satellite: its runs are the satellite's own content, whatever the free-text filter says
+                child_kwargs = {
+                    **kwargs,
+                    "content_types": set(params.content_types) | {ContentType.TEXT_OTHER, ContentType.TEXT_FORMULA},
+                }
+            nested += doc_serializer.serialize(item=child, **child_kwargs).text
     text = f"{head}{content}{nested}"
     return _wrap(text=text, wrap_tag=tag.value) if text else ""
 
