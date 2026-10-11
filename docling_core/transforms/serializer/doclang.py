@@ -148,6 +148,59 @@ def _suppress_document_page_break(
         doc_serializer._suppressed_page_breaks.add((prev_page, next_page))
 
 
+
+def _rich_thread_fragments(item: TextItem, doc: DoclingDocument) -> list[list[tuple[TextItem, str]]] | None:
+    """Split the inline runs of a rich multi-provenance text item over its provenance fragments.
+
+    A rich item keeps its full string in ``orig`` (``text`` is empty) and its content in a leading
+    InlineGroup of text / formula runs, where each formula run is a ``$...$`` span of ``orig``.
+    The runs are located in ``orig`` in order; each fragment (``prov.charspan``) gets the runs that
+    fall inside it, a text run that crosses a fragment boundary is cut there, and a formula goes to
+    the fragment where it starts. Returns one ``[(run_item, run_text), ...]`` list per provenance,
+    or ``None`` when the item is not of this shape or the runs cannot be located (callers then keep
+    the plain behavior).
+    """
+    if item.text or not item.orig or not item.children:
+        return None
+    group = item.children[0].resolve(doc)
+    if not isinstance(group, InlineGroup) or not group.children:
+        return None
+    orig = item.orig
+    located: list[tuple[TextItem, int, int]] = []
+    cursor = 0
+    for ref in group.children:
+        run = ref.resolve(doc)
+        if not isinstance(run, TextItem) or run.children:
+            return None
+        if run.label == DocItemLabel.FORMULA:
+            start = orig.find("$", cursor)
+            end = orig.find("$", start + 1) + 1 if start >= 0 else 0
+            if start < 0 or end <= 0 or orig[start + 1 : end - 1].strip() != run.text.strip():
+                return None
+        elif run.label == DocItemLabel.TEXT:
+            start = orig.find(run.text, cursor)
+            if start < 0:
+                return None
+            end = start + len(run.text)
+        else:
+            return None
+        located.append((run, start, end))
+        cursor = end
+    fragments: list[list[tuple[TextItem, str]]] = []
+    for prov in item.prov:
+        lo, hi = prov.charspan
+        pieces: list[tuple[TextItem, str]] = []
+        for run, start, end in located:
+            if run.label == DocItemLabel.FORMULA:
+                if lo <= start < hi:
+                    pieces.append((run, run.text))
+            elif start < hi and end > lo:
+                piece = orig[max(start, lo) : min(end, hi)].strip()
+                if piece:
+                    pieces.append((run, piece))
+        fragments.append(pieces)
+    return fragments
+
 def _allocate_thread_id(doc_serializer: BaseDocSerializer, node: NodeItem) -> str:
     """Allocate a document-scoped positive ``thread_id`` in reading order."""
     if isinstance(doc_serializer, DocLangDocSerializer):
@@ -952,11 +1005,24 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
             # List items are not split here; cross-page lists are handled at list-group level.
             thread_id = _allocate_thread_id(doc_serializer, item)
             res: list[SerializationResult] = []
+            # Rich item (empty text + leading InlineGroup): give each fragment its own runs instead of
+            # printing the raw ``orig`` slice plus the whole group.
+            rich = _rich_thread_fragments(item, doc)
+            if rich is not None:
+                my_visited = visited if visited is not None else set()
+                group = item.children[0].resolve(doc)
+                my_visited.add(group.self_ref)
+                my_visited.update(r.cref for r in group.children)
             for idp, prov_ in enumerate(item.prov):
                 item_ = copy.deepcopy(item)
                 item_.prov = [prov_]
                 item_.text = item.orig[prov_.charspan[0] : prov_.charspan[1]]  # it must be `orig`, not `text` here!
                 item_.orig = item.orig[prov_.charspan[0] : prov_.charspan[1]]
+                sentinel = ""
+                if rich is not None:
+                    sentinel = f"QQRICHFRAGMENT{idp}QQ"
+                    item_.text = item_.orig = sentinel
+                    item_.children = item.children[1:]
 
                 item_.prov[0].charspan = (0, len(item_.orig))
 
@@ -974,6 +1040,19 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                     include_caption_head=idp == 0,
                     **kwargs,
                 )
+                if sentinel:
+                    run_params = {**kwargs, "add_location": False}
+                    runs: list[str] = []
+                    for run, piece in rich[idp]:  # type: ignore[index]
+                        run_ = copy.deepcopy(run)
+                        run_.text = run_.orig = piece
+                        rr = doc_serializer.serialize(item=run_, is_inline_scope=True, visited=set(), **run_params)
+                        if rr.text:
+                            runs.append(rr.text)
+                    tres = create_ser_result(
+                        text=tres.text.replace(sentinel, "".join(runs)),
+                        span_source=[tres],
+                    )
                 res.append(tres)
 
             out_parts: list[str] = []
