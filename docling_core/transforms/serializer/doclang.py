@@ -2410,6 +2410,20 @@ class DocLangDocSerializer(DocSerializer):
         results: list[SerializationResult] = []
         if item.captions:
             cap_res = super().serialize_captions(item, **kwargs)
+            if not cap_res.text and ContentType.REF_CAPTION in params.content_types:
+                # rich-text caption: text "" and the content in a first-child InlineGroup (text + inline formulas)
+                rich: list[str] = []
+                for caption in item.captions:
+                    cap = caption.resolve(self.doc)
+                    if caption.cref in self.get_excluded_refs(**kwargs) or not isinstance(cap, TextItem) or cap.text:
+                        continue
+                    if cap.children and isinstance(grp := cap.children[0].resolve(self.doc), InlineGroup):
+                        if head_txt := _element_head_prefix(item=cap, doc=self.doc, params=params):
+                            results.append(create_ser_result(text=head_txt))
+                        kw = {k: v for k, v in kwargs.items() if k != "visited"}
+                        rich.append(self.serialize(item=grp, visited=set(), **kw).text.strip())
+                if rich:
+                    results.append(create_ser_result(text=" ".join(rich)))
             if cap_res.text:
                 for caption in item.captions:
                     if caption.cref not in self.get_excluded_refs(**kwargs):

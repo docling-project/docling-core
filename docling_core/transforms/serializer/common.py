@@ -469,10 +469,19 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             ###########
             elif isinstance(my_item, TextItem):
                 if my_item.self_ref in self._captions_of_some_item:
-                    # those captions will be handled by the floating item holding them
+                    # those captions will be handled by the floating item holding them, nested content
+                    # (e.g. the inline group of a rich-text caption) included: don't emit it here again
+                    for sub, _ in self.doc.iterate_items(
+                        root=my_item, with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
+                    ):
+                        my_visited.add(sub.self_ref)
                     return empty_res
                 elif my_item.self_ref in self._footnotes_of_some_item:
-                    # those footnotes will be handled by the floating item holding them
+                    # those footnotes will be handled by the floating item holding them (nested content included)
+                    for sub, _ in self.doc.iterate_items(
+                        root=my_item, with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
+                    ):
+                        my_visited.add(sub.self_ref)
                     return empty_res
                 else:
                     part = (
