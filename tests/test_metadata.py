@@ -240,7 +240,7 @@ def test_md_ser_include_picture_classification_meta_path():
 def test_md_ser_include_picture_classification_legacy_path():
     doc = DoclingDocument(name="test")
     pic = doc.add_picture()
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning, match=r"Field `annotations` is deprecated"):
         pic.annotations.append(
             PictureClassificationData(
                 provenance="test",
@@ -248,10 +248,12 @@ def test_md_ser_include_picture_classification_legacy_path():
             )
         )
 
-    default_text = doc.export_to_markdown()
+    with pytest.warns(DeprecationWarning):
+        default_text = doc.export_to_markdown()
     assert "chart" in default_text
 
-    suppressed_text = doc.export_to_markdown(include_picture_classification=False)
+    with pytest.warns(DeprecationWarning):
+        suppressed_text = doc.export_to_markdown(include_picture_classification=False)
     assert "chart" not in suppressed_text
     assert "<!-- image -->" in suppressed_text
 
