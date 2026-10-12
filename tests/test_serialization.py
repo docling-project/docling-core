@@ -1068,7 +1068,7 @@ def test_md_line_breaks():
 
     # \n in a ListItem -> GFM hard line break.
     doc = DoclingDocument(name="lb")
-    lg = doc.add_group()
+    lg = doc.add_list_group()
     doc.add_list_item(text="Line one\nLine two", parent=lg)
     assert MarkdownDocSerializer(doc=doc).serialize().text == "- Line one  \nLine two"
 
