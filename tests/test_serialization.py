@@ -668,6 +668,25 @@ def _cell(text: str, row: int, col: int, *, row_span: int = 1, column_header: bo
             [["Name", "Value"], ["A", "1"]],
             id="no-flags-markdown-promotes-row-0-dataframe-does-not",
         ),
+        # Row headers flagged as column_header in every row, with no header row, as
+        # the HTML backend produced before docling-project/docling#4216 for a body
+        # `<th>`. The leading-column flag on row 1 shows that row 0 holds a row
+        # header too, so row 0 is subject to the body-text check and no row is
+        # promoted: markdown keeps an empty header and the dataframe keeps every row.
+        pytest.param(
+            2,
+            2,
+            [
+                _cell("2025", 0, 0, column_header=True),
+                _cell("$134", 0, 1),
+                _cell("2026", 1, 0, column_header=True),
+                _cell("$150", 1, 1),
+            ],
+            "|  |  |\n| - | - |\n| 2025 | $134 |\n| 2026 | $150 |",
+            [0, 1],
+            [["2025", "$134"], ["2026", "$150"]],
+            id="row-headers-only-flagged-as-column-header-stay-in-body",
+        ),
     ],
 )
 def test_table_header_rows_in_markdown_and_dataframe(
