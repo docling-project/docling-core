@@ -651,6 +651,23 @@ def _cell(text: str, row: int, col: int, *, row_span: int = 1, column_header: bo
             [["A", "1"]],
             id="partially-flagged-first-row-stays-header",
         ),
+        # Without any column_header flag, markdown promotes row 0 to the header since
+        # GFM requires one, while the dataframe keeps every row as data with default
+        # integer column names.
+        pytest.param(
+            2,
+            2,
+            [
+                _cell("Name", 0, 0),
+                _cell("Value", 0, 1),
+                _cell("A", 1, 0),
+                _cell("1", 1, 1),
+            ],
+            "| Name | Value |\n| - | - |\n| A | 1 |",
+            [0, 1],
+            [["Name", "Value"], ["A", "1"]],
+            id="no-flags-markdown-promotes-row-0-dataframe-does-not",
+        ),
     ],
 )
 def test_table_header_rows_in_markdown_and_dataframe(
@@ -658,7 +675,7 @@ def test_table_header_rows_in_markdown_and_dataframe(
     num_cols: int,
     cells: list[TableCell],
     md_table: str,
-    df_columns: list[str],
+    df_columns: list[str | int],
     df_values: list[list[str]],
 ):
     """Markdown and dataframe exports agree on which leading rows form the column header."""
