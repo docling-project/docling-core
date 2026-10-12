@@ -2553,23 +2553,48 @@ def test_roundtrip_inline_host(label: DocItemLabel, layer: ContentLayer):
     assert runs[0].formatting is not None and runs[0].formatting.script == Script.SUPER
 
 
+@pytest.mark.parametrize(
+    ("tag", "caption_host"),
+    [
+        ("text", None),
+        ("caption", "picture"),
+        ("caption", "table"),
+        ("footnote", None),
+        ("page_header", None),
+        ("page_footer", None),
+    ],
+)
 @pytest.mark.parametrize("body", ["Before <formula>x</formula> after", "Before <bold>bold</bold> after"])
-def test_located_mixed_text_archive_roundtrip(body: str, tmp_path: Path):
-    doc = _deserialize(
-        '<doclang version="0.7"><text>'
-        '<location value="87"/><location value="417"/><location value="387"/><location value="426"/>'
-        f"{body}</text></doclang>"
+@pytest.mark.parametrize("located", [False, True])
+def test_mixed_text_like_archive_roundtrip(
+    tag: str, caption_host: str | None, body: str, located: bool, tmp_path: Path
+):
+    locations = (
+        '<location value="87"/><location value="417"/><location value="387"/><location value="426"/>' if located else ""
     )
+    fragment = f"<{tag}>{locations}{body}</{tag}>"
+    if caption_host is not None:
+        table_body = "<fcel/>Cell<nl/>" if caption_host == "table" else ""
+        fragment = f"<{caption_host}>{fragment}{table_body}</{caption_host}>"
+    doc = _deserialize(f'<doclang version="0.7">{fragment}</doclang>')
     for cycle in range(3):
-        archive = tmp_path / f"mixed-text-{cycle}.dclx"
+        archive = tmp_path / f"mixed-{tag}-{cycle}.dclx"
         doc.save_as_doclang_archive(archive)
         doc = DoclingDocument.load_from_doclang_archive(archive)
-        host = doc.body.children[0].resolve(doc)
-        assert isinstance(host, TextItem) and host.label == DocItemLabel.TEXT
-        assert host.text == "" and len(host.prov) == 1
-        assert host.prov[0].bbox.as_tuple() == (87, 417, 387, 426)
-        inline = host.children[0].resolve(doc)
-        assert inline.label == GroupLabel.INLINE
+        if tag == "text" and not located:
+            inline = doc.body.children[0].resolve(doc)
+            assert inline.label == GroupLabel.INLINE
+        else:
+            host = doc.texts[0]
+            assert host.label == DocItemLabel(tag) and host.text == ""
+            assert len(host.prov) == int(located)
+            if located:
+                assert host.prov[0].bbox.as_tuple() == (87, 417, 387, 426)
+            if caption_host is not None:
+                container = doc.pictures[0] if caption_host == "picture" else doc.tables[0]
+                assert container.captions == [host.get_ref()]
+            inline = host.children[0].resolve(doc)
+            assert inline.label == GroupLabel.INLINE
         runs = [ref.resolve(doc) for ref in inline.children]
         assert [run.text for run in runs] == ["Before", "x" if "formula" in body else "bold", "after"]
         if "formula" in body:
@@ -2577,7 +2602,7 @@ def test_located_mixed_text_archive_roundtrip(body: str, tmp_path: Path):
         else:
             assert runs[1].formatting is not None and runs[1].formatting.bold
         assert all(not run.prov for run in runs)
-        assert _serialize(doc).count("<location") == 4
+        assert _serialize(doc).count("<location") == (4 if located else 0)
 
 
 def test_roundtrip_furniture_inline_group():

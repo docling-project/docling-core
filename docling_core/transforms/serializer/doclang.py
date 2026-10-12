@@ -2019,7 +2019,7 @@ class DocLangDocSerializer(DocSerializer):
     def _satellite_refs(self) -> tuple[set[str], set[str]]:
         """The refs of the satellites serialized by their floating item, and those nested in them.
 
-        Satellites are the footnotes and the extra captions (the first caption goes in the host's head).
+        Captions and footnotes are emitted by their host, including the first caption in its head.
         """
         if self._satellite_refs_cache is None:
             satellites: set[str] = set()
@@ -2029,7 +2029,7 @@ class DocLangDocSerializer(DocSerializer):
             ):
                 if not isinstance(host, FloatingItem):
                     continue
-                for ref in [*host.captions[1:], *host.footnotes]:
+                for ref in [*host.captions, *host.footnotes]:
                     if isinstance(sat := ref.resolve(self.doc), TextItem):
                         satellites.add(sat.self_ref)
                         nested.update(
@@ -2124,21 +2124,19 @@ class DocLangDocSerializer(DocSerializer):
         """Serialize the item's captions with DocLang location tokens."""
         params = DocLangParams(**kwargs)
         results: list[SerializationResult] = []
-        if item.captions:
-            cap_res = super().serialize_captions(item, **kwargs)
-            if cap_res.text:
-                for caption in item.captions:
-                    if caption.cref not in self.get_excluded_refs(**kwargs):
-                        if isinstance(cap := caption.resolve(self.doc), DocItem):
-                            if head_txt := _element_head_prefix(item=cap, doc=self.doc, params=params):
-                                results.append(create_ser_result(text=head_txt))
-            if cap_res.text and ContentType.REF_CAPTION in params.content_types:
-                cap_res.text = _escape_text(cap_res.text, params)
-                results.append(cap_res)
-        text_res = "".join([r.text for r in results])
-        if text_res:
-            text_res = _wrap(text=text_res, wrap_tag=DocLangToken.CAPTION.value)
-        return create_ser_result(text=text_res, span_source=results)
+        for caption in _resolve_satellites(refs=item.captions, doc_serializer=self, doc=self.doc, **kwargs):
+            text = _serialize_satellite(
+                item=caption,
+                tag=DocLangToken.CAPTION,
+                content_type=ContentType.REF_CAPTION,
+                doc=self.doc,
+                params=params,
+                doc_serializer=self,
+                **kwargs,
+            )
+            if text:
+                results.append(create_ser_result(text=text, span_source=caption))
+        return create_ser_result(text="".join(r.text for r in results), span_source=results)
 
     @override
     def serialize_footnotes(

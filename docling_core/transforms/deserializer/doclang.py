@@ -99,10 +99,10 @@ from docling_core.utils.settings import settings
 __all__ = ["DocLangDocDeserializer", "DocLangSourceMap", "DocLangSourceTarget"]
 
 # Labels whose text-like tag must keep its label when its content is mixed (text + formatting runs).
-# Unlocated TEXT maps back to a bare InlineGroup; located TEXT needs a provenance-bearing host.
+# A bare InlineGroup serializes as TEXT, so unlocated TEXT keeps that representation.
 # FORMULA is absent because a formula cannot hold prose runs.
 _INLINE_HOST_LABELS: frozenset[DocItemLabel] = frozenset(
-    {DocItemLabel.FOOTNOTE, DocItemLabel.PAGE_HEADER, DocItemLabel.PAGE_FOOTER}
+    {DocItemLabel.TEXT, DocItemLabel.CAPTION, DocItemLabel.FOOTNOTE, DocItemLabel.PAGE_HEADER, DocItemLabel.PAGE_FOOTER}
 )
 
 # Formatting tags that can themselves hold mixed content, e.g. <bold>a <italic>b</italic></bold>.
@@ -1555,8 +1555,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
     def _parse_mixed_text_like(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         """Parse a text-like element with mixed content (text + formatting runs)."""
         node: NodeItem
-        if el.tagName in _INLINE_HOST_LABELS or (
-            el.tagName == DocLangToken.TEXT.value and self._extract_provenance(doc=doc, el=el)
+        if el.tagName in _INLINE_HOST_LABELS and (
+            el.tagName != DocLangToken.TEXT.value or self._extract_provenance(doc=doc, el=el)
         ):
             node = self._parse_inline_host(doc=doc, el=el, parent=parent, label=DocItemLabel(el.tagName))
         else:
@@ -1918,6 +1918,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         text = self._get_text(cap_el).strip()
         if not text:
             return None
+        if self._get_children_simple_text_block(cap_el) is None:
+            return self._parse_inline_host(doc=doc, el=cap_el, parent=None, label=DocItemLabel.CAPTION)
         prov_list = self._extract_provenance(doc=doc, el=cap_el)
         item = doc.add_text(
             label=DocItemLabel.CAPTION,
