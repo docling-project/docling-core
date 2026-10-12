@@ -205,6 +205,23 @@ def _collect_subtree_text(item: NodeItem, doc: DoclingDocument, excluded_refs: s
     return " ".join(parts)
 
 
+def _longest_backtick_run(text: str) -> int:
+    return max((len(m) for m in re.findall(r"`+", text)), default=0)
+
+
+def _code_span(text: str) -> str:
+    """Wrap text in a code span whose delimiter no backtick run inside can close."""
+    ticks = "`" * (_longest_backtick_run(text) + 1)
+    pad = " " if text.startswith("`") or text.endswith("`") else ""
+    return f"{ticks}{pad}{text}{pad}{ticks}"
+
+
+def _code_block(text: str) -> str:
+    """Wrap text in a fenced code block whose fence is longer than any backtick run inside."""
+    fence = "`" * max(3, _longest_backtick_run(text) + 1)
+    return f"{fence}\n{text}\n{fence}"
+
+
 class OrigListItemMarkerMode(str, Enum):
     """Display mode for original list item marker."""
 
@@ -415,7 +432,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             if params.format_code_blocks:
                 # inline items and all hyperlinks: use single backticks
                 bt = is_inline_scope or (params.include_hyperlinks and item.hyperlink)
-                text_part = f"`{text}`" if bt else f"```\n{text}\n```"
+                text_part = _code_span(text) if bt else _code_block(text)
             else:
                 text_part = text
             escape_html = False
