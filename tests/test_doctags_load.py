@@ -158,6 +158,7 @@ def test_doctags_load_preserves_angle_brackets_in_text():
     [
         ("<fcel>alpha<fcel><nl>", [(0, 1, "alpha"), (1, 2, "")]),
         ("<fcel>alpha<fcel>\xa0<nl>", [(0, 1, "alpha"), (1, 2, "")]),
+        ("<fcel>alpha<fcel>", [(0, 1, "alpha"), (1, 2, "")]),
         ("<fcel><lcel><nl>", [(0, 2, "")]),
         ("<ched><lcel><nl>", [(0, 2, "")]),
     ],
