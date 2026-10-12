@@ -2358,6 +2358,39 @@ def test_export_dataframe_keeps_stacked_header_with_unmarked_row_label():
     assert dataframe.values.tolist() == [["Caption", "2.5", "2.4"]]
 
 
+def test_export_dataframe_keeps_partially_flagged_first_row_as_header():
+    """The first row stays the header when only some of its cells carry ``column_header``."""
+
+    def cell(text: str, row: int, column: int, column_header: bool = False) -> TableCell:
+        return TableCell(
+            text=text,
+            start_row_offset_idx=row,
+            end_row_offset_idx=row + 1,
+            start_col_offset_idx=column,
+            end_col_offset_idx=column + 1,
+            column_header=column_header,
+        )
+
+    doc = DoclingDocument(name="test")
+    table = doc.add_table(
+        data=TableData(
+            num_rows=2,
+            num_cols=2,
+            table_cells=[
+                cell("Name", 0, 0, column_header=True),
+                cell("Value", 0, 1),
+                cell("A", 1, 0),
+                cell("1", 1, 1),
+            ],
+        )
+    )
+
+    dataframe = table.export_to_dataframe(doc)
+
+    assert list(dataframe.columns) == ["Name", "Value"]
+    assert dataframe.values.tolist() == [["A", "1"]]
+
+
 def test_export_traverse_pictures_ocr_scanned_pdf():
     """Test that OCR text nested under a PictureItem is included when traverse_pictures=True."""
     doc = DoclingDocument(name="Scanned Doc")

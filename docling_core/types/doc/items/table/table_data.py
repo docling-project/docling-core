@@ -150,10 +150,10 @@ class TableData(BaseModel):  # TBD
 
         A row is counted when a column header cell starts on it. A header cell
         spanning several rows is repeated into each row it covers by ``grid``, so
-        rows that merely hold such a cell are not counted. A row is also not
-        counted when an unflagged, non-empty cell starts on it outside the
-        leading column, which holds row labels that stay unmarked even on
-        header rows.
+        rows that merely hold such a cell are not counted. A row after the first
+        is also not counted when an unflagged, non-empty cell starts on it
+        outside the leading column, which holds row labels that stay unmarked
+        even on header rows.
 
         Args:
             grid: The precomputed ``grid`` of this table, to avoid rebuilding it.
@@ -167,7 +167,7 @@ class TableData(BaseModel):  # TBD
         num_headers = 0
         for row_idx, row in enumerate(grid):
             starting_cells = [cell for cell in row if cell.start_row_offset_idx == row_idx]
-            carries_body_text = any(
+            carries_body_text = row_idx > 0 and any(
                 not cell.column_header and cell.text.strip() and cell.start_col_offset_idx != first_col
                 for cell in starting_cells
             )
