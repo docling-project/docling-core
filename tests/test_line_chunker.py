@@ -457,7 +457,8 @@ def test_omit_prefix_on_overflow_line_too_large(default_tokenizer):
     assert line_tokens > MAX_TOKENS, f"Line should exceed max_tokens: {line_tokens} > {MAX_TOKENS}"
 
     lines = [long_line]
-    chunks = chunker.chunk_text(lines)
+    with pytest.warns(UserWarning, match="Prefix omitted for at least one line"):
+        chunks = chunker.chunk_text(lines)
 
     # Line should be split regardless of omit_prefix_on_overflow
     assert len(chunks) > 1, "Line should be split when it exceeds max_tokens"
@@ -485,7 +486,8 @@ def test_omit_prefix_on_overflow_multiple_lines(default_tokenizer):
     line3 = "Another small line\n"
 
     lines = [line1, line2, line3]
-    chunks = chunker.chunk_text(lines)
+    with pytest.warns(UserWarning, match="Prefix omitted for at least one line"):
+        chunks = chunker.chunk_text(lines)
 
     # Verify we have chunks
     assert len(chunks) > 0
@@ -549,7 +551,8 @@ def test_omit_prefix_on_overflow_with_line_splitting(default_tokenizer):
     assert line_tokens > MAX_TOKENS, f"Line should exceed max_tokens: {line_tokens} > {MAX_TOKENS}"
 
     lines = [long_line]
-    chunks = chunker.chunk_text(lines)
+    with pytest.warns(UserWarning, match="Prefix omitted for at least one line"):
+        chunks = chunker.chunk_text(lines)
 
     # Line should be split into multiple chunks
     assert len(chunks) > 1, "Line should be split when it exceeds max_tokens"

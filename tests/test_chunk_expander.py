@@ -304,7 +304,8 @@ class TestTreeChunkExpander:
 
         # Call expand with failing serializer
         # Should catch the exception and return original chunk
-        expanded = tree_expander.expand(chunk=chunk, dl_doc=sample_doc, serializer=FailingSerializer())
+        with pytest.warns(UserWarning, match="did not yield any text"):
+            expanded = tree_expander.expand(chunk=chunk, dl_doc=sample_doc, serializer=FailingSerializer())
 
         # Should return original chunk when serialization fails
         assert expanded == chunk, "Should return original chunk when serialization fails"
@@ -358,7 +359,8 @@ class TestPageChunkExpander:
             if not isinstance(chunk, DocChunk):
                 continue
 
-            result = page_expander.expand(chunk=chunk, dl_doc=doc_no_pages, serializer=serializer)
+            with pytest.warns(UserWarning, match="Cannot expand to page"):
+                result = page_expander.expand(chunk=chunk, dl_doc=doc_no_pages, serializer=serializer)
 
             # Should return original chunk when no pages
             assert result == chunk, "Should return original chunk when document has no pages"
