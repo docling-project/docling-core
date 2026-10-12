@@ -2903,3 +2903,19 @@ def test_field_region_in_inline_group_respects_add_location_off():
     root = ET.fromstring(serialize_doclang(doc, DocLangParams(include_version=False, add_location=False)))
 
     assert not list(root.iter("location"))
+
+
+def test_picture_with_nested_field_region():
+    """A field region that is a child of a picture is serialized inside the picture."""
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100))
+    picture = doc.add_picture(prov=_prov(0, 100, 100, 0))
+    item = doc.add_field_item(parent=doc.add_field_region(parent=picture))
+    doc.add_field_key(text="K:", parent=item, prov=_prov(10, 90, 30, 80))
+    doc.add_field_value(text="V", parent=item, prov=_prov(40, 90, 90, 80))
+
+    root = ET.fromstring(serialize_doclang(doc))
+
+    assert len(list(root.iter("field_region"))) == 1
+    assert root.find("picture/field_region/field_item/key") is not None
+    assert root.find("picture/field_region/field_item/value") is not None
