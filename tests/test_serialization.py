@@ -9,6 +9,7 @@ from xml.etree import ElementTree as ET
 import pytest
 from pydantic import AnyUrl
 
+from docling_core.transforms.chunker.hierarchical_chunker import TripletTableSerializer
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
@@ -1966,3 +1967,26 @@ def test_export_and_save_markdown_caption_placement(tmp_path, placement):
     # default is unchanged
     assert doc.export_to_markdown().index("THE CAPTION") < doc.export_to_markdown().index("<!-- image -->")
     assert doc.export_to_markdown() == doc.export_to_markdown(caption_placement="standard")
+
+
+def test_md_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_table_doc):
+    params = MarkdownParams(compact_tables=True)
+    actual = MarkdownDocSerializer(doc=col_span_rich_table_doc, params=params).serialize().text
+    assert actual == "|  | Partner | Partner |\n| - | - | - |\n| Status | Done | Open |"
+
+    # same table with the spanning header as a plain TableCell
+    plain_doc = col_span_rich_table_doc.model_copy(deep=True)
+    plain_doc.tables[0].data.table_cells = [
+        TableCell(**cell.model_dump(exclude={"ref", "text"}), text="Partner")
+        if isinstance(cell, RichTableCell)
+        else cell
+        for cell in plain_doc.tables[0].data.table_cells
+    ]
+    plain_doc.delete_items(node_items=[ref.resolve(plain_doc) for ref in plain_doc.tables[0].children])
+    assert actual == MarkdownDocSerializer(doc=plain_doc, params=params).serialize().text
+
+
+def test_triplet_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_table_doc):
+    ser = MarkdownDocSerializer(doc=col_span_rich_table_doc, table_serializer=TripletTableSerializer())
+    actual = ser.serialize().text
+    assert actual == "Status, Partner = Done. Status, Partner = Open"
