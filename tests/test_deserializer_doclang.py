@@ -2516,6 +2516,8 @@ def test_nested_formatting_tag_accumulates_style():
 @pytest.mark.parametrize(
     ("label", "layer"),
     [
+        (DocItemLabel.TEXT, ContentLayer.BODY),
+        (DocItemLabel.TEXT, ContentLayer.FURNITURE),
         (DocItemLabel.FOOTNOTE, ContentLayer.BODY),
         (DocItemLabel.PAGE_HEADER, ContentLayer.FURNITURE),
         (DocItemLabel.PAGE_FOOTER, ContentLayer.FURNITURE),
@@ -2549,6 +2551,33 @@ def test_roundtrip_inline_host(label: DocItemLabel, layer: ContentLayer):
     ]
     assert [(r.text, r.content_layer) for r in runs] == [("1", layer), ("body", layer)]
     assert runs[0].formatting is not None and runs[0].formatting.script == Script.SUPER
+
+
+@pytest.mark.parametrize("body", ["Before <formula>x</formula> after", "Before <bold>bold</bold> after"])
+def test_located_mixed_text_archive_roundtrip(body: str, tmp_path: Path):
+    doc = _deserialize(
+        '<doclang version="0.7"><text>'
+        '<location value="87"/><location value="417"/><location value="387"/><location value="426"/>'
+        f"{body}</text></doclang>"
+    )
+    for cycle in range(3):
+        archive = tmp_path / f"mixed-text-{cycle}.dclx"
+        doc.save_as_doclang_archive(archive)
+        doc = DoclingDocument.load_from_doclang_archive(archive)
+        host = doc.body.children[0].resolve(doc)
+        assert isinstance(host, TextItem) and host.label == DocItemLabel.TEXT
+        assert host.text == "" and len(host.prov) == 1
+        assert host.prov[0].bbox.as_tuple() == (87, 417, 387, 426)
+        inline = host.children[0].resolve(doc)
+        assert inline.label == GroupLabel.INLINE
+        runs = [ref.resolve(doc) for ref in inline.children]
+        assert [run.text for run in runs] == ["Before", "x" if "formula" in body else "bold", "after"]
+        if "formula" in body:
+            assert runs[1].label == DocItemLabel.FORMULA
+        else:
+            assert runs[1].formatting is not None and runs[1].formatting.bold
+        assert all(not run.prov for run in runs)
+        assert _serialize(doc).count("<location") == 4
 
 
 def test_roundtrip_furniture_inline_group():

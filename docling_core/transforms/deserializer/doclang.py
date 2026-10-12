@@ -99,7 +99,7 @@ from docling_core.utils.settings import settings
 __all__ = ["DocLangDocDeserializer", "DocLangSourceMap", "DocLangSourceTarget"]
 
 # Labels whose text-like tag must keep its label when its content is mixed (text + formatting runs).
-# TEXT is absent on purpose: a bare InlineGroup is serialized as ``<text>``, so it maps back to one.
+# Unlocated TEXT maps back to a bare InlineGroup; located TEXT needs a provenance-bearing host.
 # FORMULA is absent because a formula cannot hold prose runs.
 _INLINE_HOST_LABELS: frozenset[DocItemLabel] = frozenset(
     {DocItemLabel.FOOTNOTE, DocItemLabel.PAGE_HEADER, DocItemLabel.PAGE_FOOTER}
@@ -1555,7 +1555,9 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
     def _parse_mixed_text_like(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         """Parse a text-like element with mixed content (text + formatting runs)."""
         node: NodeItem
-        if el.tagName in _INLINE_HOST_LABELS:
+        if el.tagName in _INLINE_HOST_LABELS or (
+            el.tagName == DocLangToken.TEXT.value and self._extract_provenance(doc=doc, el=el)
+        ):
             node = self._parse_inline_host(doc=doc, el=el, parent=parent, label=DocItemLabel(el.tagName))
         else:
             # If the mixed-content element is itself a formatting tag (e.g. <bold> with a
