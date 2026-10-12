@@ -406,14 +406,23 @@ def test_docitems():
         return yaml.safe_load(gold)
 
     def verify(dc, obj):
-        pred = serialise(obj).strip()
+        pred_text = serialise(obj).strip()
+        pred = yaml.safe_load(pred_text)
 
-        if dc is KeyValueItem or dc is FormItem:
-            write(dc.__name__, pred)
+        if GEN_TEST_DATA:
+            # Rewrite only when the content genuinely differs.  `safe_dump`
+            # sorts keys while the committed fixtures preserve insertion
+            # order, so writing unconditionally would reorder every file
+            # without changing what any of them mean.
+            try:
+                outdated = read(dc.__name__) != pred
+            except (FileNotFoundError, yaml.YAMLError):
+                # Missing or unparseable: regenerating is the whole point of
+                # the flag, so do not let a corrupt fixture block it.
+                outdated = True
+            if outdated:
+                write(dc.__name__, pred_text)
 
-        pred = yaml.safe_load(pred)
-
-        # print(f"\t{dc.__name__}:\n {pred}")
         gold = read(dc.__name__)
 
         assert pred == gold, f"pred!=gold for {dc.__name__}"
