@@ -1966,3 +1966,33 @@ def test_export_and_save_markdown_caption_placement(tmp_path, placement):
     # default is unchanged
     assert doc.export_to_markdown().index("THE CAPTION") < doc.export_to_markdown().index("<!-- image -->")
     assert doc.export_to_markdown() == doc.export_to_markdown(caption_placement="standard")
+
+
+@pytest.mark.parametrize(
+    ("code", "expected"),
+    [
+        ("print(1)", "```\nprint(1)\n```"),
+        ("x = '```'\n```\nprint(1)", "````\nx = '```'\n```\nprint(1)\n````"),
+        ("a\n`````\nb", "``````\na\n`````\nb\n``````"),
+    ],
+)
+def test_markdown_code_block_fence_outlasts_backticks_in_code(code: str, expected: str):
+    doc = DoclingDocument(name="code")
+    doc.add_code(text=code)
+    assert doc.export_to_markdown() == expected
+
+
+@pytest.mark.parametrize(
+    ("code", "expected"),
+    [
+        ("x", "`x`"),
+        ("a`b", "``a`b``"),
+        ("`tick", "`` `tick ``"),
+    ],
+)
+def test_markdown_inline_code_span_outlasts_backticks_in_code(code: str, expected: str):
+    doc = DoclingDocument(name="code")
+    group = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="see", parent=group)
+    doc.add_code(text=code, parent=group)
+    assert doc.export_to_markdown() == f"see {expected}"
