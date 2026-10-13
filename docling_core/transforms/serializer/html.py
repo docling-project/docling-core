@@ -1255,11 +1255,13 @@ class HTMLDocSerializer(DocSerializer):
                     and it.content_layer in params.layers
                     and it.self_ref not in excluded_refs
                 ):
-                    text_cap = it._get_plain_text(self.doc, serializer=self._plain_text_serializer)
-                    text_dir = get_text_direction(text_cap)
+                    parts = [html.escape(it.text)]
+                    parts.extend(p.text for p in self.get_parts(item=it, is_inline_scope=True, **kwargs))
+                    text_cap = " ".join(p for p in parts if p)
+                    text_dir = get_text_direction(it._get_plain_text(self.doc))
                     dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""
                     cap_ser_res = create_ser_result(
-                        text=(f'<div class="caption"{dir_str}>{html.escape(text_cap)}</div>'),
+                        text=(f'<div class="caption"{dir_str}>{text_cap}</div>'),
                         span_source=it,
                     )
                     results.append(cap_ser_res)

@@ -1,4 +1,5 @@
 import re
+import xml.etree.ElementTree as ET
 from collections.abc import Callable
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from docling_core.transforms.serializer.doclang import (
 )
 from docling_core.transforms.serializer.doctags import DocTagsDocSerializer
 from docling_core.transforms.serializer.html import HTMLDocSerializer
+from docling_core.transforms.serializer.latex import LaTeXDocSerializer
 from docling_core.transforms.serializer.markdown import MarkdownDocSerializer
 from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer
 from docling_core.types.doc import (
@@ -2635,16 +2637,16 @@ def test_plain_caption_layer_roundtrip(kind: str, layer: ContentLayer, tmp_path:
 
 @pytest.mark.parametrize("kind", ["table", "picture"])
 @pytest.mark.parametrize(
-    ("caption", "expected"),
+    ("caption", "expected", "markdown"),
     [
-        ("Table 1: results", "Table 1: results"),
-        ("Table <bold>1</bold>: results", "Table 1 : results"),
-        ("<bold>Table <italic>1</italic></bold>: results", "Table 1 : results"),
+        ("Table 1: results", "Table 1: results", "Table 1: results"),
+        ("Table <bold>1</bold>: results", "Table 1 : results", "Table **1** : results"),
+        ("<bold>Table <italic>1</italic></bold>: results", "Table 1 : results", "**Table** ***1*** : results"),
     ],
 )
 @pytest.mark.parametrize("layer", [ContentLayer.BODY, ContentLayer.FURNITURE])
 def test_caption_readers_after_archive_roundtrip(
-    kind: str, caption: str, expected: str, layer: ContentLayer, tmp_path: Path
+    kind: str, caption: str, expected: str, markdown: str, layer: ContentLayer, tmp_path: Path
 ):
     table_body = "<fcel/>A<fcel/>B<nl/><fcel/>1<fcel/>2<nl/>" if kind == "table" else ""
     doc = _deserialize(
@@ -2661,14 +2663,73 @@ def test_caption_readers_after_archive_roundtrip(
             DocTagsDocSerializer(doc=doc),
         ]:
             result = serializer.serialize_captions(item=owner, layers=set(ContentLayer)).text
-            assert expected in result
-            assert serializer.serialize(layers=set(ContentLayer)).text.count(expected) == 1
+            if isinstance(serializer, HTMLDocSerializer | DocTagsDocSerializer):
+                content = " ".join(text.strip() for text in ET.fromstring(result).itertext() if text.strip())
+                assert content == expected
+                if isinstance(serializer, HTMLDocSerializer):
+                    if "<bold>" in caption:
+                        assert "<strong>1</strong>" in result
+                    if "<italic>" in caption:
+                        assert "<em>" in result
+            elif isinstance(serializer, PlainTextDocSerializer):
+                assert expected in result
+            else:
+                assert markdown in result
+            assert serializer.serialize(layers=set(ContentLayer)).text.count("results") == 1
             if layer == ContentLayer.FURNITURE:
                 assert not serializer.serialize_captions(item=owner, layers={ContentLayer.BODY}).text
             assert not serializer.serialize_captions(item=owner, labels={DocItemLabel.TABLE, DocItemLabel.PICTURE}).text
         archive = tmp_path / f"caption-reader-{cycle}.dclx"
         doc.save_as_doclang_archive(archive)
         doc = DoclingDocument.load_from_doclang_archive(archive)
+
+
+@pytest.mark.parametrize("kind", ["table", "picture"])
+@pytest.mark.parametrize("host_text", ["", "HOST &"])
+def test_native_caption_children_and_filters(kind: str, host_text: str):
+    doc = DoclingDocument(name="caption-boundary")
+    owner = doc.add_table(data=TableData()) if kind == "table" else doc.add_picture()
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text=host_text)
+    owner.captions.append(caption.get_ref())
+    inline = doc.add_inline_group(parent=caption)
+    doc.add_text(label=DocItemLabel.TEXT, text="CHILD", formatting=Formatting(bold=True), parent=inline)
+    doc.add_text(label=DocItemLabel.FORMULA, text="FORMULA", parent=inline)
+    DoclingDocument.model_validate(doc.model_dump())
+    assert owner.caption_text(doc) == " ".join(text for text in [host_text, "CHILD", "FORMULA"] if text)
+    labels = {DocItemLabel.CAPTION, DocItemLabel.TEXT, DocItemLabel.TABLE, DocItemLabel.PICTURE}
+    for serializer in [
+        MarkdownDocSerializer(doc=doc),
+        PlainTextDocSerializer(doc=doc),
+        HTMLDocSerializer(doc=doc),
+        LaTeXDocSerializer(doc=doc),
+        DocTagsDocSerializer(doc=doc),
+        DocLangDocSerializer(doc=doc),
+    ]:
+        result = serializer.serialize_captions(item=owner, labels=labels).text
+        assert "CHILD" in result
+        assert "FORMULA" not in result
+        whole = serializer.serialize(labels=labels).text
+        assert whole.count("CHILD") == 1
+        assert "FORMULA" not in whole
+        if host_text:
+            assert "HOST" in result
+            assert whole.count("HOST") == 1
+        if isinstance(serializer, HTMLDocSerializer):
+            assert "<strong>CHILD</strong>" in result
+            if host_text:
+                assert "HOST &amp;" in result
+                assert "&amp;amp;" not in result
+        elif isinstance(serializer, LaTeXDocSerializer):
+            assert r"\textbf{CHILD}" in result
+        elif isinstance(serializer, MarkdownDocSerializer) and not isinstance(serializer, PlainTextDocSerializer):
+            assert "**CHILD**" in result
+
+
+def test_rich_caption_html_direction():
+    doc = _deserialize('<doclang version="0.7"><picture><caption><bold>אב</bold> גד</caption></picture></doclang>')
+    result = HTMLDocSerializer(doc=doc).serialize_captions(item=doc.pictures[0]).text
+    assert '<div class="caption" dir="rtl">' in result
+    assert "<strong>אב</strong>" in result
 
 
 def test_roundtrip_furniture_inline_group():

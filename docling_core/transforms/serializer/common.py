@@ -8,7 +8,7 @@ from abc import abstractmethod
 from collections.abc import Iterable
 from functools import cached_property
 from pathlib import Path, PurePath
-from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
+from typing import Annotated, Any, Optional, Union
 
 from pydantic import (
     AnyUrl,
@@ -60,9 +60,6 @@ from docling_core.types.doc import (
     TextItem,
 )
 from docling_core.types.doc.document import DOCUMENT_TOKENS_EXPORT_LABELS
-
-if TYPE_CHECKING:
-    from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer
 
 _DEFAULT_LABELS = DOCUMENT_TOKENS_EXPORT_LABELS
 _DEFAULT_LAYERS = set(ContentLayer)
@@ -543,27 +540,24 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
         return create_ser_result(text=delim.join([p.text for p in parts if p.text]), span_source=parts)
 
-    # making some assumptions about the kwargs it can pass
     def _skip_in_walk(self, *, node: NodeItem, root: NodeItem | None) -> bool:
-        """Whether the node is left out when walking the tree from ``root``, as it is serialized elsewhere."""
-        nested = self._caption_descendants
+        """Skip satellite descendants unless the walk starts inside that satellite."""
+        nested = self._satellite_descendants
         return node.self_ref in nested and (
-            root is None or (root.self_ref not in nested and root.self_ref not in self._captions_of_some_item)
+            root is None or (root.self_ref not in nested and root.self_ref not in self._satellites_of_some_item)
         )
 
     @cached_property
-    def _plain_text_serializer(self) -> "PlainTextDocSerializer":
-        """Reuse one reader for the document's structured captions."""
-        from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer, PlainTextParams
-
-        return PlainTextDocSerializer(doc=self.doc, params=PlainTextParams(layers=set(ContentLayer)))
+    def _satellites_of_some_item(self) -> set[str]:
+        """The captions emitted by their floating item."""
+        return self._captions_of_some_item
 
     @cached_property
-    def _caption_descendants(self) -> set[str]:
-        """Caption subtrees are emitted by their floating item."""
+    def _satellite_descendants(self) -> set[str]:
+        """Content emitted inside a satellite must not appear again in the outer walk."""
         return {
             node.self_ref
-            for ref in self._captions_of_some_item
+            for ref in self._satellites_of_some_item
             for node, _ in self.doc.iterate_items(
                 root=RefItem(cref=ref).resolve(self.doc),
                 with_groups=True,
@@ -696,17 +690,18 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         params = self.params.merge_with_patch(patch=kwargs)
         results: list[SerializationResult] = []
         if DocItemLabel.CAPTION in params.labels:
-            results = [
-                create_ser_result(
-                    text=it._get_plain_text(self.doc, serializer=self._plain_text_serializer), span_source=it
-                )
-                for cap in item.captions
-                if isinstance(it := cap.resolve(self.doc), TextItem)
-                and it.content_layer in params.layers
-                and it.self_ref not in self.get_excluded_refs(**kwargs)
-            ]
-            text_res = params.caption_delim.join([r.text for r in results])
-            text_res = self.post_process(text=text_res)
+            for ref in item.captions:
+                caption = ref.resolve(self.doc)
+                if (
+                    not isinstance(caption, TextItem)
+                    or caption.content_layer not in params.layers
+                    or caption.self_ref in self.get_excluded_refs(**kwargs)
+                ):
+                    continue
+                parts = [create_ser_result(text=self.post_process(text=caption.text, **kwargs), span_source=caption)]
+                parts.extend(self.get_parts(item=caption, is_inline_scope=True, **kwargs))
+                results.append(create_ser_result(text=" ".join(p.text for p in parts if p.text), span_source=parts))
+            text_res = params.caption_delim.join(r.text for r in results)
         else:
             text_res = ""
         return create_ser_result(text=text_res, span_source=results)

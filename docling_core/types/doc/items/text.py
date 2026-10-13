@@ -7,14 +7,12 @@ from typing import TYPE_CHECKING, Optional, Union
 from pydantic import AnyUrl, Field
 from typing_extensions import deprecated
 
-from docling_core.types.doc.common.content_layer import ContentLayer
 from docling_core.types.doc.common.formatting import Formatting
 from docling_core.types.doc.common.scalars import LevelNumber
 from docling_core.types.doc.items.node import DocItem
 from docling_core.types.doc.labels import DocItemLabel
 
 if TYPE_CHECKING:
-    from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer
     from docling_core.types.doc.document import DoclingDocument
 
 
@@ -44,18 +42,13 @@ class TextItem(DocItem):
     formatting: Formatting | None = None
     hyperlink: AnyUrl | Path | None = Field(union_mode="left_to_right", default=None)
 
-    def _get_plain_text(self, doc: "DoclingDocument", serializer: "PlainTextDocSerializer | None" = None) -> str:
-        """Read the item text, including its inline representation."""
+    def _get_plain_text(self, doc: "DoclingDocument") -> str:
+        """Read the item's own text and its descendant text without document-wide scans."""
         if not self.children:
             return self.text
-        from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer, PlainTextParams
+        from docling_core.transforms.serializer.markdown import _collect_subtree_text
 
-        serializer = (
-            serializer
-            if serializer is not None
-            else PlainTextDocSerializer(doc=doc, params=PlainTextParams(layers=set(ContentLayer)))
-        )
-        return serializer.text_serializer.serialize(item=self, doc_serializer=serializer, doc=doc).text
+        return _collect_subtree_text(item=self, doc=doc, excluded_refs=set())
 
     @deprecated("Use export_to_doctags() instead.")
     def export_to_document_tokens(self, *args, **kwargs):

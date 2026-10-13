@@ -9,6 +9,7 @@ import warnings
 import xml.etree.ElementTree as ET
 from collections.abc import Callable
 from enum import Enum
+from functools import cached_property
 from itertools import groupby
 from pathlib import Path, PurePath
 from typing import Annotated, Any, Optional, Union, cast
@@ -2014,44 +2015,11 @@ class DocLangDocSerializer(DocSerializer):
     _suppressed_page_breaks: set[tuple[int, int]] = PrivateAttr(default_factory=set)
     _next_thread_id: int = PrivateAttr(default=1)
     _thread_id_by_ref: dict[str, str] = PrivateAttr(default_factory=dict)
-    _satellite_refs_cache: tuple[set[str], set[str]] | None = PrivateAttr(default=None)
 
-    def _satellite_refs(self) -> tuple[set[str], set[str]]:
-        """The refs of the satellites serialized by their floating item, and those nested in them.
-
-        Captions and footnotes are emitted by their host, including the first caption in its head.
-        """
-        if self._satellite_refs_cache is None:
-            satellites: set[str] = set()
-            nested: set[str] = set()
-            for host, _ in self.doc.iterate_items(
-                with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
-            ):
-                if not isinstance(host, FloatingItem):
-                    continue
-                for ref in [*host.captions, *host.footnotes]:
-                    if isinstance(sat := ref.resolve(self.doc), TextItem):
-                        satellites.add(sat.self_ref)
-                        nested.update(
-                            n.self_ref
-                            for n, _ in self.doc.iterate_items(
-                                root=sat,
-                                with_groups=True,
-                                traverse_pictures=True,
-                                included_content_layers=set(ContentLayer),
-                            )
-                            if n.self_ref != sat.self_ref
-                        )
-            self._satellite_refs_cache = (satellites, nested)
-        return self._satellite_refs_cache
-
-    @override
-    def _skip_in_walk(self, *, node: NodeItem, root: NodeItem | None) -> bool:
-        """Skip the content nested in a satellite unless walking from within it: its floating item emits it."""
-        satellites, nested = self._satellite_refs()
-        if node.self_ref not in nested:
-            return False
-        return root is None or (root.self_ref not in nested and root.self_ref not in satellites)
+    @cached_property
+    def _satellites_of_some_item(self) -> set[str]:
+        """DocLang emits both captions and footnotes inside their floating item."""
+        return self._captions_of_some_item | self._footnotes_of_some_item
 
     def allocate_thread_id(self, node: NodeItem) -> str:
         """Return a spec-unique positive ``thread_id`` for a fragmented component."""
