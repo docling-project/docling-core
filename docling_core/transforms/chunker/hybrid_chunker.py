@@ -167,10 +167,19 @@ class HybridChunker(BaseChunker):
         )
 
     def _estimate_meta_tokens(self, doc_chunk: DocChunk, text_tokens: int) -> int:
-        """Estimate context overhead using an already counted chunk text.
+        """Estimate the token overhead that contextualize() adds to the chunk text.
 
-        This estimate can be reused while embedded metadata stays unchanged;
-        exact window counts still account for tokenization at text boundaries.
+        Callers that replace only text and doc_items may reuse this estimate
+        while headings and captions stay unchanged. Tokenization at the context
+        boundary can change with the text, so exact window counts are still needed.
+
+        Args:
+            doc_chunk: The reference chunk used to measure overhead.
+            text_tokens: Pre-computed token count of ``doc_chunk.text``.
+
+        Returns:
+            Estimated token overhead: contextualized tokens minus text tokens.
+            The difference is not guaranteed to be non-negative.
         """
         return self._count_chunk_tokens(doc_chunk=doc_chunk) - text_tokens
 
@@ -353,7 +362,7 @@ class HybridChunker(BaseChunker):
             segments = cast(list[str], sem_segments)
         return segments
 
-    def _merge_chunks_with_matching_metadata(self, chunks: list[DocChunk]):
+    def _merge_chunks_with_matching_metadata(self, chunks: list[DocChunk]) -> list[DocChunk]:
         """Merge neighboring chunks with matching headings, keeping windows within max_tokens.
 
         Chunk texts are counted once and windows are grown with a running token

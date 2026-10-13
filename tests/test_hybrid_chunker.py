@@ -21,7 +21,7 @@ from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTok
 from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
 from docling_core.transforms.serializer.html import HTMLTableSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
-from docling_core.types.doc import DocItemLabel, DoclingDocument
+from docling_core.types.doc import DocItemLabel, DoclingDocument, DocumentOrigin
 from docling_core.types.doc.common.content_layer import ContentLayer
 from docling_core.types.doc.items.table.table_data import TableCell, TableData
 
@@ -913,16 +913,25 @@ def test_split_by_doc_items_shrinks_back_when_estimate_under_counts():
 
 
 def test_doc_meta_excluded_embed_keeps_contextualize_window_invariant():
-    """Pin the constant meta cost contract used by the split and merge estimates.
-
-    The running token estimate treats the chunk-meta cost as constant across
-    windows, which only holds while doc_items and origin stay excluded from the
-    embedding serialization (DocMeta.excluded_embed). A change to excluded_embed
-    must fail loudly here instead of silently drifting chunk boundaries past
-    max_tokens.
-    """
+    """Split and merge share this contract: doc_items and origin add no context."""
     assert "doc_items" in DocMeta.excluded_embed
     assert "origin" in DocMeta.excluded_embed
+
+    doc = _paragraph_doc(2)
+    chunker = HybridChunker(tokenizer=_WordCountTokenizer(max_tokens=100))
+    reference = DocChunk(
+        text="same text",
+        meta=DocMeta(doc_items=[doc.texts[1]], headings=["Chapter 1"]),
+    )
+    window = DocChunk(
+        text=reference.text,
+        meta=DocMeta(
+            doc_items=doc.texts[1:],
+            headings=reference.meta.headings,
+            origin=DocumentOrigin(mimetype="text/plain", binary_hash=0, filename="other.txt"),
+        ),
+    )
+    assert chunker.contextualize(window) == chunker.contextualize(reference)
 
 
 class _WordCountTokenizer(_TestTokenizer):
@@ -964,27 +973,51 @@ def _chunks_before_merge(chunker, doc):
     return [x for c in res for x in chunker._split_using_plain_text(c, doc_serializer=ser)]
 
 
-def test_merge_chunks_tokenizes_linearly():
+@pytest.mark.parametrize("max_tokens", [100, 500, 5000])
+def test_merge_chunks_tokenizes_linearly(max_tokens):
     """_merge_chunks_with_matching_metadata must not re-tokenize the growing window per step.
 
     The old implementation re-tokenized the whole joined window on every
     iteration, i.e. ~N·w/2 chunk-sized counts for N chunks in windows of w.
-    The new one counts each chunk once plus one exact check per window.
+    With additive word counts, estimates are exact: each output window needs
+    one metadata count and one final verification, plus an overflow check for
+    each window except the last. No re-anchoring or shrink-back is needed.
     """
     doc = _paragraph_doc(200)
-    tok = _WordCountTokenizer(max_tokens=500)
+    tok = _WordCountTokenizer(max_tokens=max_tokens)
     chunker = HybridChunker(tokenizer=tok, merge_peers=False)
     chunks = _chunks_before_merge(chunker, doc)
-    doc_words = sum(len(c.text.split()) for c in chunks)
 
     tok.calls = 0
     tok.chars = 0
     merged = chunker._merge_chunks_with_matching_metadata(chunks)
 
+    # Measure only the merge stage, before correctness assertions count tokens.
+    merge_calls, merge_chars = tok.calls, tok.chars
+    overflow_events = len(merged) - 1  # all inputs have the same headings
+    calibration_calls = 3  # counts of a+delimiter+b, a, and b
+    assert merge_calls <= len(chunks) + calibration_calls + 2 * len(merged) + overflow_events
+
+    # Call counts alone cannot catch the old implementation: it also makes O(N)
+    # calls, but each call re-counts a growing prefix. Bound the actual input
+    # characters as well. Each input text is counted once; final verification
+    # counts each output once. Overflow checks count each output at most once
+    # more, plus a delimiter and the next input text. Metadata checks count one
+    # contextualized input per output. A maximum single-input context bounds
+    # both metadata checks and the extra input at each overflow.
+    text_chars = sum(len(c.text) for c in chunks)
+    output_chars = sum(len(chunker.contextualize(c)) for c in merged)
+    max_input_chars = max(len(chunker.contextualize(c)) for c in chunks)
+    calibration_chars = len(f"a{chunker.delim}b") + len("a") + len("b")
+    assert merge_chars <= (
+        calibration_chars
+        + text_chars
+        + 2 * output_chars
+        + (len(merged) + overflow_events) * max_input_chars
+        + overflow_events * len(chunker.delim)
+    )
+
     _assert_chunk_windows(chunker, merged, [it for c in chunks for it in c.meta.doc_items])
-    # tokenization work stays proportional to the document (~25x vs ~170x with
-    # the old implementation)
-    assert tok.chars <= 40 * doc_words
 
 
 class _OverCountingTokenizer(_TestTokenizer):
