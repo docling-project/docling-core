@@ -1554,16 +1554,15 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
 
     def _parse_mixed_text_like(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         """Parse a text-like element with mixed content (text + formatting runs)."""
-        node: NodeItem
         if el.tagName in _INLINE_HOST_LABELS and (
             el.tagName != DocLangToken.TEXT.value or self._extract_provenance(doc=doc, el=el)
         ):
-            node = self._parse_inline_host(doc=doc, el=el, parent=parent, label=DocItemLabel(el.tagName))
-        else:
-            # If the mixed-content element is itself a formatting tag (e.g. <bold> with a
-            # leading text run before a nested <italic>), its own style must not be dropped.
-            formatting = self._merge_formatting_tag(el.tagName, None) if el.tagName in _FORMATTING_TAG_VALUES else None
-            node = self._parse_inline_group(doc=doc, el=el, parent=parent, formatting=formatting)
+            self._parse_inline_host(doc=doc, el=el, parent=parent, label=DocItemLabel(el.tagName))
+            return
+        # If the mixed-content element is itself a formatting tag (e.g. <bold> with a
+        # leading text run before a nested <italic>), its own style must not be dropped.
+        formatting = self._merge_formatting_tag(el.tagName, None) if el.tagName in _FORMATTING_TAG_VALUES else None
+        node = self._parse_inline_group(doc=doc, el=el, parent=parent, formatting=formatting)
         if (content_layer := self._extract_layer(el=el)) is not None:
             # Runs carry no layer of their own; without this, furniture runs would leak into the body.
             for it, _ in doc.iterate_items(root=node, with_groups=True, included_content_layers=set(ContentLayer)):
@@ -1594,6 +1593,10 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         self._apply_initial_text_provenance(item, text="", prov_list=prov_list)
         _, body_nodes = self._split_element_children_head_body(el)
         self._parse_inline_group(doc=doc, el=el, parent=item, nodes=body_nodes)
+        if content_layer is not None:
+            # Inline runs inherit the host layer, including captions parsed directly.
+            for node, _ in doc.iterate_items(root=item, with_groups=True, included_content_layers=set(ContentLayer)):
+                node.content_layer = content_layer
         self._apply_custom_meta_from_element(item=item, el=el)
         self._source_recorder.bind_item(el, item)
         return item
@@ -1925,6 +1928,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             label=DocItemLabel.CAPTION,
             text=text,
             prov=(prov_list[0] if prov_list else None),
+            content_layer=self._extract_layer(el=cap_el),
         )
         for p in prov_list[1:]:
             item.prov.append(p)

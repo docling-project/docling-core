@@ -1250,7 +1250,11 @@ class HTMLDocSerializer(DocSerializer):
 
         if DocItemLabel.CAPTION in params.labels:
             for cap in item.captions:
-                if isinstance(it := cap.resolve(self.doc), TextItem) and it.self_ref not in excluded_refs:
+                if (
+                    isinstance(it := cap.resolve(self.doc), TextItem)
+                    and it.content_layer in params.layers
+                    and it.self_ref not in excluded_refs
+                ):
                     text_cap = it._get_plain_text(self.doc, serializer=self._plain_text_serializer)
                     text_dir = get_text_direction(text_cap)
                     dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""

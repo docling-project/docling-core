@@ -554,9 +554,9 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     @cached_property
     def _plain_text_serializer(self) -> "PlainTextDocSerializer":
         """Reuse one reader for the document's structured captions."""
-        from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer
+        from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer, PlainTextParams
 
-        return PlainTextDocSerializer(doc=self.doc)
+        return PlainTextDocSerializer(doc=self.doc, params=PlainTextParams(layers=set(ContentLayer)))
 
     @cached_property
     def _caption_descendants(self) -> set[str]:
@@ -702,6 +702,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 )
                 for cap in item.captions
                 if isinstance(it := cap.resolve(self.doc), TextItem)
+                and it.content_layer in params.layers
                 and it.self_ref not in self.get_excluded_refs(**kwargs)
             ]
             text_res = params.caption_delim.join([r.text for r in results])

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Optional, Union
 from pydantic import AnyUrl, Field
 from typing_extensions import deprecated
 
+from docling_core.types.doc.common.content_layer import ContentLayer
 from docling_core.types.doc.common.formatting import Formatting
 from docling_core.types.doc.common.scalars import LevelNumber
 from docling_core.types.doc.items.node import DocItem
@@ -47,9 +48,13 @@ class TextItem(DocItem):
         """Read the item text, including its inline representation."""
         if not self.children:
             return self.text
-        from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer
+        from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer, PlainTextParams
 
-        serializer = serializer if serializer is not None else PlainTextDocSerializer(doc=doc)
+        serializer = (
+            serializer
+            if serializer is not None
+            else PlainTextDocSerializer(doc=doc, params=PlainTextParams(layers=set(ContentLayer)))
+        )
         return serializer.text_serializer.serialize(item=self, doc_serializer=serializer, doc=doc).text
 
     @deprecated("Use export_to_doctags() instead.")

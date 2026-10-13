@@ -2570,13 +2570,14 @@ def test_roundtrip_inline_host(label: DocItemLabel, layer: ContentLayer):
 )
 @pytest.mark.parametrize("body", ["Before <formula>x</formula> after", "Before <bold>bold</bold> after"])
 @pytest.mark.parametrize("located", [False, True])
+@pytest.mark.parametrize("layer", [ContentLayer.BODY, ContentLayer.FURNITURE])
 def test_mixed_text_like_archive_roundtrip(
-    tag: str, caption_host: str | None, body: str, located: bool, tmp_path: Path
+    tag: str, caption_host: str | None, body: str, located: bool, layer: ContentLayer, tmp_path: Path
 ):
     locations = (
         '<location value="87"/><location value="417"/><location value="387"/><location value="426"/>' if located else ""
     )
-    fragment = f"<{tag}>{locations}{body}</{tag}>"
+    fragment = f'<{tag}><layer value="{layer.value}"/>{locations}{body}</{tag}>'
     if caption_host is not None:
         table_body = "<fcel/>Cell<nl/>" if caption_host == "table" else ""
         fragment = f"<{caption_host}>{fragment}{table_body}</{caption_host}>"
@@ -2599,6 +2600,11 @@ def test_mixed_text_like_archive_roundtrip(
                 assert container.captions == [host.get_ref()]
             inline = host.children[0].resolve(doc)
             assert inline.label == GroupLabel.INLINE
+        root = inline if tag == "text" and not located else host
+        assert all(
+            node.content_layer == layer
+            for node, _ in doc.iterate_items(root=root, with_groups=True, included_content_layers=set(ContentLayer))
+        )
         runs = [ref.resolve(doc) for ref in inline.children]
         assert [run.text for run in runs] == ["Before", "x" if "formula" in body else "bold", "after"]
         if "formula" in body:
@@ -2610,6 +2616,24 @@ def test_mixed_text_like_archive_roundtrip(
 
 
 @pytest.mark.parametrize("kind", ["table", "picture"])
+@pytest.mark.parametrize("layer", [ContentLayer.BODY, ContentLayer.FURNITURE])
+def test_plain_caption_layer_roundtrip(kind: str, layer: ContentLayer, tmp_path: Path):
+    table_body = "<fcel/>A<nl/>" if kind == "table" else ""
+    doc = _deserialize(
+        f'<doclang version="0.7"><text>Body paragraph</text><{kind}>'
+        f'<caption><layer value="{layer.value}"/>Caption</caption>{table_body}</{kind}></doclang>'
+    )
+    for cycle in range(2):
+        owner = doc.tables[0] if kind == "table" else doc.pictures[0]
+        caption = owner.captions[0].resolve(doc)
+        assert caption.content_layer == layer
+        assert doc.texts[0].content_layer == ContentLayer.BODY
+        archive = tmp_path / f"plain-caption-layer-{cycle}.dclx"
+        doc.save_as_doclang_archive(archive)
+        doc = DoclingDocument.load_from_doclang_archive(archive)
+
+
+@pytest.mark.parametrize("kind", ["table", "picture"])
 @pytest.mark.parametrize(
     ("caption", "expected"),
     [
@@ -2618,9 +2642,15 @@ def test_mixed_text_like_archive_roundtrip(
         ("<bold>Table <italic>1</italic></bold>: results", "Table 1 : results"),
     ],
 )
-def test_caption_readers_after_archive_roundtrip(kind: str, caption: str, expected: str, tmp_path: Path):
+@pytest.mark.parametrize("layer", [ContentLayer.BODY, ContentLayer.FURNITURE])
+def test_caption_readers_after_archive_roundtrip(
+    kind: str, caption: str, expected: str, layer: ContentLayer, tmp_path: Path
+):
     table_body = "<fcel/>A<fcel/>B<nl/><fcel/>1<fcel/>2<nl/>" if kind == "table" else ""
-    doc = _deserialize(f'<doclang version="0.7"><{kind}><caption>{caption}</caption>{table_body}</{kind}></doclang>')
+    doc = _deserialize(
+        f'<doclang version="0.7"><{kind}><caption><layer value="{layer.value}"/>'
+        f"{caption}</caption>{table_body}</{kind}></doclang>"
+    )
     for cycle in range(2):
         owner = doc.tables[0] if kind == "table" else doc.pictures[0]
         assert owner.caption_text(doc) == expected
@@ -2630,9 +2660,11 @@ def test_caption_readers_after_archive_roundtrip(kind: str, caption: str, expect
             HTMLDocSerializer(doc=doc),
             DocTagsDocSerializer(doc=doc),
         ]:
-            result = serializer.serialize_captions(item=owner).text
+            result = serializer.serialize_captions(item=owner, layers=set(ContentLayer)).text
             assert expected in result
-            assert serializer.serialize().text.count(expected) == 1
+            assert serializer.serialize(layers=set(ContentLayer)).text.count(expected) == 1
+            if layer == ContentLayer.FURNITURE:
+                assert not serializer.serialize_captions(item=owner, layers={ContentLayer.BODY}).text
             assert not serializer.serialize_captions(item=owner, labels={DocItemLabel.TABLE, DocItemLabel.PICTURE}).text
         archive = tmp_path / f"caption-reader-{cycle}.dclx"
         doc.save_as_doclang_archive(archive)
