@@ -8,7 +8,7 @@ from abc import abstractmethod
 from collections.abc import Iterable
 from functools import cached_property
 from pathlib import Path, PurePath
-from typing import Annotated, Any, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
 
 from pydantic import (
     AnyUrl,
@@ -52,6 +52,7 @@ from docling_core.types.doc import (
     PictureDataType,
     PictureItem,
     PictureMoleculeData,
+    RefItem,
     RichTableCell,
     Script,
     TableAnnotationType,
@@ -59,6 +60,9 @@ from docling_core.types.doc import (
     TextItem,
 )
 from docling_core.types.doc.document import DOCUMENT_TOKENS_EXPORT_LABELS
+
+if TYPE_CHECKING:
+    from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer
 
 _DEFAULT_LABELS = DOCUMENT_TOKENS_EXPORT_LABELS
 _DEFAULT_LAYERS = set(ContentLayer)
@@ -542,7 +546,32 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     # making some assumptions about the kwargs it can pass
     def _skip_in_walk(self, *, node: NodeItem, root: NodeItem | None) -> bool:
         """Whether the node is left out when walking the tree from ``root``, as it is serialized elsewhere."""
-        return False
+        nested = self._caption_descendants
+        return node.self_ref in nested and (
+            root is None or (root.self_ref not in nested and root.self_ref not in self._captions_of_some_item)
+        )
+
+    @cached_property
+    def _plain_text_serializer(self) -> "PlainTextDocSerializer":
+        """Reuse one reader for the document's structured captions."""
+        from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer
+
+        return PlainTextDocSerializer(doc=self.doc)
+
+    @cached_property
+    def _caption_descendants(self) -> set[str]:
+        """Caption subtrees are emitted by their floating item."""
+        return {
+            node.self_ref
+            for ref in self._captions_of_some_item
+            for node, _ in self.doc.iterate_items(
+                root=RefItem(cref=ref).resolve(self.doc),
+                with_groups=True,
+                traverse_pictures=True,
+                included_content_layers=set(ContentLayer),
+            )
+            if node.self_ref != ref
+        }
 
     @override
     def get_parts(
@@ -668,7 +697,9 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         results: list[SerializationResult] = []
         if DocItemLabel.CAPTION in params.labels:
             results = [
-                create_ser_result(text=it.text, span_source=it)
+                create_ser_result(
+                    text=it._get_plain_text(self.doc, serializer=self._plain_text_serializer), span_source=it
+                )
                 for cap in item.captions
                 if isinstance(it := cap.resolve(self.doc), TextItem)
                 and it.self_ref not in self.get_excluded_refs(**kwargs)

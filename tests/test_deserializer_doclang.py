@@ -11,6 +11,10 @@ from docling_core.transforms.serializer.doclang import (
     EscapeMode,
     LabelMode,
 )
+from docling_core.transforms.serializer.doctags import DocTagsDocSerializer
+from docling_core.transforms.serializer.html import HTMLDocSerializer
+from docling_core.transforms.serializer.markdown import MarkdownDocSerializer
+from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer
 from docling_core.types.doc import (
     BoundingBox,
     ContentLayer,
@@ -2603,6 +2607,36 @@ def test_mixed_text_like_archive_roundtrip(
             assert runs[1].formatting is not None and runs[1].formatting.bold
         assert all(not run.prov for run in runs)
         assert _serialize(doc).count("<location") == (4 if located else 0)
+
+
+@pytest.mark.parametrize("kind", ["table", "picture"])
+@pytest.mark.parametrize(
+    ("caption", "expected"),
+    [
+        ("Table 1: results", "Table 1: results"),
+        ("Table <bold>1</bold>: results", "Table 1 : results"),
+        ("<bold>Table <italic>1</italic></bold>: results", "Table 1 : results"),
+    ],
+)
+def test_caption_readers_after_archive_roundtrip(kind: str, caption: str, expected: str, tmp_path: Path):
+    table_body = "<fcel/>A<fcel/>B<nl/><fcel/>1<fcel/>2<nl/>" if kind == "table" else ""
+    doc = _deserialize(f'<doclang version="0.7"><{kind}><caption>{caption}</caption>{table_body}</{kind}></doclang>')
+    for cycle in range(2):
+        owner = doc.tables[0] if kind == "table" else doc.pictures[0]
+        assert owner.caption_text(doc) == expected
+        for serializer in [
+            PlainTextDocSerializer(doc=doc),
+            MarkdownDocSerializer(doc=doc),
+            HTMLDocSerializer(doc=doc),
+            DocTagsDocSerializer(doc=doc),
+        ]:
+            result = serializer.serialize_captions(item=owner).text
+            assert expected in result
+            assert serializer.serialize().text.count(expected) == 1
+            assert not serializer.serialize_captions(item=owner, labels={DocItemLabel.TABLE, DocItemLabel.PICTURE}).text
+        archive = tmp_path / f"caption-reader-{cycle}.dclx"
+        doc.save_as_doclang_archive(archive)
+        doc = DoclingDocument.load_from_doclang_archive(archive)
 
 
 def test_roundtrip_furniture_inline_group():

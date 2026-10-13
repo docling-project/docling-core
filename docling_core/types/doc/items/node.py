@@ -213,9 +213,12 @@ class FloatingItem(DocItem):
 
     def caption_text(self, doc: "DoclingDocument") -> str:
         """Computes the caption as a single text."""
+        from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer
+
+        serializer = PlainTextDocSerializer(doc=doc)
         text = ""
         for cap in self.captions:
-            text += cap.resolve(doc).text
+            text += cap.resolve(doc)._get_plain_text(doc, serializer=serializer)
         return text
 
     def get_image(self, doc: "DoclingDocument", prov_index: int = 0) -> PILImage.Image | None:
