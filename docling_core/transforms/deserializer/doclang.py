@@ -98,8 +98,8 @@ from docling_core.utils.settings import settings
 
 __all__ = ["DocLangDocDeserializer", "DocLangSourceMap", "DocLangSourceTarget"]
 
-# Labels whose text-like tag must keep its label when its content is mixed (text + formatting runs).
-# A bare InlineGroup serializes as TEXT, so unlocated TEXT keeps that representation.
+# Mixed-content hosts preserve their semantic label or, for TEXT, their provenance.
+# A bare InlineGroup already serializes as <text>, so TEXT needs a host only when located.
 # FORMULA is absent because a formula cannot hold prose runs.
 _INLINE_HOST_LABELS: frozenset[DocItemLabel] = frozenset(
     {DocItemLabel.TEXT, DocItemLabel.CAPTION, DocItemLabel.FOOTNOTE, DocItemLabel.PAGE_HEADER, DocItemLabel.PAGE_FOOTER}
