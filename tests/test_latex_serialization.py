@@ -44,6 +44,15 @@ def test_latex_basic_activities():
     verify_or_update(exp_file=src.with_suffix(".gt.tex"), actual=actual)
 
 
+def test_title_does_not_gain_the_compilation_date():
+    doc = DoclingDocument(name="title-date")
+    doc.add_text(label=DocItemLabel.TITLE, text="A title")
+    rendered = LaTeXDocSerializer(doc=doc).serialize().text
+
+    assert rendered.index(r"\title{A title}") < rendered.index(r"\date{}")
+    assert rendered.index(r"\date{}") < rendered.index(r"\begin{document}")
+
+
 def test_latex_inline_and_formatting():
     src = Path("./tests/data/doc/inline_and_formatting.yaml")
     doc = DoclingDocument.load_from_yaml(src)

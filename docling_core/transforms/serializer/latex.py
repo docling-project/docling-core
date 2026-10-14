@@ -700,6 +700,8 @@ class LaTeXDocSerializer(DocSerializer):
         # Ensure title (if any) is before \begin{document}
         if title_cmd:
             preamble_lines.append(title_cmd)
+            # LaTeX otherwise prints the compilation date for every title.
+            preamble_lines.append(r"\date{}")
 
         header = "\n".join(preamble_lines + ["", "\\begin{document}"]) if preamble_lines else "\\begin{document}"
         footer = "\\end{document}"
