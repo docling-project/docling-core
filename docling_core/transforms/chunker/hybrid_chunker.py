@@ -24,6 +24,7 @@ from docling_core.transforms.serializer.base import (
     BaseDocSerializer,
     BaseSerializerProvider,
 )
+from docling_core.transforms.serializer.markdown import MARKDOWN_SEPARATOR_ROW_RE
 from docling_core.types.doc import DoclingDocument, SectionHeaderItem, TableItem, TitleItem
 
 _SEMCHUNK_AVAILABLE: bool = False
@@ -315,6 +316,12 @@ class HybridChunker(BaseChunker):
           included in the prefix to account for its token cost, but is stripped
           from all segments after the first so it does not repeat.
 
+          When ``omit_header_on_overflow`` is ``False`` and a body row is too
+          wide to fit alongside the full header, the table is split vertically
+          (by columns) so that each resulting sub-table is a complete, valid
+          Markdown table.  When ``omit_header_on_overflow`` is ``True``, wide
+          rows are emitted without the header instead.
+
         - Semantic splitting: for all other chunks, ``semchunk`` splits the
           text at natural semantic boundaries up to ``available_length`` tokens.
 
@@ -345,16 +352,39 @@ class HybridChunker(BaseChunker):
             table_prefix = "".join(header_lines)
             full_prefix = preamble + table_prefix
 
-            line_chunker = LineBasedTokenChunker(
-                tokenizer=self.tokenizer,
-                max_tokens_override=available_length,
-                prefix=full_prefix,
-                omit_prefix_on_overflow=self.omit_header_on_overflow,
-                serializer_provider=self.serializer_provider,
+            # Check whether any body row is too wide to fit alongside the full header.
+            # Uses the concatenated token count (not the sum) to match the same
+            # non-additive tokenization behaviour used by LineBasedTokenChunker.
+            any_row_overflows = body_lines and any(
+                self.tokenizer.count_tokens(table_prefix + line) > available_length for line in body_lines
             )
-            segments = line_chunker.chunk_text(lines=body_lines)
-            if preamble:
-                segments = segments[:1] + [s[len(preamble) :] if s.startswith(full_prefix) else s for s in segments[1:]]
+
+            if any_row_overflows and not self.omit_header_on_overflow:
+                # omit_header_on_overflow=False: the user wants the header present
+                # in every chunk.  Since splitting a Markdown row mid-cell produces
+                # an invalid fragment, split the table vertically (by columns) so
+                # that each sub-table is a complete, valid Markdown table.
+                segments = self._split_table_by_columns(
+                    header_lines=header_lines,
+                    body_lines=body_lines,
+                    preamble=preamble,
+                    available_length=available_length,
+                )
+            else:
+                # omit_header_on_overflow=True (or no overflow): use row-wise
+                # splitting with omit-prefix fallback for rows that don't fit.
+                line_chunker = LineBasedTokenChunker(
+                    tokenizer=self.tokenizer,
+                    max_tokens_override=available_length,
+                    prefix=full_prefix,
+                    omit_prefix_on_overflow=True,
+                    serializer_provider=self.serializer_provider,
+                )
+                segments = line_chunker.chunk_text(lines=body_lines)
+                if preamble:
+                    segments = segments[:1] + [
+                        s[len(preamble) :] if s.startswith(full_prefix) else s for s in segments[1:]
+                    ]
         else:
             if not _SEMCHUNK_AVAILABLE:
                 raise ImportError(_SEMCHUNK_INSTALL_HINT) from _SEMCHUNK_IMPORT_ERROR
@@ -441,6 +471,127 @@ class HybridChunker(BaseChunker):
             window_start = fit_end + 1
 
         return output_chunks
+
+    def _split_table_by_columns(
+        self,
+        header_lines: list[str],
+        body_lines: list[str],
+        preamble: str,
+        available_length: int,
+    ) -> list[str]:
+        """Split a Markdown table into column-wise sub-tables that fit within the token budget.
+
+        When a table row is too wide to fit alongside the repeated header, splitting
+        the row mid-cell would produce an invalid Markdown fragment.  This method
+        instead partitions the table columns into groups so that each resulting
+        sub-table (header columns + all body rows for those columns) is a complete,
+        valid Markdown table that fits within ``available_length`` tokens.
+
+        The preamble (caption or other text preceding the header) is prepended only
+        to the first sub-table.
+
+        Args:
+            header_lines: The header row(s) and separator row of the original table,
+                each as a newline-terminated string.
+            body_lines: The data rows of the original table, each as a
+                newline-terminated string.
+            preamble: Text preceding the table header (e.g. a caption).  Included
+                in the first returned segment only.
+            available_length: Maximum token budget for each segment (text only,
+                before context overhead is added by the caller).
+
+        Returns:
+            A list of text segments, each a complete Markdown sub-table string.
+            Falls back to a single segment containing all rows without the header
+            when even a single-column sub-table exceeds the budget.
+        """
+        # Exclude the separator row from header_lines for cell parsing; rebuild it.
+        data_header_lines = [l for l in header_lines if not MARKDOWN_SEPARATOR_ROW_RE.match(l.rstrip("\n"))]
+
+        def parse_cells(row: str) -> list[str]:
+            line = row.strip()
+            if not line:
+                return []
+            if line.startswith("|"):
+                line = line[1:]
+            if line.endswith("|"):
+                num_bs = len(line[:-1]) - len(line[:-1].rstrip("\\"))
+                if num_bs % 2 == 0:
+                    line = line[:-1]
+
+            cells: list[str] = []
+            current: list[str] = []
+            bs_count = 0
+            for char in line:
+                if char == "\\":
+                    bs_count += 1
+                    current.append(char)
+                elif char == "|":
+                    if bs_count % 2 == 1:
+                        current.append(char)
+                    else:
+                        cells.append("".join(current).strip())
+                        current = []
+                    bs_count = 0
+                else:
+                    bs_count = 0
+                    current.append(char)
+            cells.append("".join(current).strip())
+            return cells
+
+        header_cell_rows: list[list[str]] = [parse_cells(l) for l in data_header_lines]
+        body_cell_rows: list[list[str]] = [parse_cells(l) for l in body_lines if l.strip()]
+
+        # Determine the effective column count (min across all rows for safety).
+        n_cols = min(
+            (len(r) for r in header_cell_rows + body_cell_rows),
+            default=0,
+        )
+        if n_cols == 0:
+            # Malformed table: fall back to emitting body rows without header.
+            return ["".join(body_lines)]
+
+        def build_subtable(col_start: int, col_end: int, include_preamble: bool) -> str:
+            """Construct the text of a sub-table covering columns [col_start, col_end)."""
+            lines: list[str] = []
+            if include_preamble and preamble:
+                lines.append(preamble)
+            for hrow in header_cell_rows:
+                lines.append("| " + " | ".join(hrow[col_start:col_end]) + " |\n")
+            lines.append("| " + " | ".join(["-"] * (col_end - col_start)) + " |\n")
+            for brow in body_cell_rows:
+                lines.append("| " + " | ".join(brow[col_start:col_end]) + " |\n")
+            return "".join(lines)
+
+        segments: list[str] = []
+        col_start = 0
+        first = True
+
+        while col_start < n_cols:
+            # Binary-search for the largest col_end in (col_start, n_cols] that fits.
+            lo, hi = col_start + 1, n_cols
+            best_end: int | None = None
+            while lo <= hi:
+                mid = (lo + hi) // 2
+                candidate = build_subtable(col_start, mid, include_preamble=first)
+                if self.tokenizer.count_tokens(candidate) <= available_length:
+                    best_end = mid
+                    lo = mid + 1
+                else:
+                    hi = mid - 1
+
+            if best_end is None:
+                # Even a single column doesn't fit.  Fall back to emitting the
+                # remaining rows without a header to guarantee forward progress.
+                remaining = build_subtable(col_start, n_cols, include_preamble=first)
+                segments.append(remaining)
+                break
+
+            segments.append(build_subtable(col_start, best_end, include_preamble=first))
+            col_start = best_end
+            first = False
+
+        return segments
 
     def chunk(
         self,
