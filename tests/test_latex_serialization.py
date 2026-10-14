@@ -11,7 +11,7 @@ import yaml
 
 from docling_core.transforms.serializer.latex import LaTeXDocSerializer, LaTeXParams
 from docling_core.types.doc.base import ImageRefMode
-from docling_core.types.doc.document import DoclingDocument, Formatting
+from docling_core.types.doc.document import DocItemLabel, DoclingDocument, Formatting
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -177,6 +177,35 @@ def test_inline_group_no_duplication():
     # The content must be inside the LaTeX command, not on a standalone line
     assert "\\section{\\textit{Partially formatted} heading}" in body
     assert "\\item \\textbf{Term} : definition" in body
+
+
+def test_display_math_uses_valid_environments():
+    doc = DoclingDocument(name="math")
+    doc.add_text(
+        label=DocItemLabel.FORMULA,
+        text=r"\begin{eqnarray}a&=&b\\c&=&d\end{eqnarray}",
+    )
+    doc.add_text(label=DocItemLabel.FORMULA, text=r"x=y\tag{1.2a}")
+    doc.add_text(label=DocItemLabel.FORMULA, text=r"a&=b\\c&=d")
+
+    latex = LaTeXDocSerializer(doc=doc).serialize().text
+
+    assert r"\usepackage{amsmath}" in latex
+    assert r"\usepackage{amssymb}" in latex
+    assert r"\begin{eqnarray}a&=&b\\c&=&d\end{eqnarray}" in latex
+    assert r"\begin{equation}" + "\nx=y\\tag{1.2a}\n" + r"\end{equation}" in latex
+    assert r"\begin{align*}" + "\na&=b\\\\c&=d\n" + r"\end{align*}" in latex
+
+
+def test_markdown_avoids_nested_display_math_delimiters():
+    doc = DoclingDocument(name="math")
+    doc.add_text(
+        label=DocItemLabel.FORMULA,
+        text=r"\begin{equation}a=b\end{equation}",
+    )
+    markdown = doc.export_to_markdown()
+    assert "$$a=b$$" in markdown
+    assert r"$$\begin{equation}" not in markdown
 
 
 def test_latex_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_table_doc):

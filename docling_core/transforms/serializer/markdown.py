@@ -423,6 +423,15 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             escape_underscores = False
         elif isinstance(item, FormulaItem):
             if text:
+                if not is_inline_scope:
+                    match = re.fullmatch(
+                        r"\s*\\begin\{(equation\*?|eqnarray\*?)\}(.*?)"
+                        r"\\end\{\1\}\s*",
+                        text,
+                        flags=re.DOTALL,
+                    )
+                    if match:
+                        text = match.group(2).strip()
                 text_part = f"${text}$" if is_inline_scope else f"$${text}$$"
             elif item.orig:
                 text_part = "<!-- formula-not-decoded -->"
