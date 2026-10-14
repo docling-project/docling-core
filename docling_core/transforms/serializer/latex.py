@@ -76,9 +76,17 @@ class LaTeXParams(CommonParams):
     layers: set[ContentLayer] = {ContentLayer.BODY}
 
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
-    image_placeholder: str = "% image"
 
-    enable_chart_tables: bool = True
+    image_placeholder: Annotated[
+        str,
+        Field(description="LaTeX snippet emitted in place of an image when image_mode is PLACEHOLDER."),
+    ] = "% image"
+
+    enable_chart_tables: Annotated[
+        bool,
+        Field(description="Render tabular-chart data as a LaTeX table after the enclosing figure environment."),
+    ] = True
+
     include_annotations: Annotated[
         bool,
         Field(
@@ -87,21 +95,41 @@ class LaTeXParams(CommonParams):
         ),
     ] = True
 
-    indent: int = 2  # spaces for nested lists
+    indent: Annotated[
+        int,
+        Field(description="Number of spaces used to indent each level of nested list environments."),
+    ] = 2
 
-    # If not None, emitted where page breaks occur (e.g., "\\newpage")
-    page_break_command: str | None = None
+    page_break_command: Annotated[
+        str | None,
+        Field(
+            description="LaTeX command emitted at every page break. Set to None to omit page breaks.",
+            examples=[r"\newpage", r"\clearpage"],
+        ),
+    ] = None
 
-    # Escape LaTeX special characters in text
-    escape_latex: bool = True
+    escape_latex: Annotated[
+        bool,
+        Field(description="Escape LaTeX special characters (e.g. `_`, `%`, `&`) in text content."),
+    ] = True
 
-    # Optional LaTeX preamble configuration
-    # When provided, emitted before the document environment
-    # Example: "\\documentclass[11pt,a4paper]{article}"
-    document_class: str = r"\documentclass[11pt,a4paper]{article}"
-    # List of packages to include. Accepts either full lines
-    # like "\\usepackage{graphicx}" or bare package names like "graphicx".
-    packages: list[str] = [
+    document_class: Annotated[
+        str,
+        Field(
+            description="LaTeX document-class declaration emitted at the top of the preamble.",
+            examples=[r"\documentclass[11pt,a4paper]{article}", r"\documentclass{beamer}"],
+        ),
+    ] = r"\documentclass[11pt,a4paper]{article}"
+
+    packages: Annotated[
+        list[str],
+        Field(
+            description=(
+                "LaTeX packages to include in the preamble. "
+                "Each entry may be a full `\\usepackage{…}` line or a bare package name."
+            ),
+        ),
+    ] = [
         r"\usepackage[utf8]{inputenc} % allow utf-8 input",
         r"\usepackage[T1]{fontenc}    % use 8-bit T1 fonts",
         r"\usepackage{hyperref}       % hyperlinks",
