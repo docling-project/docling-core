@@ -1487,3 +1487,80 @@ def test_split_markdown_table_with_escaped_pipes_and_empty_cells():
         assert tc <= 64, f"Chunk {i} exceeds token limit: {tc} > 64"
         # Verify valid Markdown table structure
         assert any(MARKDOWN_SEPARATOR_ROW_RE.match(ln.rstrip("\n")) for ln in chunk.text.splitlines())
+
+
+def test_tall_and_wide_table_chunks_respect_token_limit():
+    """Verify that a table with both many columns and many rows is partitioned across columns and rows."""
+    num_cols = 12
+    num_rows = 25  # 1 header + 24 body rows
+    max_tokens = 96
+
+    doc = DoclingDocument(name="tall_and_wide_table")
+    doc.add_heading(text="Large Financial Matrix Overview", level=1)
+
+    cells = []
+    for col in range(num_cols):
+        cells.append(
+            TableCell(
+                text=f"Metric_{col}",
+                row_span=1,
+                col_span=1,
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=col,
+                end_col_offset_idx=col + 1,
+                column_header=True,
+            )
+        )
+    for row in range(1, num_rows):
+        for col in range(num_cols):
+            cells.append(
+                TableCell(
+                    text=f"R{row}C{col}_val",
+                    row_span=1,
+                    col_span=1,
+                    start_row_offset_idx=row,
+                    end_row_offset_idx=row + 1,
+                    start_col_offset_idx=col,
+                    end_col_offset_idx=col + 1,
+                    column_header=False,
+                )
+            )
+    doc.add_table(data=TableData(num_rows=num_rows, num_cols=num_cols, table_cells=cells))
+
+    tokenizer = OpenAITokenizer(
+        tokenizer=tiktoken.get_encoding("cl100k_base"),
+        max_tokens=max_tokens,
+    )
+    chunker = HybridChunker(
+        tokenizer=tokenizer,
+        merge_peers=False,
+        repeat_table_header=True,
+        serializer_provider=CompactMarkdownSerializerProvider(),
+    )
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    assert len(chunks) > 2, "Tall and wide table should be split into multiple chunks across columns and rows"
+    all_chunk_text = "\n".join(chunk.text for chunk in chunks)
+
+    for i, chunk in enumerate(chunks):
+        tc = tokenizer.count_tokens(chunker.contextualize(chunk))
+        assert tc <= max_tokens, (
+            f"Chunk {i} exceeds token limit: {tc} > {max_tokens} — "
+            f"contextualized text: {chunker.contextualize(chunk)!r}"
+        )
+        # Verify valid Markdown table structure (has separator row)
+        assert any(MARKDOWN_SEPARATOR_ROW_RE.match(ln.rstrip("\n")) for ln in chunk.text.splitlines())
+
+    # Verify that cells from top and bottom rows, left and right columns are preserved
+    sample_values = [
+        "Metric_0",
+        f"Metric_{num_cols - 1}",
+        "R1C0_val",
+        f"R1C{num_cols - 1}_val",
+        f"R{num_rows - 1}C0_val",
+        f"R{num_rows - 1}C{num_cols - 1}_val",
+    ]
+    for val in sample_values:
+        assert val in all_chunk_text, f"Sample cell value {val!r} not found across chunks"
