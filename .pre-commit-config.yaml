@@ -1,17 +1,34 @@
 fail_fast: true
+default_stages: [pre-commit]
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        files: '^(docling_core|tests|docs/examples|examples|packages/dclq|\.github/scripts)/.*\.py$|^(\.pre-commit-config\.yaml|pyproject\.toml)$'
+        exclude: '^tests/data/'
+      - id: end-of-file-fixer
+        files: '^(docling_core|tests|docs/examples|examples|packages/dclq|\.github/scripts)/.*\.py$|^(\.pre-commit-config\.yaml|pyproject\.toml)$'
+        exclude: '^tests/data/'
+      - id: check-yaml
+        args: [--unsafe]
+        exclude: '^tests/data/'
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=5120]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.5
+    rev: v0.16.10
     hooks:
       - id: ruff-check
         name: "Ruff linter"
         args: [--exit-non-zero-on-fix, --fix, --config=pyproject.toml]
-        files: '^(docling_core|tests|docs/examples|examples|packages/dclq).*\.(py|ipynb)$'
+        files: '^(docling_core|tests|docs/examples|examples|packages/dclq|\.github/scripts).*\.(py|ipynb)$'
         pass_filenames: false
       - id: ruff-format
         name: "Ruff formatter"
         args: [--config=pyproject.toml]
-        files: '^(docling_core|tests|docs/examples|examples|packages/dclq).*\.(py|ipynb)$'
+        files: '^(docling_core|tests|docs/examples|examples|packages/dclq|\.github/scripts).*\.(py|ipynb)$'
         pass_filenames: false
   - repo: local
     hooks:
@@ -21,30 +38,12 @@ repos:
         pass_filenames: false
         language: system
         files: '(docling_core/compat\.py|docling_core/types/doc/common/constants\.py|docling_core/types/doc/.*\.py|docs/DoclingDocument\.json)$'
-  - repo: local
-    hooks:
-      - id: mypy
-        name: MyPy
-        entry: uv run --no-sync mypy docling_core tests packages/dclq/dclq packages/dclq/tests
+      - id: ty
+        name: ty
+        entry: uv run --no-sync ty check
         pass_filenames: false
         language: system
-        files: '\.py$'
-  - repo: local
-    hooks:
-      - id: pytest
-        name: Pytest
-        entry: uv run --no-sync pytest --cov=docling_core --cov-report=xml tests
-        pass_filenames: false
-        language: system
-        files: '\.py$'
-      - id: pytest-dclq
-        name: Pytest (dclq)
-        entry: uv run --no-sync pytest packages/dclq/tests
-        pass_filenames: false
-        language: system
-        files: '\.py$'
-  - repo: local
-    hooks:
+        files: '^(docling_core|tests|packages/dclq|\.github/scripts)/.*\.py$'
       - id: docs
         name: Docs
         entry: uv run --no-sync python -m docling_core.utils.generate_docs docs
@@ -52,10 +51,6 @@ repos:
         language: system
         files: '\.py$'
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.12.9
+    rev: 0.12.23
     hooks:
       - id: uv-lock
-        name: "uv lockfile"
-        entry: uv lock
-        pass_filenames: false
-        language: system
