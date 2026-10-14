@@ -79,7 +79,14 @@
   </code>
   <text></text>
   <formula></formula>
-  <text></text>
+  <text>
+    <text>
+      <href uri="."/>
+    </text>
+    <text>
+      <href uri="https://github.com/DS4SD/docling"/>
+    </text>
+  </text>
   <list class="ordered">
     <ldiv>
       <marker>(i)</marker>
