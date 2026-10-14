@@ -47,7 +47,12 @@ class LineBasedTokenChunker(BaseChunker):
         ),
     ]
 
-    max_tokens_override: Annotated[int | None, Field(default=None, gt=0)]
+    max_tokens_override: Annotated[
+        int | None,
+        Field(
+            gt=0, description="Optional token limit override to constrain chunk size independently of the tokenizer."
+        ),
+    ] = None
 
     prefix: Annotated[
         str,
@@ -116,6 +121,11 @@ class LineBasedTokenChunker(BaseChunker):
 
     @property
     def max_tokens(self) -> int:
+        """Maximum number of tokens allowed in a chunk.
+
+        Returns max_tokens_override if set, otherwise the maximum tokens
+        reported by the tokenizer.
+        """
         return self.max_tokens_override or self.tokenizer.get_max_tokens()
 
     def model_post_init(self, __context) -> None:
@@ -134,17 +144,13 @@ class LineBasedTokenChunker(BaseChunker):
             Iterator[BaseChunk]: iterator over extracted chunks
         """
         my_doc_ser = self.serializer_provider.get_serializer(doc=dl_doc)
-
-        # Serialize the entire document to get the text
         ser_res = my_doc_ser.serialize()
 
         if not ser_res.text:
             return
 
-        # Use chunk_text to split the text into chunks
         text_chunks = self.chunk_text(lines=ser_res.text.splitlines(True))
 
-        # Yield DocChunk objects for each text chunk
         for chunk_text in text_chunks:
             yield DocChunk(
                 text=chunk_text,

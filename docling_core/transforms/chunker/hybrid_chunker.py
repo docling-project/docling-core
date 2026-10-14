@@ -61,7 +61,7 @@ class HybridChunker(BaseChunker):
             respective pretrained model
         max_tokens: The maximum number of tokens per chunk. If not set, limit is
             resolved from the tokenizer
-        repeat_table_headers: Whether to repeat a table header if the table is chunked
+        repeat_table_header: Whether to repeat a table header if the table is chunked
         merge_peers: Whether to merge undersized chunks sharing same relevant metadata
         always_emit_headings: Whether to emit headings even for empty sections
         omit_header_on_overflow: Only used when repeat_table_header is True. When True,
@@ -277,12 +277,36 @@ class HybridChunker(BaseChunker):
         doc_chunk: DocChunk,
         doc_serializer: BaseDocSerializer,
     ) -> list[DocChunk]:
+        """Split an oversized chunk into token-bounded sub-chunks via text segmentation.
+
+        Computes the token budget available for body text by subtracting the cost of
+        headings and captions (``other_len``) from ``max_tokens``, then delegates
+        segmentation to :meth:`segment`. If the first segmentation still produces
+        chunks that exceed ``max_tokens`` after contextualization (due to non-additive
+        tokenization), ``available_length`` is reduced by the observed overflow and
+        :meth:`segment` is called again. This loop converges because ``available_length``
+        strictly decreases on each iteration.
+
+        When the loop exhausts the budget (``available_length <= 0``), headings and
+        captions are stripped and the method recurses once on the stripped chunk, which
+        has ``other_len == 0`` and therefore a full ``max_tokens`` budget. If headings
+        and captions are already absent, :meth:`segment` is called directly with the
+        full budget.
+
+        Args:
+            doc_chunk: The chunk to split. May already fit within ``max_tokens``, in
+                which case it is returned unchanged.
+            doc_serializer: Serializer for the current document, forwarded to
+                :meth:`segment`.
+
+        Returns:
+            A list of :class:`DocChunk` objects whose contextualized token counts
+            respect ``max_tokens``.
+        """
         lengths = self._doc_chunk_length(doc_chunk)
         if lengths.total_len <= self.max_tokens:
             return [DocChunk(**doc_chunk.export_json_dict())]
 
-        # How much room is there for text after subtracting out the headers and
-        # captions:
         available_length = self.max_tokens - lengths.other_len
 
         while available_length > 0:
@@ -333,6 +357,7 @@ class HybridChunker(BaseChunker):
 
         Args:
             doc_chunk: The chunk to segment.
+            available_length: Maximum token budget available for each segment.
             doc_serializer: Serializer for the current document; must be a
                 ``ChunkingDocSerializer`` for the table path to activate.
 
@@ -521,6 +546,20 @@ class HybridChunker(BaseChunker):
         data_header_lines = [l for l in header_lines if not MARKDOWN_SEPARATOR_ROW_RE.match(l.rstrip("\n"))]
 
         def parse_cells(row: str) -> list[str]:
+            """Split a Markdown table row string into a list of cell strings.
+
+            Strips the optional leading and trailing ``|`` delimiters, then splits
+            on unescaped ``|`` characters. A ``|`` is considered escaped when it is
+            preceded by an odd number of backslashes. Each cell value is stripped of
+            surrounding whitespace before being returned.
+
+            Args:
+                row: A single Markdown table row, e.g. ``| a | b\\|c | d |``.
+
+            Returns:
+                A list of cell strings with whitespace stripped. Returns an empty
+                list for blank rows.
+            """
             line = row.strip()
             if not line:
                 return []

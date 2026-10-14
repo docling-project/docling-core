@@ -82,7 +82,7 @@ from docling_core.types.doc import (
 
 _logger = logging.getLogger(__name__)
 
-MARKDOWN_SEPARATOR_ROW_RE: re.Pattern = re.compile(r"^\|(\s*:?-+:?\s*\|)+\s*$")
+MARKDOWN_SEPARATOR_ROW_RE: re.Pattern[str] = re.compile(r"^\|(\s*:?-+:?\s*\|)+\s*$")
 """Matches a Markdown table separator row, e.g. ``| - | :---: | --: |``."""
 
 
