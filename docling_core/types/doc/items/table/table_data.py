@@ -153,10 +153,10 @@ class TableData(BaseModel):  # TBD
         rows that merely hold such a cell are not counted. A row after the first
         is also not counted when an unflagged, non-empty cell starts on it
         outside the leading column, which holds row labels that stay unmarked
-        even on header rows. Row 0 is subject to that check only when a later
-        row also flags its leading cell, the shape of a column of row headers
-        flagged as ``column_header``; otherwise a partially flagged row 0 is
-        still the header row.
+        even on header rows. A partially flagged row 0 is always kept as the
+        header unless a flagged cell also starts in the leading column on a
+        later row, which indicates a column of row headers rather than a
+        genuine stacked header.
 
         Args:
             grid: The precomputed ``grid`` of this table, to avoid rebuilding it.
@@ -167,10 +167,8 @@ class TableData(BaseModel):  # TBD
         if grid is None:
             grid = self.grid
         first_col = min((cell.start_col_offset_idx for cell in self.table_cells), default=0)
-        # A column_header flag that starts in the leading column of a later row
-        # marks a column of row headers (the pre-docling#4216 HTML shape). Only
-        # then can row 0 be such a mis-flagged row header rather than a partially
-        # flagged header row, so only then is row 0 subject to the body-text check.
+        # Apply the body-text check to row 0 only when a flagged cell starts in
+        # the leading column on a later row, which signals a column of row headers.
         leading_col_flagged_below = any(
             cell.column_header and cell.start_col_offset_idx == first_col and cell.start_row_offset_idx == row_idx
             for row_idx, row in enumerate(grid)
