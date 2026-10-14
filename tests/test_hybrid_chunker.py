@@ -1263,8 +1263,7 @@ def test_wide_table_is_split_by_columns_when_rows_do_not_fit_with_header():
     Each resulting column-slice chunk must be a complete, valid Markdown sub-table
     with its own header, and no chunk may exceed ``max_tokens``.
 
-    This test pins the exact scenario from docling issue #3428:
-    header ≈ 137 tokens, body row ≈ 106 tokens, header+row ≈ 243 tokens.
+    Scenario: header ≈ 137 tokens, body row ≈ 106 tokens, header+row ≈ 243 tokens.
     With a 9-token heading context, available_length = max_tokens(250) - 9 = 241.
     So header+row(243) > available_length(241) but header+row ≤ max_tokens(250).
     """
