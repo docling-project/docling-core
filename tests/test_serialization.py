@@ -9,6 +9,7 @@ from xml.etree import ElementTree as ET
 import pytest
 from pydantic import AnyUrl
 
+from docling_core.transforms.chunker.hierarchical_chunker import TripletTableSerializer
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
@@ -1709,6 +1710,30 @@ def test_referenced_image_uri_is_encoded(uri, expected: str):
     assert doc.export_to_markdown(image_mode=ImageRefMode.REFERENCED) == f"![Image]({expected})"
 
 
+@pytest.mark.parametrize(
+    ("uri", "expected"),
+    [
+        (Path("doc_artifacts/image_000001_ab12.png"), "doc_artifacts/image_000001_ab12.png"),
+        (Path("My Report (final)_artifacts/img.png"), "My%20Report%20%28final%29_artifacts/img.png"),
+        # A Windows-authored separator must reach the page as "/", not as "%5C".
+        (Path("My Report_artifacts\\img.png"), "My%20Report_artifacts/img.png"),
+        # An absolute Windows path becomes a file:// URL, as in the Markdown output.
+        (Path("C:/Users/me/My Docs/img.png"), "file:///C:/Users/me/My%20Docs/img.png"),
+        # URLs keep their scheme and delimiters, and pydantic's escapes are not encoded twice.
+        (AnyUrl("file:///home/a b/img.png"), "file:///home/a%20b/img.png"),
+        (AnyUrl("s3://bucket/My Report_artifacts/img.png"), "s3://bucket/My%20Report_artifacts/img.png"),
+        # In an HTML attribute, "&" is written as "&amp;".
+        (AnyUrl("https://example.com/img.png?w=1&h=2"), "https://example.com/img.png?w=1&amp;h=2"),
+    ],
+)
+def test_html_referenced_image_uri_is_encoded(uri, expected: str):
+    """Test that the HTML serializer encodes a referenced image URI the same way as Markdown."""
+    doc = DoclingDocument(name="x")
+    doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=uri))
+
+    assert f'<img src="{expected}">' in doc.export_to_html(image_mode=ImageRefMode.REFERENCED)
+
+
 def test_referenced_image_uri_encoding_only_applies_to_referenced_mode():
     """Test that PLACEHOLDER mode still emits the placeholder, not an encoded URI."""
     doc = DoclingDocument(name="x")
@@ -1966,3 +1991,26 @@ def test_export_and_save_markdown_caption_placement(tmp_path, placement):
     # default is unchanged
     assert doc.export_to_markdown().index("THE CAPTION") < doc.export_to_markdown().index("<!-- image -->")
     assert doc.export_to_markdown() == doc.export_to_markdown(caption_placement="standard")
+
+
+def test_md_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_table_doc):
+    params = MarkdownParams(compact_tables=True)
+    actual = MarkdownDocSerializer(doc=col_span_rich_table_doc, params=params).serialize().text
+    assert actual == "|  | Partner | Partner |\n| - | - | - |\n| Status | Done | Open |"
+
+    # same table with the spanning header as a plain TableCell
+    plain_doc = col_span_rich_table_doc.model_copy(deep=True)
+    plain_doc.tables[0].data.table_cells = [
+        TableCell(**cell.model_dump(exclude={"ref", "text"}), text="Partner")
+        if isinstance(cell, RichTableCell)
+        else cell
+        for cell in plain_doc.tables[0].data.table_cells
+    ]
+    plain_doc.delete_items(node_items=[ref.resolve(plain_doc) for ref in plain_doc.tables[0].children])
+    assert actual == MarkdownDocSerializer(doc=plain_doc, params=params).serialize().text
+
+
+def test_triplet_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_table_doc):
+    ser = MarkdownDocSerializer(doc=col_span_rich_table_doc, table_serializer=TripletTableSerializer())
+    actual = ser.serialize().text
+    assert actual == "Status, Partner = Done. Status, Partner = Open"

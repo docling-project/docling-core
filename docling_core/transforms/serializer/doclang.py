@@ -1142,11 +1142,14 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
 
         include_href = not is_inline_scope
         if not skip_location:
+            # An inline run is located through its host.
+            head_params = params.model_copy()
+            head_params.add_location = params.add_location and not is_inline_scope
             parts.append(
                 _element_head_prefix(
                     item=item,
                     doc=doc,
-                    params=params,
+                    params=head_params,
                     label_value=code_label,
                     caption_text=caption_head or None,
                     custom_text=custom_head or None,
@@ -1888,7 +1891,6 @@ class DocLangInlineSerializer(BaseInlineSerializer):
                         yres=params.ysize,
                     )
                     parts.append(create_ser_result(text=loc_str))
-            params.add_location = False
         parts.extend(
             doc_serializer.get_parts(
                 item=item,

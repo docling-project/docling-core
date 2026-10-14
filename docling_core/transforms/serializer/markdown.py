@@ -30,6 +30,7 @@ from docling_core.transforms.serializer.base import (
 from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
+    _escape_uri_path,
     _get_annotation_text,
     _PageBreakSerResult,
     _should_use_legacy_annotations,
@@ -819,16 +820,20 @@ class MarkdownTableSerializer(BaseTableSerializer):
                     res_parts.append(ann_res)
 
             rows = []
+            rich_texts: dict[tuple[int, int], str] = {}
             for row in item.data.grid:
                 rendered_row = []
                 for col in row:
                     if isinstance(col, RichTableCell):
-                        ref_item = col.ref.resolve(doc=doc)
-                        inner_kwargs = {**kwargs, "_nested_in_table": True, "in_table_cell": True}
-                        cell_text = doc_serializer.serialize(
-                            item=ref_item,
-                            **inner_kwargs,
-                        ).text
+                        key = (col.start_row_offset_idx, col.start_col_offset_idx)
+                        if key not in rich_texts:
+                            ref_item = col.ref.resolve(doc=doc)
+                            inner_kwargs = {**kwargs, "_nested_in_table": True, "in_table_cell": True}
+                            rich_texts[key] = doc_serializer.serialize(
+                                item=ref_item,
+                                **inner_kwargs,
+                            ).text
+                        cell_text = rich_texts[key]
                     else:
                         cell_text = col.text or ""
                     # Newlines and pipes must be escaped in every cell so the
@@ -874,18 +879,6 @@ class MarkdownTableSerializer(BaseTableSerializer):
 
 class MarkdownPictureSerializer(BasePictureSerializer):
     """Markdown-specific picture item serializer."""
-
-    _URI_KEEP_CHARS: Final[str] = "/%:@+,;=~$!&'*"
-    """Characters that survive percent-encoding in a Markdown link destination.
-
-    Includes the RFC 3986 reserved characters that carry meaning in a URI, plus
-    `%` so that an already-encoded destination is not encoded a second time.
-    Whitespace and parentheses are deliberately absent: they would end a Markdown
-    inline link.
-    """
-
-    _WINDOWS_DRIVE_RE: Final[re.Pattern[str]] = re.compile(r"[A-Za-z]:/")
-    """Matches the drive prefix of an absolute Windows path, e.g. `C:/`."""
 
     @override
     def serialize(
@@ -995,66 +988,8 @@ class MarkdownPictureSerializer(BasePictureSerializer):
 
     @staticmethod
     def _escape_uri_path(value: AnyUrl | PurePath) -> str:
-        """Encode a URL or filesystem path as a Markdown link destination.
-
-        Handles URLs of any scheme (https/s3/ftp/...) as well as POSIX and Windows
-        paths, keeps relative paths relative, and never double-encodes. A Windows path
-        is recognized by either flavour, so a document authored on Windows still
-        resolves when it is exported on POSIX.
-
-        The only destination this gives a ``file://`` scheme to is an absolute Windows
-        path, where it is the sole spelling a renderer cannot misread as a URL scheme
-        (``C:``) or as an authority (``//server``). A URL that already carries the
-        scheme is passed through, since dropping it would turn an absolute filesystem
-        reference into a root-relative URL.
-
-        Known limitation: a backslash in a `PosixPath` string is ambiguous.
-        It may be a Windows separator surviving a JSON round-trip (correct to
-        convert) or a literal filename character (where converting it to `/`
-        would split one component into two). The two cases are indistinguishable
-        from `str()`. In practice this is not a concern because `ImageRef.uri`
-        is always populated from native filesystem operations, so a `PosixPath`
-        can only carry a literal backslash if the caller explicitly constructed one.
-
-        Args:
-            value: The URL or path to encode.
-
-        Returns:
-            A percent-encoded Markdown link destination.
-        """
-
-        keep = MarkdownPictureSerializer._URI_KEEP_CHARS
-        # A backslash is both the Windows separator and a Markdown escape character, and
-        # is read as a separator whatever flavour the path arrives in: a document authored
-        # on Windows keeps its backslashes once it is re-read on POSIX, where the flavour
-        # can no longer tell. A URL is unaffected, as pydantic normalizes backslashes away
-        # when parsing.
-        s = str(value).replace("\\", "/")
-
-        if s.startswith("//"):  # In case of a fileshare (//someserver/somefolder)
-            host, _, tail = s.lstrip("/").partition("/")  # get the end of the path
-            # file://<host>/<path>, with <host> being a possibly empty string.
-            return urlunsplit(("file", host, quote(f"/{tail}", safe=keep), "", ""))
-        if MarkdownPictureSerializer._WINDOWS_DRIVE_RE.match(s):  # In case of a Windows filename with drive letter
-            # file://<full_path_with_filename>
-            return urlunsplit(("file", "", quote(f"/{s}", safe=keep), "", ""))
-
-        # A URL keeps its scheme, authority and delimiters; only its components are
-        # encoded. A single-character scheme cannot be real, so it is read as a path.
-        parts = urlsplit(s)
-        if len(parts.scheme) > 1:
-            return urlunsplit(
-                (
-                    parts.scheme,
-                    parts.netloc,
-                    quote(parts.path, safe=keep),
-                    quote(parts.query, safe=keep + "="),
-                    quote(parts.fragment, safe=keep),
-                )
-            )
-
-        # A relative or root-relative local path.
-        return quote(s, safe=keep)
+        """Encode a URL or filesystem path as a Markdown link destination."""
+        return _escape_uri_path(value)
 
 
 class MarkdownKeyValueSerializer(BaseKeyValueSerializer):
