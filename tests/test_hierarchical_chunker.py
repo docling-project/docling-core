@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import ClassVar
 
+import pytest
 from pydantic import Field
 
 from docling_core.transforms.chunker import HierarchicalChunker
@@ -11,6 +12,7 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
     DocChunk,
     TripletTableSerializer,
 )
+from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 from docling_core.transforms.serializer.html import HTMLDocSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
 from docling_core.types.doc import ContentLayer, DocItemLabel, DoclingDocument, PictureItem, TableData, TextItem
@@ -28,6 +30,52 @@ def test_chunk():
     chunks = chunker.chunk(dl_doc=dl_doc)
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     assert_or_generate_json_ground_truth(act_data, "tests/data/chunker/0_out_chunks.json")
+
+
+@pytest.mark.parametrize("kind", ["table", "picture"])
+@pytest.mark.parametrize(
+    ("caption", "expected"),
+    [
+        ("Table 1: results", "Table 1: results"),
+        ("Table <bold>1</bold>: results", "Table **1** : results"),
+        ("Table <formula>x</formula>: results", "Table $x$ : results"),
+    ],
+)
+def test_chunk_caption_stays_with_owner(kind: str, caption: str, expected: str, tmp_path: Path) -> None:
+    table_body = "<fcel/>A<fcel/>B<nl/><fcel/>1<fcel/>2<nl/>" if kind == "table" else ""
+    doc = DocLangDocDeserializer().deserialize_str(
+        f'<doclang version="0.7"><{kind}><caption>{caption}</caption>{table_body}</{kind}></doclang>'
+    )
+    for cycle in range(2):
+        owner = doc.tables[0] if kind == "table" else doc.pictures[0]
+        caption_item = owner.captions[0].resolve(doc)
+        chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker().chunk(doc)]
+        assert len(chunks) == 1
+        chunk = chunks[0]
+        assert chunk.text.count(expected) == 1
+        if kind == "table":
+            assert chunk.text == expected + "\n\nA, 1 = B. 1, 1 = 2"
+        else:
+            assert chunk.text == expected
+        refs = {item.self_ref for item in chunk.meta.doc_items}
+        assert caption_item.self_ref in refs
+        if kind == "table":
+            assert owner.self_ref in refs
+        assert {item.self_ref for item, _ in doc.iterate_items(root=caption_item) if isinstance(item, TextItem)} <= refs
+        archive = tmp_path / f"caption-chunk-{cycle}.dclx"
+        doc.save_as_doclang_archive(archive)
+        doc = DoclingDocument.load_from_doclang_archive(archive)
+
+
+def test_chunk_satellite_check_keeps_unrelated_inline_text() -> None:
+    doc = DocLangDocDeserializer().deserialize_str(
+        '<doclang version="0.7"><text>Before <bold>body</bold></text>'
+        "<table><caption>Table <bold>1</bold>: results</caption><fcel/>A<nl/></table>"
+        "<text>After</text></doclang>"
+    )
+    chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker().chunk(doc)]
+    assert [chunk.text for chunk in chunks] == ["Before **body**", "Table **1** : results\n\nA", "After"]
+    assert doc.tables[0].self_ref in {item.self_ref for item in chunks[1].meta.doc_items}
 
 
 def test_chunk_custom_serializer():

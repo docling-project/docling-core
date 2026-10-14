@@ -53,6 +53,7 @@ from docling_core.types.doc import (
     PictureDataType,
     PictureItem,
     PictureMoleculeData,
+    RefItem,
     RichTableCell,
     Script,
     TableAnnotationType,
@@ -615,10 +616,32 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
         return create_ser_result(text=delim.join([p.text for p in parts if p.text]), span_source=parts)
 
-    # making some assumptions about the kwargs it can pass
     def _skip_in_walk(self, *, node: NodeItem, root: NodeItem | None) -> bool:
-        """Whether the node is left out when walking the tree from ``root``, as it is serialized elsewhere."""
-        return False
+        """Skip satellite descendants unless the walk starts inside that satellite."""
+        nested = self._satellite_descendants
+        return node.self_ref in nested and (
+            root is None or (root.self_ref not in nested and root.self_ref not in self._satellites_of_some_item)
+        )
+
+    @cached_property
+    def _satellites_of_some_item(self) -> set[str]:
+        """The captions emitted by their floating item."""
+        return self._captions_of_some_item
+
+    @cached_property
+    def _satellite_descendants(self) -> set[str]:
+        """Content emitted inside a satellite must not appear again in the outer walk."""
+        return {
+            node.self_ref
+            for ref in self._satellites_of_some_item
+            for node, _ in self.doc.iterate_items(
+                root=RefItem(cref=ref).resolve(self.doc),
+                with_groups=True,
+                traverse_pictures=True,
+                included_content_layers=set(ContentLayer),
+            )
+            if node.self_ref != ref
+        }
 
     @override
     def get_parts(
@@ -743,14 +766,18 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         params = self.params.merge_with_patch(patch=kwargs)
         results: list[SerializationResult] = []
         if DocItemLabel.CAPTION in params.labels:
-            results = [
-                create_ser_result(text=it.text, span_source=it)
-                for cap in item.captions
-                if isinstance(it := cap.resolve(self.doc), TextItem)
-                and it.self_ref not in self.get_excluded_refs(**kwargs)
-            ]
-            text_res = params.caption_delim.join([r.text for r in results])
-            text_res = self.post_process(text=text_res)
+            for ref in item.captions:
+                caption = ref.resolve(self.doc)
+                if (
+                    not isinstance(caption, TextItem)
+                    or caption.content_layer not in params.layers
+                    or caption.self_ref in self.get_excluded_refs(**kwargs)
+                ):
+                    continue
+                parts = [create_ser_result(text=self.post_process(text=caption.text, **kwargs), span_source=caption)]
+                parts.extend(self.get_parts(item=caption, is_inline_scope=True, **kwargs))
+                results.append(create_ser_result(text=" ".join(p.text for p in parts if p.text), span_source=parts))
+            text_res = params.caption_delim.join(r.text for r in results)
         else:
             text_res = ""
         return create_ser_result(text=text_res, span_source=results)
