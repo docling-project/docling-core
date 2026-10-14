@@ -378,3 +378,34 @@ def test_webvtt_cue_language_span_start_tag():
         WebVTTCueLanguageSpanStartTag.model_validate_json('{"annotation": "en_US"}')
     with pytest.raises(ValidationError, match="BCP 47"):
         WebVTTCueLanguageSpanStartTag.model_validate_json('{"annotation": "123-de"}')
+
+
+def test_webvtt_unclosed_and_stray_end_tags() -> None:
+    """Test that unclosed spans keep their text and that a stray end tag is ignored."""
+    # A span still open at the end of the cue keeps its text.
+    block = WebVTTCueBlock.parse("00:01.000 --> 00:02.000\nHe said <i>stop\n")
+    assert len(block.payload) == 2
+    assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
+    assert block.payload[0].component.text == "He said "
+    span = block.payload[1].component
+    assert isinstance(span, WebVTTCueItalicSpan)
+    assert isinstance(span.internal_text.components[0].component, WebVTTCueTextSpan)
+    assert span.internal_text.components[0].component.text == "stop"
+
+    # Italics that run across two cues: the first cue leaves <i> open and the
+    # second cue starts with its end tag. Every cue of the file is kept.
+    content = (
+        "WEBVTT\n\n"
+        "00:01.000 --> 00:03.000\n<i>I'm thinking about\n\n"
+        "00:03.000 --> 00:05.000\nwhat she said</i>\n\n"
+        "00:05.000 --> 00:07.000\nLast cue\n"
+    )
+    vtt = WebVTTFile.parse(content)
+    assert len(vtt) == 3
+    assert str(vtt[0]).rstrip("\n").endswith("<i>I'm thinking about</i>")
+    assert str(vtt[1]).rstrip("\n").endswith("\nwhat she said")
+    assert str(vtt[2]).rstrip("\n").endswith("\nLast cue")
+
+    # Misnested end tags are still rejected.
+    with pytest.raises(ValueError, match="Incorrect end tag"):
+        WebVTTCueBlock.parse("00:01.000 --> 00:02.000\n<b><i>both</b></i>\n")
