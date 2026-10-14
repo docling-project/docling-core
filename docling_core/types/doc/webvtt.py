@@ -478,7 +478,18 @@ class WebVTTCueBlock(BaseModel):
                 )
 
     @staticmethod
-    def _create_span(start: dict, children: list[WebVTTCueComponentWithTerminator]) -> "WebVTTCueComponent":
+    def _create_span(
+        start: dict[str, str | None], children: list[WebVTTCueComponentWithTerminator]
+    ) -> WebVTTCueComponent:
+        """Create a WebVTT cue span component from parsed start tag metadata and child components.
+
+        Args:
+            start: Dictionary containing parsed tag groups ('tag', 'class', 'annotation').
+            children: Child cue components contained within this span.
+
+        Returns:
+            The instantiated WebVTT cue span component.
+        """
         tag = start["tag"]
         annotation = start["annotation"]
         classes: list[str] | None = None
@@ -560,7 +571,7 @@ class WebVTTCueBlock(BaseModel):
                     if closed["tag"] != gps["tag"]:
                         raise ValueError(f"Incorrect end tag: {closed['tag']}")
                     stack[-1].append(WebVTTCueComponentWithTerminator(component=cls._create_span(closed, children)))
-                # An end tag with no open span is ignored, as in the WebVTT cue text parsing rules.
+                # Ignore stray end tags that have no matching open span.
 
             pos = match.end()
             i += 1
@@ -569,8 +580,7 @@ class WebVTTCueBlock(BaseModel):
             text = cue_text[pos:]
             stack[-1].extend(cls._create_text_components(text))
 
-        # Spans still open at the end of the cue text end there and keep their text,
-        # as in the WebVTT cue text parsing rules.
+        # Close any remaining unclosed spans at the end of the cue.
         while tag_stack:
             children = stack.pop()
             stack[-1].append(WebVTTCueComponentWithTerminator(component=cls._create_span(tag_stack.pop(), children)))
