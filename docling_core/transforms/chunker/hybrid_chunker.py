@@ -280,19 +280,20 @@ class HybridChunker(BaseChunker):
         lengths = self._doc_chunk_length(doc_chunk)
         if lengths.total_len <= self.max_tokens:
             return [DocChunk(**doc_chunk.export_json_dict())]
-        else:
-            # How much room is there for text after subtracting out the headers and
-            # captions:
-            available_length = self.max_tokens - lengths.other_len
 
-            while available_length > 0:
-                segments = self.segment(doc_chunk, available_length, doc_serializer)
-                chunks = [DocChunk(text=s, meta=doc_chunk.meta) for s in segments]
-                overflow = max(self._count_chunk_tokens(chunk) - self.max_tokens for chunk in chunks)
-                if overflow <= 0:
-                    return chunks
-                available_length -= overflow
+        # How much room is there for text after subtracting out the headers and
+        # captions:
+        available_length = self.max_tokens - lengths.other_len
 
+        while available_length > 0:
+            segments = self.segment(doc_chunk, available_length, doc_serializer)
+            chunks = [DocChunk(text=s, meta=doc_chunk.meta) for s in segments]
+            overflow = max(self._count_chunk_tokens(chunk) - self.max_tokens for chunk in chunks)
+            if overflow <= 0:
+                return chunks
+            available_length -= overflow
+
+        if doc_chunk.meta.headings is not None or doc_chunk.meta.captions is not None:
             warnings.warn(
                 "Headers and captions for this chunk are longer than the total "
                 "available size for the chunk, so they will be ignored: "
@@ -302,6 +303,10 @@ class HybridChunker(BaseChunker):
             new_chunk.meta.captions = None
             new_chunk.meta.headings = None
             return self._split_using_plain_text(doc_chunk=new_chunk, doc_serializer=doc_serializer)
+
+        # Headings and captions are already absent; return segmented chunks directly.
+        segments = self.segment(doc_chunk, self.max_tokens, doc_serializer)
+        return [DocChunk(text=s, meta=doc_chunk.meta) for s in segments]
 
     def segment(self, doc_chunk: DocChunk, available_length: int, doc_serializer: BaseDocSerializer) -> list[str]:
         """Split a single doc chunk into a list of text segments.

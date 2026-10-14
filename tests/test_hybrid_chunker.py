@@ -1564,3 +1564,29 @@ def test_tall_and_wide_table_chunks_respect_token_limit():
     ]
     for val in sample_values:
         assert val in all_chunk_text, f"Sample cell value {val!r} not found across chunks"
+
+
+def test_split_using_plain_text_no_headings_avoids_infinite_recursion():
+    """Verify that _split_using_plain_text does not recurse infinitely when headings and captions are absent."""
+    max_tokens = 32
+    doc = DoclingDocument(name="no_headings_doc")
+    # A single large paragraph without any headings or captions
+    long_text = "This is a long paragraph designed to exceed the chunk token budget. " * 10
+    doc.add_text(label=DocItemLabel.PARAGRAPH, text=long_text)
+
+    tokenizer = OpenAITokenizer(
+        tokenizer=tiktoken.get_encoding("cl100k_base"),
+        max_tokens=max_tokens,
+    )
+    chunker = HybridChunker(
+        tokenizer=tokenizer,
+        merge_peers=False,
+    )
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    assert len(chunks) > 1, "Large paragraph should be split into multiple chunks"
+    for i, chunk in enumerate(chunks):
+        tc = tokenizer.count_tokens(chunker.contextualize(chunk))
+        assert tc <= max_tokens, f"Chunk {i} exceeds token limit: {tc} > {max_tokens}"
+        assert chunk.meta.headings is None
