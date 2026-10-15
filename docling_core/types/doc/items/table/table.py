@@ -233,9 +233,11 @@ class TableItem(FloatingItem):
         if len(self.prov) > 0:
             page_no = self.prov[0].page_no
 
+        # `grid` builds the whole grid on every read, so read it once.
+        grid = self.data.grid
         for i in range(nrows):
             for j in range(ncols):
-                cell: TableCell = self.data.grid[i][j]
+                cell: TableCell = grid[i][j]
                 content = cell._get_text(doc=doc, doc_serializer=doc_serializer, **kwargs).strip()
                 rowspan, rowstart = (
                     cell.row_span,
