@@ -1,5 +1,6 @@
 """Test serialization."""
 
+import re
 import threading
 from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
 from typing import TypeAlias, Union
@@ -38,6 +39,7 @@ from docling_core.types.doc.document import (
     DescriptionAnnotation,
     EntitiesMetaField,
     EntityMention,
+    Formatting,
     LanguageMetaField,
     PictureClassificationMetaField,
     PictureClassificationPrediction,
@@ -45,6 +47,7 @@ from docling_core.types.doc.document import (
     ProvenanceItem,
     RefItem,
     RichTableCell,
+    Script,
     SummaryMetaField,
     TableCell,
     TableData,
@@ -1507,6 +1510,102 @@ def test_html_inline_and_formatting():
     ser = HTMLDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".gt.html"), actual=actual)
+
+
+@pytest.mark.parametrize(
+    ("formatting", "hyperlink", "expected"),
+    [
+        (Formatting(bold=True), None, "<p><strong>Some text</strong></p>"),
+        (Formatting(italic=True), None, "<p><em>Some text</em></p>"),
+        (Formatting(underline=True), None, "<p><u>Some text</u></p>"),
+        (Formatting(strikethrough=True), None, "<p><del>Some text</del></p>"),
+        (Formatting(script=Script.SUB), None, "<p><sub>Some text</sub></p>"),
+        (Formatting(script=Script.SUPER), None, "<p><sup>Some text</sup></p>"),
+        (None, AnyUrl("https://example.com/page"), '<p><a href="https://example.com/page">Some text</a></p>'),
+        (
+            Formatting(bold=True, italic=True),
+            AnyUrl("https://example.com/page"),
+            '<p><a href="https://example.com/page"><em><strong>Some text</strong></em></a></p>',
+        ),
+    ],
+)
+def test_html_text_formatting_inside_paragraph(formatting, hyperlink, expected):
+    """Formatting and hyperlinks of a text item go inside its <p> tag."""
+    doc = DoclingDocument(name="formatted_text")
+    item = doc.add_text(label=DocItemLabel.TEXT, text="Some text", formatting=formatting, hyperlink=hyperlink)
+
+    assert HTMLDocSerializer(doc=doc).serialize(item=item).text == expected
+
+
+def test_html_heading_formatting_inside_heading_tag():
+    """Formatting and hyperlinks of a title or section header go inside its <hN> tag."""
+    doc = DoclingDocument(name="formatted_headings")
+    title = doc.add_title(text="A title", formatting=Formatting(italic=True))
+    heading = doc.add_heading(
+        text="A section",
+        level=1,
+        formatting=Formatting(bold=True),
+        hyperlink=AnyUrl("https://example.com/section"),
+    )
+
+    ser = HTMLDocSerializer(doc=doc)
+    assert ser.serialize(item=title).text == "<h1><em>A title</em></h1>"
+    assert ser.serialize(item=heading).text == (
+        '<h2><a href="https://example.com/section"><strong>A section</strong></a></h2>'
+    )
+
+
+def test_html_rich_table_cell_formatting_inside_paragraph():
+    """A bold-only rich table cell keeps the <strong> tag inside the <p> tag of the cell."""
+    doc = DoclingDocument(name="bold_rich_cells")
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=2))
+    for row, text in enumerate(["Bold header", "Bold cell"]):
+        bold_text = doc.add_text(label=DocItemLabel.TEXT, text=text, parent=table, formatting=Formatting(bold=True))
+        doc.add_table_cell(
+            table_item=table,
+            cell=RichTableCell(
+                start_row_offset_idx=row,
+                end_row_offset_idx=row + 1,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+                column_header=row == 0,
+                ref=bold_text.get_ref(),
+                text=text,
+            ),
+        )
+    for row, text in enumerate(["Plain header", "Plain cell"]):
+        doc.add_table_cell(
+            table_item=table,
+            cell=TableCell(
+                start_row_offset_idx=row,
+                end_row_offset_idx=row + 1,
+                start_col_offset_idx=1,
+                end_col_offset_idx=2,
+                column_header=row == 0,
+                text=text,
+            ),
+        )
+
+    assert HTMLDocSerializer(doc=doc).serialize(item=table).text == (
+        "<table><tbody>"
+        "<tr><th><p><strong>Bold header</strong></p></th><th>Plain header</th></tr>"
+        "<tr><td><p><strong>Bold cell</strong></p></td><td>Plain cell</td></tr>"
+        "</tbody></table>"
+    )
+
+
+def test_html_ground_truth_has_no_inline_element_around_a_block():
+    """No HTML ground truth file wraps a <p> or <hN> element in an inline element."""
+    inline_around_block = re.compile(
+        r"<(?:strong|em|u|del|sub|sup|a)\b[^>]*>(?:<(?:strong|em|u|del|sub|sup)>)*<(?:p|h[1-6])\b"
+    )
+    offenders = [
+        f"{path}: {match.group(0)}"
+        for path in sorted(Path("tests/data").rglob("*.html"))
+        for match in inline_around_block.finditer(path.read_text(encoding="utf-8"))
+    ]
+
+    assert not offenders, "\n".join(offenders)
 
 
 # ===============================
