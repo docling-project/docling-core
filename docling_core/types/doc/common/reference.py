@@ -3,7 +3,7 @@
 import base64
 import mimetypes
 from io import BytesIO
-from pathlib import Path
+from pathlib import Path, PurePath, PurePosixPath
 from typing import TYPE_CHECKING, Annotated, Optional, Union
 from urllib.parse import unquote
 
@@ -13,7 +13,7 @@ from pydantic import AnyUrl, BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import Self
 
 from docling_core.types.base import _JSON_POINTER_REGEX
-from docling_core.types.doc.base import BoundingBox, Size
+from docling_core.types.doc.base import BoundingBox, Size, coerce_pure_posix_path
 from docling_core.types.doc.common.scalars import CharSpan
 from docling_core.types.doc.utils import _ensure_within_size_limit
 from docling_core.utils.settings import settings
@@ -86,8 +86,13 @@ class ImageRef(BaseModel):
     mimetype: str
     dpi: int
     size: Size
-    uri: AnyUrl | Path = Field(union_mode="left_to_right")
+    uri: AnyUrl | PurePosixPath = Field(union_mode="left_to_right")
     _pil: PILImage.Image | None = None
+
+    @field_validator("uri", mode="before")
+    @classmethod
+    def _normalize_uri_path(cls, value):
+        return coerce_pure_posix_path(value)
 
     @property
     def pil_image(self) -> PILImage.Image | None:
@@ -117,13 +122,16 @@ class ImageRef(BaseModel):
             # else: HTTP(S) and other remote schemes are intentionally not fetched.
             # If remote fetch is enabled, it must use host allowlists and block
             # private, link-local, and cloud-metadata addresses (SSRF controls).
-        elif isinstance(self.uri, Path):
+        elif isinstance(self.uri, PurePath):
+            # PurePosixPath keeps the serialized URI portable; open through a
+            # concrete Path only at the local I/O boundary.
+            local_path = Path(self.uri)
             _ensure_within_size_limit(
-                self.uri,
+                local_path,
                 max_size=settings.max_image_decoded_size,
                 label="Image file",
             )
-            self._pil = PILImage.open(self.uri)
+            self._pil = PILImage.open(local_path)
 
         return self._pil
 

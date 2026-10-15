@@ -1,6 +1,7 @@
 """Models for the base data types."""
 
 from enum import Enum
+from pathlib import PurePath, PurePosixPath
 from typing import Any, Optional
 
 from pydantic import BaseModel, FieldSerializationInfo, field_serializer
@@ -41,6 +42,21 @@ def round_pydantic_float(val: float, ctx: Any, precision_ctx_key: PydanticSerCtx
         ctx.get(precision_ctx_key.value) if isinstance(ctx, dict) else getattr(ctx, precision_ctx_key.value, None)
     )
     return round(val, precision) if isinstance(precision, int) else val
+
+
+def coerce_pure_posix_path(value):
+    """Normalize Path-like values to ``PurePosixPath``.
+
+    URI and path-reference fields are serialized into documents shared across
+    platforms. A concrete ``pathlib.Path`` would embed OS-native separators
+    (backslashes on Windows) into JSON payloads and rendered links. Path-like
+    inputs are converted via ``as_posix()`` and kept as ``PurePosixPath``
+    instances so that lenient URL union branches cannot reinterpret
+    drive-letter strings as URL schemes.
+    """
+    if isinstance(value, PurePath) and not isinstance(value, PurePosixPath):
+        return PurePosixPath(value.as_posix())
+    return value
 
 
 class Size(BaseModel):
