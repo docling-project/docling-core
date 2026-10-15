@@ -9,6 +9,7 @@ from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
     BaseAnnotationSerializer,
+    BaseBlockQuoteSerializer,
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -28,10 +29,12 @@ from docling_core.transforms.serializer.common import (
     _should_use_legacy_annotations,
     create_ser_result,
     hyperlink_uri,
+    strip_attribution_dash,
 )
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     BaseMeta,
+    BlockQuoteGroup,
     CodeItem,
     CodeMetaField,
     ContentLayer,
@@ -650,6 +653,44 @@ class LaTeXListSerializer(BaseModel, BaseListSerializer):
         return create_ser_result(text=text_res, span_source=parts)
 
 
+class LaTeXBlockQuoteSerializer(BaseModel, BaseBlockQuoteSerializer):
+    """LaTeX-specific block quote serializer."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: BlockQuoteGroup,
+        doc_serializer: "BaseDocSerializer",
+        doc: DoclingDocument,
+        list_level: int = 0,
+        is_inline_scope: bool = False,
+        visited: set[str] | None = None,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize a block quote into a ``quote`` environment, with the attribution as its last paragraph."""
+        my_visited = visited if visited is not None else set()
+        parts = doc_serializer.get_parts(
+            item=item,
+            list_level=list_level,
+            is_inline_scope=is_inline_scope,
+            visited=my_visited,
+            **kwargs,
+        )
+        blocks = [p.text for p in parts if p.text]
+        cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
+        res_parts = list(parts)
+        if cap_res.text:
+            attribution = strip_attribution_dash(cap_res.text)
+            if item.cite is not None:
+                attribution = doc_serializer.serialize_hyperlink(text=attribution, hyperlink=item.cite, **kwargs)
+            blocks.append(f"\\hfill--- {attribution}")
+            res_parts.append(cap_res)
+        content = "\n\n".join(blocks)
+        text_res = f"\\begin{{quote}}\n{content}\n\\end{{quote}}" if content else ""
+        return create_ser_result(text=text_res, span_source=res_parts)
+
+
 class LaTeXInlineSerializer(BaseInlineSerializer):
     """LaTeX-specific inline group serializer."""
 
@@ -710,6 +751,7 @@ class LaTeXDocSerializer(DocSerializer):
 
     list_serializer: BaseListSerializer = LaTeXListSerializer()
     inline_serializer: BaseInlineSerializer = LaTeXInlineSerializer()
+    block_quote_serializer: BaseBlockQuoteSerializer = LaTeXBlockQuoteSerializer()
 
     meta_serializer: BaseMetaSerializer = LaTeXMetaSerializer()
     annotation_serializer: BaseAnnotationSerializer = LaTeXAnnotationSerializer()

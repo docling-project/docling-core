@@ -109,6 +109,89 @@
       "title": "BaseMeta",
       "type": "object"
     },
+    "BlockQuoteGroup": {
+      "additionalProperties": false,
+      "description": "A block quotation: block-level content quoted from another source.\n\nThe children are the quoted blocks: paragraphs, lists, tables, code and nested\nquotes. An attribution, if any, is a ``caption`` text item that is both a child\nof the group and listed in ``captions``, as for ``FloatingItem``.",
+      "properties": {
+        "self_ref": {
+          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
+          "title": "Self Ref",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RefItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "children": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Children",
+          "type": "array"
+        },
+        "content_layer": {
+          "$ref": "#/$defs/ContentLayer",
+          "default": "body"
+        },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BaseMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "default": "group",
+          "title": "Name",
+          "type": "string"
+        },
+        "label": {
+          "const": "block_quote",
+          "default": "block_quote",
+          "title": "Label",
+          "type": "string"
+        },
+        "cite": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cite"
+        },
+        "captions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Captions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "self_ref"
+      ],
+      "title": "BlockQuoteGroup",
+      "type": "object"
+    },
     "BoundingBox": {
       "description": "BoundingBox.",
       "properties": {
@@ -1917,7 +2000,8 @@
         "key_value_area",
         "comment_section",
         "inline",
-        "picture_area"
+        "picture_area",
+        "block_quote"
       ],
       "title": "GroupLabel",
       "type": "string"
@@ -4494,7 +4578,7 @@
       "type": "string"
     },
     "version": {
-      "default": "1.10.0",
+      "default": "1.11.0",
       "pattern": "^(?P<major>0|[1-9]\\d*)\\.(?P<minor>0|[1-9]\\d*)\\.(?P<patch>0|[1-9]\\d*)(?:-(?P<prerelease>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
       "title": "Version",
       "type": "string"
@@ -4548,6 +4632,9 @@
           },
           {
             "$ref": "#/$defs/InlineGroup"
+          },
+          {
+            "$ref": "#/$defs/BlockQuoteGroup"
           },
           {
             "$ref": "#/$defs/GroupItem"

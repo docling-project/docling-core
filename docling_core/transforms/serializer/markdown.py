@@ -15,6 +15,7 @@ from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
     BaseAnnotationSerializer,
+    BaseBlockQuoteSerializer,
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -36,9 +37,11 @@ from docling_core.transforms.serializer.common import (
     _should_use_legacy_annotations,
     create_ser_result,
     markdown_link_destination,
+    strip_attribution_dash,
 )
 from docling_core.types.doc import (
     BaseMeta,
+    BlockQuoteGroup,
     CaptionPlacement,
     CodeItem,
     ContentLayer,
@@ -1117,6 +1120,50 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
         return create_ser_result(text=text_res, span_source=my_parts)
 
 
+class MarkdownBlockQuoteSerializer(BaseModel, BaseBlockQuoteSerializer):
+    """Markdown-specific block quote serializer."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: BlockQuoteGroup,
+        doc_serializer: "BaseDocSerializer",
+        doc: DoclingDocument,
+        list_level: int = 0,
+        is_inline_scope: bool = False,
+        visited: set[str] | None = None,  # refs of visited items
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serializes a block quote with a ``>`` marker on every line.
+
+        An attribution follows the quoted blocks as a last quoted line, introduced
+        by one em dash and linked to the ``cite`` URL when both are present. A
+        ``cite`` URL without an attribution has no Markdown representation.
+        """
+        my_visited: set[str] = visited if visited is not None else set()
+        parts = doc_serializer.get_parts(
+            item=item,
+            list_level=list_level,
+            is_inline_scope=is_inline_scope,
+            visited=my_visited,
+            **kwargs,
+        )
+        blocks = [p.text for p in parts if p.text]
+        cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
+        res_parts = list(parts)
+        if cap_res.text:
+            # One em dash introduces the attribution; a dash the source already has is dropped.
+            attribution = strip_attribution_dash(cap_res.text)
+            if item.cite is not None:
+                attribution = doc_serializer.serialize_hyperlink(text=attribution, hyperlink=item.cite, **kwargs)
+            attribution = f"\u2014 {attribution}"
+            blocks.append(attribution)
+            res_parts.append(cap_res)
+        text_res = "\n".join(f"> {line}".rstrip() for line in "\n\n".join(blocks).split("\n")) if blocks else ""
+        return create_ser_result(text=text_res, span_source=res_parts)
+
+
 class MarkdownInlineSerializer(BaseInlineSerializer):
     """Markdown-specific inline group serializer."""
 
@@ -1182,6 +1229,7 @@ class MarkdownDocSerializer(DocSerializer):
 
     list_serializer: BaseListSerializer = MarkdownListSerializer()
     inline_serializer: BaseInlineSerializer = MarkdownInlineSerializer()
+    block_quote_serializer: BaseBlockQuoteSerializer = MarkdownBlockQuoteSerializer()
 
     meta_serializer: BaseMetaSerializer = MarkdownMetaSerializer()
     annotation_serializer: BaseAnnotationSerializer = MarkdownAnnotationSerializer()
