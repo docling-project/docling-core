@@ -4197,7 +4197,13 @@ class DoclingDocument(BaseModel):
         if image_mode == ImageRefMode.REFERENCED:
             artifacts_dir.mkdir(parents=True, exist_ok=True)
 
-        new_doc = self._make_copy_with_refmode(artifacts_dir, image_mode, page_no, reference_path=reference_path)
+        new_doc = self._make_copy_with_refmode(
+            artifacts_dir,
+            image_mode,
+            page_no,
+            reference_path=reference_path,
+            include_page_images=split_page_view,
+        )
 
         html_out = new_doc.export_to_html(
             from_element=from_element,
@@ -4327,6 +4333,7 @@ class DoclingDocument(BaseModel):
             self._with_pictures_refs(
                 image_dir=Path(image_dir),
                 page_no=page_no,
+                include_page_images=split_page_view,
                 uri_prefix=image_uri_prefix,
             )
             if image_dir is not None
