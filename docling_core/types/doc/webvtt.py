@@ -477,6 +477,44 @@ class WebVTTCueBlock(BaseModel):
                     terminator=terminator,
                 )
 
+    @staticmethod
+    def _create_span(
+        start: dict[str, str | None], children: list[WebVTTCueComponentWithTerminator]
+    ) -> WebVTTCueComponent:
+        """Create a WebVTT cue span component from parsed start tag metadata and child components.
+
+        Args:
+            start: Dictionary containing parsed tag groups ('tag', 'class', 'annotation').
+            children: Child cue components contained within this span.
+
+        Returns:
+            The instantiated WebVTT cue span component.
+        """
+        tag = start["tag"]
+        annotation = start["annotation"]
+        classes: list[str] | None = None
+        if start["class"]:
+            classes = [c for c in start["class"].split(".") if c]
+        st: WebVTTCueSpanStartTag
+        if annotation and tag == "lang":
+            st = WebVTTCueLanguageSpanStartTag(name=tag, classes=classes, annotation=annotation.strip())
+        elif annotation:
+            st = WebVTTCueSpanStartTagAnnotated(name=tag, classes=classes, annotation=annotation.strip())
+        else:
+            st = WebVTTCueSpanStartTag(name=tag, classes=classes)
+        it = WebVTTCueInternalText(components=children)
+        if tag == "c":
+            return WebVTTCueClassSpan(start_tag=st, internal_text=it)
+        if tag == "b":
+            return WebVTTCueBoldSpan(start_tag=st, internal_text=it)
+        if tag == "i":
+            return WebVTTCueItalicSpan(start_tag=st, internal_text=it)
+        if tag == "u":
+            return WebVTTCueUnderlineSpan(start_tag=st, internal_text=it)
+        if tag == "lang":
+            return WebVTTCueLanguageSpan(start_tag=st, internal_text=it)
+        return WebVTTCueVoiceSpan(start_tag=st, internal_text=it)
+
     @classmethod
     def parse(cls, raw: str) -> Self:
         """Parse a WebVTT cue block from a string.
@@ -506,11 +544,6 @@ class WebVTTCueBlock(BaseModel):
         end = re.split(" |\t", end)[0]  # ignore the cue settings list
         timings: WebVTTCueTimings = WebVTTCueTimings(start=WebVTTTimestamp(raw=start), end=WebVTTTimestamp(raw=end))
         cue_text = "\n".join(cue_lines).strip()
-        # adding close tag for cue spans without end tag
-        for omm in {"v"}:
-            if cue_text.startswith(f"<{omm}") and f"</{omm}>" not in cue_text:
-                cue_text += f"</{omm}>"
-                break
 
         # Strip cue timestamp tags (e.g. <00:00:01.500>) — they carry no text content.
         cue_text = cls._pattern_cue_timestamp.sub("", cue_text)
@@ -532,39 +565,13 @@ class WebVTTCueBlock(BaseModel):
                 if not gps["end"]:
                     tag_stack.append(gps)
                     stack.append([])
-                else:
-                    children = stack.pop() if stack else []
-                    if tag_stack:
-                        closed = tag_stack.pop()
-                        if (ct := closed["tag"]) != gps["tag"]:
-                            raise ValueError(f"Incorrect end tag: {ct}")
-                        class_string = closed["class"]
-                        annotation = closed["annotation"]
-                        classes: list[str] | None = None
-                        if class_string:
-                            classes = [c for c in class_string.split(".") if c]
-                        st: WebVTTCueSpanStartTag
-                        if annotation and ct == "lang":
-                            st = WebVTTCueLanguageSpanStartTag(name=ct, classes=classes, annotation=annotation.strip())
-                        elif annotation:
-                            st = WebVTTCueSpanStartTagAnnotated(name=ct, classes=classes, annotation=annotation.strip())
-                        else:
-                            st = WebVTTCueSpanStartTag(name=ct, classes=classes)
-                        it = WebVTTCueInternalText(components=children)
-                        cp: WebVTTCueComponent
-                        if ct == "c":
-                            cp = WebVTTCueClassSpan(start_tag=st, internal_text=it)
-                        elif ct == "b":
-                            cp = WebVTTCueBoldSpan(start_tag=st, internal_text=it)
-                        elif ct == "i":
-                            cp = WebVTTCueItalicSpan(start_tag=st, internal_text=it)
-                        elif ct == "u":
-                            cp = WebVTTCueUnderlineSpan(start_tag=st, internal_text=it)
-                        elif ct == "lang":
-                            cp = WebVTTCueLanguageSpan(start_tag=st, internal_text=it)
-                        elif ct == "v":
-                            cp = WebVTTCueVoiceSpan(start_tag=st, internal_text=it)
-                        stack[-1].append(WebVTTCueComponentWithTerminator(component=cp))
+                elif tag_stack:
+                    children = stack.pop()
+                    closed = tag_stack.pop()
+                    if closed["tag"] != gps["tag"]:
+                        raise ValueError(f"Incorrect end tag: {closed['tag']}")
+                    stack[-1].append(WebVTTCueComponentWithTerminator(component=cls._create_span(closed, children)))
+                # Ignore stray end tags that have no matching open span.
 
             pos = match.end()
             i += 1
@@ -572,6 +579,11 @@ class WebVTTCueBlock(BaseModel):
         if pos < len(cue_text):
             text = cue_text[pos:]
             stack[-1].extend(cls._create_text_components(text))
+
+        # Close any remaining unclosed spans at the end of the cue.
+        while tag_stack:
+            children = stack.pop()
+            stack[-1].append(WebVTTCueComponentWithTerminator(component=cls._create_span(tag_stack.pop(), children)))
 
         return cls(
             identifier=identifier,
