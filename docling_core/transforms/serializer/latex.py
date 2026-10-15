@@ -88,7 +88,9 @@ class LaTeXParams(CommonParams):
         r"\usepackage{hyperref}       % hyperlinks",
         r"\usepackage{url}            % simple URL typesetting",
         r"\usepackage{booktabs}       % professional-quality tables",
+        r"\usepackage{amsmath}         % display math environments",
         r"\usepackage{amsfonts}       % blackboard math symbols",
+        r"\usepackage{amssymb}         % extended math symbols",
         r"\usepackage{nicefrac}       % compact symbols for 1/2, etc.",
         r"\usepackage{microtype}      % microtypography",
         r"\usepackage{xcolor}         % colors",
@@ -120,6 +122,43 @@ def _escape_latex(text: str) -> str:
     for ch in text:
         res.append(replacements.get(ch, ch))
     return "".join(res)
+
+
+_DISPLAY_MATH_ENVIRONMENTS = frozenset(
+    {
+        "equation",
+        "equation*",
+        "eqnarray",
+        "eqnarray*",
+        "align",
+        "align*",
+        "alignat",
+        "alignat*",
+        "flalign",
+        "flalign*",
+        "gather",
+        "gather*",
+        "multline",
+        "multline*",
+        "displaymath",
+    }
+)
+
+
+def _serialize_display_formula(text: str) -> str:
+    """Keep complete math environments and choose one for bare math."""
+    body = re.sub(r"(?<!\\)%[^\n]*", "", text).strip()
+    body = re.sub(r"\n[ \t]*\n+", "\n", body)
+    opening = re.match(r"\\begin\{([A-Za-z]+\*?)\}", body)
+    if opening is not None:
+        environment = opening.group(1)
+        if environment in _DISPLAY_MATH_ENVIRONMENTS and re.search(rf"\\end\{{{re.escape(environment)}\}}\s*$", body):
+            return body
+    if r"\tag{" in body:
+        return f"\\begin{{equation}}\n{body}\n\\end{{equation}}"
+    if re.search(r"(?<!\\)&|\\\\", body):
+        return f"\\begin{{align*}}\n{body}\n\\end{{align*}}"
+    return f"$${body}$$"
 
 
 class LaTeXTextSerializer(BaseModel, BaseTextSerializer):
@@ -208,7 +247,7 @@ class LaTeXTextSerializer(BaseModel, BaseTextSerializer):
 
         elif isinstance(item, FormulaItem):
             if text:
-                text_part = f"${text}$" if is_inline_scope else f"$${text}$$"
+                text_part = f"${text}$" if is_inline_scope else _serialize_display_formula(text)
             elif item.orig:
                 text_part = "% formula-not-decoded"
             else:
@@ -661,6 +700,8 @@ class LaTeXDocSerializer(DocSerializer):
         # Ensure title (if any) is before \begin{document}
         if title_cmd:
             preamble_lines.append(title_cmd)
+            # LaTeX otherwise prints the compilation date for every title.
+            preamble_lines.append(r"\date{}")
 
         header = "\n".join(preamble_lines + ["", "\\begin{document}"]) if preamble_lines else "\\begin{document}"
         footer = "\\end{document}"
