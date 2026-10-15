@@ -423,3 +423,69 @@ def test_keywords_topics_required_values() -> None:
         TopicsMetaField(values=34)
     with pytest.raises(ValidationError, match="valid string"):
         TopicsMetaField(values=[34])
+
+
+def _bilingual_doc() -> DoclingDocument:
+    doc = DoclingDocument(name="bilingual")
+    doc.add_title(text="Titel")
+    german = doc.add_text(label=DocItemLabel.PARAGRAPH, text="Dieser Absatz ist auf Deutsch.")
+    german.meta = BaseMeta(
+        language=LanguageMetaField(code=HumanLanguageLabel.DE, confidence=0.99, created_by="langdetect"),
+        entities=EntitiesMetaField(mentions=[EntityMention(text="Deutsch", label="LANG")]),
+    )
+    english = doc.add_text(label=DocItemLabel.PARAGRAPH, text="Short.")
+    english.meta = BaseMeta(language=LanguageMetaField(code=HumanLanguageLabel.EN))
+    return doc
+
+
+def test_md_language_and_entities_are_metadata_not_content() -> None:
+    doc = _bilingual_doc()
+
+    assert doc.export_to_markdown() == "# Titel\n\nDieser Absatz ist auf Deutsch.\n\nShort."
+    assert doc.export_to_text() == "Titel\n\nDieser Absatz ist auf Deutsch.\n\nShort."
+    assert doc.export_to_markdown(mark_meta=True) == (
+        "# Titel\n\nDieser Absatz ist auf Deutsch.\n\n[Language] de\n\n[Entities] Deutsch\n\nShort.\n\n[Language] en"
+    )
+
+
+def test_md_skips_structured_meta_without_renderer() -> None:
+    class _Opaque(BaseModel):
+        value: int = 1
+
+    doc = DoclingDocument(name="opaque")
+    item = doc.add_text(label=DocItemLabel.PARAGRAPH, text="Body.")
+    item.meta = BaseMeta(acme__opaque=_Opaque(), acme__note="kept")
+
+    assert doc.export_to_markdown() == "Body.\n\nkept"
+
+
+def test_html_lang_attributes_mark_language_of_parts() -> None:
+    doc = _bilingual_doc()
+
+    # Default page language: character-weighted majority of the items' languages.
+    html = doc.export_to_html()
+    assert '<html lang="de">' in html
+    assert "<p>Dieser Absatz ist auf Deutsch.</p>" in html
+    assert '<p lang="en">Short.</p>' in html
+
+    # An explicit page language is honoured, and compared by primary subtag.
+    html = HTMLDocSerializer(doc=doc, params=HTMLParams(html_lang="en-US")).serialize().text
+    assert '<html lang="en-US">' in html
+    assert '<p lang="de">Dieser Absatz ist auf Deutsch.</p>' in html
+    assert "<p>Short.</p>" in html
+
+    # The document-level language on the body meta sets the page language.
+    doc.body.meta = BaseMeta(language=LanguageMetaField(code=HumanLanguageLabel.FR))
+    html = doc.export_to_html()
+    assert '<html lang="fr">' in html
+    assert '<p lang="de">Dieser Absatz ist auf Deutsch.</p>' in html
+    assert '<p lang="en">Short.</p>' in html
+
+
+def test_html_lang_defaults_to_en_without_language_meta() -> None:
+    doc = DoclingDocument(name="plain")
+    doc.add_text(label=DocItemLabel.PARAGRAPH, text="No language metadata.")
+
+    html = doc.export_to_html()
+    assert '<html lang="en">' in html
+    assert "<p>No language metadata.</p>" in html
