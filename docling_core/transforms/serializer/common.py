@@ -23,6 +23,7 @@ from typing_extensions import Self, override
 
 from docling_core.transforms.serializer.base import (
     BaseAnnotationSerializer,
+    BaseBlockQuoteSerializer,
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -37,6 +38,7 @@ from docling_core.transforms.serializer.base import (
     Span,
 )
 from docling_core.types.doc import (
+    BlockQuoteGroup,
     ContentLayer,
     DescriptionAnnotation,
     DocItem,
@@ -175,7 +177,7 @@ def _iterate_items(
         traverse_pictures=traverse_pictures,
     ):
         if add_page_breaks:
-            if isinstance(item, ListGroup | InlineGroup) and item.self_ref not in my_visited:
+            if isinstance(item, ListGroup | InlineGroup | BlockQuoteGroup) and item.self_ref not in my_visited:
                 # if group starts with new page, yield page break before group node
                 my_visited.add(item.self_ref)
                 for it, _ in _iterate_items(
@@ -329,6 +331,70 @@ class CommonParams(BaseModel):
         return res
 
 
+_ATTRIBUTION_DASH_PREFIX: Final = re.compile(r"^[-\u2013\u2014]+\s*")
+
+
+def strip_attribution_dash(text: str) -> str:
+    """Remove a leading dash from an attribution, so a serializer can add its own marker.
+
+    An HTML source often writes the attribution as "— Author"; the backend may turn the
+    em dash into a hyphen, and a quoted line that starts with "- " would read as a list.
+    """
+    return _ATTRIBUTION_DASH_PREFIX.sub("", text)
+
+
+def serialize_block_quote_attribution(
+    *,
+    item: BlockQuoteGroup,
+    doc_serializer: BaseDocSerializer,
+    doc: DoclingDocument,
+    **kwargs: Any,
+) -> list[SerializationResult]:
+    """Serialize the attribution items of a block quote as regular text items.
+
+    The document traversal skips them, like the captions of floating items, so a
+    serializer that keeps the quote transparent emits them through this function.
+    """
+    if not isinstance(doc_serializer, DocSerializer):
+        return []
+    excluded_refs = doc_serializer.get_excluded_refs(**kwargs)
+    results: list[SerializationResult] = []
+    for cap in item.captions:
+        if isinstance(cap_item := cap.resolve(doc), TextItem) and cap_item.self_ref not in excluded_refs:
+            results.append(
+                doc_serializer.text_serializer.serialize(
+                    item=cap_item,
+                    doc_serializer=doc_serializer,
+                    doc=doc,
+                    **kwargs,
+                )
+            )
+    return [r for r in results if r.text]
+
+
+class TransparentBlockQuoteSerializer(BaseBlockQuoteSerializer):
+    """Block quote serializer that keeps the quote transparent.
+
+    A format without a dedicated block quote serializer emits the quoted blocks and
+    then the attribution items, as it does for the children of any plain group.
+    """
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: BlockQuoteGroup,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serializes the passed item."""
+        parts = doc_serializer.get_parts(item=item, **kwargs)
+        parts.extend(serialize_block_quote_attribution(item=item, doc_serializer=doc_serializer, doc=doc, **kwargs))
+        text_res = "\n".join([p.text for p in parts if p.text])
+        return create_ser_result(text=text_res, span_source=parts)
+
+
 class DocSerializer(BaseModel, BaseDocSerializer):
     """Class for document serializers."""
 
@@ -345,6 +411,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
     list_serializer: BaseListSerializer
     inline_serializer: BaseInlineSerializer
+    block_quote_serializer: BaseBlockQuoteSerializer = TransparentBlockQuoteSerializer()
 
     meta_serializer: BaseMetaSerializer | None = None
     annotation_serializer: BaseAnnotationSerializer
@@ -364,7 +431,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 traverse_pictures=True,
                 included_content_layers=layers,
             )
-            for cap in (item.captions if isinstance(item, FloatingItem) else [])
+            for cap in (item.captions if isinstance(item, FloatingItem | BlockQuoteGroup) else [])
         }
         return refs
 
@@ -538,6 +605,16 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                     doc_serializer=self,
                     doc=self.doc,
                     list_level=list_level,
+                    visited=my_visited,
+                    **my_kwargs,
+                )
+            elif isinstance(my_item, BlockQuoteGroup):
+                part = self.block_quote_serializer.serialize(
+                    item=my_item,
+                    doc_serializer=self,
+                    doc=self.doc,
+                    list_level=list_level,
+                    is_inline_scope=is_inline_scope,
                     visited=my_visited,
                     **my_kwargs,
                 )
@@ -759,7 +836,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     @override
     def serialize_captions(
         self,
-        item: FloatingItem,
+        item: FloatingItem | BlockQuoteGroup,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize the item's captions."""

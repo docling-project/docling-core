@@ -1,0 +1,28 @@
+<doclang version="0.7">
+  <heading>Judgment</heading>
+  <text>The provision reads as follows.</text>
+  <group name="group">
+    <label value="block_quote"/>
+    <text>A person commits an offence if the person:</text>
+    <list class="ordered">
+      <ldiv>
+        <marker>(a)</marker>
+      </ldiv>
+      does an act; and
+      <ldiv>
+        <marker>(b)</marker>
+      </ldiv>
+      intends the result.
+    </list>
+    <group name="group">
+      <label value="block_quote"/>
+      <text>A nested quotation inside the provision.</text>
+    </group>
+    <text>Section 1, Example Act 2017</text>
+  </group>
+  <text>The court agreed.</text>
+  <group name="group">
+    <label value="block_quote"/>
+    <text>A quote without source or attribution.</text>
+  </group>
+</doclang>
