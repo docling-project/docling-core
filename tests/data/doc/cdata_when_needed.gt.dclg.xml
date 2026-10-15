@@ -106,17 +106,17 @@ Affiliation 2</content>
       <ldiv>
         <marker>□</marker>
       </ldiv>
-      Here a code snippet:
+      <content>Here a code snippet: </content>
       <code>
         <label value="Python"/>
 <![CDATA[print("Hello world")]]>      </code>
-(to be displayed inline)
+      <content> (to be displayed inline)</content>
       <ldiv>
         <marker>□</marker>
       </ldiv>
-      Here a formula:
+      <content>Here a formula: </content>
       <formula>E=mc^2</formula>
-(to be displayed inline)
+      <content> (to be displayed inline)</content>
     </list>
   </list>
   <text>Here a code block:</text>
@@ -126,15 +126,27 @@ Affiliation 2</content>
   <text>Here a formula block:</text>
   <formula>E=mc^2</formula>
   <text>
-    Some formatting chops:
-    <bold>bold</bold>
-    <italic>italic</italic>
-    <underline>underline</underline>
-    <strikethrough>strikethrough</strikethrough>
-    <subscript>subscript</subscript>
-    <superscript>superscript</superscript>
-hyperlink
-<![CDATA[&]]>    
+    <content>Some formatting chops: </content>
+    <bold>
+      <content>bold </content>
+    </bold>
+    <italic>
+      <content>italic </content>
+    </italic>
+    <underline>
+      <content>underline </content>
+    </underline>
+    <strikethrough>
+      <content>strikethrough </content>
+    </strikethrough>
+    <subscript>
+      <content>subscript </content>
+    </subscript>
+    <superscript>
+      <content>superscript </content>
+    </superscript>
+    <content>hyperlink </content>
+    <content><![CDATA[& ]]></content>
     <strikethrough>
       <underline>
         <italic>

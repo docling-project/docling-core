@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "name": "2408.09869v3",
   "furniture": {
     "self_ref": "#/furniture",
@@ -497,7 +497,7 @@
         }
       ],
       "orig": "To use Docling, you can simply install the docling package from PyPI. Documentation and examples are available in our GitHub repository at ",
-      "text": "To use Docling, you can simply install the docling package from PyPI. Documentation and examples are available in our GitHub repository at "
+      "text": "To use Docling, you can simply install the docling package from PyPI. Documentation and examples are available in our GitHub repository at  "
     },
     {
       "self_ref": "#/texts/9",
@@ -524,7 +524,7 @@
         }
       ],
       "orig": "github.com/DS4SD/docling",
-      "text": "github.com/DS4SD/docling",
+      "text": "github.com/DS4SD/docling ",
       "hyperlink": "https://github.com/DS4SD/docling"
     },
     {

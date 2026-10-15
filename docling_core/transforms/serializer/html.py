@@ -7,7 +7,8 @@ from enum import Enum
 from html.parser import HTMLParser
 from io import BytesIO
 from pathlib import Path, PurePath
-from typing import Any, Optional, Union
+from typing import Any, ClassVar, Optional, Union
+from urllib.parse import quote
 from xml.etree.ElementTree import SubElement, tostring
 from xml.sax.saxutils import unescape
 
@@ -892,8 +893,8 @@ class HTMLInlineSerializer(BaseInlineSerializer):
             **kwargs,
         )
 
-        # Join all parts without separators
-        inline_html = " ".join([p.text for p in parts if p.text])
+        # Inline runs carry their own significant whitespace; concatenate faithfully.
+        inline_html = "".join([p.text for p in parts if p.text])
 
         # Wrap in span if needed
         if inline_html:
@@ -1079,6 +1080,8 @@ class HTMLDocSerializer(DocSerializer):
     annotation_serializer: BaseAnnotationSerializer = HTMLAnnotationSerializer()
 
     params: HTMLParams = HTMLParams()
+
+    hoist_decoration_whitespace: ClassVar[bool] = True
 
     @override
     def _item_wraps_meta(self, item: NodeItem) -> bool:
