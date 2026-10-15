@@ -30,9 +30,7 @@ class _FakeTokenizer(BaseTokenizer):
 
 
 def test_split_function_tail_merge_does_not_strip_body_chars():
-    body_lines = [f"\tfinal_{i} = process({i})" for i in range(40)] + [
-        "\teffort = final_39"
-    ]
+    body_lines = [f"\tfinal_{i} = process({i})" for i in range(40)] + ["\teffort = final_39"]
     code = "def handle_many(items):\n" + "\n".join(body_lines) + "\n"
 
     doc = DoclingDocument(name="t")
@@ -40,9 +38,7 @@ def test_split_function_tail_merge_does_not_strip_body_chars():
 
     # max_tokens small -> the function is split; min_chunk_size large enough to
     # force the small trailing part to be merged back into the previous chunk.
-    chunker = _PythonFunctionChunker(
-        max_tokens=200, min_chunk_size=15, tokenizer=_FakeTokenizer()
-    )
+    chunker = _PythonFunctionChunker(max_tokens=200, min_chunk_size=15, tokenizer=_FakeTokenizer())
     chunks = list(chunker.chunk(doc))
 
     merged = "\n".join(c.text for c in chunks)
