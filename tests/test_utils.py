@@ -202,18 +202,33 @@ def test_sanitize_filename_paths():
     assert _sanitize_filename("..") is None
 
 
+def _make_getaddrinfo(mapping: dict):
+    """Return a getaddrinfo stub that resolves hostnames from a fixed mapping.
+
+    Each mapping value is a list of (family, address) tuples. Raises
+    socket.gaierror for hosts not in the mapping.
+    """
+
+    def _getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+        if host not in mapping:
+            raise socket.gaierror(f"Name or service not known: {host}")
+        return [(fam, socket.SOCK_STREAM, 0, "", (addr, port or 0)) for fam, addr in mapping[host]]
+
+    return _getaddrinfo
+
+
 def test_is_safe_url_rejects_private_networks(monkeypatch):
     """Test URL filtering for non-public network ranges."""
-    # Patch DNS resolution so these assertions work without network access.
-    # "localhost" resolves via the system hosts file (no DNS needed), but
-    # hostnames like example.com and github.com require a real DNS query.
     monkeypatch.setattr(
         socket,
-        "gethostbyname",
-        lambda host: {
-            "example.com": "93.184.216.34",
-            "github.com": "140.82.121.4",
-        }.get(host, host),
+        "getaddrinfo",
+        _make_getaddrinfo(
+            {
+                "example.com": [(socket.AF_INET, "93.184.216.34")],
+                "github.com": [(socket.AF_INET, "140.82.121.4")],
+                "localhost": [(socket.AF_INET, "127.0.0.1")],
+            }
+        ),
     )
 
     assert not _is_safe_url("http://10.0.0.1/file")
@@ -231,6 +246,70 @@ def test_is_safe_url_rejects_private_networks(monkeypatch):
     assert _is_safe_url("http://8.8.8.8/file")
     assert _is_safe_url("https://example.com/file")
     assert _is_safe_url("https://github.com/github/file")
+
+
+def test_is_safe_url_rejects_dual_stack_with_private_ipv6(monkeypatch):
+    """A host with a public A record but a private AAAA record must be rejected."""
+    monkeypatch.setattr(
+        socket,
+        "getaddrinfo",
+        _make_getaddrinfo(
+            {
+                # Public IPv4, loopback IPv6 — the AAAA record is private.
+                "dual.example": [
+                    (socket.AF_INET6, "::1"),
+                    (socket.AF_INET, "1.1.1.1"),
+                ],
+                # Public IPv4, IPv4-mapped loopback AAAA record.
+                "mapped.example": [
+                    (socket.AF_INET, "1.1.1.1"),
+                    (socket.AF_INET6, "::ffff:127.0.0.1"),
+                ],
+            }
+        ),
+    )
+
+    assert not _is_safe_url("http://dual.example/file")
+    assert not _is_safe_url("http://mapped.example/file")
+
+
+def test_is_safe_url_accepts_ipv6_only_host(monkeypatch):
+    """A host with only a public AAAA record must be accepted."""
+    monkeypatch.setattr(
+        socket,
+        "getaddrinfo",
+        _make_getaddrinfo(
+            {
+                "ipv6only.example": [(socket.AF_INET6, "2606:4700:4700::1111")],
+            }
+        ),
+    )
+
+    assert _is_safe_url("https://ipv6only.example/file")
+
+
+def test_is_safe_url_rejects_ipv4_mapped_loopback_literal():
+    """A literal IPv4-mapped loopback address in the URL must be rejected."""
+    assert not _is_safe_url("http://[::ffff:127.0.0.1]/file")
+    assert not _is_safe_url("http://[::ffff:10.0.0.1]/file")
+
+
+def test_is_safe_url_allowlist_applies_to_ipv6_mapped_address(monkeypatch):
+    """An allowlisted IPv4 address reached via an IPv4-mapped AAAA record is permitted."""
+    from docling_core.utils.settings import settings
+
+    monkeypatch.setattr(settings, "allowed_private_ips", ["10.0.0.1"])
+    monkeypatch.setattr(
+        socket,
+        "getaddrinfo",
+        _make_getaddrinfo(
+            {
+                "internal.example": [(socket.AF_INET6, "::ffff:10.0.0.1")],
+            }
+        ),
+    )
+
+    assert _is_safe_url("http://internal.example/file")
 
 
 def test_ip_in_allowlist():
@@ -410,3 +489,85 @@ def test_resolve_source_stops_when_stream_exceeds_limit(monkeypatch):
 
     with pytest.raises(ValueError, match="maximum allowed size"):
         resolve_source_to_stream("https://example.com/file", max_file_size=5)
+
+
+def test_connect_time_validation_blocks_dns_rebinding(monkeypatch):
+    """A DNS rebinding attempt must be rejected at connect time.
+
+    The first getaddrinfo call (made by _is_safe_url) returns a public IP so
+    the pre-flight check passes. The second call (made by urllib3's
+    create_connection) returns loopback, simulating a DNS server that gives
+    different answers to successive queries.
+    """
+    call_count = 0
+
+    def rebinding_getaddrinfo(host, port, *args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        addr = "1.1.1.1" if call_count == 1 else "127.0.0.1"
+        return [(socket.AF_INET, socket.SOCK_STREAM, 0, "", (addr, port or 0))]
+
+    monkeypatch.setattr(socket, "getaddrinfo", rebinding_getaddrinfo)
+
+    with pytest.raises(ValueError, match="Connect-time address is not allowed"):
+        resolve_source_to_stream("https://example.com/file")
+
+
+def test_connect_time_validation_connects_to_validated_address(monkeypatch):
+    """The socket must go to the validated address, not to a later DNS answer.
+
+    The resolver answers with a public IP for the pre-flight and connect-time
+    lookups, and with loopback afterwards. A loopback-only server must never be
+    reached.
+    """
+    import http.server
+    import threading
+
+    hits = []
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            hits.append(self.path)
+            self.send_response(200)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
+        def log_message(self, *args):
+            pass
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+    port = server.server_address[1]
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+
+    call_count = 0
+
+    real_getaddrinfo = socket.getaddrinfo
+
+    def rebinding_getaddrinfo(host, port, *args, **kwargs):
+        nonlocal call_count
+        if host != "rebind.example":
+            return real_getaddrinfo(host, port, *args, **kwargs)
+        call_count += 1
+        addr = "192.0.2.1" if call_count <= 2 else "127.0.0.1"
+        return [(socket.AF_INET, socket.SOCK_STREAM, 0, "", (addr, port or 0))]
+
+    monkeypatch.setattr(socket, "getaddrinfo", rebinding_getaddrinfo)
+    # 192.0.2.0/24 is non-routable in practice; patch it as safe and make the
+    # connect fail fast instead of waiting for a timeout.
+    monkeypatch.setattr("docling_core.utils.file._is_address_safe", lambda ip: str(ip) == "192.0.2.1")
+    real_connect = socket.socket.connect
+
+    def fast_fail_connect(self, sockaddr):
+        if sockaddr[0] == "192.0.2.1":
+            raise ConnectionRefusedError("unreachable in test")
+        return real_connect(self, sockaddr)
+
+    monkeypatch.setattr(socket.socket, "connect", fast_fail_connect)
+
+    try:
+        with pytest.raises(Exception):
+            resolve_source_to_stream(f"http://rebind.example:{port}/file")
+    finally:
+        server.shutdown()
+
+    assert hits == []

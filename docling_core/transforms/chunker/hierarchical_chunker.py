@@ -218,6 +218,8 @@ class HierarchicalChunker(BaseChunker):
         ):
             if item.self_ref in excluded_refs:
                 continue
+            if isinstance(my_doc_ser, DocSerializer) and my_doc_ser._skip_in_walk(node=item, root=None):
+                continue
             if isinstance(item, TitleItem | SectionHeaderItem):
                 level = item.level if isinstance(item, SectionHeaderItem) else 0
 

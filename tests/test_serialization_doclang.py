@@ -9,6 +9,7 @@ from typing import Optional
 import pytest
 from pydantic import AnyUrl
 
+from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 from docling_core.transforms.serializer._doclang_utils import (
     _create_location_tokens_for_bbox,
     _quantize_to_resolution,
@@ -891,6 +892,31 @@ def test_chart():
     ser_txt = ser_res.text
     exp_file = Path("./tests/data/doc/barchart.out.dclg.xml")
     verify_doclang(exp_file=exp_file, actual=ser_txt)
+
+
+@pytest.mark.parametrize(
+    "src",
+    [
+        # captions and footnotes as children of their picture/table (as produced by conversion)
+        Path("./tests/data/doc/multi_captions_footnotes.json"),
+        # captions and footnotes at body level
+        Path("./tests/data/doc/multi_captions_footnotes_top_level.json"),
+    ],
+    ids=lambda p: p.stem,
+)
+def test_multiple_captions_and_footnotes(src: Path):
+    doc = DoclingDocument.load_from_json(src)
+    params = DocLangParams(include_version=False)
+
+    ser_txt = DocLangDocSerializer(doc=doc, params=params).serialize().text
+    verify_doclang(exp_file=src.with_suffix(".gt.dclg.xml"), actual=ser_txt)
+
+    doc2 = DocLangDocDeserializer().deserialize_str(ser_txt)
+    _verify_doc(doc=doc2, exp_json=src.with_suffix(".deserialized.gt.json"))
+
+    reser_txt = DocLangDocSerializer(doc=doc2, params=params).serialize().text
+    verify_doclang(exp_file=src.with_suffix(".reserialized.gt.dclg.xml"), actual=reser_txt)
+    assert reser_txt == ser_txt
 
 
 def _verify_doc(doc: DoclingDocument, exp_json: Path):
@@ -2277,6 +2303,140 @@ def test_cross_page_paragraph_emits_thread_and_page_break():
         assert ser_txt.count("<page_break") == 1
 
 
+@doclang_validator
+def test_cross_page_paragraph_keeps_following_page_one_picture_before_break():
+    """A picture following a cross-page paragraph remains on its provenance page."""
+    doc = DoclingDocument(name="cross_page_paragraph_with_picture")
+    for page_no in (10, 11):
+        doc.add_page(page_no=page_no, size=Size(width=612, height=792), image=None)
+
+    page_10_text = "Paragraph starts on page ten. "
+    page_11_text = "Paragraph continues on page eleven."
+    full_text = page_10_text + page_11_text
+    paragraph = doc.add_text(
+        label=DocItemLabel.TEXT,
+        text=full_text,
+        orig=full_text,
+        prov=ProvenanceItem(
+            page_no=10,
+            bbox=BoundingBox.from_tuple((32, 88, 284, 38), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, len(page_10_text)),
+        ),
+    )
+    paragraph.prov.append(
+        ProvenanceItem(
+            page_no=11,
+            bbox=BoundingBox.from_tuple((43, 726, 294, 676), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(len(page_10_text), len(full_text)),
+        )
+    )
+
+    picture = doc.add_picture(
+        prov=ProvenanceItem(
+            page_no=10,
+            bbox=BoundingBox.from_tuple((313, 353, 541, 98), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, 0),
+        )
+    )
+    caption_text = "Figure 7 caption"
+    caption = doc.add_text(
+        label=DocItemLabel.CAPTION,
+        text=caption_text,
+        parent=picture,
+        prov=ProvenanceItem(
+            page_no=10,
+            bbox=BoundingBox.from_tuple((302, 88, 553, 39), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, len(caption_text)),
+        ),
+    )
+    picture.captions.append(caption.get_ref())
+
+    assert doc.body.children == [paragraph.get_ref(), picture.get_ref()]
+    assert [prov.page_no for prov in paragraph.prov] == [10, 11]
+    assert picture.prov[0].page_no == 10
+    assert caption.parent == picture.get_ref()
+    assert caption.prov[0].page_no == 10
+
+    root = ET.fromstring(serialize_doclang(doc))
+    assert [child.tag for child in root] == [
+        "text",
+        "picture",
+        "page_break",
+        "text",
+    ]
+    caption_element = root.find("picture/caption")
+    assert caption_element is not None
+    assert "".join(caption_element.itertext()).strip() == caption_text
+
+
+@doclang_validator
+def test_cross_page_paragraph_keeps_grouped_page_six_footer_before_break():
+    """A page-six footer in a transparent group stays before the page break."""
+    doc = DoclingDocument(name="cross_page_paragraph_with_grouped_footer")
+    for page_no in (6, 7):
+        doc.add_page(page_no=page_no, size=Size(width=612, height=792), image=None)
+
+    group = doc.add_group(name="section")
+    page_6_text = "Paragraph starts on page six. "
+    page_7_text = "Paragraph continues on page seven."
+    full_text = page_6_text + page_7_text
+    paragraph = doc.add_text(
+        label=DocItemLabel.TEXT,
+        text=full_text,
+        orig=full_text,
+        parent=group,
+        prov=ProvenanceItem(
+            page_no=6,
+            bbox=BoundingBox.from_tuple((32, 88, 284, 38), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, len(page_6_text)),
+        ),
+    )
+    paragraph.prov.append(
+        ProvenanceItem(
+            page_no=7,
+            bbox=BoundingBox.from_tuple((43, 726, 294, 676), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(len(page_6_text), len(full_text)),
+        )
+    )
+
+    footer_text = "nnh: number of neuron in the hidden layer."
+    doc.add_text(
+        label=DocItemLabel.PAGE_FOOTER,
+        text=footer_text,
+        parent=group,
+        content_layer=ContentLayer.FURNITURE,
+        prov=ProvenanceItem(
+            page_no=6,
+            bbox=BoundingBox.from_tuple((32, 24, 284, 10), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, len(footer_text)),
+        ),
+    )
+    header_text = "Header on page seven"
+    doc.add_text(
+        label=DocItemLabel.PAGE_HEADER,
+        text=header_text,
+        parent=group,
+        content_layer=ContentLayer.FURNITURE,
+        prov=ProvenanceItem(
+            page_no=7,
+            bbox=BoundingBox.from_tuple((32, 780, 284, 760), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, len(header_text)),
+        ),
+    )
+
+    root = ET.fromstring(serialize_doclang(doc))
+    assert [child.tag for child in root] == [
+        "text",
+        "page_footer",
+        "page_break",
+        "text",
+        "page_header",
+    ]
+    footer_element = root.find("page_footer")
+    assert footer_element is not None
+    assert "".join(footer_element.itertext()).strip() == footer_text
+
+
 def _doc_cross_page_list() -> DoclingDocument:
     """List group with whole items on page 1 and page 2 (list-level fragmentation)."""
     doc = DoclingDocument(name="cross_page_list")
@@ -2561,3 +2721,201 @@ def test_create_threading_token_emits_thread_id():
     assert DocLangVocabulary._create_threading_token(thread_id="42") == '<thread thread_id="42"/>'
     with pytest.raises(ValueError, match="thread_id length"):
         DocLangVocabulary._create_threading_token(thread_id="")
+
+
+def test_inline_group_nested_when_parent_text_item_has_text():
+    """Runs of an InlineGroup stay inside the parent element even if it has text.
+
+    Regression test for #750: when the parent ``TextItem`` carries text of its
+    own, the inline runs used to be emitted bare at the parent's sibling level,
+    which is invalid against the DocLang XSD (``group`` is not mixed) and drops
+    the plain-text run on deserialization.
+    """
+    doc = DoclingDocument(name="t")
+    heading = doc.add_heading(text="Heading text", level=2)
+    inline = doc.add_inline_group(parent=heading)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="bold",
+        parent=inline,
+        formatting=Formatting(bold=True),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text=" plain ", parent=inline)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="italic",
+        parent=inline,
+        formatting=Formatting(italic=True),
+    )
+
+    txt = serialize_doclang(doc)
+
+    root = ET.fromstring(txt)
+    assert [child.tag for child in root] == ["heading"]
+    heading_el = root[0]
+    assert [child.tag for child in heading_el] == ["bold", "content", "italic"]
+    assert "".join(heading_el.itertext()).replace("\n", " ").split() == [
+        "Heading",
+        "text",
+        "bold",
+        "plain",
+        "italic",
+    ]
+    assert " plain " in txt
+
+
+def test_inline_group_nested_preserves_checkbox_and_handwriting():
+    """The checkbox token and handwriting wrap survive when text has an InlineGroup child.
+
+    Regression test: a ``CHECKBOX_SELECTED``/``HANDWRITTEN_TEXT`` item that has
+    both its own text and an ``InlineGroup`` child used to silently drop the
+    checkbox state token / ``<handwriting>`` wrap, since that label-specific
+    handling only lived in the branch that runs when there is no InlineGroup
+    child.
+    """
+    doc = DoclingDocument(name="t")
+    checkbox = doc.add_text(label=DocItemLabel.CHECKBOX_SELECTED, text="Yes")
+    inline = doc.add_inline_group(parent=checkbox)
+    doc.add_text(label=DocItemLabel.TEXT, text="confirmed", parent=inline, formatting=Formatting(bold=True))
+
+    txt = serialize_doclang(doc)
+    assert "<checkbox" in txt
+    assert "confirmed" in txt
+
+    doc2 = DoclingDocument(name="t")
+    handwritten = doc2.add_text(label=DocItemLabel.HANDWRITTEN_TEXT, text="Signed by")
+    inline2 = doc2.add_inline_group(parent=handwritten)
+    doc2.add_text(label=DocItemLabel.TEXT, text="John", parent=inline2, formatting=Formatting(bold=True))
+
+    txt2 = serialize_doclang(doc2)
+    assert "<handwriting>" in txt2
+    assert "John" in txt2
+
+
+def test_inline_group_nested_word_boundary_when_minimized():
+    """A word boundary is kept between own text and inline runs in minimized mode.
+
+    Regression test: joining the item's own text with the InlineGroup's runs
+    used to reuse the pretty-printing record delimiter, which is the empty
+    string when ``pretty_indentation=None`` (minimized serialization), running
+    the two words together with no separator.
+    """
+    doc = DoclingDocument(name="t")
+    heading = doc.add_heading(text="Heading text", level=2)
+    inline = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", parent=inline, formatting=Formatting(bold=True))
+
+    txt = serialize_doclang(doc, params=DocLangParams(include_version=False, pretty_indentation=None))
+    assert "Heading textbold" not in txt
+
+    root = ET.fromstring(txt)
+    heading_el = root[0]
+    assert "".join(heading_el.itertext()).split() == ["Heading", "text", "bold"]
+
+
+def _prov(l: float, t: float, r: float, b: float) -> ProvenanceItem:
+    return ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox(l=l, t=t, r=r, b=b, coord_origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 0),
+    )
+
+
+def test_table_footnote_with_nested_field_region():
+    """A table footnote serializes its nested content, once, and is placed by its first nested item.
+
+    The footnote is a satellite of the table (it is emitted in the table's group) and has neither
+    text nor location of its own: its field region must come out inside the ``<footnote>``, not
+    again as a sibling, and the footnote sorts by the location of its first key.
+    """
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100))
+    table = doc.add_table(data=TableData(num_rows=0, num_cols=0), prov=_prov(10, 90, 90, 50))
+
+    # a regular footnote, below the field region footnote
+    plain = doc.add_text(label=DocItemLabel.FOOTNOTE, text="Plain note.", prov=_prov(10, 30, 50, 25))
+    nested = doc.add_text(label=DocItemLabel.FOOTNOTE, text="")
+    region = doc.add_field_region(parent=nested)
+    item = doc.add_field_item(parent=region)
+    doc.add_field_key(text="K:", parent=item, prov=_prov(10, 45, 20, 40))
+    doc.add_field_value(text="V", parent=item, prov=_prov(22, 45, 30, 40))
+    table.footnotes = [plain.get_ref(), nested.get_ref()]
+
+    root = ET.fromstring(serialize_doclang(doc))
+
+    group = root.find("group")
+    assert group is not None
+    assert [c.tag for c in group] == ["table", "footnote", "footnote"]  # nested one first: it is higher
+    nested_ftn, plain_ftn = group.findall("footnote")
+    assert nested_ftn.find("field_region/field_item/key") is not None
+    assert "".join(plain_ftn.itertext()).strip().endswith("Plain note.")
+    assert len(list(root.iter("field_region"))) == 1  # not emitted a second time next to the group
+
+    # the nested content survives a round trip, under its footnote
+    ser_txt = serialize_doclang(doc)
+    doc2 = DocLangDocDeserializer().deserialize_str(ser_txt)
+    (table2,) = doc2.tables
+    nested2 = [ftn.resolve(doc2) for ftn in table2.footnotes if not ftn.resolve(doc2).text]
+    assert len(nested2) == 1
+    regions2 = [
+        it for it, _ in doc2.iterate_items(root=nested2[0], with_groups=True) if it.label == DocItemLabel.FIELD_REGION
+    ]
+    assert len(regions2) == 1
+    assert [t.text for t in doc2.texts if t.label in (DocItemLabel.FIELD_KEY, DocItemLabel.FIELD_VALUE)] == ["K:", "V"]
+    assert serialize_doclang(doc2) == ser_txt
+
+
+def _doc_field_region_in_inline_group() -> DoclingDocument:
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100))
+    group = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="(", parent=group, prov=_prov(5, 90, 10, 80))
+    item = doc.add_field_item(parent=doc.add_field_region(parent=group))
+    doc.add_field_key(text="K:", parent=item, prov=_prov(10, 90, 30, 80))
+    doc.add_field_value(text="V", parent=item, prov=_prov(40, 90, 90, 80))
+    doc.add_text(label=DocItemLabel.TEXT, text=")", parent=group, prov=_prov(90, 90, 95, 80))
+    return doc
+
+
+def test_field_region_in_inline_group_keeps_key_value_locations():
+    """Keys and values are elements with their own location, also when the region sits in an inline group."""
+    doc = _doc_field_region_in_inline_group()
+
+    root = ET.fromstring(serialize_doclang(doc))
+
+    item = root.find("text/field_region/field_item")
+    assert item is not None
+    for tag in ("key", "value"):
+        assert len(item.findall(f"{tag}/location")) == 4
+    # the runs of the group are still located by the group alone
+    assert len(root.findall("text/location")) == 4
+
+    # the locations survive a round trip
+    doc2 = DocLangDocDeserializer().deserialize_str(serialize_doclang(doc))
+    kv = [t for t in doc2.texts if t.label in (DocItemLabel.FIELD_KEY, DocItemLabel.FIELD_VALUE)]
+    assert [t.text for t in kv] == ["K:", "V"]
+    assert all(t.prov for t in kv)
+
+
+def test_field_region_in_inline_group_respects_add_location_off():
+    doc = _doc_field_region_in_inline_group()
+
+    root = ET.fromstring(serialize_doclang(doc, DocLangParams(include_version=False, add_location=False)))
+
+    assert not list(root.iter("location"))
+
+
+def test_picture_with_nested_field_region():
+    """A field region that is a child of a picture is serialized inside the picture."""
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100))
+    picture = doc.add_picture(prov=_prov(0, 100, 100, 0))
+    item = doc.add_field_item(parent=doc.add_field_region(parent=picture))
+    doc.add_field_key(text="K:", parent=item, prov=_prov(10, 90, 30, 80))
+    doc.add_field_value(text="V", parent=item, prov=_prov(40, 90, 90, 80))
+
+    root = ET.fromstring(serialize_doclang(doc))
+
+    assert len(list(root.iter("field_region"))) == 1
+    assert root.find("picture/field_region/field_item/key") is not None
+    assert root.find("picture/field_region/field_item/value") is not None

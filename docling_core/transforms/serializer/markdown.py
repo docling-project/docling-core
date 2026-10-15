@@ -30,15 +30,19 @@ from docling_core.transforms.serializer.base import (
 from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
+    _escape_uri_path,
     _get_annotation_text,
     _PageBreakSerResult,
     _should_use_legacy_annotations,
     create_ser_result,
+    hyperlink_uri,
 )
 from docling_core.types.doc import (
     BaseMeta,
+    CaptionPlacement,
     CodeItem,
     ContentLayer,
+    CoordOrigin,
     DescriptionAnnotation,
     DescriptionMetaField,
     DocItem,
@@ -65,6 +69,7 @@ from docling_core.types.doc import (
     PictureItem,
     PictureMoleculeData,
     PictureTabularChartData,
+    ProvenanceItem,
     RichTableCell,
     SectionHeaderItem,
     SummaryMetaField,
@@ -89,6 +94,61 @@ def _cell_content_has_table(item: NodeItem, doc: DoclingDocument) -> bool:
     return False
 
 
+def _captions_below_item(item: FloatingItem, doc: DoclingDocument) -> bool | None:
+    """Tell whether the item's captions sit below the item, judging by bbox centers.
+
+    Returns ``True`` if every caption is centered lower than the item on the page,
+    ``False`` if the item has captions located at or above it, and ``None`` if the
+    position cannot be determined (no captions, missing provenance, different pages
+    or unresolvable page height), in which case the caller keeps its default order.
+    """
+
+    def center_y(prov: ProvenanceItem) -> float | None:
+        bbox = prov.bbox
+        if bbox.coord_origin != CoordOrigin.TOPLEFT:
+            page = doc.pages.get(prov.page_no)
+            if page is None:
+                return None
+            bbox = bbox.to_top_left_origin(page_height=page.size.height)
+        return (bbox.t + bbox.b) / 2
+
+    if not item.prov or not item.captions:
+        return None
+    item_prov = item.prov[0]
+    item_y = center_y(item_prov)
+    if item_y is None:
+        return None
+
+    below: list[bool] = []
+    for cap_ref in item.captions:
+        cap = cap_ref.resolve(doc)
+        if not isinstance(cap, DocItem):
+            continue
+        cap_prov = next((p for p in cap.prov if p.page_no == item_prov.page_no), None)
+        if cap_prov is None or (cap_y := center_y(cap_prov)) is None:
+            return None
+        below.append(cap_y > item_y)
+    return all(below) if below else None
+
+
+def _caption_goes_after(
+    item: FloatingItem,
+    doc: DoclingDocument,
+    params: "MarkdownParams",
+    standard_after: bool,
+) -> bool:
+    """Decide whether the item's captions are serialized after the item.
+
+    ``standard_after`` is the item type's default order, used for ``STANDARD``
+    placement and whenever ``LAYOUT`` placement cannot determine the position.
+    """
+    if params.caption_placement == CaptionPlacement.LAYOUT:
+        below = _captions_below_item(item, doc)
+        if below is not None:
+            return below
+    return standard_after
+
+
 def _mark_subtree_visited(
     item: NodeItem,
     doc: DoclingDocument,
@@ -107,33 +167,39 @@ def _mark_subtree_visited(
             _mark_subtree_visited(child_ref.resolve(doc=doc), doc, visited)
 
 
-def _collect_subtree_text(item: NodeItem, doc: DoclingDocument) -> str:
+def _collect_subtree_text(item: NodeItem, doc: DoclingDocument, excluded_refs: set[str]) -> str:
     """Collect all text from *item*'s subtree, flattening nested tables.
 
     Returns a space-joined string of every piece of text found so that the
     content of a nested table is preserved in a flat, readable form.
 
     For TableItems the text is pulled from ``data.grid`` cells directly;
-    children are *not* recursed into because they duplicate the grid content
-    for RichTableCells.  For all other items, ``.text`` is collected and
-    children are visited recursively.
+    RichTableCells are resolved through their references, without visiting the
+    table children again. Exclusions apply during flattening just as they do
+    during normal serialization.
     """
     parts: list[str] = []
 
     if isinstance(item, TableItem):
+        if item.self_ref in excluded_refs:
+            return ""
         for row in item.data.grid:
             for cell in row:
-                if cell.text:
-                    parts.append(cell.text)
+                if isinstance(cell, RichTableCell):
+                    cell_text = _collect_subtree_text(cell.ref.resolve(doc), doc, excluded_refs)
+                else:
+                    cell_text = cell.text
+                if cell_text:
+                    parts.append(cell_text)
         return " ".join(parts)
 
-    if isinstance(item, TextItem) and item.text:
+    if isinstance(item, TextItem) and item.self_ref not in excluded_refs and item.text:
         parts.append(item.text)
 
     if isinstance(item, NodeItem):
         for child_ref in item.children:
             child = child_ref.resolve(doc=doc)
-            child_text = _collect_subtree_text(child, doc)
+            child_text = _collect_subtree_text(child, doc, excluded_refs)
             if child_text:
                 parts.append(child_text)
 
@@ -190,6 +256,15 @@ class MarkdownParams(CommonParams):
     include_picture_classification: bool = Field(
         default=True,
         description="Include the picture classification prediction (the image's predicted class).",
+    )
+    caption_placement: CaptionPlacement = Field(
+        default=CaptionPlacement.STANDARD,
+        description=(
+            "Where captions go relative to their item. 'standard' keeps the per-type order "
+            "(before tables and pictures, after code and formulas); 'layout' places a caption "
+            "after its item if the caption's bbox center is lower on the page, else before, "
+            "falling back to 'standard' when positions are unavailable."
+        ),
     )
 
 
@@ -294,8 +369,10 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
 
             if isinstance(item, ListItem):
                 pieces: list[str] = []
-                case_auto = params.orig_list_item_marker_mode == OrigListItemMarkerMode.AUTO and bool(
-                    re.search(r"[a-zA-Z0-9]", item.marker)
+                # Any Unicode letter or digit (as in a), ① or 第一条) makes the
+                # original marker informative; bullet glyphs (•, ◦) do not.
+                case_auto = params.orig_list_item_marker_mode == OrigListItemMarkerMode.AUTO and any(
+                    char.isalnum() for char in item.marker
                 )
                 case_already_valid = (
                     params.ensure_valid_list_item_marker
@@ -367,7 +444,10 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         if isinstance(item, FloatingItem):
             cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
             if cap_res.text:
-                res_parts.append(cap_res)
+                if _caption_goes_after(item, doc, params, standard_after=True):
+                    res_parts.append(cap_res)
+                else:
+                    res_parts.insert(0, cap_res)
 
         text = (" " if is_inline_scope else "\n\n").join([r.text for r in res_parts])
         if processing_pending:
@@ -531,6 +611,11 @@ def _count_header_rows(item: TableItem) -> int:
     pull the data rows beneath a vertically spanning header into the header
     block.
 
+    A row is only promoted when it carries no non-flagged text outside the
+    leading column. Text in the leading column is exempt, because that column
+    holds the row labels, which stay unmarked even on rows that belong to the
+    header.
+
     Args:
         item: The table whose header rows are to be counted.
 
@@ -546,8 +631,14 @@ def _count_header_rows(item: TableItem) -> int:
           "no promotable header block", and every row stays in the body.
     """
     num_headers = 0
+    first_col = min((cell.start_col_offset_idx for cell in item.data.table_cells), default=0)
     for row_idx, row in enumerate(item.data.grid):
-        if any(cell.column_header and cell.start_row_offset_idx == row_idx for cell in row):
+        starting_cells = [cell for cell in row if cell.start_row_offset_idx == row_idx]
+        carries_body_text = any(
+            not cell.column_header and cell.text.strip() and cell.start_col_offset_idx != first_col
+            for cell in starting_cells
+        )
+        if any(cell.column_header for cell in starting_cells) and not carries_body_text:
             num_headers += 1
         else:
             if row_idx == 0 and not any(cell.column_header for later_row in item.data.grid[1:] for cell in later_row):
@@ -704,7 +795,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
             visited: set[str] = kwargs.get("visited") or set()
             _mark_subtree_visited(item, doc, visited)
             return create_ser_result(
-                text=_collect_subtree_text(item, doc),
+                text=_collect_subtree_text(item, doc, doc_serializer.get_excluded_refs(**kwargs)),
                 span_source=item,
             )
 
@@ -715,7 +806,8 @@ class MarkdownTableSerializer(BaseTableSerializer):
             item=item,
             **kwargs,
         )
-        if cap_res.text:
+        cap_after = _caption_goes_after(item, doc, params, standard_after=False)
+        if cap_res.text and not cap_after:
             res_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
@@ -728,16 +820,20 @@ class MarkdownTableSerializer(BaseTableSerializer):
                     res_parts.append(ann_res)
 
             rows = []
+            rich_texts: dict[tuple[int, int], str] = {}
             for row in item.data.grid:
                 rendered_row = []
                 for col in row:
                     if isinstance(col, RichTableCell):
-                        ref_item = col.ref.resolve(doc=doc)
-                        inner_kwargs = {**kwargs, "_nested_in_table": True, "in_table_cell": True}
-                        cell_text = doc_serializer.serialize(
-                            item=ref_item,
-                            **inner_kwargs,
-                        ).text
+                        key = (col.start_row_offset_idx, col.start_col_offset_idx)
+                        if key not in rich_texts:
+                            ref_item = col.ref.resolve(doc=doc)
+                            inner_kwargs = {**kwargs, "_nested_in_table": True, "in_table_cell": True}
+                            rich_texts[key] = doc_serializer.serialize(
+                                item=ref_item,
+                                **inner_kwargs,
+                            ).text
+                        cell_text = rich_texts[key]
                     else:
                         cell_text = col.text or ""
                     # Newlines and pipes must be escaped in every cell so the
@@ -773,6 +869,9 @@ class MarkdownTableSerializer(BaseTableSerializer):
             if table_text:
                 res_parts.append(create_ser_result(text=table_text, span_source=item))
 
+        if cap_res.text and cap_after:
+            res_parts.append(cap_res)
+
         text_res = "\n\n".join([r.text for r in res_parts])
 
         return create_ser_result(text=text_res, span_source=res_parts)
@@ -780,18 +879,6 @@ class MarkdownTableSerializer(BaseTableSerializer):
 
 class MarkdownPictureSerializer(BasePictureSerializer):
     """Markdown-specific picture item serializer."""
-
-    _URI_KEEP_CHARS: Final[str] = "/%:@+,;=~$!&'*"
-    """Characters that survive percent-encoding in a Markdown link destination.
-
-    Includes the RFC 3986 reserved characters that carry meaning in a URI, plus
-    `%` so that an already-encoded destination is not encoded a second time.
-    Whitespace and parentheses are deliberately absent: they would end a Markdown
-    inline link.
-    """
-
-    _WINDOWS_DRIVE_RE: Final[re.Pattern[str]] = re.compile(r"[A-Za-z]:/")
-    """Matches the drive prefix of an absolute Windows path, e.g. `C:/`."""
 
     @override
     def serialize(
@@ -811,7 +898,8 @@ class MarkdownPictureSerializer(BasePictureSerializer):
             item=item,
             **kwargs,
         )
-        if cap_res.text:
+        cap_after = _caption_goes_after(item, doc, params, standard_after=False)
+        if cap_res.text and not cap_after:
             res_parts.append(cap_res)
 
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
@@ -845,6 +933,10 @@ class MarkdownPictureSerializer(BasePictureSerializer):
                 md_table_content = temp_table.export_to_markdown(temp_doc)
                 if len(md_table_content) > 0:
                     res_parts.append(create_ser_result(text=md_table_content, span_source=item))
+
+        if cap_res.text and cap_after:
+            res_parts.append(cap_res)
+
         text_res = "\n\n".join([r.text for r in res_parts if r.text])
 
         return create_ser_result(text=text_res, span_source=res_parts)
@@ -896,66 +988,8 @@ class MarkdownPictureSerializer(BasePictureSerializer):
 
     @staticmethod
     def _escape_uri_path(value: AnyUrl | PurePath) -> str:
-        """Encode a URL or filesystem path as a Markdown link destination.
-
-        Handles URLs of any scheme (https/s3/ftp/...) as well as POSIX and Windows
-        paths, keeps relative paths relative, and never double-encodes. A Windows path
-        is recognized by either flavour, so a document authored on Windows still
-        resolves when it is exported on POSIX.
-
-        The only destination this gives a ``file://`` scheme to is an absolute Windows
-        path, where it is the sole spelling a renderer cannot misread as a URL scheme
-        (``C:``) or as an authority (``//server``). A URL that already carries the
-        scheme is passed through, since dropping it would turn an absolute filesystem
-        reference into a root-relative URL.
-
-        Known limitation: a backslash in a `PosixPath` string is ambiguous.
-        It may be a Windows separator surviving a JSON round-trip (correct to
-        convert) or a literal filename character (where converting it to `/`
-        would split one component into two). The two cases are indistinguishable
-        from `str()`. In practice this is not a concern because `ImageRef.uri`
-        is always populated from native filesystem operations, so a `PosixPath`
-        can only carry a literal backslash if the caller explicitly constructed one.
-
-        Args:
-            value: The URL or path to encode.
-
-        Returns:
-            A percent-encoded Markdown link destination.
-        """
-
-        keep = MarkdownPictureSerializer._URI_KEEP_CHARS
-        # A backslash is both the Windows separator and a Markdown escape character, and
-        # is read as a separator whatever flavour the path arrives in: a document authored
-        # on Windows keeps its backslashes once it is re-read on POSIX, where the flavour
-        # can no longer tell. A URL is unaffected, as pydantic normalizes backslashes away
-        # when parsing.
-        s = str(value).replace("\\", "/")
-
-        if s.startswith("//"):  # In case of a fileshare (//someserver/somefolder)
-            host, _, tail = s.lstrip("/").partition("/")  # get the end of the path
-            # file://<host>/<path>, with <host> being a possibly empty string.
-            return urlunsplit(("file", host, quote(f"/{tail}", safe=keep), "", ""))
-        if MarkdownPictureSerializer._WINDOWS_DRIVE_RE.match(s):  # In case of a Windows filename with drive letter
-            # file://<full_path_with_filename>
-            return urlunsplit(("file", "", quote(f"/{s}", safe=keep), "", ""))
-
-        # A URL keeps its scheme, authority and delimiters; only its components are
-        # encoded. A single-character scheme cannot be real, so it is read as a path.
-        parts = urlsplit(s)
-        if len(parts.scheme) > 1:
-            return urlunsplit(
-                (
-                    parts.scheme,
-                    parts.netloc,
-                    quote(parts.path, safe=keep),
-                    quote(parts.query, safe=keep + "="),
-                    quote(parts.fragment, safe=keep),
-                )
-            )
-
-        # A relative or root-relative local path.
-        return quote(s, safe=keep)
+        """Encode a URL or filesystem path as a Markdown link destination."""
+        return _escape_uri_path(value)
 
 
 class MarkdownKeyValueSerializer(BaseKeyValueSerializer):
@@ -1154,11 +1188,11 @@ class MarkdownDocSerializer(DocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: AnyUrl | Path,
+        hyperlink: AnyUrl | PurePath,
         **kwargs: Any,
     ):
         """Apply Markdown-specific hyperlink serialization."""
-        return f"[{text}]({hyperlink!s})"
+        return f"[{text}]({hyperlink_uri(hyperlink)})"
 
     @classmethod
     def _escape_underscores(cls, text: str):
@@ -1192,7 +1226,7 @@ class MarkdownDocSerializer(DocSerializer):
         escape_html: bool = True,
         escape_underscores: bool = True,
         formatting: Formatting | None = None,
-        hyperlink: AnyUrl | Path | None = None,
+        hyperlink: AnyUrl | PurePath | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply some text post-processing steps."""

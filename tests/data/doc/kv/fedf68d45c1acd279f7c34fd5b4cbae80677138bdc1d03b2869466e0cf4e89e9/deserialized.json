@@ -16,28 +16,17 @@
         "$ref": "#/field_regions/0"
       },
       {
-        "$ref": "#/texts/47"
+        "$ref": "#/texts/48"
       },
       {
-        "$ref": "#/texts/48"
+        "$ref": "#/texts/49"
       }
     ],
     "content_layer": "body",
     "name": "_root_",
     "label": "unspecified"
   },
-  "groups": [
-    {
-      "self_ref": "#/groups/0",
-      "parent": {
-        "$ref": "#/field_regions/0"
-      },
-      "children": [],
-      "content_layer": "body",
-      "name": "group",
-      "label": "inline"
-    }
-  ],
+  "groups": [],
   "texts": [
     {
       "self_ref": "#/texts/0",
@@ -541,6 +530,33 @@
         {
           "page_no": 1,
           "bbox": {
+            "l": 57.0,
+            "t": 112.0,
+            "r": 391.0,
+            "b": 122.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            0
+          ]
+        }
+      ],
+      "orig": "",
+      "text": ""
+    },
+    {
+      "self_ref": "#/texts/19",
+      "parent": {
+        "$ref": "#/field_regions/0"
+      },
+      "children": [],
+      "content_layer": "body",
+      "label": "text",
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
             "l": 54.0,
             "t": 126.0,
             "r": 390.0,
@@ -557,7 +573,7 @@
       "text": "Electronic data base consulted during the international search (name of data base and , where practicable, search terms used)"
     },
     {
-      "self_ref": "#/texts/19",
+      "self_ref": "#/texts/20",
       "parent": {
         "$ref": "#/field_regions/0"
       },
@@ -584,7 +600,7 @@
       "text": "EPO-Internal , WPI Data"
     },
     {
-      "self_ref": "#/texts/20",
+      "self_ref": "#/texts/21",
       "parent": {
         "$ref": "#/field_regions/0"
       },
@@ -612,7 +628,7 @@
       "level": 2
     },
     {
-      "self_ref": "#/texts/21",
+      "self_ref": "#/texts/22",
       "parent": {
         "$ref": "#/field_regions/0"
       },
@@ -639,7 +655,7 @@
       "text": "Further documents are listed in the continuation of Box O."
     },
     {
-      "self_ref": "#/texts/22",
+      "self_ref": "#/texts/23",
       "parent": {
         "$ref": "#/field_regions/0"
       },
@@ -666,7 +682,7 @@
       "text": "* Special categories of cited documents :"
     },
     {
-      "self_ref": "#/texts/23",
+      "self_ref": "#/texts/24",
       "parent": {
         "$ref": "#/field_regions/0"
       },
@@ -693,7 +709,7 @@
       "text": "\"A\" document defining the general state of the art which is not considered to be of particular relevance"
     },
     {
-      "self_ref": "#/texts/24",
+      "self_ref": "#/texts/25",
       "parent": {
         "$ref": "#/field_regions/0"
       },
@@ -720,7 +736,7 @@
       "text": "E \" earlier application or patent but published on or after the international filing date"
     },
     {
-      "self_ref": "#/texts/25",
+      "self_ref": "#/texts/26",
       "parent": {
         "$ref": "#/field_regions/0"
       },
@@ -747,7 +763,7 @@
       "text": "\"L\" document which may throw doubts on priority claim(s) or which is cited to establish the publication date of another citation or other special reason (as specified)"
     },
     {
-      "self_ref": "#/texts/26",
+      "self_ref": "#/texts/27",
       "parent": {
         "$ref": "#/field_regions/0"
       },
@@ -774,7 +790,7 @@
       "text": "\"O\" document referring to an oral disclosure , use , exhibition or other means"
     },
     {
-      "self_ref": "#/texts/27",
+      "self_ref": "#/texts/28",
       "parent": {
         "$ref": "#/field_regions/0"
       },
@@ -801,7 +817,7 @@
       "text": "\"P\"ocument published prior to the international filing date but later than the priority date claimed"
     },
     {
-      "self_ref": "#/texts/28",
+      "self_ref": "#/texts/29",
       "parent": {
         "$ref": "#/field_items/1"
       },
@@ -828,7 +844,7 @@
       "text": "Date of the actual completion of the international search"
     },
     {
-      "self_ref": "#/texts/29",
+      "self_ref": "#/texts/30",
       "parent": {
         "$ref": "#/field_items/1"
       },
@@ -856,7 +872,7 @@
       "kind": "read_only"
     },
     {
-      "self_ref": "#/texts/30",
+      "self_ref": "#/texts/31",
       "parent": {
         "$ref": "#/field_items/2"
       },
@@ -883,7 +899,7 @@
       "text": "Name and mailing address of the ISA/"
     },
     {
-      "self_ref": "#/texts/31",
+      "self_ref": "#/texts/32",
       "parent": {
         "$ref": "#/field_items/2"
       },
@@ -911,7 +927,7 @@
       "kind": "read_only"
     },
     {
-      "self_ref": "#/texts/32",
+      "self_ref": "#/texts/33",
       "parent": {
         "$ref": "#/field_items/3"
       },
@@ -938,7 +954,7 @@
       "text": "NL-"
     },
     {
-      "self_ref": "#/texts/33",
+      "self_ref": "#/texts/34",
       "parent": {
         "$ref": "#/field_items/3"
       },
@@ -966,7 +982,7 @@
       "kind": "read_only"
     },
     {
-      "self_ref": "#/texts/34",
+      "self_ref": "#/texts/35",
       "parent": {
         "$ref": "#/field_items/4"
       },
@@ -993,7 +1009,7 @@
       "text": "Tel."
     },
     {
-      "self_ref": "#/texts/35",
+      "self_ref": "#/texts/36",
       "parent": {
         "$ref": "#/field_items/4"
       },
@@ -1021,7 +1037,7 @@
       "kind": "read_only"
     },
     {
-      "self_ref": "#/texts/36",
+      "self_ref": "#/texts/37",
       "parent": {
         "$ref": "#/field_items/5"
       },
@@ -1048,7 +1064,7 @@
       "text": "Fax:"
     },
     {
-      "self_ref": "#/texts/37",
+      "self_ref": "#/texts/38",
       "parent": {
         "$ref": "#/field_items/5"
       },
@@ -1076,7 +1092,7 @@
       "kind": "read_only"
     },
     {
-      "self_ref": "#/texts/38",
+      "self_ref": "#/texts/39",
       "parent": {
         "$ref": "#/field_regions/0"
       },
@@ -1103,7 +1119,7 @@
       "text": "X See patent family annex."
     },
     {
-      "self_ref": "#/texts/39",
+      "self_ref": "#/texts/40",
       "parent": {
         "$ref": "#/field_regions/0"
       },
@@ -1130,7 +1146,7 @@
       "text": "\"T\" later document published after the international filing date or priority"
     },
     {
-      "self_ref": "#/texts/40",
+      "self_ref": "#/texts/41",
       "parent": {
         "$ref": "#/field_regions/0"
       },
@@ -1157,7 +1173,7 @@
       "text": "\"X\" document of particular relevance; the claimed invention cannot be considered novel or cannot be considered to involve an inventive step when the document is taken alone"
     },
     {
-      "self_ref": "#/texts/41",
+      "self_ref": "#/texts/42",
       "parent": {
         "$ref": "#/field_regions/0"
       },
@@ -1184,7 +1200,7 @@
       "text": "\"Y\" doocument of particular relevance; the claimed invention cannot be considered to involve an inventive step when the doocument is combined with one or more other such documents, such combination being obvious to a person skilled in the art"
     },
     {
-      "self_ref": "#/texts/42",
+      "self_ref": "#/texts/43",
       "parent": {
         "$ref": "#/field_regions/0"
       },
@@ -1211,7 +1227,7 @@
       "text": "\"&\" document member of the same patent family"
     },
     {
-      "self_ref": "#/texts/43",
+      "self_ref": "#/texts/44",
       "parent": {
         "$ref": "#/field_items/6"
       },
@@ -1238,7 +1254,7 @@
       "text": "Date of mailing of the international search report"
     },
     {
-      "self_ref": "#/texts/44",
+      "self_ref": "#/texts/45",
       "parent": {
         "$ref": "#/field_items/6"
       },
@@ -1266,7 +1282,7 @@
       "kind": "read_only"
     },
     {
-      "self_ref": "#/texts/45",
+      "self_ref": "#/texts/46",
       "parent": {
         "$ref": "#/field_items/7"
       },
@@ -1293,7 +1309,7 @@
       "text": "Authorized officer"
     },
     {
-      "self_ref": "#/texts/46",
+      "self_ref": "#/texts/47",
       "parent": {
         "$ref": "#/field_items/7"
       },
@@ -1321,7 +1337,7 @@
       "kind": "read_only"
     },
     {
-      "self_ref": "#/texts/47",
+      "self_ref": "#/texts/48",
       "parent": {
         "$ref": "#/body"
       },
@@ -1348,7 +1364,7 @@
       "text": "Form PCT/ISA/210 (second sheet) (April 2005)"
     },
     {
-      "self_ref": "#/texts/48",
+      "self_ref": "#/texts/49",
       "parent": {
         "$ref": "#/body"
       },
@@ -1637,9 +1653,6 @@
           "$ref": "#/texts/17"
         },
         {
-          "$ref": "#/groups/0"
-        },
-        {
           "$ref": "#/texts/18"
         },
         {
@@ -1649,10 +1662,10 @@
           "$ref": "#/texts/20"
         },
         {
-          "$ref": "#/tables/0"
+          "$ref": "#/texts/21"
         },
         {
-          "$ref": "#/texts/21"
+          "$ref": "#/tables/0"
         },
         {
           "$ref": "#/texts/22"
@@ -1673,6 +1686,9 @@
           "$ref": "#/texts/27"
         },
         {
+          "$ref": "#/texts/28"
+        },
+        {
           "$ref": "#/field_items/1"
         },
         {
@@ -1688,9 +1704,6 @@
           "$ref": "#/field_items/5"
         },
         {
-          "$ref": "#/texts/38"
-        },
-        {
           "$ref": "#/texts/39"
         },
         {
@@ -1701,6 +1714,9 @@
         },
         {
           "$ref": "#/texts/42"
+        },
+        {
+          "$ref": "#/texts/43"
         },
         {
           "$ref": "#/field_items/6"
@@ -1754,10 +1770,10 @@
       },
       "children": [
         {
-          "$ref": "#/texts/28"
+          "$ref": "#/texts/29"
         },
         {
-          "$ref": "#/texts/29"
+          "$ref": "#/texts/30"
         }
       ],
       "content_layer": "body",
@@ -1771,10 +1787,10 @@
       },
       "children": [
         {
-          "$ref": "#/texts/30"
+          "$ref": "#/texts/31"
         },
         {
-          "$ref": "#/texts/31"
+          "$ref": "#/texts/32"
         }
       ],
       "content_layer": "body",
@@ -1788,10 +1804,10 @@
       },
       "children": [
         {
-          "$ref": "#/texts/32"
+          "$ref": "#/texts/33"
         },
         {
-          "$ref": "#/texts/33"
+          "$ref": "#/texts/34"
         }
       ],
       "content_layer": "body",
@@ -1805,10 +1821,10 @@
       },
       "children": [
         {
-          "$ref": "#/texts/34"
+          "$ref": "#/texts/35"
         },
         {
-          "$ref": "#/texts/35"
+          "$ref": "#/texts/36"
         }
       ],
       "content_layer": "body",
@@ -1822,10 +1838,10 @@
       },
       "children": [
         {
-          "$ref": "#/texts/36"
+          "$ref": "#/texts/37"
         },
         {
-          "$ref": "#/texts/37"
+          "$ref": "#/texts/38"
         }
       ],
       "content_layer": "body",
@@ -1839,10 +1855,10 @@
       },
       "children": [
         {
-          "$ref": "#/texts/43"
+          "$ref": "#/texts/44"
         },
         {
-          "$ref": "#/texts/44"
+          "$ref": "#/texts/45"
         }
       ],
       "content_layer": "body",
@@ -1856,10 +1872,10 @@
       },
       "children": [
         {
-          "$ref": "#/texts/45"
+          "$ref": "#/texts/46"
         },
         {
-          "$ref": "#/texts/46"
+          "$ref": "#/texts/47"
         }
       ],
       "content_layer": "body",

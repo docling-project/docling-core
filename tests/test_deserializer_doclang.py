@@ -1,4 +1,5 @@
 import re
+import xml.etree.ElementTree as ET
 from collections.abc import Callable
 from pathlib import Path
 
@@ -11,8 +12,14 @@ from docling_core.transforms.serializer.doclang import (
     EscapeMode,
     LabelMode,
 )
+from docling_core.transforms.serializer.doctags import DocTagsDocSerializer
+from docling_core.transforms.serializer.html import HTMLDocSerializer
+from docling_core.transforms.serializer.latex import LaTeXDocSerializer
+from docling_core.transforms.serializer.markdown import MarkdownDocSerializer
+from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer
 from docling_core.types.doc import (
     BoundingBox,
+    ContentLayer,
     CoordOrigin,
     DescriptionMetaField,
     DocItemLabel,
@@ -26,12 +33,14 @@ from docling_core.types.doc import (
     PictureMeta,
     ProvenanceItem,
     RichTableCell,
+    Script,
     Size,
     SummaryMetaField,
     TableCell,
     TableData,
     TableItem,
     TabularChartMetaField,
+    TextItem,
 )
 from docling_core.types.doc.document import GroupLabel
 from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
@@ -793,6 +802,27 @@ def test_roundtrip_nested_list_unordered_in_unordered():
         print("\ndt:", dt)
         print("\ndt2:", dt2)
     assert dt2 == dt
+
+
+def test_deserialize_locationless_list_with_empty_item_and_formula():
+    doc = _deserialize(
+        """
+<doclang>
+  <list>
+    <ldiv/>
+    <ldiv/>
+    A.
+    <formula>f(x)</formula>
+    is odd
+  </list>
+</doclang>
+"""
+    )
+
+    assert [item.text for item in doc.texts] == ["", "", "A.", "f(x)", "is odd"]
+    assert doc.texts[3].label == DocItemLabel.FORMULA
+    assert all(not item.prov for item in doc.texts)
+    assert "<location" not in _serialize(doc)
 
 
 def test_roundtrip_nested_list_ordered_in_ordered():
@@ -2410,3 +2440,445 @@ def test_unnamed_group_markup_still_wraps_floats() -> None:
     doc = _deserialize(xml, validate=False)
     assert doc.groups == []
     assert len(doc.pictures) == 1
+
+
+def test_default_resolution_sets_page_coordinate_space():
+    """<default_resolution> establishes the page size so locations are not clamped."""
+    import warnings
+
+    xml = (
+        '<doclang version="0.7">'
+        '<head><default_resolution width="2048" height="2048"/></head>'
+        "<text>"
+        '<location value="27"/><location value="14"/>'
+        '<location value="1316"/><location value="1900"/>'
+        "<content>Hello</content></text>"
+        "</doclang>"
+    )
+    doc = _deserialize(xml, validate=False)
+
+    assert doc.pages[1].size.width == 2048
+    assert doc.pages[1].size.height == 2048
+    bbox = doc.texts[0].prov[0].bbox
+    assert (bbox.l, bbox.t, bbox.r, bbox.b) == (27, 14, 1316, 1900)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        DoclingDocument.validate_document(doc)
+    assert [w for w in caught if "clamping" in str(w.message)] == []
+
+
+@pytest.mark.parametrize(
+    ("frag", "expected"),
+    [
+        ("<text>2<superscript>nd</superscript></text>", ["2", "nd"]),
+        ("<text>plain <bold>b</bold></text>", ["plain", "b"]),
+        ("<footnote>see <italic>ibid</italic></footnote>", ["see", "ibid"]),
+        ("<formula>E <bold>=</bold></formula>", ["E", "="]),
+        ("<text>x <bold>a <italic>b</italic></bold></text>", ["x", "a", "b"]),
+        # shapes that already worked
+        ("<text><superscript>nd</superscript> place</text>", ["nd", "place"]),
+        ("<text>H<subscript>2</subscript>O</text>", ["H", "2", "O"]),
+    ],
+)
+def test_leading_text_before_lone_formatting_tag_is_preserved(frag: str, expected: list[str]):
+    doc = _deserialize(f'<doclang version="0.7">{frag}</doclang>')
+    assert [t.text.strip() for t in doc.texts if t.text] == expected
+
+
+def test_mixed_content_footnote_keeps_label_and_provenance():
+    doc = _deserialize(
+        '<doclang version="0.7"><footnote>'
+        '<location value="87"/><location value="417"/><location value="387"/><location value="426"/>'
+        "<superscript>①</superscript>盐池县县志编纂委员会编《盐池县志》</footnote></doclang>"
+    )
+    host = doc.texts[0]
+    assert host.label == DocItemLabel.FOOTNOTE
+    assert host.text == ""
+    assert host.prov and host.prov[0].bbox.as_tuple() == (87, 417, 387, 426)
+    (inline,) = [ref.resolve(doc) for ref in host.children]
+    assert inline.label == GroupLabel.INLINE
+    runs = [ref.resolve(doc) for ref in inline.children]
+    assert [r.text for r in runs] == ["①", "盐池县县志编纂委员会编《盐池县志》"]
+    assert runs[0].formatting is not None and runs[0].formatting.script == Script.SUPER
+
+
+def test_nested_formatting_tag_accumulates_style():
+    """<bold>a <italic>b</italic></bold>: "a" keeps bold, "b" keeps bold *and* italic."""
+    doc = _deserialize('<doclang version="0.7"><text>x <bold>a <italic>b</italic></bold></text></doclang>')
+    runs = {t.text.strip(): t.formatting for t in doc.texts if t.text}
+    assert runs["x"] is None
+    assert runs["a"] is not None and runs["a"].bold and not runs["a"].italic
+    assert runs["b"] is not None and runs["b"].bold and runs["b"].italic
+
+    # Round trip must stay valid DocLang (no <text> nested inside <text>).
+    xml = _serialize(doc)
+    doc2 = _deserialize(xml)
+    runs2 = {t.text.strip(): t.formatting for t in doc2.texts if t.text}
+    assert runs2["a"].bold and not runs2["a"].italic
+    assert runs2["b"].bold and runs2["b"].italic
+
+
+@pytest.mark.parametrize(
+    ("label", "layer"),
+    [
+        (DocItemLabel.TEXT, ContentLayer.BODY),
+        (DocItemLabel.TEXT, ContentLayer.FURNITURE),
+        (DocItemLabel.FOOTNOTE, ContentLayer.BODY),
+        (DocItemLabel.PAGE_HEADER, ContentLayer.FURNITURE),
+        (DocItemLabel.PAGE_FOOTER, ContentLayer.FURNITURE),
+    ],
+)
+def test_roundtrip_inline_host(label: DocItemLabel, layer: ContentLayer):
+    doc = DoclingDocument(name="t")
+    _add_default_page(doc)
+    host = doc.add_text(label=label, text="", prov=_default_prov(), content_layer=layer)
+    inline = doc.add_inline_group(parent=host, content_layer=layer)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="1",
+        parent=inline,
+        formatting=Formatting(script=Script.SUPER),
+        content_layer=layer,
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text="body", parent=inline, content_layer=layer)
+
+    doc2 = _deserialize(_serialize(doc))
+
+    host2 = doc2.texts[0]
+    assert host2.label == label
+    assert host2.text == ""
+    assert host2.content_layer == layer
+    assert host2.prov
+    runs = [
+        it
+        for it, _ in doc2.iterate_items(root=host2, included_content_layers=set(ContentLayer))
+        if isinstance(it, TextItem) and it is not host2
+    ]
+    assert [(r.text, r.content_layer) for r in runs] == [("1", layer), ("body", layer)]
+    assert runs[0].formatting is not None and runs[0].formatting.script == Script.SUPER
+
+
+@pytest.mark.parametrize(
+    ("tag", "caption_host"),
+    [
+        ("text", None),
+        ("caption", "picture"),
+        ("caption", "table"),
+        ("footnote", None),
+        ("page_header", None),
+        ("page_footer", None),
+    ],
+)
+@pytest.mark.parametrize("body", ["Before <formula>x</formula> after", "Before <bold>bold</bold> after"])
+@pytest.mark.parametrize("located", [False, True])
+@pytest.mark.parametrize("layer", [ContentLayer.BODY, ContentLayer.FURNITURE])
+def test_mixed_text_like_archive_roundtrip(
+    tag: str, caption_host: str | None, body: str, located: bool, layer: ContentLayer, tmp_path: Path
+):
+    locations = (
+        '<location value="87"/><location value="417"/><location value="387"/><location value="426"/>' if located else ""
+    )
+    fragment = f'<{tag}><layer value="{layer.value}"/>{locations}{body}</{tag}>'
+    if caption_host is not None:
+        table_body = "<fcel/>Cell<nl/>" if caption_host == "table" else ""
+        fragment = f"<{caption_host}>{fragment}{table_body}</{caption_host}>"
+    doc = _deserialize(f'<doclang version="0.7">{fragment}</doclang>')
+    for cycle in range(3):
+        archive = tmp_path / f"mixed-{tag}-{cycle}.dclx"
+        doc.save_as_doclang_archive(archive)
+        doc = DoclingDocument.load_from_doclang_archive(archive)
+        if tag == "text" and not located:
+            inline = doc.body.children[0].resolve(doc)
+            assert inline.label == GroupLabel.INLINE
+        else:
+            host = doc.texts[0]
+            assert host.label == DocItemLabel(tag) and host.text == ""
+            assert len(host.prov) == int(located)
+            if located:
+                assert host.prov[0].bbox.as_tuple() == (87, 417, 387, 426)
+            if caption_host is not None:
+                container = doc.pictures[0] if caption_host == "picture" else doc.tables[0]
+                assert container.captions == [host.get_ref()]
+            inline = host.children[0].resolve(doc)
+            assert inline.label == GroupLabel.INLINE
+        root = inline if tag == "text" and not located else host
+        assert all(
+            node.content_layer == layer
+            for node, _ in doc.iterate_items(root=root, with_groups=True, included_content_layers=set(ContentLayer))
+        )
+        runs = [ref.resolve(doc) for ref in inline.children]
+        assert [run.text for run in runs] == ["Before", "x" if "formula" in body else "bold", "after"]
+        if "formula" in body:
+            assert runs[1].label == DocItemLabel.FORMULA
+        else:
+            assert runs[1].formatting is not None and runs[1].formatting.bold
+        assert all(not run.prov for run in runs)
+        assert _serialize(doc).count("<location") == (4 if located else 0)
+
+
+@pytest.mark.parametrize("kind", ["table", "picture"])
+@pytest.mark.parametrize("layer", [ContentLayer.BODY, ContentLayer.FURNITURE])
+def test_plain_caption_layer_roundtrip(kind: str, layer: ContentLayer, tmp_path: Path):
+    table_body = "<fcel/>A<nl/>" if kind == "table" else ""
+    doc = _deserialize(
+        f'<doclang version="0.7"><text>Body paragraph</text><{kind}>'
+        f'<caption><layer value="{layer.value}"/>Caption</caption>{table_body}</{kind}></doclang>'
+    )
+    for cycle in range(2):
+        owner = doc.tables[0] if kind == "table" else doc.pictures[0]
+        caption = owner.captions[0].resolve(doc)
+        assert caption.content_layer == layer
+        assert doc.texts[0].content_layer == ContentLayer.BODY
+        archive = tmp_path / f"plain-caption-layer-{cycle}.dclx"
+        doc.save_as_doclang_archive(archive)
+        doc = DoclingDocument.load_from_doclang_archive(archive)
+
+
+@pytest.mark.parametrize("kind", ["table", "picture"])
+@pytest.mark.parametrize(
+    ("caption", "expected", "markdown"),
+    [
+        ("Table 1: results", "Table 1: results", "Table 1: results"),
+        ("Table <bold>1</bold>: results", "Table 1 : results", "Table **1** : results"),
+        ("<bold>Table <italic>1</italic></bold>: results", "Table 1 : results", "**Table** ***1*** : results"),
+    ],
+)
+@pytest.mark.parametrize("layer", [ContentLayer.BODY, ContentLayer.FURNITURE])
+def test_caption_readers_after_archive_roundtrip(
+    kind: str, caption: str, expected: str, markdown: str, layer: ContentLayer, tmp_path: Path
+):
+    table_body = "<fcel/>A<fcel/>B<nl/><fcel/>1<fcel/>2<nl/>" if kind == "table" else ""
+    doc = _deserialize(
+        f'<doclang version="0.7"><{kind}><caption><layer value="{layer.value}"/>'
+        f"{caption}</caption>{table_body}</{kind}></doclang>"
+    )
+    for cycle in range(2):
+        owner = doc.tables[0] if kind == "table" else doc.pictures[0]
+        assert owner.caption_text(doc) == expected
+        for serializer in [
+            PlainTextDocSerializer(doc=doc),
+            MarkdownDocSerializer(doc=doc),
+            HTMLDocSerializer(doc=doc),
+            DocTagsDocSerializer(doc=doc),
+        ]:
+            result = serializer.serialize_captions(item=owner, layers=set(ContentLayer)).text
+            if isinstance(serializer, HTMLDocSerializer | DocTagsDocSerializer):
+                content = " ".join(text.strip() for text in ET.fromstring(result).itertext() if text.strip())
+                assert content == expected
+                if isinstance(serializer, HTMLDocSerializer):
+                    if "<bold>" in caption:
+                        assert "<strong>1</strong>" in result
+                    if "<italic>" in caption:
+                        assert "<em>" in result
+            elif isinstance(serializer, PlainTextDocSerializer):
+                assert expected in result
+            else:
+                assert markdown in result
+            assert serializer.serialize(layers=set(ContentLayer)).text.count("results") == 1
+            if layer == ContentLayer.FURNITURE:
+                assert not serializer.serialize_captions(item=owner, layers={ContentLayer.BODY}).text
+            assert not serializer.serialize_captions(item=owner, labels={DocItemLabel.TABLE, DocItemLabel.PICTURE}).text
+        archive = tmp_path / f"caption-reader-{cycle}.dclx"
+        doc.save_as_doclang_archive(archive)
+        doc = DoclingDocument.load_from_doclang_archive(archive)
+
+
+@pytest.mark.parametrize("kind", ["table", "picture"])
+@pytest.mark.parametrize("host_text", ["", "HOST &"])
+def test_native_caption_children_and_filters(kind: str, host_text: str):
+    doc = DoclingDocument(name="caption-boundary")
+    owner = doc.add_table(data=TableData()) if kind == "table" else doc.add_picture()
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text=host_text)
+    owner.captions.append(caption.get_ref())
+    inline = doc.add_inline_group(parent=caption)
+    doc.add_text(label=DocItemLabel.TEXT, text="CHILD", formatting=Formatting(bold=True), parent=inline)
+    doc.add_text(label=DocItemLabel.FORMULA, text="FORMULA", parent=inline)
+    DoclingDocument.model_validate(doc.model_dump())
+    assert owner.caption_text(doc) == " ".join(text for text in [host_text, "CHILD", "FORMULA"] if text)
+    labels = {DocItemLabel.CAPTION, DocItemLabel.TEXT, DocItemLabel.TABLE, DocItemLabel.PICTURE}
+    for serializer in [
+        MarkdownDocSerializer(doc=doc),
+        PlainTextDocSerializer(doc=doc),
+        HTMLDocSerializer(doc=doc),
+        LaTeXDocSerializer(doc=doc),
+        DocTagsDocSerializer(doc=doc),
+        DocLangDocSerializer(doc=doc),
+    ]:
+        result = serializer.serialize_captions(item=owner, labels=labels).text
+        assert "CHILD" in result
+        assert "FORMULA" not in result
+        whole = serializer.serialize(labels=labels).text
+        assert whole.count("CHILD") == 1
+        assert "FORMULA" not in whole
+        if host_text:
+            assert "HOST" in result
+            assert whole.count("HOST") == 1
+        if isinstance(serializer, HTMLDocSerializer):
+            assert "<strong>CHILD</strong>" in result
+            if host_text:
+                assert "HOST &amp;" in result
+                assert "&amp;amp;" not in result
+        elif isinstance(serializer, LaTeXDocSerializer):
+            assert r"\textbf{CHILD}" in result
+        elif isinstance(serializer, MarkdownDocSerializer) and not isinstance(serializer, PlainTextDocSerializer):
+            assert "**CHILD**" in result
+
+
+def test_rich_caption_html_direction():
+    doc = _deserialize('<doclang version="0.7"><picture><caption><bold>אב</bold> גד</caption></picture></doclang>')
+    result = HTMLDocSerializer(doc=doc).serialize_captions(item=doc.pictures[0]).text
+    assert '<div class="caption" dir="rtl">' in result
+    assert "<strong>אב</strong>" in result
+
+
+def test_roundtrip_furniture_inline_group():
+    doc = DoclingDocument(name="t")
+    _add_default_page(doc)
+    inline = doc.add_inline_group(content_layer=ContentLayer.FURNITURE)
+    doc.add_text(label=DocItemLabel.TEXT, text="a", parent=inline, content_layer=ContentLayer.FURNITURE)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="b",
+        parent=inline,
+        formatting=Formatting(bold=True),
+        content_layer=ContentLayer.FURNITURE,
+    )
+
+    doc2 = _deserialize(_serialize(doc))
+
+    items = [it for it, _ in doc2.iterate_items(with_groups=True, included_content_layers=set(ContentLayer))][1:]
+    assert [it.label for it in items] == [GroupLabel.INLINE, DocItemLabel.TEXT, DocItemLabel.TEXT]
+    assert {it.content_layer for it in items} == {ContentLayer.FURNITURE}
+
+
+@pytest.mark.parametrize(
+    ("body", "expected"),
+    [
+        ("Wiley & Sons", ["Wiley & Sons"]),
+        ("$q < 0$ and p <0.05 and $a<\\ln b$", ["$q < 0$ and p <0.05 and $a<\\ln b$"]),
+        ("x]]> y", ["x]]> y"]),
+        ("a\x18b", ["ab"]),
+        ("<![CDATA[a & b < c]]> & d", ["a & b < c", "& d"]),
+    ],
+)
+def test_repair_unescaped_text(body: str, expected: list[str]):
+    xml = f"<doclang><text>{body}</text></doclang>"
+    with pytest.raises(ValueError, match="Invalid DocLang XML"):
+        DocLangDocDeserializer().deserialize_str(xml)
+    doc = DocLangDocDeserializer().deserialize_str(xml, repair_unescaped_text=True)
+    assert [t.text for t in doc.texts] == expected
+
+
+@pytest.mark.parametrize("kwargs", [{}, {"repair_unescaped_text": False}])
+def test_repair_unescaped_text_is_opt_in(kwargs):
+    with pytest.raises(ValueError, match="Invalid DocLang XML"):
+        DocLangDocDeserializer().deserialize_str("<doclang><text>a & b</text></doclang>", **kwargs)
+
+
+def test_repair_keeps_well_formed_markup_and_entities():
+    xml = '<doclang><text>a &amp; &#60; &#x3E;<![CDATA[ & < ]]></text><heading level="1">H</heading></doclang>'
+    plain = DocLangDocDeserializer().deserialize_str(xml)
+    repaired = DocLangDocDeserializer().deserialize_str(xml, repair_unescaped_text=True)
+    assert repaired.export_to_dict() == plain.export_to_dict()
+
+
+def test_empty_list_item_does_not_replay_siblings():
+    xml = """<doclang version="0.7"><list>
+<ldiv/><content>Alpha</content>
+<ldiv/><location value="1"/><location value="2"/>
+<location value="3"/><location value="4"/>
+<ldiv/><content>Beta</content>
+</list></doclang>"""
+    doc = DocLangDocDeserializer().deserialize_str(xml)
+    assert sorted(it.text for it in doc.texts if it.text.strip()) == ["Alpha", "Beta"]
+    assert [g for g in doc.groups if not g.children] == []
+
+
+@pytest.mark.parametrize("markup", ["<text></text>", "<text>\n  </text>"])
+def test_empty_text_is_an_empty_text_item(markup: str) -> None:
+    doc = DocLangDocDeserializer().deserialize_str(f'<doclang version="0.7">\n<text>a</text>\n{markup}\n</doclang>')
+
+    assert [t.text for t in doc.texts] == ["a", ""]
+    assert not doc.groups
+
+
+def test_empty_text_keeps_its_locations_and_layer() -> None:
+    locs = "".join(f'<location value="{v}"/>' for v in (10, 20, 30, 40))
+    doc = DocLangDocDeserializer().deserialize_str(
+        f'<doclang version="0.7"><text><layer value="furniture"/>{locs}</text></doclang>'
+    )
+
+    (item,) = doc.texts
+    assert item.text == ""
+    assert item.content_layer.value == "furniture"
+    assert len(item.prov) == 1 and item.prov[0].bbox.l < item.prov[0].bbox.r
+    assert not doc.groups
+
+
+def test_empty_formula_is_kept() -> None:
+    doc = DocLangDocDeserializer().deserialize_str('<doclang version="0.7"><formula></formula><formula/></doclang>')
+
+    assert [type(t).__name__ for t in doc.texts] == ["FormulaItem", "FormulaItem"]
+    assert all(t.text == "" for t in doc.texts)
+    assert not doc.groups
+
+
+def test_empty_code_is_kept() -> None:
+    doc = DocLangDocDeserializer().deserialize_str('<doclang version="0.7"><code></code><code/></doclang>')
+
+    assert [type(t).__name__ for t in doc.texts] == ["CodeItem", "CodeItem"]
+    assert all(t.text == "" for t in doc.texts)
+    assert not doc.groups
+
+
+def _cdata(text: str) -> str:
+    return f"<![CDATA[{text.replace(']]>', ']]]]><![CDATA[>')}]]>"
+
+
+def test_custom_field_text_roundtrip() -> None:
+    # custom content (here with markup and CDATA) must round-trip as text
+    # and must not leak into the text of the host element
+    value = "<opt><formula>a</formula><formula><![CDATA[b < c]]></formula></opt>"
+    xml = (
+        '<doclang version="0.7"><formula><custom>'
+        f"<acme__alt>{_cdata(value)}</acme__alt></custom>a b c</formula></doclang>"
+    )
+
+    doc = DocLangDocDeserializer().deserialize_str(xml)
+
+    (item,) = doc.texts
+    assert item.text == "a b c"
+    assert item.meta is not None
+    assert item.meta.get_custom_part() == {"acme__alt": value}
+
+    doc2 = DocLangDocDeserializer().deserialize_str(DocLangDocSerializer(doc=doc).serialize().text)
+    assert doc2.texts[0].text == "a b c"
+    assert doc2.texts[0].meta is not None
+    assert doc2.texts[0].meta.get_custom_part() == {"acme__alt": value}
+
+
+def test_custom_field_structured_roundtrip() -> None:
+    opt1 = "<formula>a</formula>\n<formula><![CDATA[b < c]]></formula>"
+    opt2 = "another option"
+    xml = (
+        '<doclang version="0.7"><formula><custom><docling__alt_repr>'
+        f"<docling__alt_opt>{_cdata(opt1)}</docling__alt_opt>"
+        f"<docling__alt_opt>{_cdata(opt2)}</docling__alt_opt>"
+        "</docling__alt_repr><acme__tag>x</acme__tag><acme__tag>y</acme__tag></custom>a b c</formula></doclang>"
+    )
+    expected = {"docling__alt_repr": {"docling__alt_opt": [opt1, opt2]}, "acme__tag": ["x", "y"]}
+
+    doc = DocLangDocDeserializer().deserialize_str(xml)
+
+    (item,) = doc.texts
+    assert item.text == "a b c"
+    assert item.meta is not None
+    assert item.meta.get_custom_part() == expected
+
+    doc2 = DocLangDocDeserializer().deserialize_str(DocLangDocSerializer(doc=doc).serialize().text)
+    assert doc2.texts[0].meta is not None
+    assert doc2.texts[0].meta.get_custom_part() == expected
+    out = DocLangDocSerializer(doc=doc2).serialize().text
+    assert out == DocLangDocSerializer(doc=doc).serialize().text
+    assert "<content>" not in out  # nested values are not wrapped just for containing newlines

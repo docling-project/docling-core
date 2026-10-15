@@ -199,10 +199,30 @@
       <location value="130"/>
       Emplacement des travaux
     </text>
-    <text></text>
-    <text></text>
-    <text></text>
-    <text></text>
+    <text>
+      <location value="179"/>
+      <location value="123"/>
+      <location value="201"/>
+      <location value="132"/>
+    </text>
+    <text>
+      <location value="204"/>
+      <location value="122"/>
+      <location value="227"/>
+      <location value="132"/>
+    </text>
+    <text>
+      <location value="231"/>
+      <location value="123"/>
+      <location value="254"/>
+      <location value="132"/>
+    </text>
+    <text>
+      <location value="257"/>
+      <location value="123"/>
+      <location value="316"/>
+      <location value="132"/>
+    </text>
     <field_item>
       <key>
         <location value="49"/>
@@ -1211,7 +1231,12 @@
       <location value="453"/>
       Début
     </text>
-    <text></text>
+    <text>
+      <location value="132"/>
+      <location value="446"/>
+      <location value="169"/>
+      <location value="455"/>
+    </text>
     <text>
       <location value="170"/>
       <location value="446"/>
@@ -1219,8 +1244,18 @@
       <location value="455"/>
       | | |
     </text>
-    <text></text>
-    <text></text>
+    <text>
+      <location value="207"/>
+      <location value="446"/>
+      <location value="243"/>
+      <location value="455"/>
+    </text>
+    <text>
+      <location value="244"/>
+      <location value="447"/>
+      <location value="280"/>
+      <location value="455"/>
+    </text>
     <text>
       <location value="284"/>
       <location value="447"/>
@@ -1228,12 +1263,42 @@
       <location value="452"/>
       Fin
     </text>
-    <text></text>
-    <text></text>
-    <text></text>
-    <text></text>
-    <text></text>
-    <text></text>
+    <text>
+      <location value="95"/>
+      <location value="455"/>
+      <location value="131"/>
+      <location value="470"/>
+    </text>
+    <text>
+      <location value="132"/>
+      <location value="455"/>
+      <location value="169"/>
+      <location value="470"/>
+    </text>
+    <text>
+      <location value="170"/>
+      <location value="455"/>
+      <location value="207"/>
+      <location value="470"/>
+    </text>
+    <text>
+      <location value="207"/>
+      <location value="455"/>
+      <location value="243"/>
+      <location value="470"/>
+    </text>
+    <text>
+      <location value="243"/>
+      <location value="455"/>
+      <location value="280"/>
+      <location value="471"/>
+    </text>
+    <text>
+      <location value="280"/>
+      <location value="455"/>
+      <location value="317"/>
+      <location value="470"/>
+    </text>
     <field_item>
       <key>
         <location value="322"/>

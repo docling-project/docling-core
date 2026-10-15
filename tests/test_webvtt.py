@@ -10,6 +10,7 @@ import pytest
 from pydantic import ValidationError
 
 from docling_core.types.doc.webvtt import (
+    _ENTITY_CHARS,
     WebVTTCueBlock,
     WebVTTCueComponentWithTerminator,
     WebVTTCueInternalText,
@@ -112,7 +113,14 @@ def test_vtt_cue_commponents() -> None:
         WebVTTCueTextSpan(text=invalid_text)
     valid_text = "My favorite book is Pride &amp; Prejudice"
     span = WebVTTCueTextSpan(text=valid_text)
-    assert span.text == valid_text
+    # An escape denotes the character, so the span holds the character and
+    # writes the escape back out.
+    assert span.text == "My favorite book is Pride & Prejudice"
+    assert str(span) == valid_text
+    for name, char in _ENTITY_CHARS.items():
+        assert WebVTTCueTextSpan(text=f"a&{name};b").text == f"a{char}b"
+    # Only the two that cannot be written literally come back escaped.
+    assert str(WebVTTCueTextSpan(text="a&gt;b")) == "a>b"
 
     """Test with text containing less-than sign."""
     invalid_text = "This cue text span contains <."
@@ -164,6 +172,27 @@ def test_vtt_cue_commponents() -> None:
     )
     expected_str = "<v speaker>random text</v>"
     assert str(cue_span) == expected_str
+
+
+def test_timestamp_from_seconds_rounding() -> None:
+    """Test that from_seconds carries fractional rounding across all boundaries.
+
+    A fraction in [0.9995, 1) rounds up to a full second; the second must carry
+    into minutes and hours correctly instead of emitting an invalid '1000' ms value.
+    """
+    cases = [
+        # (input_seconds, expected_raw)
+        (3.9994, "00:00:03.999"),  # just below boundary — stays at 999 ms
+        (3.9996, "00:00:04.000"),  # rounds up: ms carry into seconds
+        (59.9996, "00:01:00.000"),  # ms carry propagates seconds → minutes
+        (3599.9996, "01:00:00.000"),  # ms carry propagates all the way to hours
+        (7139.9996, "01:59:00.000"),  # 1h 58m 59.9996s → 1h 59m 0s
+        (0.0, "00:00:00.000"),
+        (3723.456, "01:02:03.456"),
+    ]
+    for secs, expected in cases:
+        ts = WebVTTTimestamp.from_seconds(secs)
+        assert ts.raw == expected, f"from_seconds({secs!r}) → {ts.raw!r}, want {expected!r}"
 
 
 def test_webvttcueblock_parse() -> None:
@@ -318,6 +347,27 @@ def test_webvtt_file() -> None:
     assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
     assert block.payload[0].component.text == "the quick brown fox"
     assert vtt.title == "Danger of Nitrogen"
+
+
+def test_webvtt_cue_escapes_in_annotation() -> None:
+    """Test that an escape in a cue span annotation keeps the cue parseable."""
+    # The start tag pattern used to exclude "&" from the annotation, so a cue
+    # whose speaker name contained an escape matched no tag at all, fell through
+    # to the text span, and was rejected there for containing "<" — the whole
+    # cue was dropped with only a warning.
+    content = "WEBVTT\n\n00:00.000 --> 00:02.000\n<v Ben &amp; Jerry>We charge 5 &lt; 10 &amp; win</v>"
+    vtt = WebVTTFile.parse(content)
+
+    assert len(vtt) == 1
+    component = vtt.cue_blocks[0].payload[0].component
+    assert isinstance(component, WebVTTCueVoiceSpan)
+    assert component.start_tag.annotation == "Ben & Jerry"
+    text_span = component.internal_text.components[0].component
+    assert isinstance(text_span, WebVTTCueTextSpan)
+    assert text_span.text == "We charge 5 < 10 & win"
+
+    # The escapes are written back, so the file still round-trips.
+    assert str(vtt.cue_blocks[0]).rstrip("\n").endswith("<v Ben &amp; Jerry>We charge 5 &lt; 10 &amp; win</v>")
 
 
 def test_webvtt_cue_language_span_start_tag():

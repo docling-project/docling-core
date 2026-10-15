@@ -1,3 +1,90 @@
+## [v2.101.1](https://github.com/docling-project/docling-core/releases/tag/v2.101.1) - 2026-10-08
+
+### Fix
+
+* **file:** Validate all resolved addresses and pin connections to them ([#846](https://github.com/docling-project/docling-core/issues/846)) ([`31c4262`](https://github.com/docling-project/docling-core/commit/31c426227c9a3c7d96abe2bb86c522f595590ce8))
+
+## [v2.101.0](https://github.com/docling-project/docling-core/releases/tag/v2.101.0) - 2026-10-08
+
+### Feature
+
+* **doclang:** Add xsize/ysize to DocLang export and save methods ([#848](https://github.com/docling-project/docling-core/issues/848)) ([`ed26b0a`](https://github.com/docling-project/docling-core/commit/ed26b0a9d3a3c494bfa89ddec6d2ede1f60307a8))
+* **doclang:** Support nested custom field values ([#847](https://github.com/docling-project/docling-core/issues/847)) ([`2afbea5`](https://github.com/docling-project/docling-core/commit/2afbea50cf13a8ab12aec1afe844991882b12054))
+
+## [v2.100.0](https://github.com/docling-project/docling-core/releases/tag/v2.100.0) - 2026-10-06
+
+### Feature
+
+* Lenient escape repair on doclang deserialization ([#803](https://github.com/docling-project/docling-core/issues/803)) ([`367ed14`](https://github.com/docling-project/docling-core/commit/367ed14afcd687dd27ad9f824e21a4a4374bc066))
+* **doclang:** Add `include_namespace` & `image_mode` options to export & archive saving ([#809](https://github.com/docling-project/docling-core/issues/809)) ([`eac575a`](https://github.com/docling-project/docling-core/commit/eac575a6a26d19353c4ad4a272d4ff0f7ce4c5f6))
+
+### Fix
+
+* **vtt:** Carry millisecond rounding across second/minute/hour boundaries ([#829](https://github.com/docling-project/docling-core/issues/829)) ([`c44fcf8`](https://github.com/docling-project/docling-core/commit/c44fcf84a6d1be45de6a0bfc42910beeb37de0ad))
+* **serializer:** Render relative hyperlinks with portable separators ([#780](https://github.com/docling-project/docling-core/issues/780)) ([`cff563f`](https://github.com/docling-project/docling-core/commit/cff563f9fc274e1f602ef153fc4d9ea4d262c6ce))
+* Support "application/rtf" MIME type in document validation ([#827](https://github.com/docling-project/docling-core/issues/827)) ([`3e42dba`](https://github.com/docling-project/docling-core/commit/3e42dbac5d496e798f42d7a80fb40e99e5736fce))
+* **doclang:** Keep the nested content of float footnotes and captions ([#824](https://github.com/docling-project/docling-core/issues/824)) ([`d7cef4c`](https://github.com/docling-project/docling-core/commit/d7cef4c10a7574c02ba9ea1b02c9c494dfe8b0df))
+* **doclang:** Fix deserialization of <text> without element body ([#811](https://github.com/docling-project/docling-core/issues/811)) ([`01c2443`](https://github.com/docling-project/docling-core/commit/01c244358aaeb21d7d1a2398cc4fc0701e9ebc77))
+* **doclang:** Don't replay parent children for empty list item bodies ([#820](https://github.com/docling-project/docling-core/issues/820)) ([`bb89daa`](https://github.com/docling-project/docling-core/commit/bb89daa211e76d568f09919ff2da29c7670a54e3))
+* **doclang:** Keep label, provenance, layer and leading text of mixed-content elements ([#804](https://github.com/docling-project/docling-core/issues/804)) ([`39aec16`](https://github.com/docling-project/docling-core/commit/39aec1602077304ddf03a8d8f1a3a6cb5dae6f4c))
+* Renumber all items on deletion; add opt-in validation rules and repairs ([#810](https://github.com/docling-project/docling-core/issues/810)) ([`61ab797`](https://github.com/docling-project/docling-core/commit/61ab797b904eb68f79eb6229f021b3747099dec6))
+* **markdown:** Keep non-ASCII list markers in AUTO mode ([#799](https://github.com/docling-project/docling-core/issues/799)) ([`25ade75`](https://github.com/docling-project/docling-core/commit/25ade75406ab7a809b3296714a84080cf71d173e))
+
+### Performance
+
+* **chunking:** Make _split_by_doc_items linear in the number of doc items ([#808](https://github.com/docling-project/docling-core/issues/808)) ([`e551f14`](https://github.com/docling-project/docling-core/commit/e551f14f5b630e34618f686a89335351c798fb4a))
+* Stop building a throwaway serializer for every rich table cell ([#771](https://github.com/docling-project/docling-core/issues/771)) ([`ed78fd3`](https://github.com/docling-project/docling-core/commit/ed78fd36f40ad1a861f244a308bcf0f0f031ce51))
+
+## [v2.99.0](https://github.com/docling-project/docling-core/releases/tag/v2.99.0) - 2026-09-25
+
+### Feature
+
+* Expose raw AcroForm widget state ([#733](https://github.com/docling-project/docling-core/issues/733)) ([`254224c`](https://github.com/docling-project/docling-core/commit/254224ccaae8e17b5cd8e6e7780c1e5cd5036c36))
+
+## [v2.98.1](https://github.com/docling-project/docling-core/releases/tag/v2.98.1) - 2026-09-25
+
+### Fix
+
+* **doclang:** Fix multi-caption/footnote (de)serialization ([#797](https://github.com/docling-project/docling-core/issues/797)) ([`9aa4a53`](https://github.com/docling-project/docling-core/commit/9aa4a535800879f3e922251cc647fb58bf16cda0))
+* **webvtt:** Decode cue text escapes and allow them in annotations ([#776](https://github.com/docling-project/docling-core/issues/776)) ([`876e9d8`](https://github.com/docling-project/docling-core/commit/876e9d8852b56a1345cfbba4aaa6baa6dc9941e0))
+* **origin:** Accept M4A and MP4 audio MIME types ([#789](https://github.com/docling-project/docling-core/issues/789)) ([`c0e852c`](https://github.com/docling-project/docling-core/commit/c0e852c4490f6087934f96ffba48ec6e4d143736))
+* **doclang:** Nest InlineGroup runs inside a TextItem that has its own text ([#752](https://github.com/docling-project/docling-core/issues/752)) ([`7096ba0`](https://github.com/docling-project/docling-core/commit/7096ba0c400cb2843ee11b466c41633088f3caa2))
+
+## [v2.98.0](https://github.com/docling-project/docling-core/releases/tag/v2.98.0) - 2026-09-22
+
+### Feature
+
+* **markdown:** Add caption_placement param to markdown serialization ([#786](https://github.com/docling-project/docling-core/issues/786)) ([`f17ef63`](https://github.com/docling-project/docling-core/commit/f17ef63cc673d9a979bc49f66fe9763fc8e2c993))
+
+## [v2.97.2](https://github.com/docling-project/docling-core/releases/tag/v2.97.2) - 2026-09-21
+
+### Fix
+
+* **doclang:** Honour non-square default_resolution, drop locationless-list artifacts, and scope table-cell text to exclusions ([#785](https://github.com/docling-project/docling-core/issues/785)) ([`8bba310`](https://github.com/docling-project/docling-core/commit/8bba310cc5e1b590c13262c443d286474ff10a81))
+
+## [v2.97.1](https://github.com/docling-project/docling-core/releases/tag/v2.97.1) - 2026-09-18
+
+### Fix
+
+* Doclang serializer for footnotes ([#782](https://github.com/docling-project/docling-core/issues/782)) ([`975c773`](https://github.com/docling-project/docling-core/commit/975c773b39265e6b6841d400f1cccc8eb03530a0))
+
+## [v2.97.0](https://github.com/docling-project/docling-core/releases/tag/v2.97.0) - 2026-09-16
+
+### Feature
+
+* Add artifacts_dir parameter to export_to_markdown and export_to_html ([#552](https://github.com/docling-project/docling-core/issues/552)) ([`1259eba`](https://github.com/docling-project/docling-core/commit/1259eba96b8fefeadc4313f8c1af5c7304c28256))
+
+### Fix
+
+* **serializer:** Keep row-header rows out of the markdown table header block ([#766](https://github.com/docling-project/docling-core/issues/766)) ([`b2a768c`](https://github.com/docling-project/docling-core/commit/b2a768c018827176b3b22b7deda463560fcffcf0))
+
+## [v2.96.1](https://github.com/docling-project/docling-core/releases/tag/v2.96.1) - 2026-09-15
+
+### Fix
+
+* Serialization into DCLX on splitted text across pages ([#775](https://github.com/docling-project/docling-core/issues/775)) ([`ebbc1ed`](https://github.com/docling-project/docling-core/commit/ebbc1ed2d1e273cd372f76c90d74795ac5de926c))
+* Add missing dependency on `requests` ([#764](https://github.com/docling-project/docling-core/issues/764)) ([`6073888`](https://github.com/docling-project/docling-core/commit/6073888fb9cac0c3de77a441c7c724620996fb7e))
+
 ## [v2.96.0](https://github.com/docling-project/docling-core/releases/tag/v2.96.0) - 2026-09-10
 
 ### Feature

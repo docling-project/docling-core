@@ -2,6 +2,7 @@
 
 from docling_core.types.doc.base import (
     BoundingBox,
+    CaptionPlacement,
     CoordOrigin,
     ImageRefMode,
     PydanticSerCtxKey,
