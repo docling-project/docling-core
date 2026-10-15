@@ -284,6 +284,55 @@ class TestSchemaSnapshotRendering:
         assert set(schema["$defs"]["FieldItem"]["properties"]) == set(FieldItem.model_fields)
 
 
+class TestProjector_1_11_to_1_10:
+    """Tests for the 1.11 → 1.10 downgrade projector."""
+
+    def _apply(self, data: dict) -> dict:
+        from docling_core.compat import _project_1_11_to_1_10
+
+        return _project_1_11_to_1_10(data)
+
+    def test_version_set_to_1_10(self):
+        result = self._apply(_minimal_doc_dict("1.11.0"))
+        assert result["version"] == "1.10.0"
+
+    def test_relabels_block_quote_group_and_strips_new_fields(self):
+        data = _minimal_doc_dict("1.11.0")
+        data["groups"] = [
+            {
+                "self_ref": "#/groups/0",
+                "parent": {"cref": "#/body"},
+                "children": [{"cref": "#/texts/0"}, {"cref": "#/texts/1"}],
+                "content_layer": "body",
+                "name": "group",
+                "label": "block_quote",
+                "cite": "https://example.org/source",
+                "captions": [{"cref": "#/texts/1"}],
+            }
+        ]
+        result = self._apply(data)
+        group = result["groups"][0]
+        assert group["label"] == "unspecified"
+        assert "cite" not in group
+        assert "captions" not in group
+        # The attribution item stays a child, so old clients still read it after the quote.
+        assert group["children"] == [{"cref": "#/texts/0"}, {"cref": "#/texts/1"}]
+
+    def test_other_groups_are_untouched(self):
+        data = _minimal_doc_dict("1.11.0")
+        list_group = {
+            "self_ref": "#/groups/0",
+            "parent": {"cref": "#/body"},
+            "children": [],
+            "content_layer": "body",
+            "name": "list",
+            "label": "list",
+        }
+        data["groups"] = [dict(list_group)]
+        result = self._apply(data)
+        assert result["groups"] == [list_group]
+
+
 class TestProjector_1_10_to_1_9:
     """Tests for the 1.10 → 1.9 downgrade projector."""
 
