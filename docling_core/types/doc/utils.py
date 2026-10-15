@@ -333,7 +333,12 @@ def otsl_parse_texts(texts: list[str], tokens: list[str]) -> tuple[list["TableCe
             row_span = 1
             col_span = 1
             right_offset = 1
-            if text != TableToken.OTSL_ECEL.value:
+            # whitespace-only text is dropped, so a cell with no text is followed by the next token
+            if (
+                text != TableToken.OTSL_ECEL.value
+                and i + 1 < len(texts)
+                and not TableToken.is_known_token(texts[i + 1])
+            ):
                 cell_text = texts[i + 1]
                 right_offset = 2
 
