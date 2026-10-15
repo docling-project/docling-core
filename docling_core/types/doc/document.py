@@ -4894,15 +4894,19 @@ class DoclingDocument(BaseModel):
                                     ]
                                 )
                                 # legacy annotations:
-                                pic.annotations.append(
-                                    PictureClassificationData(
-                                        provenance="load_from_doctags",
-                                        predicted_classes=[
-                                            # chart_type
-                                            PictureClassificationClass(class_name=image_classification, confidence=1.0)
-                                        ],
+                                with warnings.catch_warnings():
+                                    warnings.simplefilter("ignore", category=DeprecationWarning)
+                                    pic.annotations.append(
+                                        PictureClassificationData(
+                                            provenance="load_from_doctags",
+                                            predicted_classes=[
+                                                # chart_type
+                                                PictureClassificationClass(
+                                                    class_name=image_classification, confidence=1.0
+                                                )
+                                            ],
+                                        )
                                     )
-                                )
                             if table_data is not None:
                                 if pic.meta is None:
                                     pic.meta = PictureMeta()
@@ -4910,7 +4914,9 @@ class DoclingDocument(BaseModel):
                                 # legacy annotations:
                                 # Add chart data as PictureTabularChartData
                                 pd = PictureTabularChartData(chart_data=table_data, title=pic_title)
-                                pic.annotations.append(pd)
+                                with warnings.catch_warnings():
+                                    warnings.simplefilter("ignore", category=DeprecationWarning)
+                                    pic.annotations.append(pd)
 
                 elif tag_name == DocItemLabel.KEY_VALUE_REGION:
                     key_value_data, kv_item_prov = parse_key_value_item(full_chunk, image)

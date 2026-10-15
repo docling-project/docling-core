@@ -879,12 +879,20 @@ def _should_use_legacy_annotations(
 ) -> bool:
     if item.meta:
         return False
-    with warnings.catch_warnings(record=True) as caught_warnings:
-        warnings.simplefilter("ignore", DeprecationWarning)
-        if (incl_attr := getattr(params, "include_annotations", None)) is not None and not incl_attr:
-            return False
-        use_legacy = bool([ann for ann in item.annotations if ((ann.kind == kind) if kind is not None else True)])
-        if use_legacy:
-            for w in caught_warnings:
-                warnings.warn(w.message, w.category)
-        return use_legacy
+    # Read the deprecated `include_annotations` flag via __dict__ to avoid triggering
+    # its Pydantic deprecation warning before we know whether annotations are present.
+    incl_attr = params.__dict__.get("include_annotations")
+    if incl_attr is not None and not incl_attr:
+        return False
+    # Read `annotations` via __dict__ for the same reason: accessing the deprecated
+    # property fires a warning even when no annotations exist.  We re-emit the warning
+    # manually below, but only when the legacy path will actually be used.
+    raw_annotations: list[Any] = item.__dict__.get("annotations", [])
+    use_legacy = bool([ann for ann in raw_annotations if ((ann.kind == kind) if kind is not None else True)])
+    if use_legacy:
+        warnings.warn(
+            "Field `annotations` is deprecated; use `meta` instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    return use_legacy

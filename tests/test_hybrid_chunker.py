@@ -36,6 +36,18 @@ INPUT_FILE_2 = "tests/data/chunker/2_inp_dl_doc.json"
 INNER_TOKENIZER = AutoTokenizer.from_pretrained(EMBED_MODEL_ID)
 
 
+def warns_headers_exceed_budget():
+    """Expect the warning raised when a chunk's headers and captions alone exceed `max_tokens`.
+
+    The ground-truth tests intentionally use a tiny `MAX_TOKENS` budget to force splitting,
+    which makes the headers of some chunks longer than the whole budget.
+    """
+    return pytest.warns(
+        UserWarning,
+        match="Headers and captions for this chunk are longer than the total available size",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Reusable serializer-provider classes
 # ---------------------------------------------------------------------------
@@ -100,7 +112,8 @@ def test_chunk_merge_peers():
         merge_peers=True,
     )
 
-    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    with warns_headers_exceed_budget():
+        chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     assert_or_generate_json_ground_truth(
@@ -124,7 +137,8 @@ def test_chunk_with_model_name():
         merge_peers=True,
     )
 
-    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    with warns_headers_exceed_budget():
+        chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     assert_or_generate_json_ground_truth(
@@ -145,7 +159,8 @@ def test_chunk_deprecated_max_tokens():
             max_tokens=MAX_TOKENS,
         )
 
-    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    with warns_headers_exceed_budget():
+        chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     assert_or_generate_json_ground_truth(
@@ -169,7 +184,8 @@ def test_contextualize():
         merge_peers=True,
     )
 
-    chunks = chunker.chunk(dl_doc=dl_doc)
+    with warns_headers_exceed_budget():
+        chunks = chunker.chunk(dl_doc=dl_doc)
 
     act_data = dict(
         root=[
@@ -202,7 +218,8 @@ def test_chunk_no_merge_peers():
         merge_peers=False,
     )
 
-    chunks = chunker.chunk(dl_doc=dl_doc)
+    with warns_headers_exceed_budget():
+        chunks = chunker.chunk(dl_doc=dl_doc)
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     assert_or_generate_json_ground_truth(
         act_data,
@@ -292,7 +309,8 @@ def test_contextualize_altered_delim():
         delim="####",
     )
 
-    chunks = chunker.chunk(dl_doc=dl_doc)
+    with warns_headers_exceed_budget():
+        chunks = chunker.chunk(dl_doc=dl_doc)
 
     act_data = dict(
         root=[
@@ -368,7 +386,8 @@ def test_chunk_custom_serializer():
         serializer_provider=MySerializerProvider(),
     )
 
-    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    with warns_headers_exceed_budget():
+        chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     assert_or_generate_json_ground_truth(
@@ -774,7 +793,8 @@ def test_html_parser_error_handling(dl_doc_0):
     )
 
     # Chunking with HTML serializer should complete without errors
-    chunks = list(chunker.chunk(dl_doc=dl_doc))
+    with pytest.warns(UserWarning, match="Chunks prefix is too long"):
+        chunks = list(chunker.chunk(dl_doc=dl_doc))
     assert len(chunks) > 0, "Should produce chunks even with potential HTML parsing issues"
 
     # Verify all chunks have valid structure

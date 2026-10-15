@@ -128,8 +128,8 @@ class HTMLParams(CommonParams):
 
     include_annotations: bool = Field(
         default=True,
-        description="Include item annotations.",
-        deprecated="Use include_meta instead.",
+        description="Include legacy annotations. Has no effect on meta-based output.",
+        deprecated="Setting this to False only suppresses legacy `annotations`; use `blocked_meta_names` to suppress specific meta fields.",
     )
 
     show_original_list_item_marker: bool = True
