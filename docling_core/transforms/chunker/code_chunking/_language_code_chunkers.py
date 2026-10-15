@@ -336,8 +336,7 @@ class _ChunkSizeProcessor:
             current_chunk.append(line)
             current_size += line_tokens
 
-        if current_chunk:
-            chunks.append("".join(current_chunk) + f"{self._get_chunk_suffix()}")
+        if current_chunk:\n            chunks.append("".join(current_chunk) + f"{self._get_chunk_suffix()}")
 
         if len(chunks) > 1:
             last_chunk = chunks.pop()
@@ -753,8 +752,7 @@ class _CodeChunker(BaseChunker):
                     used.add(import_name)
 
         for import_name, import_node in imports.items():
-            if "*" in import_name:
-                import_text = self._get_import_with_comments(import_node)
+            if "*" in import_name:\n                import_text = self._get_import_with_comments(import_node)
                 set_imports.add(import_text)
 
         for u in used:
@@ -911,7 +909,7 @@ class _CodeChunker(BaseChunker):
             if child.type in self.expression_types and not self._is_docstring(child)
         ]
         fields_text = "\n".join(fields)
-        constructor_node = self._find_constructor(body)
+        constructor_node = self._find_constructor(body_node)
         if constructor_node:
             constructor_doc = self._get_docstring(constructor_node)
             constructor_text = self._build_function(constructor_node)
