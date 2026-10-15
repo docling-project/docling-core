@@ -1720,7 +1720,7 @@ def test_layer_filter_body_only(doc_with_layers):
         (ContentLayer.BACKGROUND, "background"),
         (ContentLayer.FURNITURE, "furniture"),
         (ContentLayer.NOTES, "furniture"),
-        (ContentLayer.INVISIBLE, "furniture"),
+        (ContentLayer.INVISIBLE, "background"),
     ],
 )
 def test_doclang_layers_use_xsd_values(layer, expected):
@@ -1746,6 +1746,31 @@ def test_doclang_notes_and_invisible_layers_validate_against_xsd(tmp_path):
     path.write_text(xml, encoding="utf-8")
 
     validate(path, xsd_only=True)
+
+
+@pytest.mark.parametrize("layer_mode", [LayerMode.AUTO, LayerMode.ALWAYS])
+def test_doclang_invisible_layer_stays_out_of_furniture_export(layer_mode):
+    """Hidden text must not become furniture after a DocLang round trip."""
+    doc = DoclingDocument(name="layers")
+    doc.add_text(label=DocItemLabel.TEXT, text="visible body")
+    doc.add_text(label=DocItemLabel.PAGE_HEADER, text="page header", content_layer=ContentLayer.FURNITURE)
+    doc.add_text(label=DocItemLabel.TEXT, text="speaker note", content_layer=ContentLayer.NOTES)
+    doc.add_text(label=DocItemLabel.TEXT, text="hidden text", content_layer=ContentLayer.INVISIBLE)
+    original = doc.model_dump()
+
+    xml = DocLangDocSerializer(doc=doc, params=DocLangParams(layer_mode=layer_mode)).serialize().text
+    restored = DocLangDocDeserializer().deserialize_str(xml)
+
+    assert doc.model_dump() == original
+    assert [item.content_layer for item in restored.texts] == [
+        ContentLayer.BODY,
+        ContentLayer.FURNITURE,
+        ContentLayer.FURNITURE,
+        ContentLayer.BACKGROUND,
+    ]
+    assert restored.export_to_markdown(included_content_layers={ContentLayer.BODY, ContentLayer.FURNITURE}) == (
+        "visible body\n\npage header\n\nspeaker note"
+    )
 
 
 def _doc_with_labeled_code_and_pictures() -> DoclingDocument:

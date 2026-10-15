@@ -294,8 +294,10 @@ def _create_layer_token(
     ):
         layer = item.content_layer
         # DocLang 0.7 has no notes or invisible layer values.
-        if layer in (ContentLayer.NOTES, ContentLayer.INVISIBLE):
+        if layer == ContentLayer.NOTES:
             layer = ContentLayer.FURNITURE
+        elif layer == ContentLayer.INVISIBLE:
+            layer = ContentLayer.BACKGROUND
         return DocLangVocabulary._create_selfclosing_token(
             token=DocLangToken.LAYER,
             attrs={DocLangAttributeKey.VALUE: layer.value},
