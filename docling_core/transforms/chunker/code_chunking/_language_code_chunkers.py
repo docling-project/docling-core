@@ -344,9 +344,11 @@ class _ChunkSizeProcessor:
             last_chunk_tokens = self.tokenizer.count_tokens(last_chunk)
             if last_chunk_tokens < self.min_chunk_size:
                 chunks[-1] = (
-                    chunks[-1].rstrip(self._get_chunk_suffix())
+                    chunks[-1].removesuffix(self._get_chunk_suffix())
                     + "\n"
-                    + last_chunk.lstrip(signature_line + f"{self._get_chunk_prefix()}")
+                    + last_chunk.removeprefix(
+                        signature_line + f"{self._get_chunk_prefix()}"
+                    )
                 )
             else:
                 chunks.append(last_chunk)
@@ -406,7 +408,7 @@ class _ChunkSizeProcessor:
                 yield self._create_split_chunk(chunk, chunk_text, chunk_number), ranges
 
     def _create_split_chunk(self, original_chunk: CodeChunk, text: str, chunk_number: int) -> CodeChunk:
-        """Create a new chunk from split text."""
+        """Create a new split chunk from text."""
         new_meta = original_chunk.meta.model_copy()
         new_meta.part_name = f"{original_chunk.meta.part_name}_part_{chunk_number}"
 
@@ -586,9 +588,7 @@ class _CodeChunker(BaseChunker):
             used_ranges,
         )
 
-    def _yield_class_chunk_with_ranges(
-        self, node: Node, import_nodes: dict[str, Node], chunk_builder: _ChunkBuilder
-    ) -> Iterator[tuple[CodeChunk, list[tuple[int, int]]]]:
+    def _yield_class_chunk_with_ranges(self, node: Node, import_nodes: dict[str, Node], chunk_builder: _ChunkBuilder) -> Iterator[tuple[CodeChunk, list[tuple[int, int]]]]:
         docstring = self._get_docstring(node)
         function_content = self._build_class_with_comments(node)
         imports = self._build_imports(import_nodes, node, function_content)
@@ -1465,13 +1465,13 @@ class _JavaFunctionChunker(_CodeChunker):
             const_block = (",".join(constants) + ";") if constants else ""
             inner_parts.append(const_block)
 
-            decl = next(
-                (child for child in body.children if child.type == self.enum_body_declarations),
-                None,
-            )
-            if decl:
-                decl_parts = [_to_str(child) for child in decl.children if child.type in self.enum_inner_types]
-                inner_parts.append("".join(decl_parts))
+        decl = next(
+            (child for child in body.children if child.type == self.enum_body_declarations),
+            None,
+        )
+        if decl:
+            decl_parts = [_to_str(child) for child in decl.children if child.type in self.enum_inner_types]
+            inner_parts.append("".join(decl_parts))
 
         elif context_type == "interface":
             constants = [_to_str(child) for child in body.children if child.type == self.constant_declaration]
