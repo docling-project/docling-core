@@ -98,18 +98,7 @@ class TableItem(FloatingItem):
 
         grid = self.data.grid
 
-        # Count how many rows are column headers
-        num_headers = 0
-        for row_idx, row in enumerate(grid):
-            if len(row) == 0:
-                raise RuntimeError(f"Invalid table. {len(row)=} but {self.data.num_cols=}.")
-
-            any_header = any(cell.column_header and cell.start_row_offset_idx == row_idx for cell in row)
-
-            if any_header:
-                num_headers += 1
-            else:
-                break
+        num_headers = self.data._count_column_header_rows(grid=grid)
 
         texts: dict[tuple[int, int], str] = {}
 

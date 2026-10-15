@@ -568,106 +568,145 @@ def test_md_table_stacked_header_drops_repeated_span_text():
     assert actual.splitlines()[0] == "| human   |   MRCNN - R50 |"
 
 
-def test_md_table_keeps_rows_under_a_vertically_spanning_header():
-    """A row-spanning header is repeated into each row it covers by `grid`.
+def _cell(text: str, row: int, col: int, *, row_span: int = 1, column_header: bool = False) -> TableCell:
+    return TableCell(
+        text=text,
+        start_row_offset_idx=row,
+        end_row_offset_idx=row + row_span,
+        start_col_offset_idx=col,
+        end_col_offset_idx=col + 1,
+        row_span=row_span,
+        column_header=column_header,
+    )
 
-    Only rows a header starts on are header rows, otherwise the data rows under
-    the span get flattened into the header and disappear from the body.
-    """
+
+@pytest.mark.parametrize(
+    ("num_rows", "num_cols", "cells", "md_table", "df_columns", "df_values"),
+    [
+        # "10.00" sits in the leading column, where unflagged text does not end the
+        # header block, so only the "header starts on this row" rule keeps row 1 out.
+        pytest.param(
+            2,
+            2,
+            [
+                _cell("Price", 0, 0, column_header=True),
+                _cell("Category", 0, 1, row_span=2, column_header=True),
+                _cell("10.00", 1, 0),
+            ],
+            "| Price | Category |\n| - | - |\n| 10.00 | Category |",
+            ["Price", "Category"],
+            [["10.00", "Category"]],
+            id="rows-under-row-spanning-header-stay-in-body",
+        ),
+        # "2025" is deliberately flagged as column_header, as the HTML backend did
+        # before docling-project/docling#4216, to model documents serialized then.
+        pytest.param(
+            3,
+            3,
+            [
+                _cell("Year", 0, 0, column_header=True),
+                _cell("Month", 0, 1, column_header=True),
+                _cell("Revenue", 0, 2, column_header=True),
+                _cell("2025", 1, 0, row_span=2, column_header=True),
+                _cell("January", 1, 1),
+                _cell("$134", 1, 2),
+                _cell("February", 2, 1),
+                _cell("$150", 2, 2),
+            ],
+            "| Year | Month | Revenue |\n| - | - | - |\n| 2025 | January | $134 |\n| 2025 | February | $150 |",
+            ["Year", "Month", "Revenue"],
+            [["2025", "January", "$134"], ["2025", "February", "$150"]],
+            id="row-header-flagged-as-column-header-stays-in-body",
+        ),
+        pytest.param(
+            3,
+            3,
+            [
+                _cell("", 0, 0, column_header=True),
+                _cell("% of Total", 0, 1, column_header=True),
+                _cell("% of Total", 0, 2, column_header=True),
+                _cell("class label", 1, 0),
+                _cell("Train", 1, 1, column_header=True),
+                _cell("Test", 1, 2, column_header=True),
+                _cell("Caption", 2, 0),
+                _cell("2.5", 2, 1),
+                _cell("2.4", 2, 2),
+            ],
+            "| class label | % of Total - Train | % of Total - Test |\n| - | - | - |\n| Caption | 2.5 | 2.4 |",
+            ["class label", "% of Total.Train", "% of Total.Test"],
+            [["Caption", "2.5", "2.4"]],
+            id="stacked-header-with-unmarked-row-label",
+        ),
+        pytest.param(
+            2,
+            2,
+            [
+                _cell("Name", 0, 0, column_header=True),
+                _cell("Value", 0, 1),
+                _cell("A", 1, 0),
+                _cell("1", 1, 1),
+            ],
+            "| Name | Value |\n| - | - |\n| A | 1 |",
+            ["Name", "Value"],
+            [["A", "1"]],
+            id="partially-flagged-first-row-stays-header",
+        ),
+        # Without any column_header flag, markdown promotes row 0 to the header since
+        # GFM requires one, while the dataframe keeps every row as data with default
+        # integer column names.
+        pytest.param(
+            2,
+            2,
+            [
+                _cell("Name", 0, 0),
+                _cell("Value", 0, 1),
+                _cell("A", 1, 0),
+                _cell("1", 1, 1),
+            ],
+            "| Name | Value |\n| - | - |\n| A | 1 |",
+            [0, 1],
+            [["Name", "Value"], ["A", "1"]],
+            id="no-flags-markdown-promotes-row-0-dataframe-does-not",
+        ),
+        # Row headers flagged as column_header in every row, with no header row, as
+        # the HTML backend produced before docling-project/docling#4216 for a body
+        # `<th>`. The leading-column flag on row 1 shows that row 0 holds a row
+        # header too, so row 0 is subject to the body-text check and no row is
+        # promoted: markdown keeps an empty header and the dataframe keeps every row.
+        pytest.param(
+            2,
+            2,
+            [
+                _cell("2025", 0, 0, column_header=True),
+                _cell("$134", 0, 1),
+                _cell("2026", 1, 0, column_header=True),
+                _cell("$150", 1, 1),
+            ],
+            "|  |  |\n| - | - |\n| 2025 | $134 |\n| 2026 | $150 |",
+            [0, 1],
+            [["2025", "$134"], ["2026", "$150"]],
+            id="row-headers-only-flagged-as-column-header-stay-in-body",
+        ),
+    ],
+)
+def test_table_header_rows_in_markdown_and_dataframe(
+    num_rows: int,
+    num_cols: int,
+    cells: list[TableCell],
+    md_table: str,
+    df_columns: list[str | int],
+    df_values: list[list[str]],
+):
+    """Markdown and dataframe exports agree on which leading rows form the column header."""
     doc = DoclingDocument(name="")
-    table = doc.add_table(data=TableData(num_rows=2, num_cols=2))
-    for cell in (
-        TableCell(
-            text="Category",
-            start_row_offset_idx=0,
-            end_row_offset_idx=2,
-            start_col_offset_idx=0,
-            end_col_offset_idx=1,
-            row_span=2,
-            column_header=True,
-        ),
-        TableCell(
-            text="Price",
-            start_row_offset_idx=0,
-            end_row_offset_idx=1,
-            start_col_offset_idx=1,
-            end_col_offset_idx=2,
-            column_header=True,
-        ),
-        TableCell(
-            text="10.00",
-            start_row_offset_idx=1,
-            end_row_offset_idx=2,
-            start_col_offset_idx=1,
-            end_col_offset_idx=2,
-        ),
-    ):
-        doc.add_table_cell(table_item=table, cell=cell)
+    table = doc.add_table(data=TableData(num_rows=num_rows, num_cols=num_cols, table_cells=cells))
 
-    actual = MarkdownDocSerializer(doc=doc).serialize().text
-    assert actual == ("| Category   |   Price |\n|------------|---------|\n| Category   |   10.00 |")
+    md_ser = MarkdownDocSerializer(doc=doc, params=MarkdownParams(compact_tables=True))
+    assert md_ser.serialize().text == md_table
 
-
-def test_md_table_row_header_above_the_body_is_not_promoted():
-    """A row header that starts on the first body row must stay in the body.
-
-    The ``"2025"`` cell below is intentionally mis-flagged with
-    ``column_header=True`` rather than ``row_header=True``. That reproduces the
-    erroneous output of the HTML backend prior to
-    ``docling-project/docling#4216``, and models documents already serialized
-    with those old flags. It is not a canonical model of a pivot table; this
-    test only verifies the defensive guard in the markdown serializer.
-    """
-    doc = DoclingDocument(name="")
-    table = doc.add_table(data=TableData(num_rows=3, num_cols=2))
-    for cell in (
-        TableCell(
-            text="Year",
-            start_row_offset_idx=0,
-            end_row_offset_idx=1,
-            start_col_offset_idx=0,
-            end_col_offset_idx=1,
-            column_header=True,
-        ),
-        TableCell(
-            text="Month",
-            start_row_offset_idx=0,
-            end_row_offset_idx=1,
-            start_col_offset_idx=1,
-            end_col_offset_idx=2,
-            column_header=True,
-        ),
-        TableCell(
-            text="2025",
-            start_row_offset_idx=1,
-            end_row_offset_idx=3,
-            start_col_offset_idx=0,
-            end_col_offset_idx=1,
-            row_span=2,
-            column_header=True,
-        ),
-        TableCell(
-            text="January",
-            start_row_offset_idx=1,
-            end_row_offset_idx=2,
-            start_col_offset_idx=1,
-            end_col_offset_idx=2,
-        ),
-        TableCell(
-            text="February",
-            start_row_offset_idx=2,
-            end_row_offset_idx=3,
-            start_col_offset_idx=1,
-            end_col_offset_idx=2,
-        ),
-    ):
-        doc.add_table_cell(table_item=table, cell=cell)
-
-    actual = MarkdownDocSerializer(doc=doc).serialize().text
-    lines = actual.splitlines()
-    assert lines[0].replace(" ", "") == "|Year|Month|"
-    assert lines[2].replace(" ", "") == "|2025|January|"
-    assert lines[3].replace(" ", "") == "|2025|February|"
+    dataframe = table.export_to_dataframe(doc)
+    assert list(dataframe.columns) == df_columns
+    assert dataframe.values.tolist() == df_values
 
 
 def test_md_table_with_header_flags_below_row_zero_keeps_every_row_as_data():
