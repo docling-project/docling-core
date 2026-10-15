@@ -336,7 +336,8 @@ class _ChunkSizeProcessor:
             current_chunk.append(line)
             current_size += line_tokens
 
-        if current_chunk:\n            chunks.append("".join(current_chunk) + f"{self._get_chunk_suffix()}")
+        if current_chunk:
+            chunks.append("".join(current_chunk) + f"{self._get_chunk_suffix()}")
 
         if len(chunks) > 1:
             last_chunk = chunks.pop()
@@ -752,7 +753,8 @@ class _CodeChunker(BaseChunker):
                     used.add(import_name)
 
         for import_name, import_node in imports.items():
-            if "*" in import_name:\n                import_text = self._get_import_with_comments(import_node)
+            if "*" in import_name:
+                import_text = self._get_import_with_comments(import_node)
                 set_imports.add(import_text)
 
         for u in used:
