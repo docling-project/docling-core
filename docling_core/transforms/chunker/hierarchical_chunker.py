@@ -29,6 +29,7 @@ from docling_core.transforms.serializer.markdown import (
 from docling_core.types import DoclingDocument as DLDocument
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
+    BlockQuoteGroup,
     CodeItem,
     DocItem,
     DoclingDocument,
@@ -265,7 +266,7 @@ class HierarchicalChunker(BaseChunker):
                 heading_text_by_level[level] = heading_text
 
                 continue
-            elif isinstance(item, ListGroup | InlineGroup | DocItem) and item.self_ref not in visited:
+            elif isinstance(item, ListGroup | InlineGroup | BlockQuoteGroup | DocItem) and item.self_ref not in visited:
                 if self.code_chunking_strategy is not None and isinstance(item, CodeItem):
                     yield from self.code_chunking_strategy.chunk_code_item(
                         item=item,

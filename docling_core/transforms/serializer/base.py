@@ -8,6 +8,7 @@ from pydantic import AnyUrl, BaseModel
 from typing_extensions import deprecated
 
 from docling_core.types.doc.document import (
+    BlockQuoteGroup,
     DocItem,
     DoclingDocument,
     FloatingItem,
@@ -188,6 +189,22 @@ class BaseInlineSerializer(ABC):
         ...
 
 
+class BaseBlockQuoteSerializer(ABC):
+    """Base class for block quote serializers."""
+
+    @abstractmethod
+    def serialize(
+        self,
+        *,
+        item: BlockQuoteGroup,
+        doc_serializer: "BaseDocSerializer",
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serializes the passed item."""
+        ...
+
+
 class BaseFallbackSerializer(ABC):
     """Base fallback class for item serializers."""
 
@@ -278,7 +295,7 @@ class BaseDocSerializer(ABC):
     @abstractmethod
     def serialize_captions(
         self,
-        item: FloatingItem,
+        item: FloatingItem | BlockQuoteGroup,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize the item's captions."""
