@@ -2712,6 +2712,52 @@ def test_table_corn_header():
     )
 
 
+@pytest.mark.parametrize("text", ["", "header"])
+@pytest.mark.parametrize(
+    "column_header,row_header,row_section,token",
+    [
+        (True, False, False, "ched"),
+        (False, True, False, "rhed"),
+        (True, True, False, "corn"),
+        (False, False, True, "srow"),
+        (False, False, False, "fcel"),
+    ],
+)
+def test_table_header_flags_survive_empty_content(
+    text: str, column_header: bool, row_header: bool, row_section: bool, token: str
+) -> None:
+    """Empty header cells retain their OTSL role and round-trip header flags."""
+    cell = TableCell(
+        text=text,
+        start_row_offset_idx=0,
+        end_row_offset_idx=1,
+        start_col_offset_idx=0,
+        end_col_offset_idx=1,
+        column_header=column_header,
+        row_header=row_header,
+        row_section=row_section,
+    )
+    doc = DoclingDocument(name="empty_header")
+    doc.add_table(data=TableData(num_rows=1, num_cols=1, table_cells=[cell]))
+    ser_txt = (
+        DocLangDocSerializer(doc=doc, params=DocLangParams(add_location=False, add_table_cell_location=False))
+        .serialize()
+        .text
+    )
+    validate_dclg_xml(ser_txt)
+    table = ET.fromstring(ser_txt).find("table")
+    assert table is not None
+    expected_token = "ecel" if not text and token == "fcel" else token
+    assert [child.tag for child in table] == [expected_token, "nl"]
+    restored = DocLangDocDeserializer().deserialize_str(ser_txt).tables[0].data.grid[0][0]
+    assert restored.text == text
+    assert (restored.column_header, restored.row_header, restored.row_section) == (
+        column_header,
+        row_header,
+        row_section,
+    )
+
+
 def test_create_threading_token_emits_thread_id():
     """Continuation tokens use ``thread_id`` per DocLang v0.5."""
     import pytest
