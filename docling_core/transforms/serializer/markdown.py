@@ -470,6 +470,9 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             res_parts.append(text_res)
 
         if isinstance(item, FloatingItem):
+            ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+            if ftn_res.text:
+                res_parts.append(ftn_res)
             cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
             if cap_res.text:
                 if _caption_goes_after(item, doc, params, standard_after=True):
