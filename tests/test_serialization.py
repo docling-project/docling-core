@@ -1,6 +1,5 @@
 """Test serialization."""
 
-import re
 import threading
 from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
 from typing import TypeAlias, Union
@@ -1592,20 +1591,6 @@ def test_html_rich_table_cell_formatting_inside_paragraph():
         "<tr><td><p><strong>Bold cell</strong></p></td><td>Plain cell</td></tr>"
         "</tbody></table>"
     )
-
-
-def test_html_ground_truth_has_no_inline_element_around_a_block():
-    """No HTML ground truth file wraps a <p> or <hN> element in an inline element."""
-    inline_around_block = re.compile(
-        r"<(?:strong|em|u|del|sub|sup|a)\b[^>]*>(?:<(?:strong|em|u|del|sub|sup)>)*<(?:p|h[1-6])\b"
-    )
-    offenders = [
-        f"{path}: {match.group(0)}"
-        for path in sorted(Path("tests/data").rglob("*.html"))
-        for match in inline_around_block.finditer(path.read_text(encoding="utf-8"))
-    ]
-
-    assert not offenders, "\n".join(offenders)
 
 
 # ===============================

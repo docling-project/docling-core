@@ -168,13 +168,12 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             if not isinstance(item, CodeItem | FormulaItem):
                 text = html.escape(text, quote=False)
                 text = text.replace("\n", "<br>")
+            if not isinstance(item, CodeItem | FormulaItem | ListItem):
+                text = doc_serializer.post_process(text=text, formatting=item.formatting, hyperlink=item.hyperlink)
+                post_processed = True
 
         # Prepare the HTML based on item type
         if isinstance(item, TitleItem | SectionHeaderItem):
-            if not post_processed:
-                # Formatting and hyperlinks go inside the block tag: <h2><strong>...</strong></h2>
-                text = doc_serializer.post_process(text=text, formatting=item.formatting, hyperlink=item.hyperlink)
-                post_processed = True
             section_level = min(item.level + 1, 6) if isinstance(item, SectionHeaderItem) else 1
             text = get_html_tag_with_text_direction(html_tag=f"h{section_level}", text=text)
 
@@ -234,14 +233,10 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             )
 
         elif not is_inline_scope:
-            if not post_processed:
-                # Formatting and hyperlinks go inside the block tag: <p><strong>...</strong></p>
-                text = doc_serializer.post_process(text=text, formatting=item.formatting, hyperlink=item.hyperlink)
-                post_processed = True
             # Regular text item
             text = get_html_tag_with_text_direction(html_tag="p", text=text)
 
-        # Formulas, code and inline text: apply formatting and hyperlinks to the parent's own text+tag.
+        # Apply formatting and hyperlinks to the parent's own text+tag.
         if not post_processed:
             text = doc_serializer.post_process(
                 text=text,
