@@ -288,6 +288,77 @@ def test_md_nested_list_page_break_keeps_indent():
     assert f"\n\n    {_PAGE_BREAK}\n\n" in doc.export_to_markdown(page_break_placeholder=_PAGE_BREAK)
 
 
+def test_md_list_starting_with_sublist_hangs_it_on_an_empty_item():
+    doc = DoclingDocument(name="structural")
+    outer = doc.add_list_group(name="outer")
+    inner = doc.add_list_group(name="inner", parent=outer)
+    doc.add_list_item(text="inner a", parent=inner)
+    doc.add_list_item(text="inner b", parent=inner)
+    doc.add_list_item(text="outer two", parent=outer)
+
+    # an indented block with no item before it would be an indented code block
+    assert doc.export_to_markdown() == "-\n    - inner a\n    - inner b\n- outer two"
+    assert doc.export_to_markdown(indent=2) == "-\n  - inner a\n  - inner b\n- outer two"
+
+
+def test_md_sublist_after_an_item_gets_no_extra_marker():
+    doc = DoclingDocument(name="nested")
+    outer = doc.add_list_group(name="outer")
+    doc.add_list_item(text="outer one", parent=outer)
+    inner = doc.add_list_group(name="inner", parent=outer)
+    doc.add_list_item(text="inner a", parent=inner)
+    doc.add_list_item(text="outer two", parent=outer)
+
+    assert doc.export_to_markdown() == "- outer one\n    - inner a\n- outer two"
+
+
+def test_md_page_filtered_nested_list_keeps_the_sublist_in_the_list():
+    doc = DoclingDocument(name="paged")
+    for page_no in (1, 2):
+        doc.add_page(page_no=page_no, size=Size(width=595, height=842), image=None)
+
+    def _prov(page_no: int, text: str) -> ProvenanceItem:
+        return ProvenanceItem(
+            page_no=page_no,
+            bbox=BoundingBox(l=50, t=700, r=500, b=680, coord_origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, len(text)),
+        )
+
+    outer = doc.add_list_group(name="outer")
+    doc.add_list_item(text="outer one", parent=outer, prov=_prov(1, "outer one"))
+    inner = doc.add_list_group(name="inner", parent=outer)
+    doc.add_list_item(text="inner a", parent=inner, prov=_prov(1, "inner a"))
+    doc.add_list_item(text="inner b", parent=inner, prov=_prov(2, "inner b"))
+    doc.add_list_item(text="outer two", parent=outer, prov=_prov(2, "outer two"))
+
+    # page 2 starts inside the sub-list: its parent item is on page 1
+    assert doc.export_to_markdown(page_no=2) == "-\n    - inner b\n- outer two"
+    assert doc.export_to_markdown() == "- outer one\n    - inner a\n    - inner b\n- outer two"
+
+
+def test_md_orphan_sublist_in_enumerated_list_keeps_the_numbering():
+    doc = DoclingDocument(name="paged")
+    for page_no in (1, 2):
+        doc.add_page(page_no=page_no, size=Size(width=595, height=842), image=None)
+
+    def _prov(page_no: int, text: str) -> ProvenanceItem:
+        return ProvenanceItem(
+            page_no=page_no,
+            bbox=BoundingBox(l=50, t=700, r=500, b=680, coord_origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, len(text)),
+        )
+
+    outer = doc.add_list_group(name="outer")
+    doc.add_list_item(text="outer one", parent=outer, enumerated=True, prov=_prov(1, "outer one"))
+    inner = doc.add_list_group(name="inner", parent=outer)
+    doc.add_list_item(text="inner a", parent=inner, prov=_prov(2, "inner a"))
+    doc.add_list_item(text="outer three", parent=outer, enumerated=True, prov=_prov(2, "outer three"))
+
+    # the empty item takes the position of the sub-list among the list's children
+    assert doc.export_to_markdown(page_no=2) == "2.\n    - inner a\n3. outer three"
+    assert doc.export_to_markdown() == "1. outer one\n    - inner a\n3. outer three"
+
+
 def test_md_page_break_between_list_and_table():
     doc = _make_paged_doc([("item one", 1), ("item two", 1)], as_list=True, num_pages=2)
     doc.add_table(
