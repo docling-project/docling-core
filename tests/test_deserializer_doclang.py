@@ -24,6 +24,7 @@ from docling_core.types.doc import (
     DescriptionMetaField,
     DocItemLabel,
     DoclingDocument,
+    FloatingMeta,
     Formatting,
     ImageRefMode,
     MoleculeMetaField,
@@ -2906,6 +2907,27 @@ def test_table_head_meta_is_restored() -> None:
     # the head does not disturb the table content
     assert tbl.data.num_rows == 2 and tbl.data.num_cols == 2
     assert [c.text for c in tbl.data.table_cells] == ["Region", "Total", "North", "1"]
+
+
+def test_table_meta_roundtrip() -> None:
+    doc = DoclingDocument(name="table_meta")
+    data = TableData(num_cols=2)
+    data.add_row(["Region", "Total"])
+    data.add_row(["North", "1"])
+    tbl = doc.add_table(data=data)
+    tbl.meta = FloatingMeta(summary=SummaryMetaField(text="Two regions"))
+    tbl.meta.set_custom_field(namespace="acme", name="source", value="erp")
+
+    out = DocLangDocSerializer(doc=doc, params=DocLangParams(pretty_indentation=None)).serialize().text
+    assert "<table><summary>Two regions</summary><custom><acme__source>erp</acme__source></custom><fcel/>" in out
+    assert_valid_dclg_xml(out)
+
+    doc2 = DocLangDocDeserializer().deserialize_str(out)
+    (tbl2,) = doc2.tables
+    assert tbl2.meta is not None
+    assert tbl2.meta.summary is not None and tbl2.meta.summary.text == "Two regions"
+    assert tbl2.meta.get_custom_part() == {"acme__source": "erp"}
+    assert [c.text for c in tbl2.data.table_cells] == ["Region", "Total", "North", "1"]
 
 
 def test_custom_field_structured_roundtrip() -> None:
