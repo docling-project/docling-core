@@ -182,6 +182,79 @@ def test_md_cross_page_list_page_break_p2():
     verify(exp_file=src.parent / f"{src.stem}_p2.gt.md", actual=actual)
 
 
+def test_md_page_export_keeps_unlocated_inline_content_with_located_parent():
+    doc = DoclingDocument(name="paged-inline")
+    for page_no in (1, 2):
+        doc.add_page(page_no=page_no, size=Size(width=100, height=100))
+
+    def page_prov(page_no: int) -> ProvenanceItem:
+        return ProvenanceItem(
+            page_no=page_no,
+            bbox=BoundingBox(l=0, t=0, r=10, b=10),
+            charspan=(0, 1),
+        )
+
+    group = doc.add_list_group()
+    host = doc.add_list_item(text="", parent=group, prov=page_prov(1))
+    inline = doc.add_inline_group(parent=host)
+    inherited = doc.add_text(label=DocItemLabel.TEXT, text="KEEP", parent=inline)
+    explicit = doc.add_text(label=DocItemLabel.TEXT, text="OTHER", parent=inline, prov=page_prov(2))
+    unlocated = doc.add_text(label=DocItemLabel.TEXT, text="ROOT")
+    doc.add_text(label=DocItemLabel.TEXT, text="PAGE TWO", prov=page_prov(2))
+
+    page_one = MarkdownDocSerializer(doc=doc, params=MarkdownParams(pages={1}))
+    excluded = page_one.get_excluded_refs()
+    assert inherited.self_ref not in excluded
+    assert explicit.self_ref in excluded
+    assert unlocated.self_ref in excluded
+    assert page_one.serialize().text == "- KEEP"
+
+    assert doc.export_to_markdown(page_no=2) == "OTHER\n\nPAGE TWO"
+    assert doc.export_to_markdown(page_no=1) == "- KEEP"
+    html_one = doc.export_to_html(page_no=1)
+    assert "KEEP" in html_one
+    assert "OTHER" not in html_one
+    assert "PAGE TWO" not in html_one
+
+
+def test_serializer_page_filter_uses_nearest_ancestor_and_all_explicit_pages():
+    doc = DoclingDocument(name="page-ancestry")
+    for page_no in (1, 2):
+        doc.add_page(page_no=page_no, size=Size(width=100, height=100))
+
+    def page_prov(page_no: int) -> ProvenanceItem:
+        return ProvenanceItem(
+            page_no=page_no,
+            bbox=BoundingBox(l=0, t=0, r=10, b=10),
+            charspan=(0, 1),
+        )
+
+    group = doc.add_list_group()
+    first = doc.add_list_item(text="first", parent=group, prov=page_prov(1))
+    nested = doc.add_inline_group(parent=first)
+    inherited = doc.add_text(label=DocItemLabel.TEXT, text="inherited", parent=nested)
+    overridden = doc.add_text(label=DocItemLabel.TEXT, text="second", parent=nested, prov=page_prov(2))
+    both = doc.add_text(label=DocItemLabel.TEXT, text="both", prov=page_prov(1))
+    both.prov.append(page_prov(2))
+    rootless = doc.add_text(label=DocItemLabel.TEXT, text="rootless")
+
+    serializer = MarkdownDocSerializer(doc=doc)
+    excluded_one = serializer.get_excluded_refs(pages={1})
+    excluded_two = serializer.get_excluded_refs(pages={2})
+    assert inherited.self_ref not in excluded_one
+    assert inherited.self_ref in excluded_two
+    assert overridden.self_ref in excluded_one
+    assert overridden.self_ref not in excluded_two
+    assert both.self_ref not in excluded_one | excluded_two
+    assert rootless.self_ref in excluded_one & excluded_two
+    assert serializer.get_excluded_refs(pages={1}) == excluded_one
+    assert serializer.get_excluded_refs(pages=set()) >= {
+        inherited.self_ref,
+        overridden.self_ref,
+        both.self_ref,
+    }
+
+
 _PAGE_BREAK = "<!-- page break -->"
 
 

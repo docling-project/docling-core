@@ -2493,6 +2493,40 @@ def test_filter_doclang_virtual_list_retains_inline_text_and_formula():
     page = doc.filter(page_nrs={1})
     assert page.export_to_markdown() == doc.export_to_markdown()
     assert [item.text for item in page.texts] == [item.text for item in doc.texts]
+    assert doc.export_to_markdown(page_no=1) == doc.export_to_markdown()
+    assert doc.export_to_text(page_no=1) == doc.export_to_text()
+    assert "-17x^6" in doc.export_to_html(page_no=1)
+    list_item = doc.texts[0]
+    runs = doc.texts[1:]
+    assert len(runs) == 4
+    assert all(run.prov and run.prov[0].page_no == 1 for run in runs)
+    assert all(run.prov[0].bbox == list_item.prov[0].bbox for run in runs)
+    assert all(run.get_location_tokens(doc) for run in runs)
+    assert [run.prov[0].charspan for run in runs] == [(0, len(run.text)) for run in runs]
+    assert [run.prov for run in page.texts[1:]] == [run.prov for run in runs]
+
+
+def test_virtual_list_inline_provenance_falls_back_to_parent_and_allows_override():
+    doc = _deserialize(
+        '<doclang version="0.7"><list><ldiv/>'
+        '<location value="10"/><location value="20"/>'
+        '<location value="100"/><location value="120"/>'
+        "plain<bold>bold</bold><formula>"
+        '<location value="30"/><location value="40"/>'
+        '<location value="80"/><location value="90"/>x</formula>'
+        "</list></doclang>",
+        validate=False,
+    )
+    by_text = {item.text: item for item in doc.texts if item.text}
+    assert by_text["plain"].prov[0].bbox.as_tuple() == (10, 20, 100, 120)
+    assert by_text["bold"].prov[0].bbox == by_text["plain"].prov[0].bbox
+    assert by_text["x"].prov[0].bbox.as_tuple() == (30, 40, 80, 90)
+
+    unlocated = _deserialize(
+        '<doclang version="0.7"><list><ldiv/>plain<formula>x</formula></list></doclang>',
+        validate=False,
+    )
+    assert all(not item.prov for item in unlocated.texts)
 
 
 def test_mixed_content_footnote_keeps_label_and_provenance():

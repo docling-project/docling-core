@@ -497,7 +497,14 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 return False
         return True
 
-    def _parse_text_like(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
+    def _parse_text_like(
+        self,
+        *,
+        doc: DoclingDocument,
+        el: Element,
+        parent: NodeItem | None,
+        inherited_prov: list[ProvenanceItem] | None = None,
+    ) -> None:
         """Parse text-like tokens (text, caption, footnotes, code, formula)."""
         element_children = [
             node for node in el.childNodes if isinstance(node, Element) and not self._is_element_head_tag(node)
@@ -508,10 +515,10 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         # an element without any content is an empty item, not a (childless) inline group
         is_empty = simple_text is None and thread_id is None and self._is_empty_text_block(el)
         if not is_empty and (len(element_children) > 1 or (simple_text is None and thread_id is None)):
-            self._parse_mixed_text_like(doc=doc, el=el, parent=parent)
+            self._parse_mixed_text_like(doc=doc, el=el, parent=parent, inherited_prov=inherited_prov)
             return
 
-        prov_list = self._extract_provenance(doc=doc, el=el)
+        prov_list = self._extract_provenance(doc=doc, el=el) or inherited_prov or []
         content_layer = self._extract_layer(el=el)
         text, formatting = self._extract_text_with_formatting(el)
         if not text and not is_empty:
@@ -1213,7 +1220,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 prov_list=prov_list,
             )
             if body_nodes:
-                self._parse_inline_group(doc=doc, el=el, parent=li, nodes=body_nodes)
+                self._parse_inline_group(doc=doc, el=el, parent=li, nodes=body_nodes, prov_list=prov_list)
 
     def _is_simple_virtual_text_nodes(self, nodes: Sequence[Node]) -> bool:
         """True when virtual-text body is plain text (optionally via ``<content>``)."""
@@ -1512,6 +1519,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         nodes: Sequence[Node],
         parent: NodeItem | None,
         formatting: Formatting | None,
+        prov_list: list[ProvenanceItem] | None = None,
     ) -> None:
         """Add text runs for ``nodes``, carrying ``formatting`` through nested formatting tags."""
         for node in nodes:
@@ -1520,18 +1528,29 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     # Accumulate this tag's style and keep descending, so e.g. <bold>a
                     # <italic>b</italic></bold> gives "a" bold and "b" bold+italic.
                     merged = self._merge_formatting_tag(node.tagName, formatting)
-                    self._parse_inline_runs(doc=doc, nodes=node.childNodes, parent=parent, formatting=merged)
+                    self._parse_inline_runs(
+                        doc=doc, nodes=node.childNodes, parent=parent, formatting=merged, prov_list=prov_list
+                    )
+                elif node.tagName in {
+                    DocLangToken.TEXT.value,
+                    DocLangToken.CONTENT.value,
+                    DocLangToken.FORMULA.value,
+                }:
+                    self._parse_text_like(doc=doc, el=node, parent=parent, inherited_prov=prov_list)
                 else:
                     self._dispatch_element(doc=doc, el=node, parent=parent)
             elif isinstance(node, Text):
                 text_content = node.data.strip()
                 if text_content:
-                    doc.add_text(
+                    item = doc.add_text(
                         label=DocItemLabel.TEXT,
                         text=text_content,
                         parent=parent,
                         formatting=formatting,
+                        prov=prov_list[0] if prov_list else None,
                     )
+                    if prov_list:
+                        self._apply_initial_text_provenance(item, text=text_content, prov_list=prov_list)
 
     def _parse_inline_group(
         self,
@@ -1541,6 +1560,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         parent: NodeItem | None,
         nodes: Sequence[Node] | None = None,
         formatting: Formatting | None = None,
+        prov_list: list[ProvenanceItem] | None = None,
     ) -> InlineGroup:
         """Parse <inline> elements into InlineGroup objects."""
         # Create the inline group
@@ -1549,10 +1569,19 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             self._source_recorder.bind_item(el, inline_group)
 
         my_nodes = nodes if nodes is not None else el.childNodes
-        self._parse_inline_runs(doc=doc, nodes=my_nodes, parent=inline_group, formatting=formatting)
+        self._parse_inline_runs(
+            doc=doc, nodes=my_nodes, parent=inline_group, formatting=formatting, prov_list=prov_list
+        )
         return inline_group
 
-    def _parse_mixed_text_like(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
+    def _parse_mixed_text_like(
+        self,
+        *,
+        doc: DoclingDocument,
+        el: Element,
+        parent: NodeItem | None,
+        inherited_prov: list[ProvenanceItem] | None = None,
+    ) -> None:
         """Parse a text-like element with mixed content (text + formatting runs)."""
         node: NodeItem
         if el.tagName in _INLINE_HOST_LABELS:
@@ -1561,7 +1590,13 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             # If the mixed-content element is itself a formatting tag (e.g. <bold> with a
             # leading text run before a nested <italic>), its own style must not be dropped.
             formatting = self._merge_formatting_tag(el.tagName, None) if el.tagName in _FORMATTING_TAG_VALUES else None
-            node = self._parse_inline_group(doc=doc, el=el, parent=parent, formatting=formatting)
+            node = self._parse_inline_group(
+                doc=doc,
+                el=el,
+                parent=parent,
+                formatting=formatting,
+                prov_list=inherited_prov,
+            )
         if (content_layer := self._extract_layer(el=el)) is not None:
             # Runs carry no layer of their own; without this, furniture runs would leak into the body.
             for it, _ in doc.iterate_items(root=node, with_groups=True, included_content_layers=set(ContentLayer)):

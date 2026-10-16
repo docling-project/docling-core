@@ -3484,15 +3484,18 @@ class DoclingDocument(BaseModel):
         _stack: list[int] | None = None,
         _inherited_page_nrs: set[int] | None = None,
     ) -> typing.Iterable[tuple[NodeItem, list[int]]]:  # tuple of node and level
-        """Iterate elements with stack."""
+        """Iterate elements with stack.
+
+        ``_inherited_page_nrs`` contains the nearest located ancestor's pages,
+        passed down by the recursive traversal. Unlocated inline descendants
+        inherit those pages for filtering; their own provenance takes precedence.
+        """
         my_layers = included_content_layers if included_content_layers is not None else DEFAULT_CONTENT_LAYERS
         my_stack: list[int] = _stack if _stack is not None else []
 
         if not root:
             root = self.body
 
-        # Inline runs often have no location of their own. In that case their
-        # nearest located ancestor determines which page they belong to.
         item_page_nrs = (
             {prov.page_no for prov in root.prov} if isinstance(root, DocItem) and root.prov else _inherited_page_nrs
         )
