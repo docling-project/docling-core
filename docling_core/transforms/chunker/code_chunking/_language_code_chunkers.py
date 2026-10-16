@@ -68,7 +68,7 @@ class _RangeTracker:
         return merged
 
     def find_gaps(self, total_length: int) -> list[tuple[int, int]]:
-        """Find gaps between the used ranges."""
+        """Find gaps between used ranges."""
         merged = self.merge_ranges()
         gaps = []
         last_end = 0
@@ -617,12 +617,12 @@ class _CodeChunker(BaseChunker):
             used_ranges.extend(prefix_range)
 
         function_no_docstring = function_content.replace(docstring, "") if docstring else function_content
-        content_no_doc = f"{prefix}{imports}{function_no_docstring}"
+        content_no_docstring = f"{prefix}{imports}{function_no_docstring}"
 
         if chunk_builder:
             yield (
                 chunk_builder.build_class_chunk(
-                    content_no_doc,
+                    content_no_docstring,
                     class_name,
                     docstring,
                     function_line_start,
@@ -696,7 +696,7 @@ class _CodeChunker(BaseChunker):
         return set()
 
     def _get_variable_with_comments(self, var_node: Node, root_node: Node) -> Node:
-        """Get a variable node including any preceding comments. Default implementation returns the node as-is."""
+        """Get variable node including any preceding comments. Default implementation returns the node as-is."""
         return var_node
 
     def _get_function_signature_end(self, node: Node) -> tuple[int, int]:
@@ -909,7 +909,7 @@ class _CodeChunker(BaseChunker):
             if child.type in self.expression_types and not self._is_docstring(child)
         ]
         fields_text = "\n".join(fields)
-        constructor_node = self._find_constructor(body)
+        constructor_node = self._find_constructor(body_node)
         if constructor_node:
             constructor_doc = self._get_docstring(constructor_node)
             constructor_text = self._build_function(constructor_node)
@@ -975,7 +975,7 @@ class _CodeChunker(BaseChunker):
         module_variables: dict[str, Node],
         range_tracker: _RangeTracker,
     ) -> None:
-        """Track constructor variables used in constructor functions that aren't being chunked separately."""
+        """Track variables used in constructor functions that aren't being chunked separately."""
         if node.type in self.function_definition_types and self._is_constructor(node):
             if not self._is_only_function_in_class(node):
                 used_variables = self._find_used_variables(node)
@@ -1013,7 +1013,7 @@ class _PythonFunctionChunker(_CodeChunker):
     @override
     def _get_docstring(self, node: Node) -> str:
         body_node = node.child_by_field_name(self.function_body)
-        if not body_node or not body_named_children:
+        if not body_node or not body_node.named_children:
             return ""
 
         docstring_node = next(
@@ -1397,7 +1397,7 @@ class _JavaFunctionChunker(_CodeChunker):
         super().__init__(**data)
 
     @override
-    def _file_prefix(self, root_node: Node) -> tuple[str, list]:
+    def _file_prefix(self, root_node: Node) -> tuple[str, list[tuple[int, int]]]:
         used_ranges = []
         prefix = ""
         for child in root_node.children:
@@ -1474,7 +1474,7 @@ class _JavaFunctionChunker(_CodeChunker):
                 inner_parts.append("".join(decl_parts))
 
         elif context_type == "interface":
-            constants = [_to_str(child) for child in body.children if child.type == self.constant_constant]
+            constants = [_to_str(child) for child in body.children if child.type == self.constant_declaration]
             methods = [_to_str(child) for child in body.children if child.type in self.function_definition_types]
             inner_parts.extend(["".join(constants), "".join(methods)])
 
