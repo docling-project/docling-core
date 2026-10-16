@@ -3495,7 +3495,7 @@
       "type": "object"
     },
     "RichTableCell": {
-      "description": "RichTableCell.",
+      "description": "A table cell whose content is a document item, such as a group or nested table.\n\nThe ``text`` field holds a plain-text rendition of the content, while ``ref`` points to\nthe item that carries the actual structure.",
       "properties": {
         "bbox": {
           "anyOf": [
@@ -3506,64 +3506,77 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Bounding box of the cell on the page."
         },
         "row_span": {
           "default": 1,
+          "description": "Number of rows spanned by the cell.",
           "title": "Row Span",
           "type": "integer"
         },
         "col_span": {
           "default": 1,
+          "description": "Number of columns spanned by the cell.",
           "title": "Col Span",
           "type": "integer"
         },
         "start_row_offset_idx": {
+          "description": "Index of the first row covered by the cell (inclusive, 0-based).",
           "minimum": 0,
           "title": "Start Row Offset Idx",
           "type": "integer"
         },
         "end_row_offset_idx": {
+          "description": "Index of the last row covered by the cell (exclusive, 0-based).",
           "minimum": 0,
           "title": "End Row Offset Idx",
           "type": "integer"
         },
         "start_col_offset_idx": {
+          "description": "Index of the first column covered by the cell (inclusive, 0-based).",
           "minimum": 0,
           "title": "Start Col Offset Idx",
           "type": "integer"
         },
         "end_col_offset_idx": {
+          "description": "Index of the last column covered by the cell (exclusive, 0-based).",
           "minimum": 0,
           "title": "End Col Offset Idx",
           "type": "integer"
         },
         "text": {
+          "description": "Text content of the cell.",
           "title": "Text",
           "type": "string"
         },
         "column_header": {
           "default": false,
+          "description": "Whether the cell is part of a column header.",
           "title": "Column Header",
           "type": "boolean"
         },
         "row_header": {
           "default": false,
+          "description": "Whether the cell is part of a row header.",
           "title": "Row Header",
           "type": "boolean"
         },
         "row_section": {
           "default": false,
+          "description": "Whether the cell is a row section title.",
           "title": "Row Section",
           "type": "boolean"
         },
         "fillable": {
           "default": false,
+          "description": "Whether the cell is meant to be filled in, as in a form.",
           "title": "Fillable",
           "type": "boolean"
         },
         "ref": {
-          "$ref": "#/$defs/RefItem"
+          "$ref": "#/$defs/RefItem",
+          "description": "Reference to the document item holding the content of the cell."
         }
       },
       "required": [
@@ -3792,7 +3805,7 @@
       "type": "object"
     },
     "TableCell": {
-      "description": "TableCell.",
+      "description": "A cell of a table, positioned in the table grid by row and column offsets.\n\nThe offset ranges are half-open: a cell covers the rows from ``start_row_offset_idx``\nup to, but not including, ``end_row_offset_idx``, and likewise for columns.",
       "properties": {
         "bbox": {
           "anyOf": [
@@ -3803,59 +3816,71 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Bounding box of the cell on the page."
         },
         "row_span": {
           "default": 1,
+          "description": "Number of rows spanned by the cell.",
           "title": "Row Span",
           "type": "integer"
         },
         "col_span": {
           "default": 1,
+          "description": "Number of columns spanned by the cell.",
           "title": "Col Span",
           "type": "integer"
         },
         "start_row_offset_idx": {
+          "description": "Index of the first row covered by the cell (inclusive, 0-based).",
           "minimum": 0,
           "title": "Start Row Offset Idx",
           "type": "integer"
         },
         "end_row_offset_idx": {
+          "description": "Index of the last row covered by the cell (exclusive, 0-based).",
           "minimum": 0,
           "title": "End Row Offset Idx",
           "type": "integer"
         },
         "start_col_offset_idx": {
+          "description": "Index of the first column covered by the cell (inclusive, 0-based).",
           "minimum": 0,
           "title": "Start Col Offset Idx",
           "type": "integer"
         },
         "end_col_offset_idx": {
+          "description": "Index of the last column covered by the cell (exclusive, 0-based).",
           "minimum": 0,
           "title": "End Col Offset Idx",
           "type": "integer"
         },
         "text": {
+          "description": "Text content of the cell.",
           "title": "Text",
           "type": "string"
         },
         "column_header": {
           "default": false,
+          "description": "Whether the cell is part of a column header.",
           "title": "Column Header",
           "type": "boolean"
         },
         "row_header": {
           "default": false,
+          "description": "Whether the cell is part of a row header.",
           "title": "Row Header",
           "type": "boolean"
         },
         "row_section": {
           "default": false,
+          "description": "Whether the cell is a row section title.",
           "title": "Row Section",
           "type": "boolean"
         },
         "fillable": {
           "default": false,
+          "description": "Whether the cell is meant to be filled in, as in a form.",
           "title": "Fillable",
           "type": "boolean"
         }
