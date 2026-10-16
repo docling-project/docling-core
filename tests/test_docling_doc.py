@@ -3602,6 +3602,24 @@ def test_table_cell_rejects_negative_offsets(field: str) -> None:
         TableCell(text="x", **offsets)
 
 
+@pytest.mark.parametrize("axis", ["row", "col"])
+def test_table_cell_rejects_inverted_offset_ranges(axis: str) -> None:
+    """An end offset smaller than its start offset is rejected, an equal one is accepted."""
+    offsets = {
+        "start_row_offset_idx": 0,
+        "end_row_offset_idx": 1,
+        "start_col_offset_idx": 0,
+        "end_col_offset_idx": 1,
+    }
+    offsets[f"start_{axis}_offset_idx"] = 2
+    offsets[f"end_{axis}_offset_idx"] = 2
+    TableCell(text="x", **offsets)
+
+    offsets[f"end_{axis}_offset_idx"] = 1
+    with pytest.raises(ValidationError, match=f"end_{axis}_offset_idx"):
+        TableCell(text="x", **offsets)
+
+
 def test_document_with_negative_table_cell_offset_fails_validation() -> None:
     doc = DoclingDocument(name="t")
     doc.add_table(
