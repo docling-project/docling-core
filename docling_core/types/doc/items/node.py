@@ -31,6 +31,10 @@ class NodeItem(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     meta: BaseMeta | None = None
+    prov: list[ProvenanceItem] = Field(
+        default_factory=list,
+        description="Explicit layout provenance for this node; empty when its location is unknown.",
+    )
 
     def get_ref(self) -> RefItem:
         """get_ref."""
@@ -120,7 +124,6 @@ class DocItem(NodeItem):
     """Base type for any element that carries content, can be a leaf node."""
 
     label: DocItemLabel
-    prov: list[ProvenanceItem] = []
     source: Annotated[
         list[SourceType],
         Field(

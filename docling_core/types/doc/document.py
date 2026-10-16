@@ -330,26 +330,15 @@ class DoclingDocument(BaseModel):
                         bbox_label="Table cell bbox",
                     )
 
-        item_lists: tuple[Iterable[NodeItem], ...] = (
-            self.texts,
-            self.pictures,
-            self.tables,
-            self.key_value_items,
-            self.form_items,
-            self.field_regions,
-            self.field_items,
-        )
-        for item_list in item_lists:
-            for item in item_list:
-                if isinstance(item, DocItem):
-                    for prov in item.prov:
-                        clamp_prov(prov)
-                if isinstance(item, TableItem):
-                    clamp_table_cell_bboxes(item)
-                if isinstance(item, KeyValueItem | FormItem):
-                    for cell in item.graph.cells:
-                        if cell.prov is not None:
-                            clamp_prov(cell.prov)
+        for item in self._iterate_all_nodes():
+            for prov in item.prov:
+                clamp_prov(prov)
+            if isinstance(item, TableItem):
+                clamp_table_cell_bboxes(item)
+            if isinstance(item, KeyValueItem | FormItem):
+                for cell in item.graph.cells:
+                    if cell.prov is not None:
+                        clamp_prov(cell.prov)
 
     @model_validator(mode="before")
     @classmethod
@@ -1481,6 +1470,8 @@ class DoclingDocument(BaseModel):
         name: str | None = None,
         parent: NodeItem | None = None,
         content_layer: ContentLayer | None = None,
+        *,
+        prov: ProvenanceItem | None = None,
     ) -> ListGroup:
         """add_list_group."""
         _parent = parent or self.body
@@ -1490,6 +1481,8 @@ class DoclingDocument(BaseModel):
             group.name = name
         if content_layer:
             group.content_layer = content_layer
+        if prov is not None:
+            group.prov.append(prov)
 
         self.groups.append(group)
         _parent.children.append(RefItem(cref=cref))
@@ -1501,12 +1494,15 @@ class DoclingDocument(BaseModel):
         name: str | None = None,
         parent: NodeItem | None = None,
         content_layer: ContentLayer | None = None,
+        *,
+        prov: ProvenanceItem | None = None,
     ) -> GroupItem:
         """add_ordered_list."""
         return self.add_list_group(
             name=name,
             parent=parent,
             content_layer=content_layer,
+            prov=prov,
         )
 
     @deprecated("Use add_list_group() instead.")
@@ -1515,12 +1511,15 @@ class DoclingDocument(BaseModel):
         name: str | None = None,
         parent: NodeItem | None = None,
         content_layer: ContentLayer | None = None,
+        *,
+        prov: ProvenanceItem | None = None,
     ) -> GroupItem:
         """add_unordered_list."""
         return self.add_list_group(
             name=name,
             parent=parent,
             content_layer=content_layer,
+            prov=prov,
         )
 
     def add_inline_group(
@@ -1528,6 +1527,8 @@ class DoclingDocument(BaseModel):
         name: str | None = None,
         parent: NodeItem | None = None,
         content_layer: ContentLayer | None = None,
+        *,
+        prov: ProvenanceItem | None = None,
     ) -> InlineGroup:
         """add_inline_group."""
         _parent = parent or self.body
@@ -1537,6 +1538,8 @@ class DoclingDocument(BaseModel):
             group.name = name
         if content_layer:
             group.content_layer = content_layer
+        if prov is not None:
+            group.prov.append(prov)
 
         self.groups.append(group)
         _parent.children.append(RefItem(cref=cref))
@@ -1548,12 +1551,15 @@ class DoclingDocument(BaseModel):
         name: str | None = None,
         parent: NodeItem | None = None,
         content_layer: ContentLayer | None = None,
+        *,
+        prov: ProvenanceItem | None = None,
     ) -> GroupItem:
         """add_group.
 
         :param label: Optional[GroupLabel]:  (Default value = None)
         :param name: Optional[str]:  (Default value = None)
         :param parent: Optional[NodeItem]:  (Default value = None)
+        :param prov: Optional explicit provenance for the group itself.
 
         """
         if label in [GroupLabel.LIST, GroupLabel.ORDERED_LIST]:
@@ -1561,12 +1567,14 @@ class DoclingDocument(BaseModel):
                 name=name,
                 parent=parent,
                 content_layer=content_layer,
+                prov=prov,
             )
         elif label == GroupLabel.INLINE:
             return self.add_inline_group(
                 name=name,
                 parent=parent,
                 content_layer=content_layer,
+                prov=prov,
             )
 
         if not parent:
@@ -1582,6 +1590,8 @@ class DoclingDocument(BaseModel):
             group.label = label
         if content_layer:
             group.content_layer = content_layer
+        if prov is not None:
+            group.prov.append(prov)
 
         self.groups.append(group)
         parent.children.append(RefItem(cref=cref))
@@ -5645,7 +5655,7 @@ class DoclingDocument(BaseModel):
             page_delta = self._max_page - min(doc.pages.keys()) + 1 if doc.pages else 0
 
             if self._body is None:
-                self._body = GroupItem(**doc.body.model_dump(exclude={"children"}))
+                self._body = GroupItem(**doc.body.model_dump(exclude={"children", "prov"}))
 
             self._names.append(doc.name)
 
@@ -5675,8 +5685,15 @@ class DoclingDocument(BaseModel):
                 # register cref mapping:
                 orig_ref_to_new_ref[item.self_ref] = new_cref
 
-                if not is_body:
-                    new_item = copy.deepcopy(item)
+                new_item = copy.deepcopy(item)
+                if page_nrs is not None and isinstance(new_item, GroupItem):
+                    new_item.prov = [prov for prov in new_item.prov if prov.page_no in page_nrs]
+                for prov in new_item.prov:
+                    prov.page_no += page_delta
+
+                if is_body:
+                    self._body.prov.extend(new_item.prov)
+                else:
                     new_item.children = []
 
                     # put item in the right list
@@ -5685,14 +5702,10 @@ class DoclingDocument(BaseModel):
                     # update item's self reference
                     new_item.self_ref = new_cref
 
-                    if isinstance(new_item, DocItem):
-                        # update page numbers
-                        for prov in new_item.prov:
-                            prov.page_no += page_delta
-                        if isinstance(new_item, KeyValueItem | FormItem):
-                            for graph_cell in new_item.graph.cells:
-                                if graph_cell.prov is not None:
-                                    graph_cell.prov.page_no += page_delta
+                    if isinstance(new_item, KeyValueItem | FormItem):
+                        for graph_cell in new_item.graph.cells:
+                            if graph_cell.prov is not None:
+                                graph_cell.prov.page_no += page_delta
 
                     if item.parent:
                         # set item's parent
