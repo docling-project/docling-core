@@ -2886,6 +2886,28 @@ def test_custom_field_attributes_roundtrip() -> None:
     assert doc2.texts[0].meta.get_custom_part() == expected
 
 
+def test_table_head_meta_is_restored() -> None:
+    # the element head of a <table> carries its meta like any other element
+    xml = (
+        '<doclang version="0.7"><table>'
+        "<description>Totals per region</description>"
+        "<summary>Two regions</summary>"
+        "<custom><acme__source>erp</acme__source></custom>"
+        "<ched/>Region<ched/>Total<nl/><fcel/>North<fcel/>1<nl/></table></doclang>"
+    )
+
+    doc = DocLangDocDeserializer().deserialize_str(xml)
+
+    (tbl,) = doc.tables
+    assert tbl.meta is not None
+    assert tbl.meta.description is not None and tbl.meta.description.text == "Totals per region"
+    assert tbl.meta.summary is not None and tbl.meta.summary.text == "Two regions"
+    assert tbl.meta.get_custom_part() == {"acme__source": "erp"}
+    # the head does not disturb the table content
+    assert tbl.data.num_rows == 2 and tbl.data.num_cols == 2
+    assert [c.text for c in tbl.data.table_cells] == ["Region", "Total", "North", "1"]
+
+
 def test_custom_field_structured_roundtrip() -> None:
     opt1 = "<formula>a</formula>\n<formula><![CDATA[b < c]]></formula>"
     opt2 = "another option"

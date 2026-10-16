@@ -1687,6 +1687,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             label=table_label,
         )
         self._source_recorder.bind_item(otsl_el, tbl)
+        self._apply_meta_from_head_nodes(item=tbl, head_nodes=head_nodes)
         tbl_content = _wrap(text=inner, wrap_tag=DocLangToken.TABLE.value)
         td = self._parse_otsl_table_content(otsl_content=tbl_content, doc=doc, parent=tbl)
         tbl.data = td
