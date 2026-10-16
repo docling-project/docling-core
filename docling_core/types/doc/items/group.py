@@ -3,7 +3,7 @@
 import typing
 from typing import TYPE_CHECKING
 
-from pydantic import field_validator
+from pydantic import SerializerFunctionWrapHandler, field_validator, model_serializer
 from typing_extensions import deprecated
 
 from docling_core.types.doc.items.node import NodeItem
@@ -23,6 +23,13 @@ class GroupItem(NodeItem):  # Container type, can't be a leaf node
     )
     # TODO narrow down to allowed values, i.e. excluding those used for subtypes
     label: GroupLabel = GroupLabel.UNSPECIFIED
+
+    @model_serializer(mode="wrap")
+    def _custom_pydantic_serialize(self, handler: SerializerFunctionWrapHandler) -> dict:
+        dumped = handler(self)
+        if dumped.get("prov") == []:
+            del dumped["prov"]
+        return dumped
 
 
 class ListGroup(GroupItem):

@@ -186,6 +186,9 @@ class ProvenanceItem(BaseModel):
     A `ProvenanceItem` object acts as a lightweight pointer back into the original
     document for an extracted element. It applies to documents with an explicit
     or implicit layout, such as PDF, HTML, docx, or pptx.
+
+    Groups have no own text buffer and use ``charspan=(0, 0)``. Their provenance
+    describes the group itself and is not inherited by its descendants.
     """
 
     page_no: Annotated[int, Field(description="Page number")]
