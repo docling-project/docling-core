@@ -4,14 +4,16 @@ import numpy as np
 import pytest
 from pydantic import AnyUrl, ValidationError
 
-from docling_core.types.doc import CoordOrigin, Size
+from docling_core.types.doc import BoundingBox, CoordOrigin, Size
 from docling_core.types.doc.page import (
     BoundingRectangle,
     Coord2D,
+    PdfCellRenderingMode,
     PdfDestination,
     PdfDestinationKind,
     PdfHyperlink,
     PdfTableOfContents,
+    PdfTextCell,
     PdfWidget,
 )
 
@@ -422,3 +424,69 @@ class TestPdfDestinationValidation:
         assert dest.kind == PdfDestinationKind.UNKNOWN
         assert dest.point is None
         assert dest.coord_origin == CoordOrigin.BOTTOMLEFT
+
+
+def _pdf_text_cell(**kwargs) -> PdfTextCell:
+    return PdfTextCell(
+        rect=BoundingRectangle(
+            r_x0=125.0,
+            r_y0=682.0,
+            r_x1=304.6,
+            r_y1=682.0,
+            r_x2=304.6,
+            r_y2=691.0,
+            r_x3=125.0,
+            r_y3=691.0,
+            coord_origin=CoordOrigin.BOTTOMLEFT,
+        ),
+        text="level",
+        orig="level",
+        rendering_mode=PdfCellRenderingMode.FILL_TEXT,
+        widget=False,
+        font_key="/F1",
+        font_name="Helvetica",
+        **kwargs,
+    )
+
+
+class TestPdfTextCellClipBbox:
+    """Text clipped to a table cell carries the clip it was painted under."""
+
+    def test_defaults_to_none_and_is_omitted_from_export(self):
+        cell = _pdf_text_cell()
+        assert cell.clip_bbox is None
+        assert "clip_bbox" not in cell.model_dump(mode="json", exclude_none=True)
+
+    def test_legacy_payload_still_validates(self):
+        payload = _pdf_text_cell().model_dump(mode="json")
+        del payload["clip_bbox"]
+        assert PdfTextCell.model_validate(payload).clip_bbox is None
+
+    def test_round_trips(self):
+        clip = BoundingBox(l=122.0, b=676.0, r=252.0, t=698.0, coord_origin=CoordOrigin.BOTTOMLEFT)
+        cell = _pdf_text_cell(clip_bbox=clip)
+        restored = PdfTextCell.model_validate(cell.model_dump(mode="json"))
+        assert restored.clip_bbox == clip
+
+    def test_origin_conversion_moves_the_clip_with_the_rect(self):
+        clip = BoundingBox(l=122.0, b=676.0, r=252.0, t=698.0, coord_origin=CoordOrigin.BOTTOMLEFT)
+        cell = _pdf_text_cell(clip_bbox=clip)
+
+        cell.to_top_left_origin(page_height=792.0)
+        assert cell.rect.coord_origin == CoordOrigin.TOPLEFT
+        assert cell.clip_bbox is not None
+        assert cell.clip_bbox.coord_origin == CoordOrigin.TOPLEFT
+        assert (cell.clip_bbox.l, cell.clip_bbox.t, cell.clip_bbox.r, cell.clip_bbox.b) == (
+            122.0,
+            792.0 - 698.0,
+            252.0,
+            792.0 - 676.0,
+        )
+
+        cell.to_bottom_left_origin(page_height=792.0)
+        assert cell.clip_bbox == clip
+
+    def test_origin_conversion_without_a_clip(self):
+        cell = _pdf_text_cell()
+        cell.to_top_left_origin(page_height=792.0)
+        assert cell.clip_bbox is None
