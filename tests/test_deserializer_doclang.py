@@ -24,6 +24,7 @@ from docling_core.types.doc import (
     DescriptionMetaField,
     DocItemLabel,
     DoclingDocument,
+    FloatingMeta,
     Formatting,
     ImageRefMode,
     MoleculeMetaField,
@@ -2856,6 +2857,77 @@ def test_custom_field_text_roundtrip() -> None:
     assert doc2.texts[0].text == "a b c"
     assert doc2.texts[0].meta is not None
     assert doc2.texts[0].meta.get_custom_part() == {"acme__alt": value}
+
+
+def test_custom_field_attributes_roundtrip() -> None:
+    # the attributes of a custom field element are read under their names, like child elements,
+    # and the host element's text is left alone
+    xml = (
+        '<doclang version="0.7"><text><custom>'
+        '<acme__identity value="x-1" source="form"/>'
+        '<acme__ref kind="figure"><acme__id>7</acme__id></acme__ref>'
+        "</custom>Prose.</text></doclang>"
+    )
+    expected = {
+        "acme__identity": {"value": "x-1", "source": "form"},
+        "acme__ref": {"kind": "figure", "acme__id": "7"},
+    }
+
+    doc = DocLangDocDeserializer().deserialize_str(xml)
+
+    (item,) = doc.texts
+    assert item.text == "Prose."
+    assert item.meta is not None
+    assert item.meta.get_custom_part() == expected
+
+    # attributes are written back as child elements, which read back to the same values
+    doc2 = DocLangDocDeserializer().deserialize_str(DocLangDocSerializer(doc=doc).serialize().text)
+    assert doc2.texts[0].text == "Prose."
+    assert doc2.texts[0].meta is not None
+    assert doc2.texts[0].meta.get_custom_part() == expected
+
+
+def test_table_head_meta_is_restored() -> None:
+    # the element head of a <table> carries its meta like any other element
+    xml = (
+        '<doclang version="0.7"><table>'
+        "<description>Totals per region</description>"
+        "<summary>Two regions</summary>"
+        "<custom><acme__source>erp</acme__source></custom>"
+        "<ched/>Region<ched/>Total<nl/><fcel/>North<fcel/>1<nl/></table></doclang>"
+    )
+
+    doc = DocLangDocDeserializer().deserialize_str(xml)
+
+    (tbl,) = doc.tables
+    assert tbl.meta is not None
+    assert tbl.meta.description is not None and tbl.meta.description.text == "Totals per region"
+    assert tbl.meta.summary is not None and tbl.meta.summary.text == "Two regions"
+    assert tbl.meta.get_custom_part() == {"acme__source": "erp"}
+    # the head does not disturb the table content
+    assert tbl.data.num_rows == 2 and tbl.data.num_cols == 2
+    assert [c.text for c in tbl.data.table_cells] == ["Region", "Total", "North", "1"]
+
+
+def test_table_meta_roundtrip() -> None:
+    doc = DoclingDocument(name="table_meta")
+    data = TableData(num_cols=2)
+    data.add_row(["Region", "Total"])
+    data.add_row(["North", "1"])
+    tbl = doc.add_table(data=data)
+    tbl.meta = FloatingMeta(summary=SummaryMetaField(text="Two regions"))
+    tbl.meta.set_custom_field(namespace="acme", name="source", value="erp")
+
+    out = DocLangDocSerializer(doc=doc, params=DocLangParams(pretty_indentation=None)).serialize().text
+    assert "<table><summary>Two regions</summary><custom><acme__source>erp</acme__source></custom><fcel/>" in out
+    assert_valid_dclg_xml(out)
+
+    doc2 = DocLangDocDeserializer().deserialize_str(out)
+    (tbl2,) = doc2.tables
+    assert tbl2.meta is not None
+    assert tbl2.meta.summary is not None and tbl2.meta.summary.text == "Two regions"
+    assert tbl2.meta.get_custom_part() == {"acme__source": "erp"}
+    assert [c.text for c in tbl2.data.table_cells] == ["Region", "Total", "North", "1"]
 
 
 def test_custom_field_structured_roundtrip() -> None:

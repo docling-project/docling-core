@@ -1687,6 +1687,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             label=table_label,
         )
         self._source_recorder.bind_item(otsl_el, tbl)
+        self._apply_meta_from_head_nodes(item=tbl, head_nodes=head_nodes)
         tbl_content = _wrap(text=inner, wrap_tag=DocLangToken.TABLE.value)
         td = self._parse_otsl_table_content(otsl_content=tbl_content, doc=doc, parent=tbl)
         tbl.data = td
@@ -1855,17 +1856,20 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         return None
 
     def _custom_field_value(self, el: Element) -> Any:
-        """Read a custom field element: its text, or a dict of child tag -> value.
+        """Read a custom field element: its text, or a dict of attribute name / child tag -> value.
 
-        A tag that occurs once in the element maps to its value, a repeated tag to a list of values.
+        An attribute maps to its value under its name. A tag that occurs once in the element maps to
+        its value, a repeated tag to a list of values. An element with neither attributes nor child
+        elements maps to its text.
         """
+        attributes: dict[str, Any] = dict(el.attributes.items()) if el.attributes is not None else {}
         children = [c for c in el.childNodes if isinstance(c, Element) and c.tagName != DocLangToken.CONTENT.value]
-        if not children:
+        if not children and not attributes:
             return self._get_text(el)
         grouped: dict[str, list[Any]] = {}
         for child in children:
             grouped.setdefault(child.tagName, []).append(self._custom_field_value(child))
-        return {tag: vals[0] if len(vals) == 1 else vals for tag, vals in grouped.items()}
+        return attributes | {tag: vals[0] if len(vals) == 1 else vals for tag, vals in grouped.items()}
 
     def _apply_custom_meta_field_element(self, *, item: DocItem, field_el: Element) -> None:
         """Map one ``<custom>`` child element onto ``item.meta``."""
