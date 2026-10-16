@@ -1060,11 +1060,22 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 my_parts.append(p)
 
         indent_str = list_level * params.indent * " "
-        my_texts = [
-            # avoid additional marker on already evaled sublists
-            (c.text if c.text and c.text[0] == " " else f"{indent_str}{c.text}")
-            for c in my_parts
-        ]
+        my_texts: list[str] = []
+        item_seen = False
+        for c in my_parts:
+            if c.text and c.text[0] == " ":
+                # avoid additional marker on already evaled sublists
+                if item_seen or isinstance(c, _PageBreakSerResult):
+                    my_texts.append(c.text)
+                else:
+                    # Markdown has no sub-list without a parent item: an indented block
+                    # with no item before it is an indented code block, so hang the
+                    # sub-list on an empty item of this list.
+                    my_texts.append(f"{indent_str}-\n{c.text}")
+            else:
+                my_texts.append(f"{indent_str}{c.text}")
+            if not isinstance(c, _PageBreakSerResult):
+                item_seen = True
         text_res = ""
         for i, text in enumerate(my_texts):
             if i:
