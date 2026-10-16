@@ -1186,6 +1186,15 @@ class MarkdownDocSerializer(DocSerializer):
         """Apply Markdown-specific hyperlink serialization."""
         return f"[{text}]({hyperlink_uri(hyperlink)})"
 
+    @override
+    def serialize_footnotes(
+        self,
+        item: FloatingItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's footnotes, one paragraph each."""
+        return super().serialize_footnotes(item=item, **{**kwargs, "caption_delim": "\n\n"})
+
     @classmethod
     def _escape_underscores(cls, text: str):
         """Escape underscores but leave them intact in the URL.."""
