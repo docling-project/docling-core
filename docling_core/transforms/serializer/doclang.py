@@ -1004,6 +1004,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
         Returns:
             SerializationResult containing the serialized text and span mappings.
         """
+        params = DocLangParams(**kwargs)
         if len(item.prov) > 1 and not isinstance(item, ListItem):
             # Split multi-provenance items into per-provenance fragments linked by
             # a shared thread_id; insert page breaks when page_no changes.
@@ -1039,7 +1040,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
 
             out_parts: list[str] = []
             for idp, tres in enumerate(res):
-                if idp > 0 and item.prov[idp - 1].page_no != item.prov[idp].page_no:
+                if idp > 0 and params.add_page_break and item.prov[idp - 1].page_no != item.prov[idp].page_no:
                     pb = _PageBreakNode(
                         self_ref=f"#/pb/{idp}",
                         prev_page=item.prov[idp - 1].page_no,
@@ -1937,7 +1938,7 @@ class DocLangTableSerializer(BaseTableSerializer):
 
             out_parts: list[str] = []
             for idp, tres in enumerate(res):
-                if idp > 0 and item.prov[idp - 1].page_no != item.prov[idp].page_no:
+                if idp > 0 and params.add_page_break and item.prov[idp - 1].page_no != item.prov[idp].page_no:
                     pb = _PageBreakNode(
                         self_ref=f"#/pb/{idp}",
                         prev_page=item.prov[idp - 1].page_no,
