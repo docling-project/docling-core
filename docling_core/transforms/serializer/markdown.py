@@ -919,6 +919,10 @@ class MarkdownPictureSerializer(BasePictureSerializer):
                 if len(md_table_content) > 0:
                     res_parts.append(create_ser_result(text=md_table_content, span_source=item))
 
+        ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+        if ftn_res.text:
+            res_parts.append(ftn_res)
+
         if cap_res.text and cap_after:
             res_parts.append(cap_res)
 
