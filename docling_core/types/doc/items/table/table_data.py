@@ -56,6 +56,28 @@ class TableCell(BaseModel):
 
         return data
 
+    @model_validator(mode="after")
+    def check_offset_ranges(self) -> Self:
+        """Check that the row and column offset ranges are not inverted.
+
+        Returns:
+            The validated cell.
+
+        Raises:
+            ValueError: If an end offset is smaller than its start offset.
+        """
+        if self.end_row_offset_idx < self.start_row_offset_idx:
+            raise ValueError(
+                f"end_row_offset_idx ({self.end_row_offset_idx}) must be greater than or equal to "
+                f"start_row_offset_idx ({self.start_row_offset_idx})"
+            )
+        if self.end_col_offset_idx < self.start_col_offset_idx:
+            raise ValueError(
+                f"end_col_offset_idx ({self.end_col_offset_idx}) must be greater than or equal to "
+                f"start_col_offset_idx ({self.start_col_offset_idx})"
+            )
+        return self
+
     def _get_text(self, doc: Optional["DoclingDocument"] = None, **kwargs: Any) -> str:
         return self.text
 
