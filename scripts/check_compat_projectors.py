@@ -11,10 +11,10 @@ What it does
 2. Checks SCHEMA_VERSION_HISTORY is up-to-date.
 3. Ensures ``docs/schemas/DoclingDocument_1_{N}.json`` exists for every
    registered projector's target minor version N.
-4. **Auto-generates the current-version snapshot** when CURRENT_VERSION was
-   just bumped: copies ``docs/DoclingDocument.json`` (which always reflects
-   the *current* model) to ``docs/schemas/DoclingDocument_1_{CURRENT_MINOR}.json``
-   if that file is missing.
+4. **Auto-generates missing snapshots** by rendering the live models' JSON
+   Schema in memory.  When CURRENT_VERSION was just bumped this produces
+   ``docs/schemas/DoclingDocument_1_{CURRENT_MINOR}.json``; for older target
+   versions it produces a permissive bootstrap copy (see below).
 
 The key invariant
 -----------------
@@ -25,16 +25,21 @@ When CURRENT_VERSION is bumped from 1.N to 1.(N+1):
   1. The contributor adds the model changes.
   2. The contributor bumps CURRENT_VERSION.
   3. This script runs (triggered by the change to constants.py).
-  4. It detects that ``docs/schemas/DoclingDocument_1_N.json`` does not yet
-     exist — i.e., the snapshot of the *old* schema was not captured yet.
+  4. It writes ``docs/schemas/DoclingDocument_1_(N+1).json`` from the live
+     models, so the snapshot describes exactly the version it is named for.
 
-**The snapshot must be taken BEFORE ``generate_docs`` overwrites
-``docs/DoclingDocument.json``.**  The pre-commit hook order is:
+The snapshot for the current version is rendered from the models rather than
+copied from ``docs/DoclingDocument.json``, because that artefact still holds
+the 1.N schema when this script runs: the pre-commit hook order is
 
-  check-compat-projectors  ← runs first, copies the snapshot
-  docs                     ← runs after, overwrites docs/DoclingDocument.json
+  check-compat-projectors  ← runs first
+  docs                     ← runs after, regenerates docs/DoclingDocument.json
 
-This ordering is guaranteed by the hook order in ``.pre-commit-config.yaml``.
+so copying it would produce a file named for 1.(N+1) that describes 1.N, and
+every later structural diff would be taken against the wrong baseline.
+Snapshots for versions older than the current one predate this system and are
+bootstrapped from the same in-memory render, which is a permissive superset of
+every older schema.  The script never reads ``docs/DoclingDocument.json``.
 
 Exit codes:
     0  — all checks pass (snapshots may have been auto-generated)
@@ -53,11 +58,24 @@ from pathlib import Path
 
 _REPO_ROOT = Path(__file__).parent.parent
 _SCHEMAS_DIR = _REPO_ROOT / "docs" / "schemas"
-_LIVE_SCHEMA = _REPO_ROOT / "docs" / "DoclingDocument.json"
 
 
 def _ensure_schemas_dir() -> None:
     _SCHEMAS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _render_model_schema() -> str:
+    """Render the live models' JSON Schema, byte-identical to ``docs/DoclingDocument.json``.
+
+    Taken from the models rather than from the generated artefact, so the
+    snapshot is correct whatever state ``docs/DoclingDocument.json`` happens to
+    be in when this runs.  Uses the same code path and serialisation as
+    ``generate_docs`` so the two cannot drift.
+    """
+    from docling_core.utils.generate_jsonschema import generate_json_schema
+
+    schema = generate_json_schema("DoclingDocument")
+    return json.dumps(schema, ensure_ascii=False, indent=2)
 
 
 def _snapshot_path(minor: int) -> Path:
@@ -287,23 +305,23 @@ def main() -> int:
     # Additionally, a snapshot for CURRENT_MINOR must exist (used to validate
     # the output of any *future* projector that targets the current version).
     #
-    # Auto-generation strategy:
-    #   - The snapshot for CURRENT_MINOR is produced by copying the live
-    #     docs/DoclingDocument.json (which always = current schema).
-    #   - Snapshots for older target versions (FIRST_SUPPORTED_MINOR..
-    #     CURRENT_MINOR-1) cannot be auto-generated because their schemas
-    #     predate this system.  If missing, we copy the live schema as a
-    #     permissive bootstrap (the current schema is a superset of all older
-    #     schemas, so it will accept — but not strictly validate — old dicts).
-    #     A warning is printed so maintainers know these are bootstrap copies.
+    # Auto-generation strategy: every missing snapshot is written from
+    # _render_model_schema(), the live models' JSON Schema rendered in memory.
+    # The script never reads docs/DoclingDocument.json, so it works whatever
+    # state that artefact is in (stale, or not yet generated).
+    #   - For CURRENT_MINOR the render *is* the schema the file is named for.
+    #   - For older target versions (FIRST_SUPPORTED_MINOR..CURRENT_MINOR-1)
+    #     the exact schema predates this system and cannot be reconstructed.
+    #     The render serves as a permissive bootstrap: the current schema is a
+    #     superset of all older schemas, so it will accept — but not strictly
+    #     validate — old dicts.  A note is printed so maintainers know these
+    #     are bootstrap copies to replace if the exact schema is available.
     #
-    # Going forward, the correct flow is:
-    #   1. Before bumping CURRENT_VERSION from 1.N to 1.(N+1):
-    #      this script captures docs/DoclingDocument.json → DoclingDocument_1_N.json
-    #   2. The contributor bumps CURRENT_VERSION.
-    #   3. generate_docs regenerates docs/DoclingDocument.json for 1.(N+1).
-    #   4. This script captures it as DoclingDocument_1_{N+1}.json.
-    # This means each snapshot is the exact schema that clients at that version saw.
+    # Going forward, the flow is:
+    #   1. The contributor bumps CURRENT_VERSION from 1.N to 1.(N+1).
+    #   2. This script renders DoclingDocument_1_{N+1}.json from the models.
+    #   3. The `docs` hook regenerates docs/DoclingDocument.json afterwards.
+    # Each snapshot is therefore the exact schema that clients at that version saw.
 
     all_target_minors = {to_minor for _, to_minor in _projectors} | {_CURRENT_MINOR}
 
@@ -317,22 +335,18 @@ def main() -> int:
                 errors.append(f"Snapshot {snap.name} is not valid JSON: {exc}")
             continue
 
-        # Snapshot missing — attempt auto-generation.
-        if not _LIVE_SCHEMA.exists():
-            errors.append(
-                f"Snapshot docs/schemas/DoclingDocument_1_{minor}.json is missing and "
-                f"docs/DoclingDocument.json does not exist either — cannot auto-generate.\n"
-                f"  -> Run `uv run python -m docling_core.utils.generate_docs docs` first."
-            )
-            continue
-
-        snap.write_text(_LIVE_SCHEMA.read_text(), encoding="utf-8")
-
+        # Snapshot missing — render it from the live models.  Never copy
+        # docs/DoclingDocument.json: at this point in the hook order it still
+        # holds the *previous* schema, so a copy would silently snapshot the
+        # wrong version under the right name.
+        snap.write_text(_render_model_schema(), encoding="utf-8")
         if minor == _CURRENT_MINOR:
             generated.append(
                 f"  docs/schemas/DoclingDocument_1_{minor}.json  (snapshot of current schema {CURRENT_VERSION})"
             )
         else:
+            # Older target versions predate this system, so their exact schema
+            # cannot be reconstructed; the render is a permissive bootstrap.
             generated.append(
                 f"  docs/schemas/DoclingDocument_1_{minor}.json  "
                 f"[bootstrap copy of {CURRENT_VERSION} schema — "
@@ -340,9 +354,11 @@ def main() -> int:
             )
 
     # --- 9. Breaking schema diff against current snapshot --------------------
-    # Compare docs/DoclingDocument.json (live, regenerated each commit by the
-    # `docs` hook) against docs/schemas/DoclingDocument_1_{CURRENT_MINOR}.json
-    # (the snapshot taken at the last CURRENT_VERSION bump).
+    # Compare the live models' schema against
+    # docs/schemas/DoclingDocument_1_{CURRENT_MINOR}.json (the snapshot taken at
+    # the last CURRENT_VERSION bump).  Read from the models rather than from
+    # docs/DoclingDocument.json so the check does not depend on whether the
+    # `docs` hook has regenerated that artefact yet.
     #
     # If the live schema has breaking changes relative to the snapshot AND
     # CURRENT_VERSION has not been bumped, the contributor forgot to announce
@@ -352,15 +368,15 @@ def main() -> int:
     # auto-generated in step 8 above and reflects the new schema), this diff
     # will be empty — the snapshot IS the current schema.
     current_snap = _snapshot_path(_CURRENT_MINOR)
-    if _LIVE_SCHEMA.exists() and current_snap.exists():
+    if current_snap.exists():
         try:
-            live_schema = json.loads(_LIVE_SCHEMA.read_text())
+            live_schema = json.loads(_render_model_schema())
             snap_schema = json.loads(current_snap.read_text())
             breaking = _breaking_changes(old=snap_schema, new=live_schema)
             if breaking:
                 msg = (
                     f"Breaking schema change(s) detected without a CURRENT_VERSION bump.\n"
-                    f"  docs/DoclingDocument.json differs from "
+                    f"  The live models differ from "
                     f"docs/schemas/DoclingDocument_1_{_CURRENT_MINOR}.json "
                     f"in {len(breaking)} breaking way(s):\n\n"
                 )

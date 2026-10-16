@@ -98,18 +98,15 @@ class TableItem(FloatingItem):
 
         grid = self.data.grid
 
-        # Count how many rows are column headers
-        num_headers = 0
-        for row_idx, row in enumerate(grid):
-            if len(row) == 0:
-                raise RuntimeError(f"Invalid table. {len(row)=} but {self.data.num_cols=}.")
+        num_headers = self.data._count_column_header_rows(grid=grid)
 
-            any_header = any(cell.column_header and cell.start_row_offset_idx == row_idx for cell in row)
+        texts: dict[tuple[int, int], str] = {}
 
-            if any_header:
-                num_headers += 1
-            else:
-                break
+        def text_of(cell: TableCell) -> str:
+            key = (cell.start_row_offset_idx, cell.start_col_offset_idx)
+            if key not in texts:
+                texts[key] = cell._get_text(doc=doc, **kwargs)
+            return texts[key]
 
         # Create the column names from all col_headers
         columns: list[str] | None = None
@@ -117,13 +114,13 @@ class TableItem(FloatingItem):
             columns = ["" for _ in range(self.data.num_cols)]
             for i in range(num_headers):
                 for j, cell in enumerate(grid[i]):
-                    col_name = cell._get_text(doc=doc, **kwargs)
+                    col_name = text_of(cell)
                     if columns[j] != "":
                         col_name = f".{col_name}"
                     columns[j] += col_name
 
         # Create table data
-        table_data = [[cell._get_text(doc=doc, **kwargs) for cell in row] for row in grid[num_headers:]]
+        table_data = [[text_of(cell) for cell in row] for row in grid[num_headers:]]
 
         # Create DataFrame
         table = pd.DataFrame(table_data, columns=columns)

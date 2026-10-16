@@ -98,11 +98,11 @@ from docling_core.utils.settings import settings
 
 __all__ = ["DocLangDocDeserializer", "DocLangSourceMap", "DocLangSourceTarget"]
 
-# Labels whose text-like tag must keep its label when its content is mixed (text + formatting runs).
-# TEXT is absent on purpose: a bare InlineGroup is serialized as ``<text>``, so it maps back to one.
+# Mixed-content hosts preserve their semantic label or, for TEXT, their provenance.
+# A bare InlineGroup already serializes as <text>, so TEXT needs a host only when located.
 # FORMULA is absent because a formula cannot hold prose runs.
 _INLINE_HOST_LABELS: frozenset[DocItemLabel] = frozenset(
-    {DocItemLabel.FOOTNOTE, DocItemLabel.PAGE_HEADER, DocItemLabel.PAGE_FOOTER}
+    {DocItemLabel.TEXT, DocItemLabel.CAPTION, DocItemLabel.FOOTNOTE, DocItemLabel.PAGE_HEADER, DocItemLabel.PAGE_FOOTER}
 )
 
 # Formatting tags that can themselves hold mixed content, e.g. <bold>a <italic>b</italic></bold>.
@@ -1554,14 +1554,15 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
 
     def _parse_mixed_text_like(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         """Parse a text-like element with mixed content (text + formatting runs)."""
-        node: NodeItem
-        if el.tagName in _INLINE_HOST_LABELS:
-            node = self._parse_inline_host(doc=doc, el=el, parent=parent, label=DocItemLabel(el.tagName))
-        else:
-            # If the mixed-content element is itself a formatting tag (e.g. <bold> with a
-            # leading text run before a nested <italic>), its own style must not be dropped.
-            formatting = self._merge_formatting_tag(el.tagName, None) if el.tagName in _FORMATTING_TAG_VALUES else None
-            node = self._parse_inline_group(doc=doc, el=el, parent=parent, formatting=formatting)
+        if el.tagName in _INLINE_HOST_LABELS and (
+            el.tagName != DocLangToken.TEXT.value or self._extract_provenance(doc=doc, el=el)
+        ):
+            self._parse_inline_host(doc=doc, el=el, parent=parent, label=DocItemLabel(el.tagName))
+            return
+        # If the mixed-content element is itself a formatting tag (e.g. <bold> with a
+        # leading text run before a nested <italic>), its own style must not be dropped.
+        formatting = self._merge_formatting_tag(el.tagName, None) if el.tagName in _FORMATTING_TAG_VALUES else None
+        node = self._parse_inline_group(doc=doc, el=el, parent=parent, formatting=formatting)
         if (content_layer := self._extract_layer(el=el)) is not None:
             # Runs carry no layer of their own; without this, furniture runs would leak into the body.
             for it, _ in doc.iterate_items(root=node, with_groups=True, included_content_layers=set(ContentLayer)):
@@ -1592,6 +1593,10 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         self._apply_initial_text_provenance(item, text="", prov_list=prov_list)
         _, body_nodes = self._split_element_children_head_body(el)
         self._parse_inline_group(doc=doc, el=el, parent=item, nodes=body_nodes)
+        if content_layer is not None:
+            # Inline runs inherit the host layer, including captions parsed directly.
+            for node, _ in doc.iterate_items(root=item, with_groups=True, included_content_layers=set(ContentLayer)):
+                node.content_layer = content_layer
         self._apply_custom_meta_from_element(item=item, el=el)
         self._source_recorder.bind_item(el, item)
         return item
@@ -1916,11 +1921,14 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         text = self._get_text(cap_el).strip()
         if not text:
             return None
+        if self._get_children_simple_text_block(cap_el) is None:
+            return self._parse_inline_host(doc=doc, el=cap_el, parent=None, label=DocItemLabel.CAPTION)
         prov_list = self._extract_provenance(doc=doc, el=cap_el)
         item = doc.add_text(
             label=DocItemLabel.CAPTION,
             text=text,
             prov=(prov_list[0] if prov_list else None),
+            content_layer=self._extract_layer(el=cap_el),
         )
         for p in prov_list[1:]:
             item.prov.append(p)

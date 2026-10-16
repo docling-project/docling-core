@@ -1,3 +1,16 @@
+## [v2.101.1](https://github.com/docling-project/docling-core/releases/tag/v2.101.1) - 2026-10-08
+
+### Fix
+
+* **file:** Validate all resolved addresses and pin connections to them ([#846](https://github.com/docling-project/docling-core/issues/846)) ([`31c4262`](https://github.com/docling-project/docling-core/commit/31c426227c9a3c7d96abe2bb86c522f595590ce8))
+
+## [v2.101.0](https://github.com/docling-project/docling-core/releases/tag/v2.101.0) - 2026-10-08
+
+### Feature
+
+* **doclang:** Add xsize/ysize to DocLang export and save methods ([#848](https://github.com/docling-project/docling-core/issues/848)) ([`ed26b0a`](https://github.com/docling-project/docling-core/commit/ed26b0a9d3a3c494bfa89ddec6d2ede1f60307a8))
+* **doclang:** Support nested custom field values ([#847](https://github.com/docling-project/docling-core/issues/847)) ([`2afbea5`](https://github.com/docling-project/docling-core/commit/2afbea50cf13a8ab12aec1afe844991882b12054))
+
 ## [v2.100.0](https://github.com/docling-project/docling-core/releases/tag/v2.100.0) - 2026-10-06
 
 ### Feature

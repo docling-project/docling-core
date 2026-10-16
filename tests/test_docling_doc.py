@@ -406,14 +406,23 @@ def test_docitems():
         return yaml.safe_load(gold)
 
     def verify(dc, obj):
-        pred = serialise(obj).strip()
+        pred_text = serialise(obj).strip()
+        pred = yaml.safe_load(pred_text)
 
-        if dc is KeyValueItem or dc is FormItem:
-            write(dc.__name__, pred)
+        if GEN_TEST_DATA:
+            # Rewrite only when the content genuinely differs.  `safe_dump`
+            # sorts keys while the committed fixtures preserve insertion
+            # order, so writing unconditionally would reorder every file
+            # without changing what any of them mean.
+            try:
+                outdated = read(dc.__name__) != pred
+            except (FileNotFoundError, yaml.YAMLError):
+                # Missing or unparseable: regenerating is the whole point of
+                # the flag, so do not let a corrupt fixture block it.
+                outdated = True
+            if outdated:
+                write(dc.__name__, pred_text)
 
-        pred = yaml.safe_load(pred)
-
-        # print(f"\t{dc.__name__}:\n {pred}")
         gold = read(dc.__name__)
 
         assert pred == gold, f"pred!=gold for {dc.__name__}"
@@ -1853,6 +1862,20 @@ def test_validate_rules_key_value_and_form_items():
     doc._validate_rules()
 
 
+def test_field_item_with_several_keys_is_invalid():
+    doc = DoclingDocument(name="")
+    region = doc.add_field_region()
+    item = doc.add_field_item(parent=region)
+    doc.add_field_key(text="a", parent=item)
+    doc.add_field_value(text="b", parent=item)
+    doc.add_field_value(text="c", parent=item)  # several values are fine
+    DoclingDocument.model_validate(doc.model_dump(mode="json"))
+
+    doc.add_field_key(text="d", parent=item)  # building through the API does not validate
+    with pytest.raises(ValueError, match="Field item #/field_items/0 has 2 keys, at most one is allowed"):
+        DoclingDocument.model_validate(doc.model_dump(mode="json"))
+
+
 def test_graph_cell_item_refs_follow_renumbering():
     def build() -> tuple[DoclingDocument, KeyValueItem]:
         doc = DoclingDocument(name="")
@@ -2206,43 +2229,6 @@ def test_export_markdown_compact_tables():
 
     # Verify compact is shorter
     assert len(md_compact) < len(md_padded)
-
-
-def test_export_dataframe_with_row_spanning_column_header():
-    def cell(
-        text: str,
-        row: int,
-        column: int,
-        row_span: int = 1,
-        column_header: bool = False,
-    ) -> TableCell:
-        return TableCell(
-            text=text,
-            start_row_offset_idx=row,
-            end_row_offset_idx=row + row_span,
-            start_col_offset_idx=column,
-            end_col_offset_idx=column + 1,
-            row_span=row_span,
-            column_header=column_header,
-        )
-
-    doc = DoclingDocument(name="test")
-    table = doc.add_table(
-        data=TableData(
-            num_rows=2,
-            num_cols=2,
-            table_cells=[
-                cell("Name", 0, 0, column_header=True),
-                cell("", 0, 1, row_span=2, column_header=True),
-                cell("Alpha", 1, 0),
-            ],
-        )
-    )
-
-    dataframe = table.export_to_dataframe(doc)
-
-    assert list(dataframe.columns) == ["Name", ""]
-    assert dataframe.values.tolist() == [["Alpha", ""]]
 
 
 def test_export_traverse_pictures_ocr_scanned_pdf():

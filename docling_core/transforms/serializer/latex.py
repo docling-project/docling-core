@@ -1,10 +1,10 @@
 """Define classes for LaTeX serialization."""
 
 import re
-from pathlib import Path, PurePath
-from typing import Any, Optional, Union
+from pathlib import PurePath
+from typing import Annotated, Any
 
-from pydantic import AnyUrl, BaseModel
+from pydantic import AnyUrl, BaseModel, Field
 from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
@@ -15,6 +15,7 @@ from docling_core.transforms.serializer.base import (
     BaseInlineSerializer,
     BaseKeyValueSerializer,
     BaseListSerializer,
+    BaseMetaSerializer,
     BasePictureSerializer,
     BaseTableSerializer,
     BaseTextSerializer,
@@ -24,16 +25,21 @@ from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
     _get_annotation_text,
+    _should_use_legacy_annotations,
     create_ser_result,
     hyperlink_uri,
 )
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
+    BaseMeta,
     CodeItem,
+    CodeMetaField,
     ContentLayer,
     DescriptionAnnotation,
+    DescriptionMetaField,
     DocItem,
     DoclingDocument,
+    EntitiesMetaField,
     FloatingItem,
     Formatting,
     FormItem,
@@ -42,18 +48,25 @@ from docling_core.types.doc.document import (
     ImageRef,
     InlineGroup,
     KeyValueItem,
+    KeywordsMetaField,
+    LanguageMetaField,
     ListGroup,
     ListItem,
+    MoleculeMetaField,
     NodeItem,
     PictureClassificationData,
+    PictureClassificationMetaField,
     PictureItem,
     PictureMoleculeData,
     PictureTabularChartData,
     RichTableCell,
     SectionHeaderItem,
+    SummaryMetaField,
     TableItem,
+    TabularChartMetaField,
     TextItem,
     TitleItem,
+    TopicsMetaField,
 )
 
 
@@ -63,26 +76,60 @@ class LaTeXParams(CommonParams):
     layers: set[ContentLayer] = {ContentLayer.BODY}
 
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
-    image_placeholder: str = "% image"
 
-    enable_chart_tables: bool = True
-    include_annotations: bool = True
+    image_placeholder: Annotated[
+        str,
+        Field(description="LaTeX snippet emitted in place of an image when image_mode is PLACEHOLDER."),
+    ] = "% image"
 
-    indent: int = 2  # spaces for nested lists
+    enable_chart_tables: Annotated[
+        bool,
+        Field(description="Render tabular-chart data as a LaTeX table after the enclosing figure environment."),
+    ] = True
 
-    # If not None, emitted where page breaks occur (e.g., "\\newpage")
-    page_break_command: str | None = None
+    include_annotations: Annotated[
+        bool,
+        Field(
+            description="Include legacy annotations. Has no effect on meta-based output.",
+            deprecated="Setting this to False only suppresses legacy `annotations`; use `blocked_meta_names` to suppress specific meta fields.",
+        ),
+    ] = True
 
-    # Escape LaTeX special characters in text
-    escape_latex: bool = True
+    indent: Annotated[
+        int,
+        Field(description="Number of spaces used to indent each level of nested list environments."),
+    ] = 2
 
-    # Optional LaTeX preamble configuration
-    # When provided, emitted before the document environment
-    # Example: "\\documentclass[11pt,a4paper]{article}"
-    document_class: str = r"\documentclass[11pt,a4paper]{article}"
-    # List of packages to include. Accepts either full lines
-    # like "\\usepackage{graphicx}" or bare package names like "graphicx".
-    packages: list[str] = [
+    page_break_command: Annotated[
+        str | None,
+        Field(
+            description="LaTeX command emitted at every page break. Set to None to omit page breaks.",
+            examples=[r"\newpage", r"\clearpage"],
+        ),
+    ] = None
+
+    escape_latex: Annotated[
+        bool,
+        Field(description="Escape LaTeX special characters (e.g. `_`, `%`, `&`) in text content."),
+    ] = True
+
+    document_class: Annotated[
+        str,
+        Field(
+            description="LaTeX document-class declaration emitted at the top of the preamble.",
+            examples=[r"\documentclass[11pt,a4paper]{article}", r"\documentclass{beamer}"],
+        ),
+    ] = r"\documentclass[11pt,a4paper]{article}"
+
+    packages: Annotated[
+        list[str],
+        Field(
+            description=(
+                "LaTeX packages to include in the preamble. "
+                "Each entry may be a full `\\usepackage{…}` line or a bare package name."
+            ),
+        ),
+    ] = [
         r"\usepackage[utf8]{inputenc} % allow utf-8 input",
         r"\usepackage[T1]{fontenc}    % use 8-bit T1 fonts",
         r"\usepackage{hyperref}       % hyperlinks",
@@ -238,9 +285,92 @@ class LaTeXTextSerializer(BaseModel, BaseTextSerializer):
         return create_ser_result(text=joined, span_source=parts)
 
 
+# Fields serialized first, in the order used by the legacy annotation serializer.
+_LEGACY_META_ORDER: tuple[str, ...] = ("classification", "description", "molecule")
+
+
+def _to_latex_comment(kind: str, text: str) -> str:
+    """Render text as a ``% annotation[kind]: …`` LaTeX comment block.
+
+    Every line of a multi-line value is prefixed with ``%``.
+
+    Args:
+        kind: The annotation kind label used in the comment tag.
+        text: The annotation text to render.
+
+    Returns:
+        The formatted comment string, or an empty string if ``text`` is empty
+        or contains only whitespace.
+    """
+    if not text.strip():
+        return ""
+    first, *rest = text.splitlines()
+    return "\n".join([f"% annotation[{kind}]: {first}", *(f"% {ln}" for ln in rest)])
+
+
+class LaTeXMetaSerializer(BaseModel, BaseMetaSerializer):
+    """LaTeX-specific meta serializer."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: NodeItem,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's meta as LaTeX comments."""
+        params = LaTeXParams(**kwargs)
+        span_source: DocItem | list[SerializationResult] = item if isinstance(item, DocItem) else []
+        if not item.meta:
+            return create_ser_result()
+
+        keys = [*item.meta.__class__.model_fields, *item.meta.get_custom_part()]
+        keys.sort(key=lambda k: _LEGACY_META_ORDER.index(k) if k in _LEGACY_META_ORDER else len(_LEGACY_META_ORDER))
+        comments = [
+            tmp
+            for key in keys
+            if (
+                (params.allowed_meta_names is None or key in params.allowed_meta_names)
+                and (key not in params.blocked_meta_names)
+                and (tmp := self._serialize_meta_field(item.meta, key))
+            )
+        ]
+        return create_ser_result(text="\n".join(comments), span_source=span_source)
+
+    @staticmethod
+    def _serialize_meta_field(meta: BaseMeta, name: str) -> str | None:
+        if (field_val := getattr(meta, name)) is None:
+            return None
+
+        kind = name
+        if isinstance(field_val, SummaryMetaField | DescriptionMetaField):
+            txt = field_val.text
+        elif isinstance(field_val, LanguageMetaField):
+            txt = field_val.code.value
+        elif isinstance(field_val, EntitiesMetaField):
+            txt = ", ".join(f"{m.text} ({m.label})" if m.label is not None else m.text for m in field_val.mentions)
+        elif isinstance(field_val, KeywordsMetaField | TopicsMetaField):
+            txt = ", ".join(field_val.values)
+        elif isinstance(field_val, PictureClassificationMetaField):
+            txt = field_val.get_main_prediction().class_name.replace("_", " ")
+        elif isinstance(field_val, MoleculeMetaField):
+            kind = "molecule_data"  # same kind as the legacy PictureMoleculeData annotation
+            txt = field_val.smi
+        elif isinstance(field_val, CodeMetaField):
+            txt = field_val.text
+        elif isinstance(field_val, TabularChartMetaField):
+            return None  # rendered as a table by LaTeXPictureSerializer
+        else:
+            txt = str(field_val or "")
+
+        return _to_latex_comment(kind, txt) or None
+
+
 class LaTeXAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
     """LaTeX-specific annotation serializer."""
 
+    @override
     def serialize(
         self,
         *,
@@ -249,31 +379,17 @@ class LaTeXAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize supported annotations of ``item`` as LaTeX comments."""
-        params = LaTeXParams(**kwargs)
-        res_parts: list[SerializationResult] = []
-        if not params.include_annotations:
-            return create_ser_result()
+        res_text: list[str] = []
         for ann in item.get_annotations():
             if isinstance(
                 ann,
                 PictureClassificationData | DescriptionAnnotation | PictureMoleculeData,
             ):
                 if ann_text := _get_annotation_text(ann):
-                    # Ensure each line of the annotation is prefixed with '%'
-                    lines = ann_text.splitlines() or [ann_text]
-                    if len(lines) <= 1:
-                        comment_text = f"% annotation[{ann.kind}]: {ann_text}"
-                    else:
-                        prefixed_lines = [f"% annotation[{ann.kind}]: {lines[0]}"] + [f"% {ln}" for ln in lines[1:]]
-                        comment_text = "\n".join(prefixed_lines)
-                    res_parts.append(
-                        create_ser_result(
-                            text=comment_text,
-                            span_source=item,
-                        )
-                    )
+                    if txt := _to_latex_comment(ann.kind, ann_text):
+                        res_text.append(txt)
         return create_ser_result(
-            text="\n".join([r.text for r in res_parts if r.text]),
+            text="\n".join(res_text),
             span_source=item,
         )
 
@@ -297,15 +413,23 @@ class LaTeXTableSerializer(BaseTableSerializer):
         # Build table body
         body_rows: list[list[str]] = []
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-            if params.include_annotations:
+            if item.meta:
+                meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
+                if meta_res.text:
+                    res_parts.append(meta_res)
+            elif _should_use_legacy_annotations(params=params, item=item):
                 ann_res = doc_serializer.serialize_annotations(item=item, **kwargs)
                 if ann_res.text:
                     res_parts.append(ann_res)
+            rich_texts: dict[tuple[int, int], str] = {}
             for row in item.data.grid:
                 body_row: list[str] = []
                 for cell in row:
                     if isinstance(cell, RichTableCell):
-                        cell_text = doc_serializer.serialize(item=cell.ref.resolve(doc=doc), **kwargs).text
+                        key = (cell.start_row_offset_idx, cell.start_col_offset_idx)
+                        if key not in rich_texts:
+                            rich_texts[key] = doc_serializer.serialize(item=cell.ref.resolve(doc=doc), **kwargs).text
+                        cell_text = rich_texts[key]
                     else:
                         cell_text = _escape_latex(cell.text) if params.escape_latex else cell.text
                     body_row.append(cell_text.replace("\n", " "))
@@ -381,8 +505,12 @@ class LaTeXPictureSerializer(BasePictureSerializer):
             if cap_res.text:
                 fig_lines.append(f"\\caption{{{cap_res.text}}}")
 
-            # Optional annotations
-            if params.include_annotations:
+            # Meta and legacy annotations
+            if item.meta:
+                meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
+                if meta_res.text:
+                    fig_lines.append(meta_res.text)
+            elif _should_use_legacy_annotations(params=params, item=item):
                 ann_res = doc_serializer.serialize_annotations(item=item, **kwargs)
                 if ann_res.text:
                     fig_lines.append(ann_res.text)
@@ -392,10 +520,25 @@ class LaTeXPictureSerializer(BasePictureSerializer):
 
         # Optional chart data as a simple table after the figure
         if params.enable_chart_tables:
-            tabular_chart_annotations = [ann for ann in item.annotations if isinstance(ann, PictureTabularChartData)]
-            if tabular_chart_annotations:
+            chart_data = None
+            if item.meta and item.meta.tabular_chart:
+                chart_data = item.meta.tabular_chart.chart_data
+            elif _should_use_legacy_annotations(
+                params=params,
+                item=item,
+                kind=PictureTabularChartData.model_fields["kind"].default,
+            ):
+                # Use __dict__ to avoid re-triggering the deprecated-field warning;
+                # _should_use_legacy_annotations already emitted it above.
+                tabular_chart_annotations = [
+                    ann for ann in item.__dict__.get("annotations", []) if isinstance(ann, PictureTabularChartData)
+                ]
+                if tabular_chart_annotations:
+                    chart_data = tabular_chart_annotations[0].chart_data
+
+            if chart_data is not None:
                 temp_doc = DoclingDocument(name="temp")
-                temp_table = temp_doc.add_table(data=tabular_chart_annotations[0].chart_data)
+                temp_table = temp_doc.add_table(data=chart_data)
                 latex_table_content = LaTeXDocSerializer(doc=temp_doc).serialize(item=temp_table).text
                 if latex_table_content:
                     res_parts.append(
@@ -568,9 +711,82 @@ class LaTeXDocSerializer(DocSerializer):
     list_serializer: BaseListSerializer = LaTeXListSerializer()
     inline_serializer: BaseInlineSerializer = LaTeXInlineSerializer()
 
+    meta_serializer: BaseMetaSerializer = LaTeXMetaSerializer()
     annotation_serializer: BaseAnnotationSerializer = LaTeXAnnotationSerializer()
 
     params: LaTeXParams = LaTeXParams()
+
+    @override
+    def _item_wraps_meta(self, item: NodeItem) -> bool:
+        """PictureItem and TableItem meta is wrapped inside the figure / table environment."""
+        return isinstance(item, (PictureItem, TableItem))
+
+    # `is_inline_scope` never reaches `serialize_meta` via **kwargs (it is a named param).
+    # This flag bridges the gap: set by `serialize()` on scope entry, read by `serialize_meta()`
+    # to suppress comment blocks mid-sentence.  The guard in `serialize()` prevents re-setting
+    # on recursive calls within the same scope.
+    _in_inline_scope: bool = False
+
+    @override
+    def serialize_meta(self, item: NodeItem, **kwargs: Any) -> SerializationResult:
+        """Suppress meta emission when inside an inline scope.
+
+        Items serialized inside an ``InlineGroup`` must not emit meta comment blocks,
+        because LaTeX comments break mid-sentence content.
+        """
+        if self._in_inline_scope and item is not self.doc.body:
+            return create_ser_result()
+        return super().serialize_meta(item=item, **kwargs)
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: NodeItem | None = None,
+        list_level: int = 0,
+        is_inline_scope: bool = False,
+        visited: set[str] | None = None,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize a node, handling the LaTeX-specific body meta placement rule.
+
+        ``doc.body.meta`` must appear inside the ``\\begin{document}``…``\\end{document}``
+        environment, so the body branch is handled directly here.
+
+        All other nodes follow the base-class implementation unchanged.
+        """
+        my_item = item or self.doc.body
+
+        if my_item is not self.doc.body or my_item.meta is None:
+            if is_inline_scope and not self._in_inline_scope:
+                self._in_inline_scope = True
+                try:
+                    return super().serialize(
+                        item=item,
+                        list_level=list_level,
+                        is_inline_scope=is_inline_scope,
+                        visited=visited,
+                        **kwargs,
+                    )
+                finally:
+                    self._in_inline_scope = False
+            return super().serialize(
+                item=item,
+                list_level=list_level,
+                is_inline_scope=is_inline_scope,
+                visited=visited,
+                **kwargs,
+            )
+
+        my_kwargs = {**self.params.model_dump(), **kwargs}
+        my_visited: set[str] = visited if visited is not None else set()
+        my_visited.add(my_item.self_ref)
+
+        body_parts = self.get_parts(visited=my_visited, **my_kwargs)
+        meta_res = self.serialize_meta(item=my_item, **my_kwargs)
+        if meta_res.text:
+            body_parts.append(meta_res)
+        return self.serialize_doc(parts=body_parts, **my_kwargs)
 
     @override
     def serialize_bold(self, text: str, **kwargs: Any) -> str:

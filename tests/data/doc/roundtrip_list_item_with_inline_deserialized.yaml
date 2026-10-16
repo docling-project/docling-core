@@ -32,7 +32,7 @@ groups:
   - $ref: '#/texts/10'
   - $ref: '#/texts/14'
   - $ref: '#/texts/17'
-  - $ref: '#/texts/23'
+  - $ref: '#/texts/24'
   content_layer: body
   label: list
   name: group
@@ -69,18 +69,18 @@ groups:
     $ref: '#/texts/14'
   self_ref: '#/groups/4'
 - children:
-  - $ref: '#/texts/18'
   - $ref: '#/texts/19'
   - $ref: '#/texts/20'
+  - $ref: '#/texts/21'
   content_layer: body
   label: inline
   name: group
   parent:
-    $ref: '#/texts/17'
+    $ref: '#/texts/18'
   self_ref: '#/groups/5'
 - children:
-  - $ref: '#/texts/21'
   - $ref: '#/texts/22'
+  - $ref: '#/texts/23'
   content_layer: body
   label: list
   name: group
@@ -280,7 +280,7 @@ texts:
   self_ref: '#/texts/16'
   text: sublist item 2
 - children:
-  - $ref: '#/groups/5'
+  - $ref: '#/texts/18'
   - $ref: '#/groups/6'
   content_layer: body
   enumerated: false
@@ -292,6 +292,26 @@ texts:
   prov: []
   self_ref: '#/texts/17'
   text: ''
+- children:
+  - $ref: '#/groups/5'
+  content_layer: body
+  label: text
+  orig: ''
+  parent:
+    $ref: '#/texts/17'
+  prov:
+  - bbox:
+      b: 502.0
+      coord_origin: TOPLEFT
+      l: 5.0
+      r: 15.0
+      t: 492.0
+    charspan:
+    - 0
+    - 0
+    page_no: 1
+  self_ref: '#/texts/18'
+  text: ''
 - children: []
   content_layer: body
   label: text
@@ -299,7 +319,7 @@ texts:
   parent:
     $ref: '#/groups/5'
   prov: []
-  self_ref: '#/texts/18'
+  self_ref: '#/texts/19'
   text: 'Here a '
 - children: []
   content_layer: body
@@ -314,7 +334,7 @@ texts:
   parent:
     $ref: '#/groups/5'
   prov: []
-  self_ref: '#/texts/19'
+  self_ref: '#/texts/20'
   text: both bold and italicized
 - children: []
   content_layer: body
@@ -323,7 +343,7 @@ texts:
   parent:
     $ref: '#/groups/5'
   prov: []
-  self_ref: '#/texts/20'
+  self_ref: '#/texts/21'
   text: ' text and a sublist:'
 - children: []
   content_layer: body
@@ -334,7 +354,7 @@ texts:
   parent:
     $ref: '#/groups/6'
   prov: []
-  self_ref: '#/texts/21'
+  self_ref: '#/texts/22'
   text: sublist item a
 - children: []
   content_layer: body
@@ -345,7 +365,7 @@ texts:
   parent:
     $ref: '#/groups/6'
   prov: []
-  self_ref: '#/texts/22'
+  self_ref: '#/texts/23'
   text: sublist item b
 - children: []
   content_layer: body
@@ -356,6 +376,6 @@ texts:
   parent:
     $ref: '#/groups/1'
   prov: []
-  self_ref: '#/texts/23'
+  self_ref: '#/texts/24'
   text: final element
 version: 1.10.0

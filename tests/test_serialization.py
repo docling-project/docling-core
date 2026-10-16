@@ -9,6 +9,7 @@ from xml.etree import ElementTree as ET
 import pytest
 from pydantic import AnyUrl
 
+from docling_core.transforms.chunker.hierarchical_chunker import TripletTableSerializer
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
@@ -567,106 +568,145 @@ def test_md_table_stacked_header_drops_repeated_span_text():
     assert actual.splitlines()[0] == "| human   |   MRCNN - R50 |"
 
 
-def test_md_table_keeps_rows_under_a_vertically_spanning_header():
-    """A row-spanning header is repeated into each row it covers by `grid`.
+def _cell(text: str, row: int, col: int, *, row_span: int = 1, column_header: bool = False) -> TableCell:
+    return TableCell(
+        text=text,
+        start_row_offset_idx=row,
+        end_row_offset_idx=row + row_span,
+        start_col_offset_idx=col,
+        end_col_offset_idx=col + 1,
+        row_span=row_span,
+        column_header=column_header,
+    )
 
-    Only rows a header starts on are header rows, otherwise the data rows under
-    the span get flattened into the header and disappear from the body.
-    """
+
+@pytest.mark.parametrize(
+    ("num_rows", "num_cols", "cells", "md_table", "df_columns", "df_values"),
+    [
+        # "10.00" sits in the leading column, where unflagged text does not end the
+        # header block, so only the "header starts on this row" rule keeps row 1 out.
+        pytest.param(
+            2,
+            2,
+            [
+                _cell("Price", 0, 0, column_header=True),
+                _cell("Category", 0, 1, row_span=2, column_header=True),
+                _cell("10.00", 1, 0),
+            ],
+            "| Price | Category |\n| - | - |\n| 10.00 | Category |",
+            ["Price", "Category"],
+            [["10.00", "Category"]],
+            id="rows-under-row-spanning-header-stay-in-body",
+        ),
+        # "2025" is deliberately flagged as column_header, as the HTML backend did
+        # before docling-project/docling#4216, to model documents serialized then.
+        pytest.param(
+            3,
+            3,
+            [
+                _cell("Year", 0, 0, column_header=True),
+                _cell("Month", 0, 1, column_header=True),
+                _cell("Revenue", 0, 2, column_header=True),
+                _cell("2025", 1, 0, row_span=2, column_header=True),
+                _cell("January", 1, 1),
+                _cell("$134", 1, 2),
+                _cell("February", 2, 1),
+                _cell("$150", 2, 2),
+            ],
+            "| Year | Month | Revenue |\n| - | - | - |\n| 2025 | January | $134 |\n| 2025 | February | $150 |",
+            ["Year", "Month", "Revenue"],
+            [["2025", "January", "$134"], ["2025", "February", "$150"]],
+            id="row-header-flagged-as-column-header-stays-in-body",
+        ),
+        pytest.param(
+            3,
+            3,
+            [
+                _cell("", 0, 0, column_header=True),
+                _cell("% of Total", 0, 1, column_header=True),
+                _cell("% of Total", 0, 2, column_header=True),
+                _cell("class label", 1, 0),
+                _cell("Train", 1, 1, column_header=True),
+                _cell("Test", 1, 2, column_header=True),
+                _cell("Caption", 2, 0),
+                _cell("2.5", 2, 1),
+                _cell("2.4", 2, 2),
+            ],
+            "| class label | % of Total - Train | % of Total - Test |\n| - | - | - |\n| Caption | 2.5 | 2.4 |",
+            ["class label", "% of Total.Train", "% of Total.Test"],
+            [["Caption", "2.5", "2.4"]],
+            id="stacked-header-with-unmarked-row-label",
+        ),
+        pytest.param(
+            2,
+            2,
+            [
+                _cell("Name", 0, 0, column_header=True),
+                _cell("Value", 0, 1),
+                _cell("A", 1, 0),
+                _cell("1", 1, 1),
+            ],
+            "| Name | Value |\n| - | - |\n| A | 1 |",
+            ["Name", "Value"],
+            [["A", "1"]],
+            id="partially-flagged-first-row-stays-header",
+        ),
+        # Without any column_header flag, markdown promotes row 0 to the header since
+        # GFM requires one, while the dataframe keeps every row as data with default
+        # integer column names.
+        pytest.param(
+            2,
+            2,
+            [
+                _cell("Name", 0, 0),
+                _cell("Value", 0, 1),
+                _cell("A", 1, 0),
+                _cell("1", 1, 1),
+            ],
+            "| Name | Value |\n| - | - |\n| A | 1 |",
+            [0, 1],
+            [["Name", "Value"], ["A", "1"]],
+            id="no-flags-markdown-promotes-row-0-dataframe-does-not",
+        ),
+        # Row headers flagged as column_header in every row, with no header row, as
+        # the HTML backend produced before docling-project/docling#4216 for a body
+        # `<th>`. The leading-column flag on row 1 shows that row 0 holds a row
+        # header too, so row 0 is subject to the body-text check and no row is
+        # promoted: markdown keeps an empty header and the dataframe keeps every row.
+        pytest.param(
+            2,
+            2,
+            [
+                _cell("2025", 0, 0, column_header=True),
+                _cell("$134", 0, 1),
+                _cell("2026", 1, 0, column_header=True),
+                _cell("$150", 1, 1),
+            ],
+            "|  |  |\n| - | - |\n| 2025 | $134 |\n| 2026 | $150 |",
+            [0, 1],
+            [["2025", "$134"], ["2026", "$150"]],
+            id="row-headers-only-flagged-as-column-header-stay-in-body",
+        ),
+    ],
+)
+def test_table_header_rows_in_markdown_and_dataframe(
+    num_rows: int,
+    num_cols: int,
+    cells: list[TableCell],
+    md_table: str,
+    df_columns: list[str | int],
+    df_values: list[list[str]],
+):
+    """Markdown and dataframe exports agree on which leading rows form the column header."""
     doc = DoclingDocument(name="")
-    table = doc.add_table(data=TableData(num_rows=2, num_cols=2))
-    for cell in (
-        TableCell(
-            text="Category",
-            start_row_offset_idx=0,
-            end_row_offset_idx=2,
-            start_col_offset_idx=0,
-            end_col_offset_idx=1,
-            row_span=2,
-            column_header=True,
-        ),
-        TableCell(
-            text="Price",
-            start_row_offset_idx=0,
-            end_row_offset_idx=1,
-            start_col_offset_idx=1,
-            end_col_offset_idx=2,
-            column_header=True,
-        ),
-        TableCell(
-            text="10.00",
-            start_row_offset_idx=1,
-            end_row_offset_idx=2,
-            start_col_offset_idx=1,
-            end_col_offset_idx=2,
-        ),
-    ):
-        doc.add_table_cell(table_item=table, cell=cell)
+    table = doc.add_table(data=TableData(num_rows=num_rows, num_cols=num_cols, table_cells=cells))
 
-    actual = MarkdownDocSerializer(doc=doc).serialize().text
-    assert actual == ("| Category   |   Price |\n|------------|---------|\n| Category   |   10.00 |")
+    md_ser = MarkdownDocSerializer(doc=doc, params=MarkdownParams(compact_tables=True))
+    assert md_ser.serialize().text == md_table
 
-
-def test_md_table_row_header_above_the_body_is_not_promoted():
-    """A row header that starts on the first body row must stay in the body.
-
-    The ``"2025"`` cell below is intentionally mis-flagged with
-    ``column_header=True`` rather than ``row_header=True``. That reproduces the
-    erroneous output of the HTML backend prior to
-    ``docling-project/docling#4216``, and models documents already serialized
-    with those old flags. It is not a canonical model of a pivot table; this
-    test only verifies the defensive guard in the markdown serializer.
-    """
-    doc = DoclingDocument(name="")
-    table = doc.add_table(data=TableData(num_rows=3, num_cols=2))
-    for cell in (
-        TableCell(
-            text="Year",
-            start_row_offset_idx=0,
-            end_row_offset_idx=1,
-            start_col_offset_idx=0,
-            end_col_offset_idx=1,
-            column_header=True,
-        ),
-        TableCell(
-            text="Month",
-            start_row_offset_idx=0,
-            end_row_offset_idx=1,
-            start_col_offset_idx=1,
-            end_col_offset_idx=2,
-            column_header=True,
-        ),
-        TableCell(
-            text="2025",
-            start_row_offset_idx=1,
-            end_row_offset_idx=3,
-            start_col_offset_idx=0,
-            end_col_offset_idx=1,
-            row_span=2,
-            column_header=True,
-        ),
-        TableCell(
-            text="January",
-            start_row_offset_idx=1,
-            end_row_offset_idx=2,
-            start_col_offset_idx=1,
-            end_col_offset_idx=2,
-        ),
-        TableCell(
-            text="February",
-            start_row_offset_idx=2,
-            end_row_offset_idx=3,
-            start_col_offset_idx=1,
-            end_col_offset_idx=2,
-        ),
-    ):
-        doc.add_table_cell(table_item=table, cell=cell)
-
-    actual = MarkdownDocSerializer(doc=doc).serialize().text
-    lines = actual.splitlines()
-    assert lines[0].replace(" ", "") == "|Year|Month|"
-    assert lines[2].replace(" ", "") == "|2025|January|"
-    assert lines[3].replace(" ", "") == "|2025|February|"
+    dataframe = table.export_to_dataframe(doc)
+    assert list(dataframe.columns) == df_columns
+    assert dataframe.values.tolist() == df_values
 
 
 def test_md_table_with_header_flags_below_row_zero_keeps_every_row_as_data():
@@ -1067,7 +1107,7 @@ def test_md_line_breaks():
 
     # \n in a ListItem -> GFM hard line break.
     doc = DoclingDocument(name="lb")
-    lg = doc.add_group()
+    lg = doc.add_list_group()
     doc.add_list_item(text="Line one\nLine two", parent=lg)
     assert MarkdownDocSerializer(doc=doc).serialize().text == "- Line one  \nLine two"
 
@@ -1709,6 +1749,30 @@ def test_referenced_image_uri_is_encoded(uri, expected: str):
     assert doc.export_to_markdown(image_mode=ImageRefMode.REFERENCED) == f"![Image]({expected})"
 
 
+@pytest.mark.parametrize(
+    ("uri", "expected"),
+    [
+        (Path("doc_artifacts/image_000001_ab12.png"), "doc_artifacts/image_000001_ab12.png"),
+        (Path("My Report (final)_artifacts/img.png"), "My%20Report%20%28final%29_artifacts/img.png"),
+        # A Windows-authored separator must reach the page as "/", not as "%5C".
+        (Path("My Report_artifacts\\img.png"), "My%20Report_artifacts/img.png"),
+        # An absolute Windows path becomes a file:// URL, as in the Markdown output.
+        (Path("C:/Users/me/My Docs/img.png"), "file:///C:/Users/me/My%20Docs/img.png"),
+        # URLs keep their scheme and delimiters, and pydantic's escapes are not encoded twice.
+        (AnyUrl("file:///home/a b/img.png"), "file:///home/a%20b/img.png"),
+        (AnyUrl("s3://bucket/My Report_artifacts/img.png"), "s3://bucket/My%20Report_artifacts/img.png"),
+        # In an HTML attribute, "&" is written as "&amp;".
+        (AnyUrl("https://example.com/img.png?w=1&h=2"), "https://example.com/img.png?w=1&amp;h=2"),
+    ],
+)
+def test_html_referenced_image_uri_is_encoded(uri, expected: str):
+    """Test that the HTML serializer encodes a referenced image URI the same way as Markdown."""
+    doc = DoclingDocument(name="x")
+    doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=uri))
+
+    assert f'<img src="{expected}">' in doc.export_to_html(image_mode=ImageRefMode.REFERENCED)
+
+
 def test_referenced_image_uri_encoding_only_applies_to_referenced_mode():
     """Test that PLACEHOLDER mode still emits the placeholder, not an encoded URI."""
     doc = DoclingDocument(name="x")
@@ -1966,3 +2030,26 @@ def test_export_and_save_markdown_caption_placement(tmp_path, placement):
     # default is unchanged
     assert doc.export_to_markdown().index("THE CAPTION") < doc.export_to_markdown().index("<!-- image -->")
     assert doc.export_to_markdown() == doc.export_to_markdown(caption_placement="standard")
+
+
+def test_md_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_table_doc):
+    params = MarkdownParams(compact_tables=True)
+    actual = MarkdownDocSerializer(doc=col_span_rich_table_doc, params=params).serialize().text
+    assert actual == "|  | Partner | Partner |\n| - | - | - |\n| Status | Done | Open |"
+
+    # same table with the spanning header as a plain TableCell
+    plain_doc = col_span_rich_table_doc.model_copy(deep=True)
+    plain_doc.tables[0].data.table_cells = [
+        TableCell(**cell.model_dump(exclude={"ref", "text"}), text="Partner")
+        if isinstance(cell, RichTableCell)
+        else cell
+        for cell in plain_doc.tables[0].data.table_cells
+    ]
+    plain_doc.delete_items(node_items=[ref.resolve(plain_doc) for ref in plain_doc.tables[0].children])
+    assert actual == MarkdownDocSerializer(doc=plain_doc, params=params).serialize().text
+
+
+def test_triplet_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_table_doc):
+    ser = MarkdownDocSerializer(doc=col_span_rich_table_doc, table_serializer=TripletTableSerializer())
+    actual = ser.serialize().text
+    assert actual == "Status, Partner = Done. Status, Partner = Open"
