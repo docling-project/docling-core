@@ -1821,12 +1821,15 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         with PILImage.open(resolved) as pil:
             pil_copy = pil.copy()
         mimetype = mimetypes.guess_type(resolved.name)[0] or "image/png"
-        return ImageRef(
+        image_ref = ImageRef(
             mimetype=mimetype,
             dpi=72,
             size=Size(width=pil_copy.width, height=pil_copy.height),
             uri=resolved,
         )
+        # cache the validated image: re-reading the local path later is gated by settings
+        image_ref._pil = pil_copy
+        return image_ref
 
     def _apply_custom_meta_from_element(self, *, item: NodeItem, el: Element) -> None:
         """Restore item meta from element-head property elements."""

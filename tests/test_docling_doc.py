@@ -4,6 +4,7 @@ import os
 import re
 import warnings
 from collections import deque
+from collections.abc import Callable
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
@@ -845,7 +846,7 @@ def test_image_ref_blocks_file_scheme():
 
     image_ref.uri = AnyUrl("file:///tmp/test.png")
 
-    with pytest.raises(ValueError, match="file:// URI scheme is not enabled"):
+    with pytest.raises(ValueError, match="Reading local image files"):
         _ = image_ref.pil_image
 
 
@@ -922,7 +923,7 @@ def test_file_uri_blocked_by_default():
         uri=AnyUrl("file:///tmp/test.png"),
     )
 
-    with pytest.raises(ValueError, match="file:// URI scheme is not enabled"):
+    with pytest.raises(ValueError, match="Reading local image files"):
         _ = image_ref.pil_image
 
 
@@ -986,8 +987,10 @@ def test_image_ref_path_rejects_oversize_file(tmp_path: Path):
     oversize.write_bytes(b"\x89PNG\r\n\x1a\n" + (b"\x00" * 256))
 
     orig_max = settings.max_image_decoded_size
+    orig_allow = settings.allow_image_file_uri
     try:
         settings.max_image_decoded_size = 64
+        settings.allow_image_file_uri = True
         image_ref = ImageRef(
             dpi=72,
             mimetype="image/png",
@@ -998,6 +1001,156 @@ def test_image_ref_path_rejects_oversize_file(tmp_path: Path):
             _ = image_ref.pil_image
     finally:
         settings.max_image_decoded_size = orig_max
+        settings.allow_image_file_uri = orig_allow
+
+
+def _doc_with_local_picture(uri: str) -> DoclingDocument:
+    """Build a document as loaded from untrusted JSON, with a picture pointing at ``uri``."""
+    doc = DoclingDocument(name="local_picture")
+    pic = doc.add_picture()
+    pic.image = ImageRef.from_pil(PILImage.new("RGB", (1, 1)), dpi=72)
+    data = doc.export_to_dict()
+    data["pictures"][0]["image"]["uri"] = uri
+    return DoclingDocument.model_validate(data)
+
+
+def _embedded_exports(doc: DoclingDocument, out_dir: Path) -> dict[str, Callable[[], str]]:
+    def _save(fn, name: str) -> str:
+        fn(out_dir / name, image_mode=ImageRefMode.EMBEDDED)
+        return (out_dir / name).read_text()
+
+    return {
+        "export_to_markdown": lambda: doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED),
+        "export_to_html": lambda: doc.export_to_html(image_mode=ImageRefMode.EMBEDDED),
+        "save_as_markdown": lambda: _save(doc.save_as_markdown, "out.md"),
+        "save_as_html": lambda: _save(doc.save_as_html, "out.html"),
+    }
+
+
+@pytest.mark.parametrize("as_file_uri", [False, True])
+@pytest.mark.parametrize("export", ["export_to_markdown", "export_to_html", "save_as_markdown", "save_as_html"])
+def test_local_image_blocked_in_embedded_exports(tmp_path: Path, as_file_uri: bool, export: str):
+    """Plain paths and file:// URIs must not be read on embedding unless enabled."""
+    secret = tmp_path / "secret.png"
+    PILImage.new("RGB", (4, 4), color=(11, 222, 33)).save(secret)
+    doc = _doc_with_local_picture(secret.as_uri() if as_file_uri else str(secret))
+
+    with pytest.raises(ValueError, match="Reading local image files"):
+        _embedded_exports(doc, tmp_path)[export]()
+
+
+@pytest.mark.parametrize("as_file_uri", [False, True])
+@pytest.mark.parametrize("export", ["export_to_markdown", "export_to_html", "save_as_markdown", "save_as_html"])
+def test_local_image_allowed_in_embedded_exports_when_enabled(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, as_file_uri: bool, export: str
+):
+    """With the opt-in, local images are embedded as before."""
+    monkeypatch.setattr(settings, "allow_image_file_uri", True)
+    img = tmp_path / "img.png"
+    PILImage.new("RGB", (4, 4), color=(11, 222, 33)).save(img)
+    doc = _doc_with_local_picture(img.as_uri() if as_file_uri else str(img))
+
+    assert "data:image/png;base64," in _embedded_exports(doc, tmp_path)[export]()
+
+
+def test_local_image_blocked_in_referenced_export(tmp_path: Path):
+    """Referenced exports must not copy local files into the artifacts directory."""
+    secret = tmp_path / "secret.png"
+    PILImage.new("RGB", (4, 4)).save(secret)
+    doc = _doc_with_local_picture(str(secret))
+
+    with pytest.raises(ValueError, match="Reading local image files"):
+        doc.save_as_markdown(tmp_path / "out.md", image_mode=ImageRefMode.REFERENCED)
+
+
+def test_local_page_image_blocked(tmp_path: Path):
+    """Page images with a local path must be gated when cropping pictures."""
+    secret = tmp_path / "page.png"
+    PILImage.new("RGB", (10, 10)).save(secret)
+    doc = DoclingDocument(name="local_page")
+    doc.add_page(
+        page_no=1,
+        size=Size(width=10, height=10),
+        image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=secret),
+    )
+    doc.add_picture(
+        prov=ProvenanceItem(
+            page_no=1, bbox=BoundingBox(l=0, t=10, r=5, b=5, coord_origin=CoordOrigin.BOTTOMLEFT), charspan=(0, 0)
+        )
+    )
+
+    with pytest.raises(ValueError, match="Reading local image files"):
+        doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
+
+
+def _save_referenced_doc(out_dir: Path, filename: str) -> Path:
+    """Save a document with a picture and a page image in referenced mode."""
+    doc = DoclingDocument(name="referenced")
+    page_image = PILImage.new("RGB", (10, 10), color=(11, 222, 33))
+    doc.add_page(page_no=1, size=Size(width=10, height=10), image=ImageRef.from_pil(page_image, dpi=72))
+    doc.add_picture(image=ImageRef.from_pil(PILImage.new("RGB", (4, 4), color=(1, 2, 3)), dpi=72))
+    path = out_dir / filename
+    if path.suffix == ".json":
+        doc.save_as_json(path, image_mode=ImageRefMode.REFERENCED)
+    else:
+        doc.save_as_yaml(path, image_mode=ImageRefMode.REFERENCED)
+    return path
+
+
+@pytest.mark.parametrize("filename", ["doc.json", "doc.yaml"])
+def test_load_with_allow_local_images(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, filename: str):
+    """Loaders read local images on explicit opt-in, relative to the file's directory."""
+    path = _save_referenced_doc(tmp_path, filename)
+    other_dir = tmp_path / "elsewhere"
+    other_dir.mkdir()
+    monkeypatch.chdir(other_dir)
+    load = DoclingDocument.load_from_json if filename.endswith(".json") else DoclingDocument.load_from_yaml
+
+    with pytest.raises(ValueError, match="Reading local image files"):
+        load(path).export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
+
+    doc = load(path, allow_local_images=True)
+    assert "data:image/png;base64," in doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
+    assert doc.pictures[0].image is not None
+    assert (picture_pil := doc.pictures[0].image.pil_image) is not None
+    assert picture_pil.getpixel((0, 0)) == (1, 2, 3)
+    assert doc.pages[1].image is not None
+    assert (page_pil := doc.pages[1].image.pil_image) is not None
+    assert page_pil.getpixel((0, 0)) == (11, 222, 33)
+
+
+def test_load_local_images_ignores_later_uri_changes(tmp_path: Path):
+    """Only the images present when opting in are read; later paths are not."""
+    doc = DoclingDocument.load_from_json(_save_referenced_doc(tmp_path, "doc.json"), allow_local_images=True)
+    secret = tmp_path / "secret.png"
+    PILImage.new("RGB", (4, 4), color=(255, 0, 0)).save(secret)
+
+    image = doc.pictures[0].image
+    assert image is not None
+    image.uri = secret
+    assert (pil := image.pil_image) is not None
+    assert pil.getpixel((0, 0)) == (1, 2, 3)
+
+    doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=4, height=4), uri=secret))
+    with pytest.raises(ValueError, match="Reading local image files"):
+        doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
+
+
+def test_load_local_images_rejects_non_regular_file(tmp_path: Path):
+    doc = _doc_with_local_picture(str(tmp_path))
+
+    with pytest.raises(ValueError, match="not a regular file"):
+        doc.load_local_images()
+
+
+def test_load_local_images_rejects_oversize_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    big = tmp_path / "big.png"
+    PILImage.new("RGB", (50, 50), color=(1, 2, 3)).save(big)
+    monkeypatch.setattr(settings, "max_image_decoded_size", 64)
+    doc = _doc_with_local_picture(str(big))
+
+    with pytest.raises(ValueError, match="exceeds size limit"):
+        doc.load_local_images()
 
 
 def test_upgrade_content_layer_from_1_0_0() -> None:
