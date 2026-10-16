@@ -141,6 +141,10 @@ class TripletTableSerializer(BaseTableSerializer):
                     shared_visited.update(local_kwargs["visited"])
                 parts.append(create_ser_result(text=table_text, span_source=item))
 
+            ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+            if ftn_res.text:
+                parts.append(ftn_res)
+
         text_res = "\n\n".join([r.text for r in parts])
 
         return create_ser_result(text=text_res, span_source=parts)
