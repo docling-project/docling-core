@@ -190,15 +190,21 @@ class TableData(BaseModel):  # TBD
     def remove_rows(self, indices: list[int], doc: Optional["DoclingDocument"] = None) -> list[list[TableCell]]:
         """Remove rows from the table by their indices.
 
-        :param indices: list[int]: A list of indices of the rows to remove. (Starting from 0)
+        Args:
+            indices: Zero-based indices of the rows to remove. Duplicate indices are ignored.
+            doc: The document that owns the table. Required to also delete the content of
+                rich cells in the removed rows; otherwise that content is left dangling
+                and a warning is logged.
 
-        :return: list[list[TableCell]]: A list representation of the removed rows as lists of TableCell objects.
+        Returns:
+            The removed rows, each as a list of cells, ordered by descending row index.
+
+        Raises:
+            IndexError: If any index is negative or not smaller than the number of rows.
         """
         if not indices:
             return []
 
-        # Deduplicate: repeated indices would remove the row that shifted
-        # into the previously removed position instead of being a no-op.
         indices = sorted(set(indices), reverse=True)
 
         refs_to_remove = []
