@@ -9,6 +9,7 @@ from pathlib import Path, PurePath
 from typing import Annotated, Any, Final, Optional, Union
 from urllib.parse import quote, urlsplit, urlunsplit
 
+import yaml
 from pydantic import AnyUrl, BaseModel, Field, PositiveInt
 from tabulate import _column_type, tabulate
 from typing_extensions import override
@@ -21,6 +22,7 @@ from docling_core.transforms.serializer.base import (
     BaseInlineSerializer,
     BaseKeyValueSerializer,
     BaseListSerializer,
+    BaseMetadataSerializer,
     BaseMetaSerializer,
     BasePictureSerializer,
     BaseTableSerializer,
@@ -1132,6 +1134,28 @@ class MarkdownFallbackSerializer(BaseFallbackSerializer):
             )
 
 
+class YAMLMetadataSerializer(BaseModel, BaseMetadataSerializer):
+    """Render arbitrary document metadata as YAML front matter.
+
+    Pass an instance as ``MarkdownDocSerializer.metadata_serializer`` to opt in.
+    """
+
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+    @override
+    def serialize(
+        self,
+        *,
+        doc: DoclingDocument,
+        doc_serializer: BaseDocSerializer,
+        parts: list[SerializationResult],
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the supplied mapping without changing the Markdown body."""
+        text = yaml.safe_dump(self.metadata, allow_unicode=True, sort_keys=False)
+        return create_ser_result(text=f"---\n{text}---\n\n")
+
+
 class MarkdownDocSerializer(DocSerializer):
     """Markdown-specific document serializer."""
 
@@ -1147,6 +1171,11 @@ class MarkdownDocSerializer(DocSerializer):
 
     meta_serializer: BaseMetaSerializer = MarkdownMetaSerializer()
     annotation_serializer: BaseAnnotationSerializer = MarkdownAnnotationSerializer()
+
+    metadata_serializer: BaseMetadataSerializer | None = Field(
+        default=None,
+        description="Optional document-level YAML front matter; disabled by default.",
+    )
 
     params: MarkdownParams = MarkdownParams()
 
@@ -1232,13 +1261,28 @@ class MarkdownDocSerializer(DocSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a document out of its parts."""
-        text_res = "\n\n".join([p.text for p in parts if p.text])
-        if self.requires_page_break():
-            page_sep = self.params.page_break_placeholder or ""
-            for full_match, _, _ in self._get_page_breaks(text=text_res):
-                text_res = text_res.replace(full_match, page_sep)
+        text_res = self._finalize_part_text("\n\n".join([p.text for p in parts if p.text]))
+        if self.metadata_serializer is not None:
+            # Filter before substitution: an empty page-break replacement still
+            # occupies a part and contributes the body's joining separators.
+            final_parts = [p.model_copy(update={"text": self._finalize_part_text(p.text)}) for p in parts if p.text]
+            metadata = self.metadata_serializer.serialize(
+                doc=self.doc,
+                doc_serializer=self,
+                parts=final_parts,
+                **kwargs,
+            )
+            text_res = f"{metadata.text}{text_res}"
 
         return create_ser_result(text=text_res, span_source=parts)
+
+    def _finalize_part_text(self, text: str) -> str:
+        """Apply body-level substitutions before rendering document metadata."""
+        if self.requires_page_break():
+            page_sep = self.params.page_break_placeholder or ""
+            for full_match, _, _ in self._get_page_breaks(text=text):
+                text = text.replace(full_match, page_sep)
+        return text
 
     @override
     def requires_page_break(self) -> bool:
