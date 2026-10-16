@@ -2858,6 +2858,34 @@ def test_custom_field_text_roundtrip() -> None:
     assert doc2.texts[0].meta.get_custom_part() == {"acme__alt": value}
 
 
+def test_custom_field_attributes_roundtrip() -> None:
+    # the attributes of a custom field element are read under their names, like child elements,
+    # and the host element's text is left alone
+    xml = (
+        '<doclang version="0.7"><text><custom>'
+        '<acme__identity value="x-1" source="form"/>'
+        '<acme__ref kind="figure"><acme__id>7</acme__id></acme__ref>'
+        "</custom>Prose.</text></doclang>"
+    )
+    expected = {
+        "acme__identity": {"value": "x-1", "source": "form"},
+        "acme__ref": {"kind": "figure", "acme__id": "7"},
+    }
+
+    doc = DocLangDocDeserializer().deserialize_str(xml)
+
+    (item,) = doc.texts
+    assert item.text == "Prose."
+    assert item.meta is not None
+    assert item.meta.get_custom_part() == expected
+
+    # attributes are written back as child elements, which read back to the same values
+    doc2 = DocLangDocDeserializer().deserialize_str(DocLangDocSerializer(doc=doc).serialize().text)
+    assert doc2.texts[0].text == "Prose."
+    assert doc2.texts[0].meta is not None
+    assert doc2.texts[0].meta.get_custom_part() == expected
+
+
 def test_custom_field_structured_roundtrip() -> None:
     opt1 = "<formula>a</formula>\n<formula><![CDATA[b < c]]></formula>"
     opt2 = "another option"
