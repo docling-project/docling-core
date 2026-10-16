@@ -1060,11 +1060,23 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 my_parts.append(p)
 
         indent_str = list_level * params.indent * " "
-        my_texts = [
-            # avoid additional marker on already evaled sublists
-            (c.text if c.text and c.text[0] == " " else f"{indent_str}{c.text}")
-            for c in my_parts
-        ]
+        my_texts: list[str] = []
+        item_seen = False
+        for c in my_parts:
+            if c.text and c.text[0] == " ":
+                # avoid additional marker on already evaled sublists
+                if item_seen or isinstance(c, _PageBreakSerResult):
+                    my_texts.append(c.text)
+                else:
+                    # Markdown has no sub-list without a parent item: an indented block
+                    # with no item before it is an indented code block, so hang the
+                    # sub-list on an empty item of this list.
+                    marker = self._orphan_sublist_marker(part=c, item=item, doc=doc)
+                    my_texts.append(f"{indent_str}{marker}\n{c.text}")
+            else:
+                my_texts.append(f"{indent_str}{c.text}")
+            if not isinstance(c, _PageBreakSerResult):
+                item_seen = True
         text_res = ""
         for i, text in enumerate(my_texts):
             if i:
@@ -1077,6 +1089,25 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 )
             text_res += text
         return create_ser_result(text=text_res, span_source=my_parts)
+
+    @staticmethod
+    def _orphan_sublist_marker(*, part: SerializationResult, item: ListGroup, doc: DoclingDocument) -> str:
+        """Return the marker of the empty item that holds a sub-list no item precedes.
+
+        The marker follows the numbering of the list: the position of the sub-list among the
+        children of the list when the list is enumerated, a dash otherwise.
+        """
+        if item.first_item_is_enumerated(doc) and part.spans:
+            node: NodeItem = part.spans[0].item
+            while node.parent is not None:
+                parent = node.parent.resolve(doc)
+                if parent.self_ref == item.self_ref:
+                    for pos, child in enumerate(item.children):
+                        if child.cref == node.self_ref:
+                            return f"{pos + 1}."
+                    break
+                node = parent
+        return "-"
 
 
 class MarkdownInlineSerializer(BaseInlineSerializer):
