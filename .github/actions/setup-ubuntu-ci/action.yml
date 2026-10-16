@@ -1,0 +1,40 @@
+name: Setup Ubuntu CI
+description: Set up Python, uv, and optional docling-core CI dependencies on Ubuntu.
+
+inputs:
+  python_version:
+    description: Python version passed to astral-sh/setup-uv.
+    required: true
+  enable_cache:
+    description: Whether to enable the uv cache.
+    default: "true"
+  uv_sync_args:
+    description: Arguments passed to `uv sync`. Leave empty to skip syncing.
+    default: ""
+  cache_models:
+    description: Whether to restore and save the Hugging Face model cache.
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Install uv and set the python version
+      uses: astral-sh/setup-uv@v7
+      with:
+        python-version: ${{ inputs.python_version }}
+        enable-cache: ${{ inputs.enable_cache }}
+
+    - name: Install Python dependencies
+      if: ${{ inputs.uv_sync_args != '' }}
+      shell: bash
+      run: uv sync ${{ inputs.uv_sync_args }}
+
+    - name: Cache models
+      if: ${{ inputs.cache_models == 'true' }}
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      with:
+        path: ~/.cache/huggingface
+        key: models-cache-${{ runner.os }}-${{ hashFiles('uv.lock', 'pyproject.toml') }}
+        restore-keys: |
+          models-cache-${{ runner.os }}-
+          models-cache-
