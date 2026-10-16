@@ -807,7 +807,9 @@ class DocLangListSerializer(BaseModel, BaseListSerializer):
 
         ordered = item.first_item_is_enumerated(doc)
         list_close = f"</{DocLangToken.LIST.value}>"
-        spans_pages = any(
+        # A list is split into threaded per-page blocks only to place page breaks
+        # between them; without page breaks it stays one block.
+        spans_pages = params.add_page_break and any(
             child_segments[i][1] is not None
             and child_segments[i + 1][1] is not None
             and child_segments[i][1] != child_segments[i + 1][1]
