@@ -671,6 +671,10 @@ class HTMLPictureSerializer(BasePictureSerializer):
             if meta_res.text:
                 res_parts.append(meta_res)
 
+        ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+        if ftn_res.text:
+            res_parts.append(ftn_res)
+
         text_res = "".join([r.text for r in res_parts])
         if text_res:
             text_res = f"<figure>{text_res}</figure>"
