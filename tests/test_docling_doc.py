@@ -3260,3 +3260,45 @@ def test_document_validation_clamps_table_cell_bbox() -> None:
     messages = [str(warning.message) for warning in caught]
     assert any("Table cell bbox coordinate l on page 1 is outside page bounds" in message for message in messages)
     assert any("Table cell bbox coordinate r on page 1 is outside page bounds" in message for message in messages)
+
+
+@pytest.mark.parametrize(
+    "field",
+    ["start_row_offset_idx", "end_row_offset_idx", "start_col_offset_idx", "end_col_offset_idx"],
+)
+def test_table_cell_rejects_negative_offsets(field: str) -> None:
+    """Negative offsets would otherwise wrap around and overwrite cells at the end of the grid."""
+    offsets = {
+        "start_row_offset_idx": 0,
+        "end_row_offset_idx": 1,
+        "start_col_offset_idx": 0,
+        "end_col_offset_idx": 1,
+    }
+    offsets[field] = -1
+
+    with pytest.raises(ValidationError, match=field):
+        TableCell(text="x", **offsets)
+
+
+def test_document_with_negative_table_cell_offset_fails_validation() -> None:
+    doc = DoclingDocument(name="t")
+    doc.add_table(
+        data=TableData(
+            num_rows=1,
+            num_cols=1,
+            table_cells=[
+                TableCell(
+                    text="A",
+                    start_row_offset_idx=0,
+                    end_row_offset_idx=1,
+                    start_col_offset_idx=0,
+                    end_col_offset_idx=1,
+                )
+            ],
+        )
+    )
+    data = doc.model_dump(mode="json")
+    data["tables"][0]["data"]["table_cells"][0]["start_row_offset_idx"] = -1
+
+    with pytest.raises(ValidationError, match="start_row_offset_idx"):
+        DoclingDocument.model_validate(data)
