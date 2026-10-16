@@ -282,7 +282,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
             if ftn_res.text:
                 res_parts.append(ftn_res)
-            if len(res_parts) > 1:
+            if cap_res.text or ftn_res.text:
                 # <figcaption> is only valid inside <figure>, as for pictures
                 text = f"<figure>{''.join(r.text for r in res_parts)}</figure>"
 
@@ -481,13 +481,13 @@ class HTMLTableSerializer(BaseTableSerializer):
                 body = f"<tbody>{body}</tbody>"
                 res_parts.append(create_ser_result(text=body, span_source=span_source))
 
-        text_res = "".join([r.text for r in res_parts])
-        text_res = f"<table>{text_res}</table>" if text_res else ""
+        text_table = "".join([r.text for r in res_parts])
+        text_table = f"<table>{text_table}</table>" if text_table else ""
 
         ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
         if ftn_res.text:
-            text_res = f"{text_res}{ftn_res.text}" if text_res else ftn_res.text
             res_parts.append(ftn_res)
+        text_res = f"{text_table}{ftn_res.text}"
 
         return create_ser_result(text=text_res, span_source=res_parts)
 
@@ -1356,7 +1356,7 @@ class HTMLDocSerializer(DocSerializer):
                         )
                     )
 
-        text_res = params.caption_delim.join([r.text for r in results])
+        text_res = "".join([r.text for r in results])
         return create_ser_result(text=text_res, span_source=results)
 
     def _generate_head(self) -> str:

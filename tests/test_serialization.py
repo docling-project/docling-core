@@ -2419,9 +2419,20 @@ def test_markdown_inline_code_span_outlasts_backticks_in_code(code: str, expecte
     assert doc.export_to_markdown() == f"see {expected}"
 
 
+def test_md_html_table_footnotes():
+    """Real conversion of the PDF from #496: a table with two footnotes."""
+    src = Path("./tests/data/doc/table_footnotes_496.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
+
+    actual = HTMLDocSerializer(doc=doc).serialize().text
+    verify(exp_file=src.with_suffix(".gt.html"), actual=actual)
+
+
 def test_table_footnotes_serialized_to_markdown_and_html():
-    """Regression test for #496: table footnotes must not be dropped by the
-    Markdown and HTML serializers (they are delegated to the parent TableItem)."""
+    """Table footnotes must not be dropped by the Markdown and HTML serializers."""
     doc = DoclingDocument(name="t")
 
     td = TableData(num_rows=0, num_cols=2)
@@ -2429,24 +2440,43 @@ def test_table_footnotes_serialized_to_markdown_and_html():
     td.add_row(["Data 1", "Data 2"])
     table = doc.add_table(data=td)
 
-    fn1 = doc.add_text(label=DocItemLabel.FOOTNOTE, text="First footnote.")
-    fn2 = doc.add_text(label=DocItemLabel.FOOTNOTE, text="Second footnote.")
-    table.footnotes.append(fn1.get_ref())
-    table.footnotes.append(fn2.get_ref())
+    for text in ["First footnote.", "Second footnote.", "a < b & c > d"]:
+        table.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text=text).get_ref())
 
-    # footnotes are stored on the table in the document model ...
-    assert [fn.resolve(doc).text for fn in table.footnotes] == [
-        "First footnote.",
-        "Second footnote.",
-    ]
-
-    # ... and must survive Markdown serialization
+    # one paragraph per footnote after the table
     md_out = doc.export_to_markdown()
-    assert "First footnote." in md_out
-    assert "Second footnote." in md_out
+    assert "|\n\nFirst footnote.\n\nSecond footnote.\n" in md_out
 
-    # ... and HTML serialization (as escaped footnote divs after the table)
+    # footnotes are HTML-escaped divs after the table, with nothing between them
     html_out = doc.export_to_html()
-    assert "First footnote." in html_out
-    assert "Second footnote." in html_out
-    assert '<div class="footnote">First footnote.</div>' in html_out
+    assert (
+        '</table><div class="footnote">First footnote.</div>'
+        '<div class="footnote">Second footnote.</div>'
+        '<div class="footnote">a &lt; b &amp; c &gt; d</div>'
+    ) in html_out
+    assert "a < b & c > d" not in html_out
+
+
+def test_picture_footnotes_serialized_to_markdown_and_html():
+    """Picture footnotes are skipped by the doc serializer like table ones."""
+    doc = DoclingDocument(name="t")
+    pic = doc.add_picture()
+    pic.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="Picture note.").get_ref())
+
+    assert "Picture note." in doc.export_to_markdown()
+    # inside <figure>, so the footnote stays with its picture
+    assert '<div class="footnote">Picture note.</div></figure>' in doc.export_to_html()
+
+
+def test_code_footnotes_serialized_to_markdown_and_html():
+    """Code footnotes are skipped by the doc serializer like table ones."""
+    doc = DoclingDocument(name="t")
+    code = doc.add_code(text="print(1)")
+    code.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="Code note.").get_ref())
+
+    assert "Code note." in doc.export_to_markdown()
+    # wrapped in <figure> like a picture, so the footnote stays with its code
+    assert (
+        '<figure><pre><code>print(1)</code></pre><div class="footnote">Code note.</div></figure>'
+        in doc.export_to_html()
+    )
