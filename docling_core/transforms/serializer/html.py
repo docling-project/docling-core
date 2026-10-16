@@ -266,6 +266,12 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
             if cap_res.text:
                 res_parts.append(cap_res)
+            ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+            if ftn_res.text:
+                res_parts.append(ftn_res)
+            if len(res_parts) > 1:
+                # <figcaption> is only valid inside <figure>, as for pictures
+                text = f"<figure>{''.join(r.text for r in res_parts)}</figure>"
 
         return create_ser_result(text=text, span_source=res_parts)
 
