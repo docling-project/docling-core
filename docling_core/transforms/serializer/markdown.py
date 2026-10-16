@@ -483,7 +483,9 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         """
         if in_table_cell:
             return text
-        num_hashes = 1 if isinstance(item, TitleItem) else item.level + 1
+        # Markdown has six heading levels; like the HTML serializer's <h6>, deeper
+        # section headers stay level-6 headings instead of becoming plain text
+        num_hashes = 1 if isinstance(item, TitleItem) else min(item.level + 1, 6)
         return f"{num_hashes * '#'} {text}"
 
 
