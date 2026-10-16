@@ -24,10 +24,10 @@ class TableCell(BaseModel):
     bbox: BoundingBox | None = None
     row_span: int = 1
     col_span: int = 1
-    start_row_offset_idx: int
-    end_row_offset_idx: int
-    start_col_offset_idx: int
-    end_col_offset_idx: int
+    start_row_offset_idx: Annotated[int, Field(ge=0)]
+    end_row_offset_idx: Annotated[int, Field(ge=0)]
+    start_col_offset_idx: Annotated[int, Field(ge=0)]
+    end_col_offset_idx: Annotated[int, Field(ge=0)]
     text: str
     column_header: bool = False
     row_header: bool = False

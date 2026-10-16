@@ -3519,18 +3519,22 @@
           "type": "integer"
         },
         "start_row_offset_idx": {
+          "minimum": 0,
           "title": "Start Row Offset Idx",
           "type": "integer"
         },
         "end_row_offset_idx": {
+          "minimum": 0,
           "title": "End Row Offset Idx",
           "type": "integer"
         },
         "start_col_offset_idx": {
+          "minimum": 0,
           "title": "Start Col Offset Idx",
           "type": "integer"
         },
         "end_col_offset_idx": {
+          "minimum": 0,
           "title": "End Col Offset Idx",
           "type": "integer"
         },
@@ -3812,18 +3816,22 @@
           "type": "integer"
         },
         "start_row_offset_idx": {
+          "minimum": 0,
           "title": "Start Row Offset Idx",
           "type": "integer"
         },
         "end_row_offset_idx": {
+          "minimum": 0,
           "title": "End Row Offset Idx",
           "type": "integer"
         },
         "start_col_offset_idx": {
+          "minimum": 0,
           "title": "Start Col Offset Idx",
           "type": "integer"
         },
         "end_col_offset_idx": {
+          "minimum": 0,
           "title": "End Col Offset Idx",
           "type": "integer"
         },
