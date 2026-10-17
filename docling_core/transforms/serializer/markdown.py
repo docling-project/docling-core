@@ -374,8 +374,9 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         res_parts: list[SerializationResult] = []
         escape_html = kwargs.get("escape_html")
         escape_underscores = kwargs.get("escape_underscores")
+        content_indent = ""
 
-        child_group = get_inline_content_group(item, doc)
+        child_group = self._inline_content_group(item, doc)
         if child_group is not None:
             text = doc_serializer.serialize(item=child_group, visited=my_visited, **kwargs).text
             if isinstance(item, TitleItem | SectionHeaderItem):
@@ -454,6 +455,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
 
                 pieces.append(text)
                 text_part = " ".join(pieces)
+                content_indent = " " * (len(pieces[0]) + 1) if len(pieces) > 1 else ""
             else:
                 text_part = self._format_heading(text, item, in_table_cell=in_table_cell)
         elif isinstance(item, CodeItem):
@@ -486,6 +488,18 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             text_res = create_ser_result(text=text_part, span_source=item)
             res_parts.append(text_res)
 
+        if isinstance(item, ListItem):
+            res_parts.extend(
+                self._serialize_list_continuations(
+                    item=item,
+                    doc_serializer=doc_serializer,
+                    doc=doc,
+                    visited=my_visited,
+                    content_indent=content_indent,
+                    **kwargs,
+                )
+            )
+
         if isinstance(item, FloatingItem):
             ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
             if ftn_res.text:
@@ -497,7 +511,13 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 else:
                     res_parts.insert(0, cap_res)
 
-        text = (" " if is_inline_scope else "\n\n").join([r.text for r in res_parts])
+        texts = [r.text for r in res_parts]
+        if isinstance(item, ListItem) and text_part and child_group is None and item.text == "" and len(texts) > 1:
+            # CommonMark: an item that starts with a blank line takes its first block on the next line
+            texts[:2] = [f"{texts[0]}\n{texts[1]}"]
+        text = (" " if is_inline_scope else "\n\n").join(texts)
+        if isinstance(item, ListItem) and len(res_parts) > 1:
+            text += "\n"  # blank line before the next sibling list item
         if processing_pending:
             text = doc_serializer.post_process(
                 text=text,
@@ -508,6 +528,44 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 **{k: v for k, v in kwargs.items() if k not in ("escape_html", "escape_underscores")},
             )
         return create_ser_result(text=text, span_source=res_parts)
+
+    @staticmethod
+    def _inline_content_group(item: TextItem, doc: DoclingDocument) -> InlineGroup | None:
+        """Return the inline group that holds the text of an item with empty text.
+
+        A list item can own continuation blocks after the inline group of its text, so
+        for a list item the group only has to be its first child.
+
+        Args:
+            item: The text item to inspect.
+            doc: The document used to resolve the children of the item.
+
+        Returns:
+            The inline group that is the text of the item, or `None`.
+        """
+        if isinstance(item, ListItem) and item.text == "" and item.children:
+            first_child = item.children[0].resolve(doc)
+            return first_child if isinstance(first_child, InlineGroup) else None
+        return get_inline_content_group(item, doc)
+
+    def _serialize_list_continuations(
+        self,
+        *,
+        item: ListItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        visited: set[str],
+        content_indent: str,
+        **kwargs: Any,
+    ) -> list[SerializationResult]:
+        """Serialize the block children of a list item, indented to its content column."""
+        # sub-lists alone are left to the list serializer, as before
+        if all(c.cref in visited or isinstance(c.resolve(doc), ListGroup) for c in item.children):
+            return []
+        parts = doc_serializer.get_parts(item=item, visited=visited, **kwargs)
+        for part in parts:
+            part.text = textwrap.indent(part.text, content_indent)
+        return parts
 
     def _format_heading(
         self,
@@ -1079,18 +1137,6 @@ class MarkdownFormSerializer(BaseFormSerializer):
 class MarkdownListSerializer(BaseModel, BaseListSerializer):
     """Markdown-specific list serializer."""
 
-    @staticmethod
-    def _is_other_list_item_content(group: InlineGroup, doc: DoclingDocument) -> bool:
-        """Whether an inline group is content of a list item other than its text.
-
-        The text of a list item with formatting or hyperlinks is an inline group, the
-        first child of a list item with an empty text. Any other inline group of a list
-        item, e.g. text after a sub-list, is not appended to the line of the previous
-        part.
-        """
-        parent = group.parent.resolve(doc) if group.parent else None
-        return isinstance(parent, ListItem) and not (parent.text == "" and parent.children[0].cref == group.self_ref)
-
     @override
     def serialize(
         self,
@@ -1121,8 +1167,7 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 and p.text
                 and p.spans
                 and p.spans[0].item.parent
-                and isinstance(group := p.spans[0].item.parent.resolve(doc), InlineGroup)
-                and not self._is_other_list_item_content(group, doc)
+                and isinstance(p.spans[0].item.parent.resolve(doc), InlineGroup)
             ):
                 # append to last; a group that is the child of a text item keeps the host separator
                 group = p.spans[0].item.parent.resolve(doc)
@@ -1150,7 +1195,7 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 # avoid additional marker on already evaled sublists
                 my_texts.append(c.text)
             else:
-                my_texts.append(f"{indent_str}{c.text}")
+                my_texts.append(textwrap.indent(c.text, indent_str))
             if not isinstance(c, _PageBreakSerResult):
                 item_seen = True
         text_res = ""
@@ -1164,7 +1209,7 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                     else sep
                 )
             text_res += text
-        return create_ser_result(text=text_res, span_source=my_parts)
+        return create_ser_result(text=text_res.rstrip("\n"), span_source=my_parts)
 
     @staticmethod
     def _sublist_child_of_part(*, part: SerializationResult, item: ListGroup, doc: DoclingDocument) -> ListGroup | None:
