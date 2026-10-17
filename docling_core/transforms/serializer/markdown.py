@@ -1023,21 +1023,24 @@ _MD_LIST_MARKER_PATTERN: Final = re.compile(r"(?:[-*+]|\d{1,9}[.)])(?= |$)")
 
 
 def _get_list_group_child(
-    *, node: NodeItem, list_group: ListGroup, doc: DoclingDocument
-) -> tuple[NodeItem | None, bool]:
-    """Get the child of the list group that contains the node.
+    *, part: SerializationResult, list_group: ListGroup, doc: DoclingDocument
+) -> tuple[NodeItem | None, NodeItem | None, bool]:
+    """Get the first item of the part that is in the list group, and the child of the list group that contains it.
 
-    Also tell if a nested list group is between the two, as a nested list indents
-    its own content.
+    A part can start with an item from outside the list group, such as the caption
+    of a table. Also tell if a nested list group is between the two items, as a
+    nested list indents its own content.
     """
-    in_sublist = False
-    while node.parent is not None:
-        parent = node.parent.resolve(doc)
-        if parent.self_ref == list_group.self_ref:
-            return node, in_sublist
-        in_sublist = in_sublist or isinstance(parent, ListGroup)
-        node = parent
-    return None, False
+    for span in part.spans:
+        node: NodeItem = span.item
+        in_sublist = False
+        while node.parent is not None:
+            parent = node.parent.resolve(doc)
+            if parent.self_ref == list_group.self_ref:
+                return span.item, node, in_sublist
+            in_sublist = in_sublist or isinstance(parent, ListGroup)
+            node = parent
+    return None, None, False
 
 
 class MarkdownListSerializer(BaseModel, BaseListSerializer):
@@ -1084,10 +1087,8 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
         content_indents: dict[str, str] = {}  # list item ref -> indent of its content
         my_texts: list[str] = []
         for c in my_parts:
-            owner, in_sublist = (
-                _get_list_group_child(node=c.spans[0].item, list_group=item, doc=doc) if c.spans else (None, False)
-            )
-            if isinstance(owner, ListItem) and c.spans[0].item is owner:
+            span_item, owner, in_sublist = _get_list_group_child(part=c, list_group=item, doc=doc)
+            if isinstance(owner, ListItem) and span_item is owner:
                 if match := _MD_LIST_MARKER_PATTERN.match(c.text):
                     content_indents[owner.self_ref] = indent_str + " " * (match.end() + 1)
                 my_texts.append(f"{indent_str}{c.text}")

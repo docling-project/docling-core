@@ -522,6 +522,21 @@ def test_md_nested_list_item_block_children_are_indented():
     assert doc.export_to_markdown() == "- Outer\n    - Inner\n      ```\n      code\n      ```\n  ```\n  after\n  ```"
 
 
+def test_md_list_item_table_with_caption_outside_list_is_indented():
+    doc = DoclingDocument(name="")
+    lst = doc.add_list_group()
+    item = doc.add_list_item(text="", enumerated=True, parent=lst)
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text="Cap")
+    cell = TableCell(
+        text="cell", start_row_offset_idx=0, end_row_offset_idx=1, start_col_offset_idx=0, end_col_offset_idx=1
+    )
+    doc.add_table(data=TableData(num_rows=1, num_cols=1, table_cells=[cell]), caption=caption, parent=item)
+    doc.add_list_item(text="Second", enumerated=True, parent=lst)
+
+    # the serialized table starts with its caption, which is not in the list
+    assert doc.export_to_markdown() == "1. \n   Cap\n\n   | cell   |\n   |--------|\n2. Second"
+
+
 def test_md_rich_table(rich_table_doc):
     exp_file = Path("./tests/data/doc/rich_table.gt.md")
 
