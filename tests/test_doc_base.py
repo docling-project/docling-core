@@ -1,3 +1,5 @@
+import mimetypes
+
 import pytest
 from pydantic import ValidationError
 
@@ -17,6 +19,26 @@ from docling_core.types.doc.items.node import NodeItem
 )
 def test_document_origin_mimetype(mimetype: str):
     """Test that DocumentOrigin accepts the supported MIME types."""
+    origin = DocumentOrigin(mimetype=mimetype, binary_hash=42, filename="test")
+    assert origin.mimetype == mimetype
+
+
+@pytest.mark.parametrize(
+    "mimetype",
+    [
+        "application/calendar+json",
+        "application/calendar+xml",
+        "text/calendar",
+        "text/x-vcalendar",
+    ],
+)
+def test_document_origin_calendar_mimetype_without_system_table(monkeypatch, mimetype: str):
+    """Test that calendar MIME types do not depend on the host MIME table.
+
+    CPython's built-in table has no calendar types; only a system table such as
+    /etc/mime.types or the Windows registry adds them.
+    """
+    monkeypatch.setattr(mimetypes, "types_map", {})
     origin = DocumentOrigin(mimetype=mimetype, binary_hash=42, filename="test")
     assert origin.mimetype == mimetype
 
