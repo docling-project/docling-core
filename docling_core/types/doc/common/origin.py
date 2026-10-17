@@ -48,6 +48,7 @@ class DocumentOrigin(BaseModel):
         "application/x-iwork-numbers-sffnumbers",
         "application/x-iwork-keynote-sffkey",
         "application/x-mimearchive",
+        "application/zip",
         "audio/m4a",
         "audio/mp4",
         "audio/mp3",
