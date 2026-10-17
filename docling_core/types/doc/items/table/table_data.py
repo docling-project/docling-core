@@ -145,6 +145,48 @@ class TableData(BaseModel):  # TBD
 
         return table_data
 
+    def _count_column_header_rows(self, grid: list[list[TableCell]] | None = None) -> int:
+        """Count the leading grid rows that form the column header block.
+
+        A row is counted when a column header cell starts on it. A header cell
+        spanning several rows is repeated into each row it covers by ``grid``, so
+        rows that merely hold such a cell are not counted. A row after the first
+        is also not counted when an unflagged, non-empty cell starts on it
+        outside the leading column, which holds row labels that stay unmarked
+        even on header rows. A partially flagged row 0 is always kept as the
+        header unless a flagged cell also starts in the leading column on a
+        later row, which indicates a column of row headers rather than a
+        genuine stacked header.
+
+        Args:
+            grid: The precomputed ``grid`` of this table, to avoid rebuilding it.
+
+        Returns:
+            The number of leading rows that form the column header block.
+        """
+        if grid is None:
+            grid = self.grid
+        first_col = min((cell.start_col_offset_idx for cell in self.table_cells), default=0)
+        # Apply the body-text check to row 0 only when a flagged cell starts in
+        # the leading column on a later row, which signals a column of row headers.
+        leading_col_flagged_below = any(
+            cell.column_header and cell.start_col_offset_idx == first_col and cell.start_row_offset_idx == row_idx
+            for row_idx, row in enumerate(grid)
+            if row_idx > 0
+            for cell in row
+        )
+        num_headers = 0
+        for row_idx, row in enumerate(grid):
+            starting_cells = [cell for cell in row if cell.start_row_offset_idx == row_idx]
+            carries_body_text = (row_idx > 0 or leading_col_flagged_below) and any(
+                not cell.column_header and cell.text.strip() and cell.start_col_offset_idx != first_col
+                for cell in starting_cells
+            )
+            if not any(cell.column_header for cell in starting_cells) or carries_body_text:
+                break
+            num_headers += 1
+        return num_headers
+
     def remove_rows(self, indices: list[int], doc: Optional["DoclingDocument"] = None) -> list[list[TableCell]]:
         """Remove rows from the table by their indices.
 

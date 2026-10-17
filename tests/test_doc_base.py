@@ -2,6 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 from docling_core.types.doc import DocItemLabel, DoclingDocument, DocumentOrigin, GraphData, TableData, TrackSource
+from docling_core.types.doc.items.node import NodeItem
 
 
 @pytest.mark.parametrize(
@@ -68,9 +69,10 @@ def test_add_doc_items_with_source():
     """Test that add_* helpers append sources to created DocItems."""
     source = TrackSource(start_time=11.0, end_time=12.0)
     doc = DoclingDocument(name="Unknown")
+    list_group = doc.add_list_group()
 
     items = [
-        doc.add_list_item(text="List item", source=source),
+        doc.add_list_item(text="List item", source=source, parent=list_group),
         doc.add_text(text="Text", label=DocItemLabel.TEXT, source=source),
         doc.add_comment(text="Comment", source=source),
         doc.add_table(data=TableData(), source=source),
@@ -111,6 +113,9 @@ def test_add_text_dispatch_preserves_source(label: DocItemLabel):
     source = TrackSource(start_time=11.0, end_time=12.0)
     doc = DoclingDocument(name="Unknown")
 
-    item = doc.add_text(label=label, text="Hello world", source=source)
+    parent: NodeItem | None = None
+    if label == DocItemLabel.LIST_ITEM:
+        parent = doc.add_list_group()
+    item = doc.add_text(label=label, text="Hello world", source=source, parent=parent)
 
     assert item.source == [source]

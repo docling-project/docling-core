@@ -9,6 +9,7 @@ import warnings
 import xml.etree.ElementTree as ET
 from collections.abc import Callable
 from enum import Enum
+from functools import cached_property
 from itertools import groupby
 from pathlib import Path, PurePath
 from typing import Annotated, Any, Optional, Union, cast
@@ -1141,11 +1142,14 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
 
         include_href = not is_inline_scope
         if not skip_location:
+            # An inline run is located through its host.
+            head_params = params.model_copy()
+            head_params.add_location = params.add_location and not is_inline_scope
             parts.append(
                 _element_head_prefix(
                     item=item,
                     doc=doc,
-                    params=params,
+                    params=head_params,
                     label_value=code_label,
                     caption_text=caption_head or None,
                     custom_text=custom_head or None,
@@ -1887,7 +1891,6 @@ class DocLangInlineSerializer(BaseInlineSerializer):
                         yres=params.ysize,
                     )
                     parts.append(create_ser_result(text=loc_str))
-            params.add_location = False
         parts.extend(
             doc_serializer.get_parts(
                 item=item,
@@ -2014,44 +2017,11 @@ class DocLangDocSerializer(DocSerializer):
     _suppressed_page_breaks: set[tuple[int, int]] = PrivateAttr(default_factory=set)
     _next_thread_id: int = PrivateAttr(default=1)
     _thread_id_by_ref: dict[str, str] = PrivateAttr(default_factory=dict)
-    _satellite_refs_cache: tuple[set[str], set[str]] | None = PrivateAttr(default=None)
 
-    def _satellite_refs(self) -> tuple[set[str], set[str]]:
-        """The refs of the satellites serialized by their floating item, and those nested in them.
-
-        Satellites are the footnotes and the extra captions (the first caption goes in the host's head).
-        """
-        if self._satellite_refs_cache is None:
-            satellites: set[str] = set()
-            nested: set[str] = set()
-            for host, _ in self.doc.iterate_items(
-                with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
-            ):
-                if not isinstance(host, FloatingItem):
-                    continue
-                for ref in [*host.captions[1:], *host.footnotes]:
-                    if isinstance(sat := ref.resolve(self.doc), TextItem):
-                        satellites.add(sat.self_ref)
-                        nested.update(
-                            n.self_ref
-                            for n, _ in self.doc.iterate_items(
-                                root=sat,
-                                with_groups=True,
-                                traverse_pictures=True,
-                                included_content_layers=set(ContentLayer),
-                            )
-                            if n.self_ref != sat.self_ref
-                        )
-            self._satellite_refs_cache = (satellites, nested)
-        return self._satellite_refs_cache
-
-    @override
-    def _skip_in_walk(self, *, node: NodeItem, root: NodeItem | None) -> bool:
-        """Skip the content nested in a satellite unless walking from within it: its floating item emits it."""
-        satellites, nested = self._satellite_refs()
-        if node.self_ref not in nested:
-            return False
-        return root is None or (root.self_ref not in nested and root.self_ref not in satellites)
+    @cached_property
+    def _satellites_of_some_item(self) -> set[str]:
+        """DocLang emits both captions and footnotes inside their floating item."""
+        return self._captions_of_some_item | self._footnotes_of_some_item
 
     def allocate_thread_id(self, node: NodeItem) -> str:
         """Return a spec-unique positive ``thread_id`` for a fragmented component."""
@@ -2124,21 +2094,19 @@ class DocLangDocSerializer(DocSerializer):
         """Serialize the item's captions with DocLang location tokens."""
         params = DocLangParams(**kwargs)
         results: list[SerializationResult] = []
-        if item.captions:
-            cap_res = super().serialize_captions(item, **kwargs)
-            if cap_res.text:
-                for caption in item.captions:
-                    if caption.cref not in self.get_excluded_refs(**kwargs):
-                        if isinstance(cap := caption.resolve(self.doc), DocItem):
-                            if head_txt := _element_head_prefix(item=cap, doc=self.doc, params=params):
-                                results.append(create_ser_result(text=head_txt))
-            if cap_res.text and ContentType.REF_CAPTION in params.content_types:
-                cap_res.text = _escape_text(cap_res.text, params)
-                results.append(cap_res)
-        text_res = "".join([r.text for r in results])
-        if text_res:
-            text_res = _wrap(text=text_res, wrap_tag=DocLangToken.CAPTION.value)
-        return create_ser_result(text=text_res, span_source=results)
+        for caption in _resolve_satellites(refs=item.captions, doc_serializer=self, doc=self.doc, **kwargs):
+            text = _serialize_satellite(
+                item=caption,
+                tag=DocLangToken.CAPTION,
+                content_type=ContentType.REF_CAPTION,
+                doc=self.doc,
+                params=params,
+                doc_serializer=self,
+                **kwargs,
+            )
+            if text:
+                results.append(create_ser_result(text=text, span_source=caption))
+        return create_ser_result(text="".join(r.text for r in results), span_source=results)
 
     @override
     def serialize_footnotes(

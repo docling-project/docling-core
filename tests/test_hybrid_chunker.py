@@ -21,7 +21,7 @@ from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTok
 from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
 from docling_core.transforms.serializer.html import HTMLTableSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
-from docling_core.types.doc import DocItemLabel, DoclingDocument
+from docling_core.types.doc import DocItemLabel, DoclingDocument, DocumentOrigin
 from docling_core.types.doc.common.content_layer import ContentLayer
 from docling_core.types.doc.items.table.table_data import TableCell, TableData
 
@@ -34,6 +34,18 @@ INPUT_FILE_2 = "tests/data/chunker/2_inp_dl_doc.json"
 
 
 INNER_TOKENIZER = AutoTokenizer.from_pretrained(EMBED_MODEL_ID)
+
+
+def warns_headers_exceed_budget():
+    """Expect the warning raised when a chunk's headers and captions alone exceed `max_tokens`.
+
+    The ground-truth tests intentionally use a tiny `MAX_TOKENS` budget to force splitting,
+    which makes the headers of some chunks longer than the whole budget.
+    """
+    return pytest.warns(
+        UserWarning,
+        match="Headers and captions for this chunk are longer than the total available size",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -100,7 +112,8 @@ def test_chunk_merge_peers():
         merge_peers=True,
     )
 
-    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    with warns_headers_exceed_budget():
+        chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     assert_or_generate_json_ground_truth(
@@ -124,7 +137,8 @@ def test_chunk_with_model_name():
         merge_peers=True,
     )
 
-    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    with warns_headers_exceed_budget():
+        chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     assert_or_generate_json_ground_truth(
@@ -145,7 +159,8 @@ def test_chunk_deprecated_max_tokens():
             max_tokens=MAX_TOKENS,
         )
 
-    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    with warns_headers_exceed_budget():
+        chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     assert_or_generate_json_ground_truth(
@@ -169,7 +184,8 @@ def test_contextualize():
         merge_peers=True,
     )
 
-    chunks = chunker.chunk(dl_doc=dl_doc)
+    with warns_headers_exceed_budget():
+        chunks = chunker.chunk(dl_doc=dl_doc)
 
     act_data = dict(
         root=[
@@ -202,7 +218,8 @@ def test_chunk_no_merge_peers():
         merge_peers=False,
     )
 
-    chunks = chunker.chunk(dl_doc=dl_doc)
+    with warns_headers_exceed_budget():
+        chunks = chunker.chunk(dl_doc=dl_doc)
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     assert_or_generate_json_ground_truth(
         act_data,
@@ -292,7 +309,8 @@ def test_contextualize_altered_delim():
         delim="####",
     )
 
-    chunks = chunker.chunk(dl_doc=dl_doc)
+    with warns_headers_exceed_budget():
+        chunks = chunker.chunk(dl_doc=dl_doc)
 
     act_data = dict(
         root=[
@@ -368,7 +386,8 @@ def test_chunk_custom_serializer():
         serializer_provider=MySerializerProvider(),
     )
 
-    chunk_iter = chunker.chunk(dl_doc=dl_doc)
+    with warns_headers_exceed_budget():
+        chunk_iter = chunker.chunk(dl_doc=dl_doc)
     chunks = list(chunk_iter)
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     assert_or_generate_json_ground_truth(
@@ -774,7 +793,8 @@ def test_html_parser_error_handling(dl_doc_0):
     )
 
     # Chunking with HTML serializer should complete without errors
-    chunks = list(chunker.chunk(dl_doc=dl_doc))
+    with pytest.warns(UserWarning, match="Chunks prefix is too long"):
+        chunks = list(chunker.chunk(dl_doc=dl_doc))
     assert len(chunks) > 0, "Should produce chunks even with potential HTML parsing issues"
 
     # Verify all chunks have valid structure
@@ -862,7 +882,19 @@ def test_split_by_doc_items_serializes_each_item_once():
     assert proxy.serialize_calls == num_items
 
 
-class _MergingNewlineTokenizer(BaseTokenizer):
+class _TestTokenizer(BaseTokenizer):
+    """Provide the token budget and backend for deterministic test tokenizers."""
+
+    max_tokens: int
+
+    def get_max_tokens(self) -> int:
+        return self.max_tokens
+
+    def get_tokenizer(self):
+        return self
+
+
+class _MergingNewlineTokenizer(_TestTokenizer):
     """Deterministic tokenizer whose per-item counts under-estimate joined text.
 
     Counting is word-based, but each newline followed by a list-marker dash
@@ -871,16 +903,15 @@ class _MergingNewlineTokenizer(BaseTokenizer):
     _split_by_doc_items.
     """
 
-    max_tokens: int
-
     def count_tokens(self, text: str) -> int:
         return len(text.split(" ")) + text.count("\n-")
 
-    def get_max_tokens(self) -> int:
-        return self.max_tokens
 
-    def get_tokenizer(self):
-        return self
+def _assert_chunk_windows(chunker, chunks, expected_items, min_window_items=1):
+    """Check ordered item conservation, window growth, and exact token limits."""
+    assert [it for c in chunks for it in c.meta.doc_items] == expected_items
+    assert max(len(c.meta.doc_items) for c in chunks) > min_window_items
+    assert all(chunker._count_chunk_tokens(c) <= chunker.max_tokens for c in chunks)
 
 
 def test_split_by_doc_items_shrinks_back_when_estimate_under_counts():
@@ -898,20 +929,143 @@ def test_split_by_doc_items_shrinks_back_when_estimate_under_counts():
     hier_chunk = next(iter(chunker._inner_chunker.chunk(doc)))
     chunks = chunker._split_by_doc_items(hier_chunk, ser)
 
-    assert sum(len(c.meta.doc_items) for c in chunks) == 12
-    assert max(len(c.meta.doc_items) for c in chunks) > 2
-    for c in chunks:
-        assert chunker._count_chunk_tokens(c) <= chunker.max_tokens
+    _assert_chunk_windows(chunker, chunks, hier_chunk.meta.doc_items, min_window_items=2)
 
 
 def test_doc_meta_excluded_embed_keeps_contextualize_window_invariant():
-    """Pin the contract that _split_by_doc_items relies on for its constant meta cost.
-
-    The running token estimate treats the chunk-meta cost as constant across
-    windows, which only holds while doc_items and origin stay excluded from the
-    embedding serialization (DocMeta.excluded_embed). A change to excluded_embed
-    must fail loudly here instead of silently drifting chunk boundaries past
-    max_tokens.
-    """
+    """Split and merge share this contract: doc_items and origin add no context."""
     assert "doc_items" in DocMeta.excluded_embed
     assert "origin" in DocMeta.excluded_embed
+
+    doc = _paragraph_doc(2)
+    chunker = HybridChunker(tokenizer=_WordCountTokenizer(max_tokens=100))
+    reference = DocChunk(
+        text="same text",
+        meta=DocMeta(doc_items=[doc.texts[1]], headings=["Chapter 1"]),
+    )
+    window = DocChunk(
+        text=reference.text,
+        meta=DocMeta(
+            doc_items=doc.texts[1:],
+            headings=reference.meta.headings,
+            origin=DocumentOrigin(mimetype="text/plain", binary_hash=0, filename="other.txt"),
+        ),
+    )
+    assert chunker.contextualize(window) == chunker.contextualize(reference)
+
+
+class _WordCountTokenizer(_TestTokenizer):
+    """Deterministic word-counting tokenizer with additive per-chunk counts."""
+
+    calls: int = 0
+    chars: int = 0
+
+    def count_tokens(self, text: str) -> int:
+        self.calls += 1
+        self.chars += len(text)
+        return len(text.split())
+
+
+class _UnderCountingTokenizer(_TestTokenizer):
+    """Word-counting tokenizer whose per-chunk counts under-estimate joined text.
+
+    A chunk that starts with "paragraph" counts one token less than its words,
+    while the joined window only loses that token once. Summing per-chunk counts
+    therefore under-estimates the joined window, forcing the shrink-back path in
+    _merge_chunks_with_matching_metadata.
+    """
+
+    def count_tokens(self, text: str) -> int:
+        return len(text.split()) - (1 if text.startswith("paragraph") else 0)
+
+
+def _paragraph_doc(num_paragraphs: int) -> DoclingDocument:
+    doc = DoclingDocument(name="t")
+    doc.add_heading(text="Chapter 1", level=1)
+    for i in range(num_paragraphs):
+        doc.add_text(label=DocItemLabel.PARAGRAPH, text=f"paragraph number {i} explains the results in some detail.")
+    return doc
+
+
+def _chunks_before_merge(chunker, doc):
+    ser = chunker.serializer_provider.get_serializer(doc)
+    res = [x for c in chunker._inner_chunker.chunk(doc) for x in chunker._split_by_doc_items(c, doc_serializer=ser)]
+    return [x for c in res for x in chunker._split_using_plain_text(c, doc_serializer=ser)]
+
+
+@pytest.mark.parametrize("max_tokens", [100, 500, 5000])
+def test_merge_chunks_tokenizes_linearly(max_tokens):
+    """_merge_chunks_with_matching_metadata must not re-tokenize the growing window per step.
+
+    The old implementation re-tokenized the whole joined window on every
+    iteration, i.e. ~N·w/2 chunk-sized counts for N chunks in windows of w.
+    With additive word counts, estimates are exact: each output window needs
+    one metadata count and one final verification, plus an overflow check for
+    each window except the last. No re-anchoring or shrink-back is needed.
+    """
+    doc = _paragraph_doc(200)
+    tok = _WordCountTokenizer(max_tokens=max_tokens)
+    chunker = HybridChunker(tokenizer=tok, merge_peers=False)
+    chunks = _chunks_before_merge(chunker, doc)
+
+    tok.calls = 0
+    tok.chars = 0
+    merged = chunker._merge_chunks_with_matching_metadata(chunks)
+
+    # Measure only the merge stage, before correctness assertions count tokens.
+    merge_calls, merge_chars = tok.calls, tok.chars
+    overflow_events = len(merged) - 1  # all inputs have the same headings
+    calibration_calls = 3  # counts of a+delimiter+b, a, and b
+    assert merge_calls <= len(chunks) + calibration_calls + 2 * len(merged) + overflow_events
+
+    # Call counts alone cannot catch the old implementation: it also makes O(N)
+    # calls, but each call re-counts a growing prefix. Bound the actual input
+    # characters as well. Each input text is counted once; final verification
+    # counts each output once. Overflow checks count each output at most once
+    # more, plus a delimiter and the next input text. Metadata checks count one
+    # contextualized input per output. A maximum single-input context bounds
+    # both metadata checks and the extra input at each overflow.
+    text_chars = sum(len(c.text) for c in chunks)
+    output_chars = sum(len(chunker.contextualize(c)) for c in merged)
+    max_input_chars = max(len(chunker.contextualize(c)) for c in chunks)
+    calibration_chars = len(f"a{chunker.delim}b") + len("a") + len("b")
+    assert merge_chars <= (
+        calibration_chars
+        + text_chars
+        + 2 * output_chars
+        + (len(merged) + overflow_events) * max_input_chars
+        + overflow_events * len(chunker.delim)
+    )
+
+    _assert_chunk_windows(chunker, merged, [it for c in chunks for it in c.meta.doc_items])
+
+
+class _OverCountingTokenizer(_TestTokenizer):
+    """Word-counting tokenizer whose per-chunk counts over-estimate joined text.
+
+    A chunk that starts with "paragraph" counts one token more than its words,
+    while the joined window only gains that token once. Summing per-chunk counts
+    therefore over-estimates the joined window, forcing the re-anchor path in
+    _merge_chunks_with_matching_metadata.
+    """
+
+    def count_tokens(self, text: str) -> int:
+        return len(text.split()) + (1 if text.startswith("paragraph") else 0)
+
+
+@pytest.mark.parametrize(
+    "tokenizer_cls",
+    [
+        pytest.param(_UnderCountingTokenizer, id="under-count-shrink"),
+        pytest.param(_OverCountingTokenizer, id="over-count-reanchor"),
+    ],
+)
+def test_merge_chunks_corrects_token_estimate(tokenizer_cls):
+    """Exact checks correct both directions of error in the running estimate."""
+    doc = _paragraph_doc(30)
+    chunker = HybridChunker(tokenizer=tokenizer_cls(max_tokens=100), merge_peers=False)
+    chunks = _chunks_before_merge(chunker, doc)
+
+    merged = chunker._merge_chunks_with_matching_metadata(chunks)
+
+    _assert_chunk_windows(chunker, merged, [it for c in chunks for it in c.meta.doc_items])

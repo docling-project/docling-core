@@ -8,7 +8,6 @@ from html.parser import HTMLParser
 from io import BytesIO
 from pathlib import Path, PurePath
 from typing import Any, Optional, Union
-from urllib.parse import quote
 from xml.etree.ElementTree import SubElement, tostring
 from xml.sax.saxutils import unescape
 
@@ -34,6 +33,7 @@ from docling_core.transforms.serializer.base import (
 from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
+    _escape_uri_path,
     _get_annotation_text,
     _should_use_legacy_annotations,
     create_ser_result,
@@ -128,8 +128,8 @@ class HTMLParams(CommonParams):
 
     include_annotations: bool = Field(
         default=True,
-        description="Include item annotations.",
-        deprecated="Use include_meta instead.",
+        description="Include legacy annotations. Has no effect on meta-based output.",
+        deprecated="Setting this to False only suppresses legacy `annotations`; use `blocked_meta_names` to suppress specific meta fields.",
     )
 
     show_original_list_item_marker: bool = True
@@ -608,7 +608,7 @@ class HTMLPictureSerializer(BasePictureSerializer):
                 if isinstance(item.image, ImageRef) and not (
                     isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "data"
                 ):
-                    img_text = f'<img src="{quote(str(item.image.uri))}">'
+                    img_text = f'<img src="{html.escape(_escape_uri_path(item.image.uri))}">'
 
         if img_text:
             res_parts.append(create_ser_result(text=img_text, span_source=item))
@@ -1250,12 +1250,18 @@ class HTMLDocSerializer(DocSerializer):
 
         if DocItemLabel.CAPTION in params.labels:
             for cap in item.captions:
-                if isinstance(it := cap.resolve(self.doc), TextItem) and it.self_ref not in excluded_refs:
-                    text_cap = it.text
-                    text_dir = get_text_direction(text_cap)
+                if (
+                    isinstance(it := cap.resolve(self.doc), TextItem)
+                    and it.content_layer in params.layers
+                    and it.self_ref not in excluded_refs
+                ):
+                    parts = [html.escape(it.text)]
+                    parts.extend(p.text for p in self.get_parts(item=it, is_inline_scope=True, **kwargs))
+                    text_cap = " ".join(p for p in parts if p)
+                    text_dir = get_text_direction(it._get_plain_text(self.doc))
                     dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""
                     cap_ser_res = create_ser_result(
-                        text=(f'<div class="caption"{dir_str}>{html.escape(text_cap)}</div>'),
+                        text=(f'<div class="caption"{dir_str}>{text_cap}</div>'),
                         span_source=it,
                     )
                     results.append(cap_ser_res)
