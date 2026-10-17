@@ -36,6 +36,7 @@ from docling_core.types.doc.document import (
     DescriptionAnnotation,
     EntitiesMetaField,
     EntityMention,
+    Formatting,
     LanguageMetaField,
     PictureClassificationMetaField,
     PictureClassificationPrediction,
@@ -412,17 +413,88 @@ def test_md_list_item_inline_groups():
     para = doc.add_group(label=GroupLabel.INLINE, parent=plain)
     doc.add_text(label=DocItemLabel.TEXT, text="Second paragraph, see", parent=para)
     doc.add_text(label=DocItemLabel.TEXT, text="the docs", parent=para, hyperlink="https://example.org")
+    rich = doc.add_list_item(text="", parent=group)
+    rich_text = doc.add_group(label=GroupLabel.INLINE, parent=rich)
+    doc.add_text(label=DocItemLabel.TEXT, text="Bold", formatting=Formatting(bold=True), parent=rich_text)
+    doc.add_text(label=DocItemLabel.TEXT, text="item text", parent=rich_text)
+    doc.add_code(text="run command", parent=rich)
 
     actual = MarkdownDocSerializer(doc=doc).serialize().text
 
     # Only the inline group holding the text of a list item stays on the item line.
+    # Any other child is a continuation block at the content column of the item.
     assert actual == (
-        "- Intro with [a link](https://example.org/)\n"
-        "    - nested\n"
-        "After the list, see [the docs](https://example.org/)\n"
-        "- Plain item\n"
-        "Second paragraph, see [the docs](https://example.org/)"
+        "- Intro with [a link](https://example.org/)\n\n"
+        "  - nested\n\n"
+        "  After the list, see [the docs](https://example.org/)\n\n"
+        "- Plain item\n\n"
+        "  Second paragraph, see [the docs](https://example.org/)\n\n"
+        "- **Bold** item text\n\n"
+        "  ```\n"
+        "  run command\n"
+        "  ```"
     )
+
+
+@pytest.mark.parametrize("marker", ["-", "*", "1.", "10."])
+@pytest.mark.parametrize("nested", [False, True])
+def test_md_list_item_continuation_blocks(marker, nested):
+    doc = DoclingDocument(name="loose_list")
+    group = doc.add_list_group()
+    if nested:
+        outer = doc.add_list_item(text="Outer", parent=group)
+        group = doc.add_list_group(parent=outer)
+    doc.add_list_item(text="First", marker=marker, parent=group)
+    item = doc.add_list_item(text="Set the key", marker=marker, parent=group)
+    paragraph = doc.add_text(label=DocItemLabel.TEXT, text="Use this value", parent=item)
+    code = doc.add_code(text="export KEY=value\nrun command", parent=item)
+    doc.add_list_item(text="Last", marker=marker, parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text="Outside")
+
+    indent = " " * (len(marker) + 1)
+    expected = (
+        f"{marker} First\n"
+        f"{marker} Set the key\n\n"
+        f"{indent}Use this value\n\n"
+        f"{indent}```\n"
+        f"{indent}export KEY=value\n"
+        f"{indent}run command\n"
+        f"{indent}```\n\n"
+        f"{marker} Last"
+    )
+    if nested:
+        expected = "- Outer\n" + "\n".join("    " + line if line else "" for line in expected.split("\n"))
+    expected += "\n\nOutside"
+
+    result = MarkdownDocSerializer(doc=doc).serialize()
+
+    assert result.text == expected
+    assert {paragraph.self_ref, code.self_ref} <= {span.item.self_ref for span in result.spans}
+
+
+def test_md_list_item_continuation_last_item():
+    doc = DoclingDocument(name="last_item")
+    item = doc.add_list_item(text="Item", parent=doc.add_list_group())
+    doc.add_text(label=DocItemLabel.TEXT, text="Continuation", parent=item)
+
+    assert doc.export_to_markdown() == "- Item\n\n  Continuation"
+
+
+def test_md_list_item_continuation_empty_text():
+    doc = DoclingDocument(name="empty_text")
+    item = doc.add_list_item(text="", parent=doc.add_list_group())
+    doc.add_text(label=DocItemLabel.TEXT, text="Only a block", parent=item)
+
+    # A blank line after the marker would end the item.
+    assert doc.export_to_markdown() == "- \n  Only a block"
+
+
+def test_md_list_item_continuation_label_filter():
+    doc = DoclingDocument(name="filtered")
+    item = doc.add_list_item(text="Item", parent=doc.add_list_group())
+    doc.add_code(text="hidden", parent=item)
+
+    assert doc.export_to_markdown(labels={DocItemLabel.LIST_ITEM}) == "- Item"
 
 
 def test_md_mark_meta_true():
