@@ -1019,6 +1019,27 @@ class MarkdownFormSerializer(BaseFormSerializer):
             return create_ser_result()
 
 
+_MD_LIST_MARKER_PATTERN: Final = re.compile(r"(?:[-*+]|\d{1,9}[.)])(?= |$)")
+
+
+def _get_list_group_child(
+    *, node: NodeItem, list_group: ListGroup, doc: DoclingDocument
+) -> tuple[NodeItem | None, bool]:
+    """Get the child of the list group that contains the node.
+
+    Also tell if a nested list group is between the two, as a nested list indents
+    its own content.
+    """
+    in_sublist = False
+    while node.parent is not None:
+        parent = node.parent.resolve(doc)
+        if parent.self_ref == list_group.self_ref:
+            return node, in_sublist
+        in_sublist = in_sublist or isinstance(parent, ListGroup)
+        node = parent
+    return None, False
+
+
 class MarkdownListSerializer(BaseModel, BaseListSerializer):
     """Markdown-specific list serializer."""
 
@@ -1060,11 +1081,24 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 my_parts.append(p)
 
         indent_str = list_level * params.indent * " "
-        my_texts = [
-            # avoid additional marker on already evaled sublists
-            (c.text if c.text and c.text[0] == " " else f"{indent_str}{c.text}")
-            for c in my_parts
-        ]
+        content_indents: dict[str, str] = {}  # list item ref -> indent of its content
+        my_texts: list[str] = []
+        for c in my_parts:
+            owner, in_sublist = (
+                _get_list_group_child(node=c.spans[0].item, list_group=item, doc=doc) if c.spans else (None, False)
+            )
+            if isinstance(owner, ListItem) and c.spans[0].item is owner:
+                if match := _MD_LIST_MARKER_PATTERN.match(c.text):
+                    content_indents[owner.self_ref] = indent_str + " " * (match.end() + 1)
+                my_texts.append(f"{indent_str}{c.text}")
+            elif owner is not None and not in_sublist and owner.self_ref in content_indents:
+                # a block inside a list item must be indented to the content of the
+                # item, otherwise Markdown ends the item before it
+                prefix = content_indents[owner.self_ref]
+                my_texts.append("\n".join(f"{prefix}{line}" if line else line for line in c.text.split("\n")))
+            else:
+                # avoid additional marker on already evaled sublists
+                my_texts.append(c.text if c.text and c.text[0] == " " else f"{indent_str}{c.text}")
         text_res = ""
         for i, text in enumerate(my_texts):
             if i:
