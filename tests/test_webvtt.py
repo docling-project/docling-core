@@ -409,3 +409,20 @@ def test_webvtt_unclosed_and_stray_end_tags() -> None:
     # Misnested end tags are still rejected.
     with pytest.raises(ValueError, match="Incorrect end tag"):
         WebVTTCueBlock.parse("00:01.000 --> 00:02.000\n<b><i>both</b></i>\n")
+
+
+def test_webvtt_unknown_tags() -> None:
+    """Test that tags which are not WebVTT cue spans are ignored and their text is kept."""
+    block = WebVTTCueBlock.parse('00:01.000 --> 00:02.000\n<font color="#ffff00">Hello</font> world\n')
+    assert len(block.payload) == 1
+    assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
+    assert block.payload[0].component.text == "Hello world"
+
+    # Tag names are case-sensitive, so <B> is not a bold span. The voice span around it is kept.
+    block = WebVTTCueBlock.parse("00:01.000 --> 00:02.000\n<v Bob><B>Run</B>!</v>\n")
+    assert len(block.payload) == 1
+    span = block.payload[0].component
+    assert isinstance(span, WebVTTCueVoiceSpan)
+    assert span.start_tag.annotation == "Bob"
+    assert isinstance(span.internal_text.components[0].component, WebVTTCueTextSpan)
+    assert span.internal_text.components[0].component.text == "Run!"
