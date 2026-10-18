@@ -1172,7 +1172,7 @@ wheels = [
 
 [[package]]
 name = "dclq"
-version = "2.101.1"
+version = "2.102.0"
 source = { editable = "packages/dclq" }
 dependencies = [
     { name = "docling-core", extra = ["dclq"] },
@@ -1270,7 +1270,7 @@ schematron-saxon = [
 
 [[package]]
 name = "docling-core"
-version = "2.101.1"
+version = "2.102.0"
 source = { editable = "." }
 dependencies = [
     { name = "defusedxml" },
