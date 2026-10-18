@@ -166,7 +166,9 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             post_processed = True
         else:
             text = item.text
-            if not isinstance(item, CodeItem | FormulaItem):
+            if isinstance(item, CodeItem):
+                text = html.escape(text, quote=False)
+            elif not isinstance(item, FormulaItem):
                 text = html.escape(text, quote=False)
                 text = text.replace("\n", "<br>")
             if not isinstance(item, CodeItem | FormulaItem | ListItem):
