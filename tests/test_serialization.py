@@ -1,6 +1,7 @@
 """Test serialization."""
 
 import threading
+from html.parser import HTMLParser
 from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
 from typing import TypeAlias, Union
 from unittest.mock import MagicMock, patch
@@ -2177,3 +2178,51 @@ def test_markdown_inline_code_span_outlasts_backticks_in_code(code: str, expecte
     doc.add_text(label=DocItemLabel.TEXT, text="see", parent=group)
     doc.add_code(text=code, parent=group)
     assert doc.export_to_markdown() == f"see {expected}"
+
+
+def test_html_code_item_text_is_escaped():
+    doc = DoclingDocument(name="code-escape")
+    doc.add_code(text='conda create -n <CONDA_NAME>\nDict<str> x = "<div>";')
+
+    ser = HTMLDocSerializer(doc=doc)
+    actual = ser.serialize().text
+
+    assert "&lt;CONDA_NAME&gt;" in actual
+    assert "&lt;div&gt;" in actual
+
+    class CodeGrab(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.in_code = 0
+            self.code_text: list[str] = []
+
+        def handle_starttag(self, tag, attrs):
+            if tag == "code":
+                self.in_code += 1
+
+        def handle_endtag(self, tag):
+            if tag == "code":
+                self.in_code -= 1
+
+        def handle_data(self, data):
+            if self.in_code:
+                self.code_text.append(data)
+
+    parser = CodeGrab()
+    parser.feed(actual)
+    recovered = "".join(parser.code_text)
+    assert recovered == 'conda create -n <CONDA_NAME>\nDict<str> x = "<div>";'
+
+
+def test_html_formula_without_mathml_keeps_text():
+    doc = DoclingDocument(name="formula-fallback")
+    doc.add_formula(text="a<b && c>d")
+
+    ser = HTMLDocSerializer(
+        doc=doc,
+        params=HTMLParams(formula_to_mathml=False),
+    )
+    actual = ser.serialize().text
+
+    assert "Formula not decoded" not in actual
+    assert "a&lt;b &amp;&amp; c&gt;d" in actual
