@@ -318,7 +318,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 if image_mode == ImageRefMode.EMBEDDED and len(item.prov) > 0 and img_fallback:
                     return img_fallback
                 elif text:
-                    return f"<pre>{text}</pre>"
+                    return f"<pre>{html.escape(text, quote=False)}</pre>"
                 else:
                     return "<pre>Formula not decoded</pre>"
 
@@ -326,9 +326,9 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
 
         # Fallback options if we got here
         if text and is_inline_scope:
-            return f"<code>{text}</code>"
+            return f"<code>{html.escape(text, quote=False)}</code>"
         elif text and (not is_inline_scope):
-            f"<pre>{text}</pre>"
+            return f"<pre>{html.escape(text, quote=False)}</pre>"
         elif is_inline_scope:
             return '<span class="formula-not-decoded">Formula not decoded</span>'
 
