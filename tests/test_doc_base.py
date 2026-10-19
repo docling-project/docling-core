@@ -44,6 +44,20 @@ def test_document_origin_calendar_mimetype_without_system_table(monkeypatch, mim
     assert origin.mimetype == mimetype
 
 
+def test_document_origin_zip_mimetype_without_application_zip(monkeypatch: pytest.MonkeyPatch):
+    """Test that DocumentOrigin accepts application/zip when the platform maps .zip elsewhere.
+
+    On Windows the registry maps ".zip" to application/x-zip-compressed, which replaces
+    application/zip in mimetypes.types_map once mimetypes.init() has run.
+    """
+    types_map = {ext: mt for ext, mt in mimetypes.types_map.items() if mt != "application/zip"}
+    types_map[".zip"] = "application/x-zip-compressed"
+    monkeypatch.setattr(mimetypes, "types_map", types_map)
+
+    origin = DocumentOrigin(mimetype="application/zip", binary_hash=42, filename="test.dclx")
+    assert origin.mimetype == "application/zip"
+
+
 def test_document_origin_invalid_mimetype():
     """Test that DocumentOrigin rejects unknown MIME types."""
     with pytest.raises(ValidationError, match="is not a valid MIME type"):
