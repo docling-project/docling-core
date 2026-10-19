@@ -30,6 +30,16 @@ class CoreSettings(BaseSettings):
         ),
     ] = []
 
+    max_table_cells: Annotated[
+        int,
+        Field(
+            description=(
+                "Maximum number of grid cells (num_rows * num_cols) a table may declare. "
+                "The grid is materialized in memory on export, so this bounds the cost of untrusted tables."
+            ),
+        ),
+    ] = 1_000_000
+
     # DocLang deserialize budgets (DoS protection for untrusted markup / .dclx)
     max_doclang_xml_bytes: int = 128 * 1024 * 1024  # 128 MiB
     max_doclang_xml_depth: int = 128

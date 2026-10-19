@@ -10,6 +10,7 @@ from typing_extensions import Self, override
 
 from docling_core.types.doc.base import BoundingBox, CoordOrigin
 from docling_core.types.doc.common.reference import RefItem
+from docling_core.utils.settings import settings
 
 if TYPE_CHECKING:
     from docling_core.types.doc.document import DoclingDocument
@@ -109,6 +110,19 @@ class TableData(BaseModel):  # TBD
     num_rows: int = 0
     num_cols: int = 0
     orientation: Orientation = Orientation.ROT_0
+
+    @model_validator(mode="after")
+    def _validate_grid_size(self) -> Self:
+        """Reject dimensions whose grid would be too large to materialize.
+
+        The rows and columns are bounded on their own too, because a table with many rows
+        and no columns still allocates one (empty) list per row.
+        """
+        limit = settings.max_table_cells
+        rows, cols = max(self.num_rows, 0), max(self.num_cols, 0)
+        if rows > limit or cols > limit or rows * cols > limit:
+            raise ValueError(f"Table of {self.num_rows}x{self.num_cols} cells exceeds the limit of {limit} cells")
+        return self
 
     @computed_field  # type: ignore
     @property

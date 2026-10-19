@@ -3434,3 +3434,107 @@ def test_document_validation_clamps_table_cell_bbox() -> None:
     messages = [str(warning.message) for warning in caught]
     assert any("Table cell bbox coordinate l on page 1 is outside page bounds" in message for message in messages)
     assert any("Table cell bbox coordinate r on page 1 is outside page bounds" in message for message in messages)
+
+
+def _nested_doc_dict(depth: int, *, kind: str) -> dict:
+    """Build a document dict whose nodes reference their single child more than once.
+
+    kind="groups": every group lists its only child twice (a DAG, not a tree).
+    kind="rich_cells": every table holds the next table in a single 2x2-spanning rich cell.
+    """
+    node_list = "groups" if kind == "groups" else "tables"
+    nodes = []
+    for i in range(depth):
+        last = i == depth - 1
+        parent = {"$ref": "#/body" if i == 0 else f"#/{node_list}/{i - 1}"}
+        nxt = {"$ref": f"#/{node_list}/{i + 1}"}
+        node: dict = {
+            "self_ref": f"#/{node_list}/{i}",
+            "parent": parent,
+            "content_layer": "body",
+        }
+        if kind == "groups":
+            node |= {"name": "g", "label": "unspecified", "children": [] if last else [nxt, nxt]}
+        else:
+            cells = [] if last else [_span_rich_cell(nxt["$ref"])]
+            node |= {
+                "label": "table",
+                "children": [] if last else [nxt],
+                "data": {"num_rows": 2, "num_cols": 2, "table_cells": cells},
+            }
+        nodes.append(node)
+    return {
+        "schema_name": "DoclingDocument",
+        "version": "1.10.0",
+        "name": "nested",
+        "body": {
+            "self_ref": "#/body",
+            "name": "_root_",
+            "label": "unspecified",
+            "content_layer": "body",
+            "children": [{"$ref": f"#/{node_list}/0"}],
+        },
+        node_list: nodes,
+    }
+
+
+def _span_rich_cell(ref: str) -> dict:
+    return {
+        "text": "",
+        "ref": {"$ref": ref},
+        "start_row_offset_idx": 0,
+        "end_row_offset_idx": 2,
+        "start_col_offset_idx": 0,
+        "end_col_offset_idx": 2,
+    }
+
+
+def test_validate_rejects_repeated_child_references():
+    """A node listed more than once under its parent makes the tree a DAG with exponential traversal."""
+    data = _nested_doc_dict(60, kind="groups")  # 2**60 paths if walked once per reference
+    with pytest.raises(ValidationError, match="already reachable"):
+        DoclingDocument.model_validate(data)
+
+
+def test_validate_rejects_rich_cell_sharing_one_subtree():
+    """Two rich cells pointing at the same item would render its subtree twice."""
+    data = _nested_doc_dict(2, kind="rich_cells")
+    cells = data["tables"][0]["data"]["table_cells"]
+    cells.append(cells[0] | {"start_col_offset_idx": 1, "end_col_offset_idx": 2})
+    with pytest.raises(ValidationError):
+        DoclingDocument.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    "export",
+    [
+        lambda doc: doc.export_to_markdown(),
+        lambda doc: doc.export_to_doctags(),
+        lambda doc: doc.export_to_doclang(),
+    ],
+    ids=["markdown", "doctags", "doclang"],
+)
+def test_export_nested_spanning_rich_cells_is_not_exponential(export):
+    """A rich cell spanning N slots must be rendered once, not once per covered slot.
+
+    With 4 slots per cell and 25 nesting levels, per-slot rendering would take ~4**25 steps.
+    """
+    doc = DoclingDocument.model_validate(_nested_doc_dict(25, kind="rich_cells"))
+    assert export(doc)
+
+
+@pytest.mark.parametrize(
+    ("num_rows", "num_cols"),
+    [(2**40, 2**40), (2**40, 0), (0, 2**40), (1001, 1000)],
+)
+def test_table_data_rejects_oversized_grid(num_rows, num_cols):
+    """Rows and columns are bounded separately too: many rows with no columns still allocate one list each."""
+    with pytest.raises(ValidationError, match="exceeds the limit"):
+        TableData(num_rows=num_rows, num_cols=num_cols)
+
+
+def test_table_data_grid_limit_is_configurable(monkeypatch):
+    monkeypatch.setattr(settings, "max_table_cells", 4)
+    TableData(num_rows=2, num_cols=2)
+    with pytest.raises(ValidationError):
+        TableData(num_rows=2, num_cols=3)

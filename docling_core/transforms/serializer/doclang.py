@@ -1623,13 +1623,26 @@ class DocLangTableSerializer(BaseTableSerializer):
                         need_cell_loc = True
 
         parts: list[str] = []
+        grid = item.data.grid  # computed on every access, so build it only once
         for i in range(row_start, row_end):
             for j in range(col_start, col_end):
-                cell = item.data.grid[i][j]
-                content = cell._get_text(doc=doc, doc_serializer=doc_serializer, **kwargs).strip()
+                cell = grid[i][j]
 
                 rowstart = cell.start_row_offset_idx
                 colstart = cell.start_col_offset_idx
+
+                if rowstart != i or colstart != j:
+                    # Continuation slot of a spanning cell: its content was emitted at the origin slot.
+                    # Rendering it again here would repeat the work (and the nested rich content) per slot.
+                    if rowstart != i and colstart != j:
+                        parts.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.XCEL))
+                    elif rowstart != i:
+                        parts.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.UCEL))
+                    else:
+                        parts.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.LCEL))
+                    continue
+
+                content = cell._get_text(doc=doc, doc_serializer=doc_serializer, **kwargs).strip()
 
                 # Optional per-cell location
                 cell_loc = ""
@@ -1643,33 +1656,26 @@ class DocLangTableSerializer(BaseTableSerializer):
                         yres=params.ysize,
                     )
 
-                if rowstart == i and colstart == j:
-                    origin = self._otsl_origin_token_for_slice(
-                        cell=cell,
-                        row_idx=i,
-                        col_idx=j,
-                        rowstart=rowstart,
-                        colstart=colstart,
-                        row_start=row_start,
-                        col_start=col_start,
-                        has_content=bool(content),
-                    )
-                    parts.append(DocLangVocabulary._create_selfclosing_token(token=origin))
-                    if content and origin != DocLangToken.ECEL:
-                        if cell_loc:
-                            parts.append(cell_loc)
-                        if ContentType.TABLE_CELL in params.content_types:
-                            if not isinstance(cell, RichTableCell):
-                                content = _escape_text(content, params)
-                                if not params.use_virtual_text:
-                                    content = _wrap(text=content, wrap_tag=DocLangToken.TEXT.value)
-                            parts.append(content)
-                elif rowstart != i and colstart != j:
-                    parts.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.XCEL))
-                elif rowstart != i:
-                    parts.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.UCEL))
-                elif colstart != j:
-                    parts.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.LCEL))
+                origin = self._otsl_origin_token_for_slice(
+                    cell=cell,
+                    row_idx=i,
+                    col_idx=j,
+                    rowstart=rowstart,
+                    colstart=colstart,
+                    row_start=row_start,
+                    col_start=col_start,
+                    has_content=bool(content),
+                )
+                parts.append(DocLangVocabulary._create_selfclosing_token(token=origin))
+                if content and origin != DocLangToken.ECEL:
+                    if cell_loc:
+                        parts.append(cell_loc)
+                    if ContentType.TABLE_CELL in params.content_types:
+                        if not isinstance(cell, RichTableCell):
+                            content = _escape_text(content, params)
+                            if not params.use_virtual_text:
+                                content = _wrap(text=content, wrap_tag=DocLangToken.TEXT.value)
+                        parts.append(content)
 
             parts.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.NL))
 

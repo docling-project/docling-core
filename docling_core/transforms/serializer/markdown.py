@@ -186,9 +186,16 @@ def _collect_subtree_text(item: NodeItem, doc: DoclingDocument, excluded_refs: s
     if isinstance(item, TableItem):
         if item.self_ref in excluded_refs:
             return ""
+        # `grid` repeats a spanning cell in every slot it covers; flatten each rich cell only once,
+        # since its subtree would otherwise be walked once per slot (exponential for nested tables).
+        seen_rich_origins: set[tuple[int, int]] = set()
         for row in item.data.grid:
             for cell in row:
                 if isinstance(cell, RichTableCell):
+                    origin = (cell.start_row_offset_idx, cell.start_col_offset_idx)
+                    if origin in seen_rich_origins:
+                        continue
+                    seen_rich_origins.add(origin)
                     cell_text = _collect_subtree_text(cell.ref.resolve(doc), doc, excluded_refs)
                 else:
                     cell_text = cell.text
