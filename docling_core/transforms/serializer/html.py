@@ -866,9 +866,13 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
         for p in parts:
             if not p.text:
                 continue
-            if p.text.startswith(("<ul>", "<ol>")) and my_texts and my_texts[-1].endswith("</li>"):
-                # nest it in the preceding item, as a sub-list owned by that item is
-                my_texts[-1] = self._nest_in_list_item(item_text=my_texts[-1], sublist_text=p.text)
+            if p.text.startswith(("<ul>", "<ol>")):
+                if my_texts and my_texts[-1].endswith("</li>"):
+                    # nest it in the preceding item, as a sub-list owned by that item is
+                    my_texts[-1] = self._nest_in_list_item(item_text=my_texts[-1], sublist_text=p.text)
+                else:
+                    # no item to own it: give it an empty item of this list
+                    my_texts.append(f"<li>\n{p.text}\n</li>")
             else:
                 my_texts.append(p.text)
         text_res = "\n".join(my_texts)
