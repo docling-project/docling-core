@@ -1038,7 +1038,7 @@ def test_md_traverse_pictures():
 
 
 def test_md_deep_section_headers_stay_headings():
-    """Section headers deeper than level 5 are level-6 headings, the deepest Markdown has."""
+    """Section headers deeper than level 5 are capped at six hashes."""
     doc = DoclingDocument(name="deep")
     for level in (4, 5, 6, 9):
         doc.add_heading(text=f"Level {level}", level=level)
