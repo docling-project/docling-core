@@ -290,6 +290,35 @@ def test_resolve_source_trusts_proxy_for_dns_only_when_opted_in(monkeypatch):
         resolve_source_to_stream("https://example.com/file")
 
 
+def test_redirect_target_trusts_proxy_for_dns(monkeypatch):
+    """With ``trust_proxy_for_dns`` a proxied redirect target skips the local lookup too."""
+    monkeypatch.setattr(socket, "getaddrinfo", _fail_getaddrinfo)
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.internal:3128")
+    monkeypatch.setenv("HTTP_PROXY", "http://proxy.internal:3128")
+    monkeypatch.delenv("NO_PROXY", raising=False)
+    monkeypatch.delenv("no_proxy", raising=False)
+    monkeypatch.setattr(settings, "trust_proxy_for_dns", True)
+
+    def get_with_redirect_to(location: str):
+        def _get(self, *args, **kwargs):
+            r = _closeable_response(status_code=302, headers={"location": location})
+            r.url = args[0] if args else kwargs.get("url", "https://example.com")
+            for hook in self.hooks["response"]:
+                hook(r)
+            return r
+
+        return _get
+
+    # a hostname the local resolver cannot resolve is left to the proxy
+    monkeypatch.setattr(Session, "get", get_with_redirect_to("https://cdn.example.net/file"))
+    resolve_source_to_stream("https://example.com/redirect")
+
+    # a literal non-public address is still rejected
+    monkeypatch.setattr(Session, "get", get_with_redirect_to("http://192.168.1.1/private-file"))
+    with pytest.raises(ValueError, match="Redirect target is not allowed"):
+        resolve_source_to_stream("https://example.com/redirect")
+
+
 def test_is_safe_url_rejects_dual_stack_with_private_ipv6(monkeypatch):
     """A host with a public A record but a private AAAA record must be rejected."""
     monkeypatch.setattr(

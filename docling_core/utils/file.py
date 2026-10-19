@@ -336,7 +336,7 @@ def resolve_source_to_stream(
 
                         redirect_url = urljoin(response.url, redirect_url)
 
-                    if not _is_safe_url(redirect_url):
+                    if not _is_safe_request_url(redirect_url, session):
                         raise ValueError(f"Redirect target is not allowed: {redirect_url}")
 
         with session:
