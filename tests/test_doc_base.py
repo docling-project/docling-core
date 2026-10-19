@@ -12,6 +12,7 @@ from docling_core.types.doc.items.node import NodeItem
     [
         "application/pdf",
         "application/vnd.box.boxnote",
+        "application/vnd.cv+pdf",
         "application/vnd.docling.ebcdic",
         "application/x-ebcdic",
         "text/markdown",

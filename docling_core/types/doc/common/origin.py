@@ -33,6 +33,7 @@ class DocumentOrigin(BaseModel):
         "application/vnd.apple.numbers",
         "application/vnd.apple.keynote",
         "application/vnd.box.boxnote",
+        "application/vnd.cv+pdf",
         "application/vnd.docling.ebcdic",
         "application/vnd.ibm.modcap",
         "application/vnd.oasis.opendocument.presentation",
