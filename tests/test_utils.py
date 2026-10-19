@@ -248,6 +248,22 @@ def test_is_safe_url_rejects_private_networks(monkeypatch):
     assert _is_safe_url("https://github.com/github/file")
 
 
+def _fail_getaddrinfo(*args, **kwargs):
+    raise socket.gaierror("no resolver")
+
+
+def test_is_safe_url_can_skip_the_hostname_lookup(monkeypatch):
+    """Without hostname resolution a hostname is accepted as is; a literal IP is still checked."""
+    monkeypatch.setattr(socket, "getaddrinfo", _fail_getaddrinfo)
+
+    assert not _is_safe_url("https://example.com/file")
+    assert _is_safe_url("https://example.com/file", resolve_hostname=False)
+
+    assert _is_safe_url("http://8.8.8.8/file", resolve_hostname=False)
+    assert not _is_safe_url("http://10.0.0.1/file", resolve_hostname=False)
+    assert not _is_safe_url("http://[::1]/file", resolve_hostname=False)
+
+
 def test_is_safe_url_rejects_dual_stack_with_private_ipv6(monkeypatch):
     """A host with a public A record but a private AAAA record must be rejected."""
     monkeypatch.setattr(

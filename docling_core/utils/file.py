@@ -84,11 +84,14 @@ def _is_address_safe(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     )
 
 
-def _is_safe_url(url: str) -> bool:
+def _is_safe_url(url: str, *, resolve_hostname: bool = True) -> bool:
     """Check whether every address a URL's hostname resolves to is globally routable.
 
     Args:
         url: The URL to validate.
+        resolve_hostname: Whether to resolve a hostname with the local resolver and check
+            its addresses. When False, only a literal IP address is checked and a hostname
+            is accepted as is, for requests whose proxy resolves the host itself.
 
     Returns:
         True if the URL is safe to fetch, False otherwise.
@@ -105,6 +108,9 @@ def _is_safe_url(url: str) -> bool:
             return _is_address_safe(ip)
         except ValueError:
             pass
+
+        if not resolve_hostname:
+            return True
 
         try:
             results = socket.getaddrinfo(hostname, None, socket.AF_UNSPEC, socket.SOCK_STREAM)
