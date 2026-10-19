@@ -3093,6 +3093,24 @@ def test_delete_items_drops_captions_of_cascade_deleted_descendants():
     assert [t.text for t in doc.texts] == ["lead 0", "trailing"]
 
 
+def test_delete_items_drops_comments_on_deleted_items():
+    # a comment on a descendant of the deleted group
+    doc, group, run, _ = _doc_with_inline_group(num_leading=0)
+    holder = doc.add_text(label=DocItemLabel.TEXT, text="holder")
+    holder.comments.append(FineRef(cref=run.self_ref))
+    doc.delete_items(node_items=[group])
+    assert holder.comments == []
+
+    # a comment on the deleted item itself: FineRef never equals RefItem, so it was kept
+    doc = DoclingDocument(name="t")
+    doc.add_text(label=DocItemLabel.TEXT, text="a")
+    b = doc.add_text(label=DocItemLabel.TEXT, text="b")
+    holder = doc.add_text(label=DocItemLabel.TEXT, text="holder")
+    holder.comments.append(FineRef(cref=b.self_ref))
+    doc.delete_items(node_items=[b])
+    assert holder.comments == []
+
+
 def test_delete_items_renumbers_captions_of_survivors():
     doc, group, _, trailing = _doc_with_inline_group(num_leading=1)
     pic = doc.add_picture(caption=trailing)

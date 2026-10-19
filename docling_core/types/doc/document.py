@@ -1201,9 +1201,10 @@ class DoclingDocument(BaseModel):
         lookup: dict[str, dict[int, int]],
     ) -> list[RefItem]:
         """Update refitems with lookup."""
+        deleted_crefs = {ref.cref for ref in refs_to_be_deleted}
         new_refitems = []
         for ref_item in ref_items:
-            if ref_item not in refs_to_be_deleted:  # if ref_item is in ref, then delete/skip them
+            if ref_item.cref not in deleted_crefs:  # if ref_item is in ref, then delete/skip them
                 path = ref_item._split_ref_to_path()
                 if len(path) == 3:
                     new_refitems.append(
@@ -1244,9 +1245,11 @@ class DoclingDocument(BaseModel):
         lookup: dict[str, dict[int, int]],
     ):
         """Update the references of a single node with lookup."""
-        # Update the comments references on any DocItem
+        # Update the comments references on any DocItem; comments are FineRef, which never
+        # compares equal to a RefItem, so they are matched by cref
         if isinstance(node, DocItem):
-            node.comments = [ref_item for ref_item in node.comments if ref_item not in refs_to_be_deleted]
+            deleted_crefs = {ref.cref for ref in refs_to_be_deleted}
+            node.comments = [ref_item for ref_item in node.comments if ref_item.cref not in deleted_crefs]
             for ref_item in node.comments:
                 ref_item._update_with_lookup(lookup=lookup)
 
