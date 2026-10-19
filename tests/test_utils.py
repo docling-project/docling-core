@@ -19,6 +19,7 @@ from docling_core.utils.file import (
     resolve_source_to_path,
     resolve_source_to_stream,
 )
+from docling_core.utils.settings import settings
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -262,6 +263,31 @@ def test_is_safe_url_can_skip_the_hostname_lookup(monkeypatch):
     assert _is_safe_url("http://8.8.8.8/file", resolve_hostname=False)
     assert not _is_safe_url("http://10.0.0.1/file", resolve_hostname=False)
     assert not _is_safe_url("http://[::1]/file", resolve_hostname=False)
+
+
+def test_resolve_source_trusts_proxy_for_dns_only_when_opted_in(monkeypatch):
+    """A proxied URL skips the local hostname lookup only with ``trust_proxy_for_dns``."""
+    monkeypatch.setattr(socket, "getaddrinfo", _fail_getaddrinfo)  # no local DNS at all
+    monkeypatch.setattr(Session, "get", lambda *args, **kwargs: _closeable_response(content=b"ok"))
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.internal:3128")
+    monkeypatch.delenv("NO_PROXY", raising=False)
+    monkeypatch.delenv("no_proxy", raising=False)
+
+    # by default the hostname is still resolved locally
+    with pytest.raises(ValueError, match="URL is not allowed"):
+        resolve_source_to_stream("https://example.com/file")
+
+    monkeypatch.setattr(settings, "trust_proxy_for_dns", True)
+    assert resolve_source_to_stream("https://example.com/file").stream.read() == b"ok"
+
+    # a literal non-public address is still rejected
+    with pytest.raises(ValueError, match="URL is not allowed"):
+        resolve_source_to_stream("https://10.0.0.1/file")
+
+    # a URL the proxy does not handle keeps the local lookup
+    monkeypatch.setenv("NO_PROXY", "example.com")
+    with pytest.raises(ValueError, match="URL is not allowed"):
+        resolve_source_to_stream("https://example.com/file")
 
 
 def test_is_safe_url_rejects_dual_stack_with_private_ipv6(monkeypatch):

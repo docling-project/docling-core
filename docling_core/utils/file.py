@@ -133,6 +133,26 @@ def _is_safe_url(url: str, *, resolve_hostname: bool = True) -> bool:
         return False
 
 
+def _resolves_hostname_locally(url: str, session: requests.Session) -> bool:
+    """Whether the SSRF check of a URL must resolve its hostname with the local resolver.
+
+    A proxied request connects to the proxy, which resolves the target itself. When the
+    ``trust_proxy_for_dns`` setting is on, such a URL skips the local lookup, which would
+    leak the hostname to the local resolver and fail where only the proxy can resolve it.
+    """
+    if not settings.trust_proxy_for_dns:
+        return True
+    proxies = session.merge_environment_settings(url, {}, None, None, None)["proxies"]
+    return not select_proxy(url, proxies)
+
+
+def _is_safe_request_url(url: str, session: requests.Session) -> bool:
+    """Run the SSRF check of a URL about to be fetched with ``session``."""
+    if _resolves_hostname_locally(url, session):
+        return _is_safe_url(url)
+    return _is_safe_url(url, resolve_hostname=False)
+
+
 def _sanitize_filename(filename: str) -> str | None:
     """Return a basename-safe filename, or None if no usable basename remains."""
     normalized = filename.replace("\\", "/")
@@ -270,7 +290,8 @@ def resolve_source_to_stream(
         http_url: AnyHttpUrl = TypeAdapter(AnyHttpUrl).validate_python(source)
         url_str = str(http_url)
 
-        if not _is_safe_url(url_str):
+        session = requests.Session()
+        if not _is_safe_request_url(url_str, session):
             raise ValueError(f"URL is not allowed: {url_str}")
 
         _headers = headers or {}
@@ -318,7 +339,7 @@ def resolve_source_to_stream(
                     if not _is_safe_url(redirect_url):
                         raise ValueError(f"Redirect target is not allowed: {redirect_url}")
 
-        with requests.Session() as session:
+        with session:
             session.max_redirects = _MAX_REDIRECTS
             session.hooks["response"].append(_check_redirect_safety)
             session.mount("https://", _SafeConnectionAdapter())
