@@ -1,3 +1,18 @@
+## [v2.103.0](https://github.com/docling-project/docling-core/releases/tag/v2.103.0) - 2026-10-19
+
+### Feature
+
+* Accept calendar MIME types in DocumentOrigin ([#892](https://github.com/docling-project/docling-core/issues/892)) ([`6b1ef55`](https://github.com/docling-project/docling-core/commit/6b1ef556f16a877e835b409c1e8c799d8f68f1f1))
+
+### Fix
+
+* Gate all local image reads behind allow_image_file_uri ([#900](https://github.com/docling-project/docling-core/issues/900)) ([`f952fc5`](https://github.com/docling-project/docling-core/commit/f952fc5d4c68fb673043c7c9f9c4390052959517))
+* **origin:** Accept application/zip MIME type ([#891](https://github.com/docling-project/docling-core/issues/891)) ([`4845666`](https://github.com/docling-project/docling-core/commit/48456664ad2b1ce8cca56134e7a16e95cd39af2f))
+* Accept the .cv MIME type in DocumentOrigin ([#898](https://github.com/docling-project/docling-core/issues/898)) ([`cb95ecb`](https://github.com/docling-project/docling-core/commit/cb95ecbe49908b62c022e29e6290fe4aaa9b00f5))
+* **chunker:** Respect contextualized table token limits ([#690](https://github.com/docling-project/docling-core/issues/690)) ([`2e7f5d5`](https://github.com/docling-project/docling-core/commit/2e7f5d501fecb570c38ac7a100d00598fe22aa1d))
+* **html:** Put formatting and hyperlinks inside the `<p>` and `<hN>` tags ([#879](https://github.com/docling-project/docling-core/issues/879)) ([`3543306`](https://github.com/docling-project/docling-core/commit/35433063aee81d2c5268712e81b58aab02a91c64))
+* **types_doc:** Deduplicate row indices in TableData.remove_rows ([#834](https://github.com/docling-project/docling-core/issues/834)) ([`fdc66b3`](https://github.com/docling-project/docling-core/commit/fdc66b38dc676a0ace1854bd3f2f5c4d49d35520))
+
 ## [v2.102.0](https://github.com/docling-project/docling-core/releases/tag/v2.102.0) - 2026-10-18
 
 ### Feature
