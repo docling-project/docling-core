@@ -2226,3 +2226,29 @@ def test_html_formula_without_mathml_keeps_text():
 
     assert "Formula not decoded" not in actual
     assert "a&lt;b &amp;&amp; c&gt;d" in actual
+
+
+def test_html_formula_mathml_failure_falls_back_to_escaped_pre():
+    doc = DoclingDocument(name="formula-mathml-failure")
+    doc.add_formula(text="a^{")  # latex2mathml raises on the dangling brace
+
+    ser = HTMLDocSerializer(doc=doc)
+    actual = ser.serialize().text
+
+    assert "Formula not decoded" not in actual
+    assert "<pre>a^{</pre>" in actual
+
+
+def test_html_inline_formula_without_mathml_keeps_text():
+    doc = DoclingDocument(name="formula-inline-fallback")
+    heading = doc.add_heading(text="", level=1)
+    ig = doc.add_inline_group(parent=heading)
+    doc.add_formula(text="x<y", parent=ig)
+
+    ser = HTMLDocSerializer(
+        doc=doc,
+        params=HTMLParams(formula_to_mathml=False),
+    )
+    actual = ser.serialize().text
+
+    assert "<code>x&lt;y</code>" in actual
