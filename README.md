@@ -81,6 +81,40 @@ and visualization capabilities for analyzing document collections at scale.
 - [Document profiling example](./examples/document_profiling.py)
 - [Collection statistics visualization](./examples/visualize_collection_stats.py)
 
+## Configuration
+
+Runtime settings are read from environment variables with the `DOCLINGCORE_` prefix,
+or set in code via `docling_core.utils.settings.settings`.
+
+### Local image files
+
+Images in a DoclingDocument may reference a local file, either as a filesystem path or as
+a `file://` URI. Since such documents may come from untrusted sources, docling-core does
+not read these files by default, and raises a `ValueError` instead. This affects, for
+example, documents saved with `ImageRefMode.REFERENCED` and loaded again.
+
+For trusted documents, either enable it globally:
+
+```bash
+export DOCLINGCORE_ALLOW_IMAGE_FILE_URI=true
+```
+
+```python
+from docling_core.utils.settings import settings
+
+settings.allow_image_file_uri = True
+```
+
+or per document, reading its local images into memory at load time:
+
+```python
+from docling_core.types.doc import DoclingDocument
+
+doc = DoclingDocument.load_from_json("doc.json", allow_local_images=True)
+# or, for a document obtained otherwise:
+doc.load_local_images(base_dir=...)
+```
+
 ## Contributing
 
 Please read [Contributing to Docling Core](./CONTRIBUTING.md) for details.
