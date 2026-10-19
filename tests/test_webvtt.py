@@ -426,3 +426,23 @@ def test_webvtt_unknown_tags() -> None:
     assert span.start_tag.annotation == "Bob"
     assert isinstance(span.internal_text.components[0].component, WebVTTCueTextSpan)
     assert span.internal_text.components[0].component.text == "Run!"
+
+
+def test_webvtt_file_unknown_tags() -> None:
+    """Test that a file with tags that are not WebVTT cue spans keeps all of its cues."""
+    content = (
+        "WEBVTT\n\n"
+        "00:00:01.000 --> 00:00:03.000\nFirst cue\n\n"
+        '00:00:03.000 --> 00:00:05.000\n<font color="#ffff00">Where are you going?</font>\n\n'
+        "00:00:05.000 --> 00:00:07.000\n<v Anna><B>Home</B>, I think.</v>\n\n"
+        "00:00:07.000 --> 00:00:09.000\nLast cue\n"
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+
+    assert len(vtt) == 4
+    assert str(vtt[0]).rstrip("\n").endswith("\nFirst cue")
+    assert str(vtt[1]).rstrip("\n").endswith("\nWhere are you going?")
+    assert str(vtt[2]).rstrip("\n").endswith("\n<v Anna>Home, I think.</v>")
+    assert str(vtt[3]).rstrip("\n").endswith("\nLast cue")
