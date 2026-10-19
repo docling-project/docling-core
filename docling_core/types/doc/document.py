@@ -1142,6 +1142,18 @@ class DoclingDocument(BaseModel):
         if len(to_be_deleted_items) < len(refs):
             raise ValueError(f"Cannot find all provided RefItems in doc: {[r.cref for r in refs]}")
 
+        # A rich table cell must keep an item to refer to: refuse to delete an item a
+        # surviving table's rich cell points at, before anything is removed
+        deleted_crefs = set(to_be_deleted_items.values())
+        for table in self.tables:
+            if table.self_ref in deleted_crefs:
+                continue
+            for cell in table.data.table_cells:
+                if isinstance(cell, RichTableCell) and cell.ref.cref in deleted_crefs:
+                    raise ValueError(
+                        f"Cannot delete {cell.ref.cref}: it is referenced by a rich cell of table {table.self_ref}"
+                    )
+
         # Clean the tree, reverse the order to not have to update
         for stack_, ref_ in sorted(to_be_deleted_items.items(), reverse=True):
             success = self.body._delete_child(doc=self, stack=list(stack_))

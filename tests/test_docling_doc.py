@@ -3111,6 +3111,38 @@ def test_delete_items_drops_comments_on_deleted_items():
     assert holder.comments == []
 
 
+def _doc_with_rich_cell() -> tuple[DoclingDocument, TableItem, TextItem]:
+    doc = DoclingDocument(name="t")
+    doc.add_text(label=DocItemLabel.TEXT, text="lead")
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
+    rich_item = doc.add_text(label=DocItemLabel.TEXT, text="rich", parent=table)
+    doc.add_table_cell(
+        table,
+        RichTableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            ref=rich_item.get_ref(),
+        ),
+    )
+    return doc, table, rich_item
+
+
+def test_delete_items_refuses_to_delete_the_target_of_a_rich_cell():
+    doc, table, rich_item = _doc_with_rich_cell()
+    with pytest.raises(ValueError, match="rich cell"):
+        doc.delete_items(node_items=[rich_item])
+    # nothing was removed
+    assert [t.text for t in doc.texts] == ["lead", "rich"]
+    assert table.data.table_cells[0].ref.cref == rich_item.self_ref  # type: ignore[union-attr]
+
+    # deleting the table takes its rich items with it
+    doc.delete_items(node_items=[table])
+    assert doc.tables == []
+    assert [t.text for t in doc.texts] == ["lead"]
+
+
 def test_delete_items_renumbers_captions_of_survivors():
     doc, group, _, trailing = _doc_with_inline_group(num_leading=1)
     pic = doc.add_picture(caption=trailing)
