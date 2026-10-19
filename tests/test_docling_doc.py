@@ -55,6 +55,7 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
 )
+from docling_core.types.doc.common.reference import FineRef
 from docling_core.types.doc.document import (
     CURRENT_VERSION,
     FieldHeadingItem,
@@ -3063,6 +3064,41 @@ def test_docitem_comments_delete_updates_refs():
     # The resolved comment should still work
     resolved = updated_para.comments[0].resolve(doc)
     assert resolved.text == "Comment on second paragraph."
+
+
+def _doc_with_inline_group(num_leading: int) -> tuple[DoclingDocument, NodeItem, TextItem, TextItem]:
+    """A document with an inline group of two runs, ``num_leading`` texts before it and one after."""
+    doc = DoclingDocument(name="t")
+    for i in range(num_leading):
+        doc.add_text(label=DocItemLabel.TEXT, text=f"lead {i}")
+    group = doc.add_inline_group()
+    run = doc.add_text(label=DocItemLabel.TEXT, text="Figure 1:", parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text="a caption", parent=group)
+    trailing = doc.add_text(label=DocItemLabel.TEXT, text="trailing")
+    return doc, group, run, trailing
+
+
+def test_delete_items_drops_captions_of_cascade_deleted_descendants():
+    # the caption points at a run inside the deleted group, which is the first text item
+    doc, group, run, _ = _doc_with_inline_group(num_leading=0)
+    pic = doc.add_picture(caption=run)
+    doc.delete_items(node_items=[group])
+    assert pic.captions == []
+
+    # with a text before the group, the stale reference used to land on that text
+    doc, group, run, _ = _doc_with_inline_group(num_leading=1)
+    pic = doc.add_picture(caption=run)
+    doc.delete_items(node_items=[group])
+    assert pic.captions == []
+    assert [t.text for t in doc.texts] == ["lead 0", "trailing"]
+
+
+def test_delete_items_renumbers_captions_of_survivors():
+    doc, group, _, trailing = _doc_with_inline_group(num_leading=1)
+    pic = doc.add_picture(caption=trailing)
+    doc.delete_items(node_items=[group])
+    assert pic.captions[0].cref == "#/texts/1"
+    assert pic.caption_text(doc) == "trailing"
 
 
 def test_table_data_vertical_bounding_boxes():

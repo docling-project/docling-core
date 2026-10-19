@@ -1173,10 +1173,14 @@ class DoclingDocument(BaseModel):
                 _logger.debug(f"deleting item in doc for {item_label} for {item_index}")
                 del self.__getattribute__(item_label)[item_index]
 
+        # Every removed item counts as deleted, not only the ones handed in: a reference to a
+        # descendant of a deleted item must be dropped, not renumbered onto another item
+        deleted_refs = [RefItem(cref=ref_) for ref_ in to_be_deleted_items.values()]
+
         # Update all nodes, not only those reachable from body via children: orphaned items
         # (e.g. captions whose parent does not list them as children) must be renumbered too
         for node in self._iterate_all_nodes():
-            self._update_node_with_lookup(node=node, refs_to_be_deleted=refs, lookup=lookup)
+            self._update_node_with_lookup(node=node, refs_to_be_deleted=deleted_refs, lookup=lookup)
 
     # Update the references
     def _update_ref_with_lookup(self, item_label: str, item_index: int, lookup: dict[str, dict[int, int]]) -> RefItem:
