@@ -1755,6 +1755,27 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
 
 
+def test_table_remove_rows_ignores_duplicate_indices() -> None:
+    table_cells = [
+        TableCell(
+            text=f"r{i}c{j}",
+            start_row_offset_idx=i,
+            end_row_offset_idx=i + 1,
+            start_col_offset_idx=j,
+            end_col_offset_idx=j + 1,
+        )
+        for i in range(4)
+        for j in range(2)
+    ]
+    data = TableData(num_rows=4, num_cols=2, table_cells=table_cells)
+
+    removed = data.remove_rows([1, 1])
+
+    assert [[c.text for c in row] for row in removed] == [["r1c0", "r1c1"]]
+    assert data.num_rows == 3
+    assert [c.text for row in data.grid for c in row] == ["r0c0", "r0c1", "r2c0", "r2c1", "r3c0", "r3c1"]
+
+
 def test_misplaced_list_items():
     filename = Path("tests/data/doc/misplaced_list_items.yaml")
     doc = DoclingDocument.load_from_yaml(filename)
