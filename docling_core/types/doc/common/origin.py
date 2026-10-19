@@ -25,6 +25,8 @@ class DocumentOrigin(BaseModel):
     )
 
     _extra_mimetypes: typing.ClassVar[list[str]] = [
+        "application/calendar+json",
+        "application/calendar+xml",
         "application/epub+zip",
         "application/rtf",
         "application/vnd.apple.pages",
@@ -55,9 +57,11 @@ class DocumentOrigin(BaseModel):
         "audio/x-wav",
         "multipart/related",
         "text/asciidoc",
+        "text/calendar",
         "text/csv",
         "text/markdown",
         "text/vtt",
+        "text/x-vcalendar",
     ]
 
     @field_validator("binary_hash", mode="before")
