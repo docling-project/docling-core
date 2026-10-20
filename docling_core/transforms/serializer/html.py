@@ -3,13 +3,13 @@
 import base64
 import html
 import logging
+import re
 from enum import Enum
 from html.parser import HTMLParser
 from io import BytesIO
 from pathlib import Path, PurePath
 from typing import Any, Optional, Union
-from xml.etree.ElementTree import SubElement, tostring
-from xml.sax.saxutils import unescape
+from xml.etree.ElementTree import tostring
 
 import latex2mathml.converter
 from PIL.Image import Image
@@ -91,6 +91,8 @@ from docling_core.types.doc.utils import (
 )
 
 _logger = logging.getLogger(__name__)
+
+_DOUBLE_ESCAPED_CHAR_REF = re.compile(r"&amp;(#x[0-9A-Fa-f]+;)")
 
 
 class HTMLOutputStyle(str, Enum):
@@ -303,9 +305,11 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 # Set display mode based on context
                 display_mode = "inline" if is_inline_scope else "block"
                 mathml_element = latex2mathml.converter.convert_to_element(text, display=display_mode)
-                annotation = SubElement(mathml_element, "annotation", dict(encoding="TeX"))
-                annotation.text = text
-                mathml = unescape(tostring(mathml_element, encoding="unicode"))
+                # latex2mathml stores numeric character references as literal element text, which
+                # ElementTree escapes again. Revert only those; any other text must stay escaped.
+                mathml = _DOUBLE_ESCAPED_CHAR_REF.sub(r"&\1", tostring(mathml_element, encoding="unicode"))
+                annotation = f'<annotation encoding="TeX">{html.escape(text, quote=False)}</annotation>'
+                mathml = mathml.removesuffix("</math>") + annotation + "</math>"
 
                 # Don't wrap in div for inline formulas
                 if is_inline_scope:
@@ -339,7 +343,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         item_image = item.get_image(doc=doc)
         if item_image is not None:
             img_ref = ImageRef.from_pil(item_image, dpi=72)
-            return f'<figure><img src="{img_ref.uri}" alt="{orig}" /></figure>'
+            return f'<figure><img src="{img_ref.uri}" alt="{html.escape(orig)}" /></figure>'
         return None
 
 

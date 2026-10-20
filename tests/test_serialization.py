@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 from xml.etree import ElementTree as ET
 
 import pytest
+from PIL import Image
 from pydantic import AnyUrl
 
 from docling_core.transforms.chunker.hierarchical_chunker import TripletTableSerializer
@@ -2252,3 +2253,81 @@ def test_html_inline_formula_without_mathml_keeps_text():
     actual = ser.serialize().text
 
     assert "<code>x&lt;y</code>" in actual
+
+
+@pytest.mark.parametrize(
+    "formula",
+    [
+        "a<b && c>d",
+        r"\text{<svg/onload=alert(1)>}",
+        "x</annotation></math><img src=x onerror=alert(1)>",
+    ],
+)
+def test_html_mathml_annotation_is_escaped(formula: str):
+    doc = DoclingDocument(name="formula-mathml-annotation")
+    doc.add_formula(text=formula)
+
+    actual = HTMLDocSerializer(doc=doc).serialize().text
+
+    class TagCollector(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.tags: set[str] = set()
+            self.in_annotation = False
+            self.annotation: list[str] = []
+
+        def handle_starttag(self, tag, attrs):
+            self.tags.add(tag)
+            self.in_annotation = tag == "annotation"
+
+        def handle_endtag(self, tag):
+            if tag == "annotation":
+                self.in_annotation = False
+
+        def handle_data(self, data):
+            if self.in_annotation:
+                self.annotation.append(data)
+
+    parser = TagCollector()
+    parser.feed(actual[actual.index("<body>") :])
+
+    assert parser.tags.isdisjoint({"img", "svg", "b"})
+    assert "".join(parser.annotation) == formula
+
+
+def test_html_mathml_keeps_symbol_character_references():
+    doc = DoclingDocument(name="formula-mathml-symbols")
+    doc.add_formula(text=r"\alpha \leq \beta")
+
+    actual = HTMLDocSerializer(doc=doc).serialize().text
+
+    assert "<mi>&#x003B1;</mi><mo>&#x02264;</mo><mi>&#x003B2;</mi>" in actual
+    assert "&amp;#x" not in actual
+
+
+def test_html_formula_image_fallback_escapes_alt_attribute(doc_with_handwritten: DoclingDocument):
+    doc = doc_with_handwritten
+    doc.pages[1].image = ImageRef.from_pil(Image.new("RGB", (100, 100), "white"), dpi=72)
+    orig = 'x" onerror="alert(1)" y="<b>'
+    doc.add_formula(text="", orig=orig, prov=doc.texts[1].prov[0])
+
+    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(image_mode=ImageRefMode.EMBEDDED)).serialize().text
+
+    class ImgCollector(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.imgs: list[dict[str, str | None]] = []
+            self.tags: set[str] = set()
+
+        def handle_starttag(self, tag, attrs):
+            self.tags.add(tag)
+            if tag == "img":
+                self.imgs.append(dict(attrs))
+
+    parser = ImgCollector()
+    parser.feed(actual[actual.index("<body>") :])
+
+    assert len(parser.imgs) == 1
+    assert parser.imgs[0]["alt"] == orig
+    assert "onerror" not in parser.imgs[0]
+    assert "b" not in parser.tags
