@@ -3425,12 +3425,45 @@ class DoclingDocument(BaseModel):
         """num_pages."""
         return len(self.pages.values())
 
-    def validate_tree(self, root: NodeItem, raise_on_error: bool = False) -> bool:
-        """validate_tree."""
+    def validate_tree(
+        self,
+        root: NodeItem,
+        raise_on_error: bool = False,
+        _visited: set[str] | None = None,
+    ) -> bool:
+        """Validate that the subtree under `root` is a consistent tree.
+
+        Every child must point back to its parent and be reachable through exactly one
+        reference. The latter keeps the traversal linear, since a node listed more than
+        once would otherwise be walked once per reference (exponential for nested repeats).
+
+        Args:
+            root: The node whose subtree is validated.
+            raise_on_error: Raise a `ValueError` instead of returning `False`.
+            _visited: Internal. Refs of the nodes already reached in this traversal.
+
+        Returns:
+            True if the subtree is a valid tree, False otherwise.
+
+        Raises:
+            ValueError: If the subtree is invalid and `raise_on_error` is set.
+        """
         # TODO add check if heading levels conflict with hierarchy (e.g. level-1 heading with level-2 parent)
+        visited = _visited if _visited is not None else {root.self_ref}
         for child_ref in root.children:
+            if child_ref.cref in visited:
+                if raise_on_error:
+                    raise ValueError(
+                        f"Document hierarchy is inconsistent. {root.self_ref} references {child_ref.cref}, "
+                        "which is already reachable through another reference"
+                    )
+                return False
+            visited.add(child_ref.cref)
+
             child = child_ref.resolve(self)
-            if child.parent.resolve(self) != root or not self.validate_tree(child, raise_on_error=raise_on_error):
+            if child.parent.resolve(self) != root or not self.validate_tree(
+                child, raise_on_error=raise_on_error, _visited=visited
+            ):
                 if raise_on_error:
                     raise ValueError(
                         f"Document hierarchy is inconsistent. {root.self_ref} has child {child.self_ref} "
@@ -3440,9 +3473,16 @@ class DoclingDocument(BaseModel):
 
         if isinstance(root, TableItem):
             root_children_crefs = {child.cref for child in root.children}
+            seen_cell_crefs: set[str] = set()
             for cell in root.data.table_cells:
-                if isinstance(cell, RichTableCell) and (
-                    (par_ref := cell.ref.resolve(self).parent) is None
+                if not isinstance(cell, RichTableCell):
+                    continue
+                # a rich cell owns its subtree: sharing it between cells would multiply serialization work
+                is_shared = cell.ref.cref in seen_cell_crefs
+                seen_cell_crefs.add(cell.ref.cref)
+                if (
+                    is_shared
+                    or (par_ref := cell.ref.resolve(self).parent) is None
                     or par_ref.resolve(self) != root
                     or cell.ref.cref not in root_children_crefs
                 ):
@@ -3542,6 +3582,30 @@ class DoclingDocument(BaseModel):
                 if item.image is not None and item.image._pil is not None:
                     item.image._pil.close()
 
+    def load_local_images(self, base_dir: Path | None = None) -> None:
+        """Read all images referenced by a local path into memory.
+
+        Images of items and pages may reference a local file, either as a
+        ``file://`` URI or as a filesystem path. Since these paths come from the
+        document content, reading them is disabled by default (see
+        ``settings.allow_image_file_uri``). Calling this method is an explicit
+        opt-in for a trusted document: the images are read now and kept in memory,
+        so later exports do not access these paths again.
+
+        Args:
+            base_dir: Directory to resolve relative paths against; defaults to the
+                current working directory. Absolute paths are used as they are.
+
+        Raises:
+            ValueError: If a referenced path is not a regular file or exceeds
+                ``settings.max_image_decoded_size``.
+        """
+        items: list[FloatingItem] = [*self.pictures, *self.tables, *self.key_value_items, *self.form_items]
+        image_refs = [item.image for item in items if item.image is not None]
+        image_refs += [page.image for page in self.pages.values() if page.image is not None]
+        for image_ref in image_refs:
+            image_ref._load_local_image(base_dir=base_dir)
+
     def _list_images_on_disk(self) -> list[Path]:
         """List all images on disk."""
         result: list[Path] = []
@@ -3571,14 +3635,10 @@ class DoclingDocument(BaseModel):
 
         for ix, (item, level) in enumerate(result.iterate_items(with_groups=True)):
             if isinstance(item, PictureItem):
-                if item.image is not None:
-                    if isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "file":
-                        assert isinstance(item.image.uri.path, str)
-                        tmp_image = PILImage.open(str(unquote(item.image.uri.path)))
-                        item.image = ImageRef.from_pil(tmp_image, dpi=item.image.dpi)
-
-                    elif isinstance(item.image.uri, Path):
-                        tmp_image = PILImage.open(str(item.image.uri))
+                if item.image is not None and item.image._local_path() is not None:
+                    # go through pil_image so local reads honor the same settings gate
+                    tmp_image = item.image.pil_image
+                    if tmp_image is not None:
                         item.image = ImageRef.from_pil(tmp_image, dpi=item.image.dpi)
 
         return result
@@ -3781,11 +3841,15 @@ class DoclingDocument(BaseModel):
         )
 
     @classmethod
-    def load_from_json(cls, filename: str | Path) -> "DoclingDocument":
+    def load_from_json(cls, filename: str | Path, allow_local_images: bool = False) -> "DoclingDocument":
         """load_from_json.
 
         :param filename: The filename to load a saved DoclingDocument from a .json.
         :type filename: Path
+        :param allow_local_images: For trusted documents only: read images referenced
+            by a local path (relative to the file's directory) into memory, see
+            ``load_local_images``.
+        :type allow_local_images: bool
 
         :returns: The loaded DoclingDocument.
         :rtype: DoclingDocument
@@ -3793,7 +3857,10 @@ class DoclingDocument(BaseModel):
         """
         if isinstance(filename, str):
             filename = Path(filename)
-        return cls.model_validate_json(filename.read_text(encoding="utf-8"))
+        doc = cls.model_validate_json(filename.read_text(encoding="utf-8"))
+        if allow_local_images:
+            doc.load_local_images(base_dir=filename.parent)
+        return doc
 
     def save_as_yaml(
         self,
@@ -3826,11 +3893,14 @@ class DoclingDocument(BaseModel):
         filename.write_text(stream.getvalue(), encoding="utf-8")
 
     @classmethod
-    def load_from_yaml(cls, filename: str | Path) -> "DoclingDocument":
+    def load_from_yaml(cls, filename: str | Path, allow_local_images: bool = False) -> "DoclingDocument":
         """load_from_yaml.
 
         Args:
             filename: The filename to load a YAML-serialized DoclingDocument from.
+            allow_local_images: For trusted documents only: read images referenced
+                by a local path (relative to the file's directory) into memory, see
+                ``load_local_images``.
 
         Returns:
             DoclingDocument: the loaded DoclingDocument
@@ -3838,7 +3908,10 @@ class DoclingDocument(BaseModel):
         if isinstance(filename, str):
             filename = Path(filename)
         data = yaml.load(filename.read_text(encoding="utf-8"), Loader=yaml.SafeLoader)
-        return DoclingDocument.model_validate(data)
+        doc = DoclingDocument.model_validate(data)
+        if allow_local_images:
+            doc.load_local_images(base_dir=filename.parent)
+        return doc
 
     def export_to_dict(
         self,
@@ -4894,15 +4967,19 @@ class DoclingDocument(BaseModel):
                                     ]
                                 )
                                 # legacy annotations:
-                                pic.annotations.append(
-                                    PictureClassificationData(
-                                        provenance="load_from_doctags",
-                                        predicted_classes=[
-                                            # chart_type
-                                            PictureClassificationClass(class_name=image_classification, confidence=1.0)
-                                        ],
+                                with warnings.catch_warnings():
+                                    warnings.simplefilter("ignore", category=DeprecationWarning)
+                                    pic.annotations.append(
+                                        PictureClassificationData(
+                                            provenance="load_from_doctags",
+                                            predicted_classes=[
+                                                # chart_type
+                                                PictureClassificationClass(
+                                                    class_name=image_classification, confidence=1.0
+                                                )
+                                            ],
+                                        )
                                     )
-                                )
                             if table_data is not None:
                                 if pic.meta is None:
                                     pic.meta = PictureMeta()
@@ -4910,7 +4987,9 @@ class DoclingDocument(BaseModel):
                                 # legacy annotations:
                                 # Add chart data as PictureTabularChartData
                                 pd = PictureTabularChartData(chart_data=table_data, title=pic_title)
-                                pic.annotations.append(pd)
+                                with warnings.catch_warnings():
+                                    warnings.simplefilter("ignore", category=DeprecationWarning)
+                                    pic.annotations.append(pd)
 
                 elif tag_name == DocItemLabel.KEY_VALUE_REGION:
                     key_value_data, kv_item_prov = parse_key_value_item(full_chunk, image)
@@ -5329,12 +5408,15 @@ class DoclingDocument(BaseModel):
             with PILImage.open(resolved) as pil:
                 pil_copy = pil.copy()
             mimetype = mimetypes.guess_type(page_file.name)[0] or "image/png"
-            doc.pages[page_no].image = ImageRef(
+            page_image = ImageRef(
                 mimetype=mimetype,
                 dpi=72,
                 size=Size(width=pil_copy.width, height=pil_copy.height),
                 uri=resolved,
             )
+            # cache the validated image: re-reading the local path later is gated by settings
+            page_image._pil = pil_copy
+            doc.pages[page_no].image = page_image
 
     def _export_to_indented_text(
         self,
@@ -5536,6 +5618,15 @@ class DoclingDocument(BaseModel):
                     seen.add(item.self_ref)
                 else:
                     raise ValueError(f"Unknown element encountered: {item}")
+        return self
+
+    @model_validator(mode="after")
+    def _validate_total_table_cells(self) -> Self:
+        # all tables are counted, not only those in the tree: serialization dumps every grid in `tables`
+        limit = settings.max_total_table_cells
+        total = sum(max(t.data.num_rows, 0) * max(t.data.num_cols, 0) for t in self.tables)
+        if total > limit:
+            raise ValueError(f"Document tables declare {total} cells in total, exceeding the limit of {limit}")
         return self
 
     def _normalize_table_children_from_rich_cells(self):

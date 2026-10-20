@@ -66,6 +66,8 @@ DEFAULT_EXPORT_LABELS = {
     DocItemLabel.PAGE_FOOTER,
     DocItemLabel.KEY_VALUE_REGION,
     DocItemLabel.EMPTY_VALUE,
+    DocItemLabel.FIELD_REGION,
+    DocItemLabel.FIELD_ITEM,
     DocItemLabel.FIELD_KEY,
     DocItemLabel.FIELD_VALUE,
     DocItemLabel.FIELD_HEADING,

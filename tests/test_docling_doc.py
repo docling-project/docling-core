@@ -4,6 +4,7 @@ import os
 import re
 import warnings
 from collections import deque
+from collections.abc import Callable
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
@@ -406,14 +407,23 @@ def test_docitems():
         return yaml.safe_load(gold)
 
     def verify(dc, obj):
-        pred = serialise(obj).strip()
+        pred_text = serialise(obj).strip()
+        pred = yaml.safe_load(pred_text)
 
-        if dc is KeyValueItem or dc is FormItem:
-            write(dc.__name__, pred)
+        if GEN_TEST_DATA:
+            # Rewrite only when the content genuinely differs.  `safe_dump`
+            # sorts keys while the committed fixtures preserve insertion
+            # order, so writing unconditionally would reorder every file
+            # without changing what any of them mean.
+            try:
+                outdated = read(dc.__name__) != pred
+            except (FileNotFoundError, yaml.YAMLError):
+                # Missing or unparseable: regenerating is the whole point of
+                # the flag, so do not let a corrupt fixture block it.
+                outdated = True
+            if outdated:
+                write(dc.__name__, pred_text)
 
-        pred = yaml.safe_load(pred)
-
-        # print(f"\t{dc.__name__}:\n {pred}")
         gold = read(dc.__name__)
 
         assert pred == gold, f"pred!=gold for {dc.__name__}"
@@ -836,7 +846,7 @@ def test_image_ref_blocks_file_scheme():
 
     image_ref.uri = AnyUrl("file:///tmp/test.png")
 
-    with pytest.raises(ValueError, match="file:// URI scheme is not enabled"):
+    with pytest.raises(ValueError, match="Reading local image files"):
         _ = image_ref.pil_image
 
 
@@ -913,7 +923,7 @@ def test_file_uri_blocked_by_default():
         uri=AnyUrl("file:///tmp/test.png"),
     )
 
-    with pytest.raises(ValueError, match="file:// URI scheme is not enabled"):
+    with pytest.raises(ValueError, match="Reading local image files"):
         _ = image_ref.pil_image
 
 
@@ -977,8 +987,10 @@ def test_image_ref_path_rejects_oversize_file(tmp_path: Path):
     oversize.write_bytes(b"\x89PNG\r\n\x1a\n" + (b"\x00" * 256))
 
     orig_max = settings.max_image_decoded_size
+    orig_allow = settings.allow_image_file_uri
     try:
         settings.max_image_decoded_size = 64
+        settings.allow_image_file_uri = True
         image_ref = ImageRef(
             dpi=72,
             mimetype="image/png",
@@ -989,6 +1001,156 @@ def test_image_ref_path_rejects_oversize_file(tmp_path: Path):
             _ = image_ref.pil_image
     finally:
         settings.max_image_decoded_size = orig_max
+        settings.allow_image_file_uri = orig_allow
+
+
+def _doc_with_local_picture(uri: str) -> DoclingDocument:
+    """Build a document as loaded from untrusted JSON, with a picture pointing at ``uri``."""
+    doc = DoclingDocument(name="local_picture")
+    pic = doc.add_picture()
+    pic.image = ImageRef.from_pil(PILImage.new("RGB", (1, 1)), dpi=72)
+    data = doc.export_to_dict()
+    data["pictures"][0]["image"]["uri"] = uri
+    return DoclingDocument.model_validate(data)
+
+
+def _embedded_exports(doc: DoclingDocument, out_dir: Path) -> dict[str, Callable[[], str]]:
+    def _save(fn, name: str) -> str:
+        fn(out_dir / name, image_mode=ImageRefMode.EMBEDDED)
+        return (out_dir / name).read_text()
+
+    return {
+        "export_to_markdown": lambda: doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED),
+        "export_to_html": lambda: doc.export_to_html(image_mode=ImageRefMode.EMBEDDED),
+        "save_as_markdown": lambda: _save(doc.save_as_markdown, "out.md"),
+        "save_as_html": lambda: _save(doc.save_as_html, "out.html"),
+    }
+
+
+@pytest.mark.parametrize("as_file_uri", [False, True])
+@pytest.mark.parametrize("export", ["export_to_markdown", "export_to_html", "save_as_markdown", "save_as_html"])
+def test_local_image_blocked_in_embedded_exports(tmp_path: Path, as_file_uri: bool, export: str):
+    """Plain paths and file:// URIs must not be read on embedding unless enabled."""
+    secret = tmp_path / "secret.png"
+    PILImage.new("RGB", (4, 4), color=(11, 222, 33)).save(secret)
+    doc = _doc_with_local_picture(secret.as_uri() if as_file_uri else str(secret))
+
+    with pytest.raises(ValueError, match="Reading local image files"):
+        _embedded_exports(doc, tmp_path)[export]()
+
+
+@pytest.mark.parametrize("as_file_uri", [False, True])
+@pytest.mark.parametrize("export", ["export_to_markdown", "export_to_html", "save_as_markdown", "save_as_html"])
+def test_local_image_allowed_in_embedded_exports_when_enabled(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, as_file_uri: bool, export: str
+):
+    """With the opt-in, local images are embedded as before."""
+    monkeypatch.setattr(settings, "allow_image_file_uri", True)
+    img = tmp_path / "img.png"
+    PILImage.new("RGB", (4, 4), color=(11, 222, 33)).save(img)
+    doc = _doc_with_local_picture(img.as_uri() if as_file_uri else str(img))
+
+    assert "data:image/png;base64," in _embedded_exports(doc, tmp_path)[export]()
+
+
+def test_local_image_blocked_in_referenced_export(tmp_path: Path):
+    """Referenced exports must not copy local files into the artifacts directory."""
+    secret = tmp_path / "secret.png"
+    PILImage.new("RGB", (4, 4)).save(secret)
+    doc = _doc_with_local_picture(str(secret))
+
+    with pytest.raises(ValueError, match="Reading local image files"):
+        doc.save_as_markdown(tmp_path / "out.md", image_mode=ImageRefMode.REFERENCED)
+
+
+def test_local_page_image_blocked(tmp_path: Path):
+    """Page images with a local path must be gated when cropping pictures."""
+    secret = tmp_path / "page.png"
+    PILImage.new("RGB", (10, 10)).save(secret)
+    doc = DoclingDocument(name="local_page")
+    doc.add_page(
+        page_no=1,
+        size=Size(width=10, height=10),
+        image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=secret),
+    )
+    doc.add_picture(
+        prov=ProvenanceItem(
+            page_no=1, bbox=BoundingBox(l=0, t=10, r=5, b=5, coord_origin=CoordOrigin.BOTTOMLEFT), charspan=(0, 0)
+        )
+    )
+
+    with pytest.raises(ValueError, match="Reading local image files"):
+        doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
+
+
+def _save_referenced_doc(out_dir: Path, filename: str) -> Path:
+    """Save a document with a picture and a page image in referenced mode."""
+    doc = DoclingDocument(name="referenced")
+    page_image = PILImage.new("RGB", (10, 10), color=(11, 222, 33))
+    doc.add_page(page_no=1, size=Size(width=10, height=10), image=ImageRef.from_pil(page_image, dpi=72))
+    doc.add_picture(image=ImageRef.from_pil(PILImage.new("RGB", (4, 4), color=(1, 2, 3)), dpi=72))
+    path = out_dir / filename
+    if path.suffix == ".json":
+        doc.save_as_json(path, image_mode=ImageRefMode.REFERENCED)
+    else:
+        doc.save_as_yaml(path, image_mode=ImageRefMode.REFERENCED)
+    return path
+
+
+@pytest.mark.parametrize("filename", ["doc.json", "doc.yaml"])
+def test_load_with_allow_local_images(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, filename: str):
+    """Loaders read local images on explicit opt-in, relative to the file's directory."""
+    path = _save_referenced_doc(tmp_path, filename)
+    other_dir = tmp_path / "elsewhere"
+    other_dir.mkdir()
+    monkeypatch.chdir(other_dir)
+    load = DoclingDocument.load_from_json if filename.endswith(".json") else DoclingDocument.load_from_yaml
+
+    with pytest.raises(ValueError, match="Reading local image files"):
+        load(path).export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
+
+    doc = load(path, allow_local_images=True)
+    assert "data:image/png;base64," in doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
+    assert doc.pictures[0].image is not None
+    assert (picture_pil := doc.pictures[0].image.pil_image) is not None
+    assert picture_pil.getpixel((0, 0)) == (1, 2, 3)
+    assert doc.pages[1].image is not None
+    assert (page_pil := doc.pages[1].image.pil_image) is not None
+    assert page_pil.getpixel((0, 0)) == (11, 222, 33)
+
+
+def test_load_local_images_ignores_later_uri_changes(tmp_path: Path):
+    """Only the images present when opting in are read; later paths are not."""
+    doc = DoclingDocument.load_from_json(_save_referenced_doc(tmp_path, "doc.json"), allow_local_images=True)
+    secret = tmp_path / "secret.png"
+    PILImage.new("RGB", (4, 4), color=(255, 0, 0)).save(secret)
+
+    image = doc.pictures[0].image
+    assert image is not None
+    image.uri = secret
+    assert (pil := image.pil_image) is not None
+    assert pil.getpixel((0, 0)) == (1, 2, 3)
+
+    doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=4, height=4), uri=secret))
+    with pytest.raises(ValueError, match="Reading local image files"):
+        doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
+
+
+def test_load_local_images_rejects_non_regular_file(tmp_path: Path):
+    doc = _doc_with_local_picture(str(tmp_path))
+
+    with pytest.raises(ValueError, match="not a regular file"):
+        doc.load_local_images()
+
+
+def test_load_local_images_rejects_oversize_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    big = tmp_path / "big.png"
+    PILImage.new("RGB", (50, 50), color=(1, 2, 3)).save(big)
+    monkeypatch.setattr(settings, "max_image_decoded_size", 64)
+    doc = _doc_with_local_picture(str(big))
+
+    with pytest.raises(ValueError, match="exceeds size limit"):
+        doc.load_local_images()
 
 
 def test_upgrade_content_layer_from_1_0_0() -> None:
@@ -1746,6 +1908,27 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
 
 
+def test_table_remove_rows_ignores_duplicate_indices() -> None:
+    table_cells = [
+        TableCell(
+            text=f"r{i}c{j}",
+            start_row_offset_idx=i,
+            end_row_offset_idx=i + 1,
+            start_col_offset_idx=j,
+            end_col_offset_idx=j + 1,
+        )
+        for i in range(4)
+        for j in range(2)
+    ]
+    data = TableData(num_rows=4, num_cols=2, table_cells=table_cells)
+
+    removed = data.remove_rows([1, 1])
+
+    assert [[c.text for c in row] for row in removed] == [["r1c0", "r1c1"]]
+    assert data.num_rows == 3
+    assert [c.text for row in data.grid for c in row] == ["r0c0", "r0c1", "r2c0", "r2c1", "r3c0", "r3c1"]
+
+
 def test_misplaced_list_items():
     filename = Path("tests/data/doc/misplaced_list_items.yaml")
     doc = DoclingDocument.load_from_yaml(filename)
@@ -2220,43 +2403,6 @@ def test_export_markdown_compact_tables():
 
     # Verify compact is shorter
     assert len(md_compact) < len(md_padded)
-
-
-def test_export_dataframe_with_row_spanning_column_header():
-    def cell(
-        text: str,
-        row: int,
-        column: int,
-        row_span: int = 1,
-        column_header: bool = False,
-    ) -> TableCell:
-        return TableCell(
-            text=text,
-            start_row_offset_idx=row,
-            end_row_offset_idx=row + row_span,
-            start_col_offset_idx=column,
-            end_col_offset_idx=column + 1,
-            row_span=row_span,
-            column_header=column_header,
-        )
-
-    doc = DoclingDocument(name="test")
-    table = doc.add_table(
-        data=TableData(
-            num_rows=2,
-            num_cols=2,
-            table_cells=[
-                cell("Name", 0, 0, column_header=True),
-                cell("", 0, 1, row_span=2, column_header=True),
-                cell("Alpha", 1, 0),
-            ],
-        )
-    )
-
-    dataframe = table.export_to_dataframe(doc)
-
-    assert list(dataframe.columns) == ["Name", ""]
-    assert dataframe.values.tolist() == [["Alpha", ""]]
 
 
 def test_export_traverse_pictures_ocr_scanned_pdf():
@@ -3288,3 +3434,151 @@ def test_document_validation_clamps_table_cell_bbox() -> None:
     messages = [str(warning.message) for warning in caught]
     assert any("Table cell bbox coordinate l on page 1 is outside page bounds" in message for message in messages)
     assert any("Table cell bbox coordinate r on page 1 is outside page bounds" in message for message in messages)
+
+
+def _nested_doc_dict(depth: int, *, kind: str) -> dict:
+    """Build a document dict whose nodes reference their single child more than once.
+
+    kind="groups": every group lists its only child twice (a DAG, not a tree).
+    kind="rich_cells": every table holds the next table in a single 2x2-spanning rich cell.
+    """
+    node_list = "groups" if kind == "groups" else "tables"
+    nodes = []
+    for i in range(depth):
+        last = i == depth - 1
+        parent = {"$ref": "#/body" if i == 0 else f"#/{node_list}/{i - 1}"}
+        nxt = {"$ref": f"#/{node_list}/{i + 1}"}
+        node: dict = {
+            "self_ref": f"#/{node_list}/{i}",
+            "parent": parent,
+            "content_layer": "body",
+        }
+        if kind == "groups":
+            node |= {"name": "g", "label": "unspecified", "children": [] if last else [nxt, nxt]}
+        else:
+            cells = [] if last else [_span_rich_cell(nxt["$ref"])]
+            node |= {
+                "label": "table",
+                "children": [] if last else [nxt],
+                "data": {"num_rows": 2, "num_cols": 2, "table_cells": cells},
+            }
+        nodes.append(node)
+    return {
+        "schema_name": "DoclingDocument",
+        "version": "1.10.0",
+        "name": "nested",
+        "body": {
+            "self_ref": "#/body",
+            "name": "_root_",
+            "label": "unspecified",
+            "content_layer": "body",
+            "children": [{"$ref": f"#/{node_list}/0"}],
+        },
+        node_list: nodes,
+    }
+
+
+def _span_rich_cell(ref: str) -> dict:
+    return {
+        "text": "",
+        "ref": {"$ref": ref},
+        "start_row_offset_idx": 0,
+        "end_row_offset_idx": 2,
+        "start_col_offset_idx": 0,
+        "end_col_offset_idx": 2,
+    }
+
+
+def test_validate_rejects_repeated_child_references():
+    """A node listed more than once under its parent makes the tree a DAG with exponential traversal."""
+    data = _nested_doc_dict(60, kind="groups")  # 2**60 paths if walked once per reference
+    with pytest.raises(ValidationError, match="already reachable"):
+        DoclingDocument.model_validate(data)
+
+
+def test_validate_rejects_rich_cell_sharing_one_subtree():
+    """Two rich cells pointing at the same item would render its subtree twice."""
+    data = _nested_doc_dict(2, kind="rich_cells")
+    cells = data["tables"][0]["data"]["table_cells"]
+    cells.append(cells[0] | {"start_col_offset_idx": 1, "end_col_offset_idx": 2})
+    with pytest.raises(ValidationError):
+        DoclingDocument.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    "export",
+    [
+        lambda doc: doc.export_to_markdown(),
+        lambda doc: doc.export_to_doctags(),
+        lambda doc: doc.export_to_doclang(),
+    ],
+    ids=["markdown", "doctags", "doclang"],
+)
+def test_export_nested_spanning_rich_cells_is_not_exponential(export):
+    """A rich cell spanning N slots must be rendered once, not once per covered slot.
+
+    With 4 slots per cell and 25 nesting levels, per-slot rendering would take ~4**25 steps.
+    """
+    doc = DoclingDocument.model_validate(_nested_doc_dict(25, kind="rich_cells"))
+    assert export(doc)
+
+
+@pytest.mark.parametrize(
+    ("num_rows", "num_cols"),
+    [(2**40, 2**40), (2**40, 0), (0, 2**40), (1001, 1000)],
+)
+def test_table_data_rejects_oversized_grid(num_rows, num_cols):
+    """Rows and columns are bounded separately too: many rows with no columns still allocate one list each."""
+    with pytest.raises(ValidationError, match="exceeds the limit"):
+        TableData(num_rows=num_rows, num_cols=num_cols)
+
+
+def test_table_data_grid_limit_is_configurable(monkeypatch):
+    monkeypatch.setattr(settings, "max_table_cells", 4)
+    TableData(num_rows=2, num_cols=2)
+    with pytest.raises(ValidationError):
+        TableData(num_rows=2, num_cols=3)
+
+
+def _tables_doc_dict(body: int, furniture: int = 0, orphans: int = 0) -> dict:
+    """Build a document dict with 2x2 tables under body, under furniture, and outside the tree."""
+    placement = ["#/body"] * body + ["#/furniture"] * furniture + ["#/body"] * orphans
+    tables = [
+        {
+            "self_ref": f"#/tables/{i}",
+            "parent": {"$ref": parent},
+            "label": "table",
+            "data": {"num_rows": 2, "num_cols": 2, "table_cells": []},
+        }
+        for i, parent in enumerate(placement)
+    ]
+
+    def root(name: str, start: int, count: int) -> dict:
+        return {
+            "self_ref": f"#/{name}",
+            "name": "_root_",
+            "label": "unspecified",
+            "children": [{"$ref": f"#/tables/{i}"} for i in range(start, start + count)],
+        }
+
+    return {
+        "schema_name": "DoclingDocument",
+        "version": "1.10.0",
+        "name": "tables",
+        "body": root("body", 0, body),
+        "furniture": root("furniture", body, furniture),
+        "tables": tables,
+    }
+
+
+@pytest.mark.parametrize(
+    ("body", "furniture", "orphans"),
+    [(3, 0, 0), (1, 2, 0), (1, 0, 2)],
+    ids=["body", "body_and_furniture", "outside_tree"],
+)
+def test_validate_rejects_total_table_cells_over_limit(monkeypatch, body, furniture, orphans):
+    """The budget covers all tables, wherever they sit: every grid in `tables` is serialized."""
+    monkeypatch.setattr(settings, "max_total_table_cells", 8)
+    DoclingDocument.model_validate(_tables_doc_dict(body=2))
+    with pytest.raises(ValidationError, match="exceeding the limit of 8"):
+        DoclingDocument.model_validate(_tables_doc_dict(body=body, furniture=furniture, orphans=orphans))

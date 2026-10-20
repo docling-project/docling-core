@@ -1,7 +1,10 @@
+import mimetypes
+
 import pytest
 from pydantic import ValidationError
 
 from docling_core.types.doc import DocItemLabel, DoclingDocument, DocumentOrigin, GraphData, TableData, TrackSource
+from docling_core.types.doc.items.node import NodeItem
 
 
 @pytest.mark.parametrize(
@@ -9,6 +12,7 @@ from docling_core.types.doc import DocItemLabel, DoclingDocument, DocumentOrigin
     [
         "application/pdf",
         "application/vnd.box.boxnote",
+        "application/vnd.cv+pdf",
         "application/vnd.docling.ebcdic",
         "application/x-ebcdic",
         "text/markdown",
@@ -18,6 +22,40 @@ def test_document_origin_mimetype(mimetype: str):
     """Test that DocumentOrigin accepts the supported MIME types."""
     origin = DocumentOrigin(mimetype=mimetype, binary_hash=42, filename="test")
     assert origin.mimetype == mimetype
+
+
+@pytest.mark.parametrize(
+    "mimetype",
+    [
+        "application/calendar+json",
+        "application/calendar+xml",
+        "text/calendar",
+        "text/x-vcalendar",
+    ],
+)
+def test_document_origin_calendar_mimetype_without_system_table(monkeypatch, mimetype: str):
+    """Test that calendar MIME types do not depend on the host MIME table.
+
+    CPython's built-in table has no calendar types; only a system table such as
+    /etc/mime.types or the Windows registry adds them.
+    """
+    monkeypatch.setattr(mimetypes, "types_map", {})
+    origin = DocumentOrigin(mimetype=mimetype, binary_hash=42, filename="test")
+    assert origin.mimetype == mimetype
+
+
+def test_document_origin_zip_mimetype_without_application_zip(monkeypatch: pytest.MonkeyPatch):
+    """Test that DocumentOrigin accepts application/zip when the platform maps .zip elsewhere.
+
+    On Windows the registry maps ".zip" to application/x-zip-compressed, which replaces
+    application/zip in mimetypes.types_map once mimetypes.init() has run.
+    """
+    types_map = {ext: mt for ext, mt in mimetypes.types_map.items() if mt != "application/zip"}
+    types_map[".zip"] = "application/x-zip-compressed"
+    monkeypatch.setattr(mimetypes, "types_map", types_map)
+
+    origin = DocumentOrigin(mimetype="application/zip", binary_hash=42, filename="test.dclx")
+    assert origin.mimetype == "application/zip"
 
 
 def test_document_origin_invalid_mimetype():
@@ -68,9 +106,10 @@ def test_add_doc_items_with_source():
     """Test that add_* helpers append sources to created DocItems."""
     source = TrackSource(start_time=11.0, end_time=12.0)
     doc = DoclingDocument(name="Unknown")
+    list_group = doc.add_list_group()
 
     items = [
-        doc.add_list_item(text="List item", source=source),
+        doc.add_list_item(text="List item", source=source, parent=list_group),
         doc.add_text(text="Text", label=DocItemLabel.TEXT, source=source),
         doc.add_comment(text="Comment", source=source),
         doc.add_table(data=TableData(), source=source),
@@ -111,6 +150,9 @@ def test_add_text_dispatch_preserves_source(label: DocItemLabel):
     source = TrackSource(start_time=11.0, end_time=12.0)
     doc = DoclingDocument(name="Unknown")
 
-    item = doc.add_text(label=label, text="Hello world", source=source)
+    parent: NodeItem | None = None
+    if label == DocItemLabel.LIST_ITEM:
+        parent = doc.add_list_group()
+    item = doc.add_text(label=label, text="Hello world", source=source, parent=parent)
 
     assert item.source == [source]

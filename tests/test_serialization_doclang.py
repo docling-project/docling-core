@@ -2863,3 +2863,59 @@ def test_table_footnote_with_nested_field_region():
     assert len(regions2) == 1
     assert [t.text for t in doc2.texts if t.label in (DocItemLabel.FIELD_KEY, DocItemLabel.FIELD_VALUE)] == ["K:", "V"]
     assert serialize_doclang(doc2) == ser_txt
+
+
+def _doc_field_region_in_inline_group() -> DoclingDocument:
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100))
+    group = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="(", parent=group, prov=_prov(5, 90, 10, 80))
+    item = doc.add_field_item(parent=doc.add_field_region(parent=group))
+    doc.add_field_key(text="K:", parent=item, prov=_prov(10, 90, 30, 80))
+    doc.add_field_value(text="V", parent=item, prov=_prov(40, 90, 90, 80))
+    doc.add_text(label=DocItemLabel.TEXT, text=")", parent=group, prov=_prov(90, 90, 95, 80))
+    return doc
+
+
+def test_field_region_in_inline_group_keeps_key_value_locations():
+    """Keys and values are elements with their own location, also when the region sits in an inline group."""
+    doc = _doc_field_region_in_inline_group()
+
+    root = ET.fromstring(serialize_doclang(doc))
+
+    item = root.find("text/field_region/field_item")
+    assert item is not None
+    for tag in ("key", "value"):
+        assert len(item.findall(f"{tag}/location")) == 4
+    # the runs of the group are still located by the group alone
+    assert len(root.findall("text/location")) == 4
+
+    # the locations survive a round trip
+    doc2 = DocLangDocDeserializer().deserialize_str(serialize_doclang(doc))
+    kv = [t for t in doc2.texts if t.label in (DocItemLabel.FIELD_KEY, DocItemLabel.FIELD_VALUE)]
+    assert [t.text for t in kv] == ["K:", "V"]
+    assert all(t.prov for t in kv)
+
+
+def test_field_region_in_inline_group_respects_add_location_off():
+    doc = _doc_field_region_in_inline_group()
+
+    root = ET.fromstring(serialize_doclang(doc, DocLangParams(include_version=False, add_location=False)))
+
+    assert not list(root.iter("location"))
+
+
+def test_picture_with_nested_field_region():
+    """A field region that is a child of a picture is serialized inside the picture."""
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100))
+    picture = doc.add_picture(prov=_prov(0, 100, 100, 0))
+    item = doc.add_field_item(parent=doc.add_field_region(parent=picture))
+    doc.add_field_key(text="K:", parent=item, prov=_prov(10, 90, 30, 80))
+    doc.add_field_value(text="V", parent=item, prov=_prov(40, 90, 90, 80))
+
+    root = ET.fromstring(serialize_doclang(doc))
+
+    assert len(list(root.iter("field_region"))) == 1
+    assert root.find("picture/field_region/field_item/key") is not None
+    assert root.find("picture/field_region/field_item/value") is not None
