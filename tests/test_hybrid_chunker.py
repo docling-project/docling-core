@@ -758,9 +758,7 @@ def test_table_caption_not_repeated_in_split_chunks():
 
 
 def test_table_caption_stripping_keeps_rows_without_repeated_header():
-    """Regression test: with a table caption and omit_header_on_overflow=True, a row
-    emitted without the repeated header must not lose its leading characters when
-    the caption (preamble) is stripped from non-first chunks."""
+    """Row text is preserved when a captioned table is split with omit_header_on_overflow=True."""
     caption_text = "Table 1: Quarterly revenue by region"
     long_note = " ".join(["growth"] * 40)
     rows = [["Region", "Notes"], ["North", "stable"], ["South", long_note], ["East", "flat"]]

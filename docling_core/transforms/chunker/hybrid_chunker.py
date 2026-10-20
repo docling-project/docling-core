@@ -412,9 +412,6 @@ class HybridChunker(BaseChunker):
                 )
                 segments = line_chunker.chunk_text(lines=body_lines)
                 if preamble:
-                    # Only strip the preamble from segments that actually carry the
-                    # repeated prefix: e.g. with omit_header_on_overflow, a segment may
-                    # start directly with a table row.
                     segments = segments[:1] + [
                         s[len(preamble) :] if s.startswith(full_prefix) else s for s in segments[1:]
                     ]
