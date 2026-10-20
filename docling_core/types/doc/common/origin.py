@@ -25,12 +25,15 @@ class DocumentOrigin(BaseModel):
     )
 
     _extra_mimetypes: typing.ClassVar[list[str]] = [
+        "application/calendar+json",
+        "application/calendar+xml",
         "application/epub+zip",
         "application/rtf",
         "application/vnd.apple.pages",
         "application/vnd.apple.numbers",
         "application/vnd.apple.keynote",
         "application/vnd.box.boxnote",
+        "application/vnd.cv+pdf",
         "application/vnd.docling.ebcdic",
         "application/vnd.ibm.modcap",
         "application/vnd.oasis.opendocument.presentation",
@@ -48,6 +51,7 @@ class DocumentOrigin(BaseModel):
         "application/x-iwork-numbers-sffnumbers",
         "application/x-iwork-keynote-sffkey",
         "application/x-mimearchive",
+        "application/zip",
         "audio/m4a",
         "audio/mp4",
         "audio/mp3",
@@ -55,9 +59,11 @@ class DocumentOrigin(BaseModel):
         "audio/x-wav",
         "multipart/related",
         "text/asciidoc",
+        "text/calendar",
         "text/csv",
         "text/markdown",
         "text/vtt",
+        "text/x-vcalendar",
     ]
 
     @field_validator("binary_hash", mode="before")

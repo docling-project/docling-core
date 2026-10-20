@@ -168,6 +168,9 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             if not isinstance(item, CodeItem | FormulaItem):
                 text = html.escape(text, quote=False)
                 text = text.replace("\n", "<br>")
+            if not isinstance(item, CodeItem | FormulaItem | ListItem):
+                text = doc_serializer.post_process(text=text, formatting=item.formatting, hyperlink=item.hyperlink)
+                post_processed = True
 
         # Prepare the HTML based on item type
         if isinstance(item, TitleItem | SectionHeaderItem):

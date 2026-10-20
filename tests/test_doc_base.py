@@ -1,3 +1,5 @@
+import mimetypes
+
 import pytest
 from pydantic import ValidationError
 
@@ -10,6 +12,7 @@ from docling_core.types.doc.items.node import NodeItem
     [
         "application/pdf",
         "application/vnd.box.boxnote",
+        "application/vnd.cv+pdf",
         "application/vnd.docling.ebcdic",
         "application/x-ebcdic",
         "text/markdown",
@@ -19,6 +22,40 @@ def test_document_origin_mimetype(mimetype: str):
     """Test that DocumentOrigin accepts the supported MIME types."""
     origin = DocumentOrigin(mimetype=mimetype, binary_hash=42, filename="test")
     assert origin.mimetype == mimetype
+
+
+@pytest.mark.parametrize(
+    "mimetype",
+    [
+        "application/calendar+json",
+        "application/calendar+xml",
+        "text/calendar",
+        "text/x-vcalendar",
+    ],
+)
+def test_document_origin_calendar_mimetype_without_system_table(monkeypatch, mimetype: str):
+    """Test that calendar MIME types do not depend on the host MIME table.
+
+    CPython's built-in table has no calendar types; only a system table such as
+    /etc/mime.types or the Windows registry adds them.
+    """
+    monkeypatch.setattr(mimetypes, "types_map", {})
+    origin = DocumentOrigin(mimetype=mimetype, binary_hash=42, filename="test")
+    assert origin.mimetype == mimetype
+
+
+def test_document_origin_zip_mimetype_without_application_zip(monkeypatch: pytest.MonkeyPatch):
+    """Test that DocumentOrigin accepts application/zip when the platform maps .zip elsewhere.
+
+    On Windows the registry maps ".zip" to application/x-zip-compressed, which replaces
+    application/zip in mimetypes.types_map once mimetypes.init() has run.
+    """
+    types_map = {ext: mt for ext, mt in mimetypes.types_map.items() if mt != "application/zip"}
+    types_map[".zip"] = "application/x-zip-compressed"
+    monkeypatch.setattr(mimetypes, "types_map", types_map)
+
+    origin = DocumentOrigin(mimetype="application/zip", binary_hash=42, filename="test.dclx")
+    assert origin.mimetype == "application/zip"
 
 
 def test_document_origin_invalid_mimetype():

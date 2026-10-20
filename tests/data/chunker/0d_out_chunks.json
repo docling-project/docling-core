@@ -770,7 +770,7 @@
         }
     },
     {
-        "text": "| class label | Count | % of Total - Train | % of Total - Test | % of Total - Val | triple inter-annotator mAP @ 0.5-0.95 (%) - All | triple inter-annotator mAP @ 0.5-0.95 (%) - Fin | triple inter-annotator mAP @ 0.5-0.95 (%) - Man | triple inter-annotator mAP @ 0.5-0.95 (%) - Sci | triple inter-annotator mAP @ 0.5-0.95 (%) - Law | triple inter-annotator mAP @ 0.5-0.95 (%) - Pat | triple inter-annotator mAP @ 0.5-0.95 (%) - Ten |\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Caption | 22524 | 2.04 | 1.77 | 2.32 | 84-89 | 40-61 | 86-92 | 94-99 | 95-99 | 69-78 | n/a |\n",
+        "text": "| class label | Count | % of Total - Train | % of Total - Test |\n| - | - | - | - |\n| Caption | 22524 | 2.04 | 1.77 |\n| Footnote | 6318 | 0.60 | 0.31 |\n| Formula | 25027 | 2.25 | 1.90 |\n| List-item | 185660 | 17.19 | 13.34 |\n| Page-footer | 70878 | 6.51 | 5.58 |\n| Page-header | 58022 | 5.10 | 6.70 |\n| Picture | 45976 | 4.21 | 2.78 |\n| Section-header | 142884 | 12.60 | 15.77 |\n| Table | 34733 | 3.20 | 2.27 |\n| Text | 510377 | 45.82 | 49.28 |\n| Title | 5071 | 0.47 | 0.30 |\n| Total | 1107470 | 941123 | 99816 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/3"
@@ -782,7 +782,7 @@
         }
     },
     {
-        "text": "| class label | Count | % of Total - Train | % of Total - Test | % of Total - Val | triple inter-annotator mAP @ 0.5-0.95 (%) - All | triple inter-annotator mAP @ 0.5-0.95 (%) - Fin | triple inter-annotator mAP @ 0.5-0.95 (%) - Man | triple inter-annotator mAP @ 0.5-0.95 (%) - Sci | triple inter-annotator mAP @ 0.5-0.95 (%) - Law | triple inter-annotator mAP @ 0.5-0.95 (%) - Pat | triple inter-annotator mAP @ 0.5-0.95 (%) - Ten |\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Footnote | 6318 | 0.60 | 0.31 | 0.58 | 83-91 | n/a | 100 | 62-88 | 85-94 | n/a | 82-97 |\n",
+        "text": "| % of Total - Val | triple inter-annotator mAP @ 0.5-0.95 (%) - All | triple inter-annotator mAP @ 0.5-0.95 (%) - Fin |\n| - | - | - |\n| 2.32 | 84-89 | 40-61 |\n| 0.58 | 83-91 | n/a |\n| 2.96 | 83-85 | n/a |\n| 15.82 | 87-88 | 74-83 |\n| 6.00 | 93-94 | 88-90 |\n| 5.06 | 85-89 | 66-76 |\n| 5.31 | 69-71 | 56-59 |\n| 12.85 | 83-84 | 76-81 |\n| 3.60 | 77-81 | 75-80 |\n| 45.00 | 84-86 | 81-86 |\n| 0.50 | 60-72 | 24-63 |\n| 66531 | 82-83 | 71-74 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/3"
@@ -794,7 +794,7 @@
         }
     },
     {
-        "text": "| class label | Count | % of Total - Train | % of Total - Test | % of Total - Val | triple inter-annotator mAP @ 0.5-0.95 (%) - All | triple inter-annotator mAP @ 0.5-0.95 (%) - Fin | triple inter-annotator mAP @ 0.5-0.95 (%) - Man | triple inter-annotator mAP @ 0.5-0.95 (%) - Sci | triple inter-annotator mAP @ 0.5-0.95 (%) - Law | triple inter-annotator mAP @ 0.5-0.95 (%) - Pat | triple inter-annotator mAP @ 0.5-0.95 (%) - Ten |\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Formula | 25027 | 2.25 | 1.90 | 2.96 | 83-85 | n/a | n/a | 84-87 | 86-96 | n/a | n/a |\n",
+        "text": "| triple inter-annotator mAP @ 0.5-0.95 (%) - Man | triple inter-annotator mAP @ 0.5-0.95 (%) - Sci | triple inter-annotator mAP @ 0.5-0.95 (%) - Law |\n| - | - | - |\n| 86-92 | 94-99 | 95-99 |\n| 100 | 62-88 | 85-94 |\n| n/a | 84-87 | 86-96 |\n| 90-92 | 97-97 | 81-85 |\n| 95-96 | 100 | 92-97 |\n| 90-94 | 98-100 | 91-92 |\n| 82-86 | 69-82 | 80-95 |\n| 90-92 | 94-95 | 87-94 |\n| 83-86 | 98-99 | 58-80 |\n| 88-93 | 89-93 | 87-92 |\n| 50-63 | 94-100 | 82-96 |\n| 79-81 | 89-94 | 86-91 |\n",
         "meta": {
             "doc_items": [
                 "#/tables/3"
@@ -806,119 +806,23 @@
         }
     },
     {
-        "text": "| class label | Count | % of Total - Train | % of Total - Test | % of Total - Val | triple inter-annotator mAP @ 0.5-0.95 (%) - All | triple inter-annotator mAP @ 0.5-0.95 (%) - Fin | triple inter-annotator mAP @ 0.5-0.95 (%) - Man | triple inter-annotator mAP @ 0.5-0.95 (%) - Sci | triple inter-annotator mAP @ 0.5-0.95 (%) - Law | triple inter-annotator mAP @ 0.5-0.95 (%) - Pat | triple inter-annotator mAP @ 0.5-0.95 (%) - Ten |\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| List-item | 185660 | 17.19 | 13.34 | 15.82 | 87-88 | 74-83 | 90-92 | 97-97 | 81-85 | 75-88 | 93-95 |\n",
+        "text": "| triple inter-annotator mAP @ 0.5-0.95 (%) - Pat | triple inter-annotator mAP @ 0.5-0.95 (%) - Ten |\n| - | - |\n| 69-78 | n/a |\n| n/a | 82-97 |\n| n/a | n/a |\n| 75-88 | 93-95 |\n| 100 | 96-98 |\n| 97-99 | 81-86 |\n| 66-71 | 59-76 |\n| 69-73 | 78-86 |\n| 79-84 | 70-85 |\n| 71-79 | 87-95 |\n| 68-79 | 24-56 |\n| 71-76 | 68-85 |\n\n<!-- image -->\n\nIn this image I can see a blue circle.\ninclude publication repositories such as arXiv",
         "meta": {
             "doc_items": [
-                "#/tables/3"
-            ],
-            "headings": [
-                "Docling Technical Report",
-                "Baselines for Object Detection"
-            ]
-        }
-    },
-    {
-        "text": "| class label | Count | % of Total - Train | % of Total - Test | % of Total - Val | triple inter-annotator mAP @ 0.5-0.95 (%) - All | triple inter-annotator mAP @ 0.5-0.95 (%) - Fin | triple inter-annotator mAP @ 0.5-0.95 (%) - Man | triple inter-annotator mAP @ 0.5-0.95 (%) - Sci | triple inter-annotator mAP @ 0.5-0.95 (%) - Law | triple inter-annotator mAP @ 0.5-0.95 (%) - Pat | triple inter-annotator mAP @ 0.5-0.95 (%) - Ten |\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Page-footer | 70878 | 6.51 | 5.58 | 6.00 | 93-94 | 88-90 | 95-96 | 100 | 92-97 | 100 | 96-98 |\n",
-        "meta": {
-            "doc_items": [
-                "#/tables/3"
-            ],
-            "headings": [
-                "Docling Technical Report",
-                "Baselines for Object Detection"
-            ]
-        }
-    },
-    {
-        "text": "| class label | Count | % of Total - Train | % of Total - Test | % of Total - Val | triple inter-annotator mAP @ 0.5-0.95 (%) - All | triple inter-annotator mAP @ 0.5-0.95 (%) - Fin | triple inter-annotator mAP @ 0.5-0.95 (%) - Man | triple inter-annotator mAP @ 0.5-0.95 (%) - Sci | triple inter-annotator mAP @ 0.5-0.95 (%) - Law | triple inter-annotator mAP @ 0.5-0.95 (%) - Pat | triple inter-annotator mAP @ 0.5-0.95 (%) - Ten |\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Page-header | 58022 | 5.10 | 6.70 | 5.06 | 85-89 | 66-76 | 90-94 | 98-100 | 91-92 | 97-99 | 81-86 |\n",
-        "meta": {
-            "doc_items": [
-                "#/tables/3"
-            ],
-            "headings": [
-                "Docling Technical Report",
-                "Baselines for Object Detection"
-            ]
-        }
-    },
-    {
-        "text": "| class label | Count | % of Total - Train | % of Total - Test | % of Total - Val | triple inter-annotator mAP @ 0.5-0.95 (%) - All | triple inter-annotator mAP @ 0.5-0.95 (%) - Fin | triple inter-annotator mAP @ 0.5-0.95 (%) - Man | triple inter-annotator mAP @ 0.5-0.95 (%) - Sci | triple inter-annotator mAP @ 0.5-0.95 (%) - Law | triple inter-annotator mAP @ 0.5-0.95 (%) - Pat | triple inter-annotator mAP @ 0.5-0.95 (%) - Ten |\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Picture | 45976 | 4.21 | 2.78 | 5.31 | 69-71 | 56-59 | 82-86 | 69-82 | 80-95 | 66-71 | 59-76 |\n",
-        "meta": {
-            "doc_items": [
-                "#/tables/3"
-            ],
-            "headings": [
-                "Docling Technical Report",
-                "Baselines for Object Detection"
-            ]
-        }
-    },
-    {
-        "text": "| class label | Count | % of Total - Train | % of Total - Test | % of Total - Val | triple inter-annotator mAP @ 0.5-0.95 (%) - All | triple inter-annotator mAP @ 0.5-0.95 (%) - Fin | triple inter-annotator mAP @ 0.5-0.95 (%) - Man | triple inter-annotator mAP @ 0.5-0.95 (%) - Sci | triple inter-annotator mAP @ 0.5-0.95 (%) - Law | triple inter-annotator mAP @ 0.5-0.95 (%) - Pat | triple inter-annotator mAP @ 0.5-0.95 (%) - Ten |\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Section-header | 142884 | 12.60 | 15.77 | 12.85 | 83-84 | 76-81 | 90-92 | 94-95 | 87-94 | 69-73 | 78-86 |\n",
-        "meta": {
-            "doc_items": [
-                "#/tables/3"
-            ],
-            "headings": [
-                "Docling Technical Report",
-                "Baselines for Object Detection"
-            ]
-        }
-    },
-    {
-        "text": "| class label | Count | % of Total - Train | % of Total - Test | % of Total - Val | triple inter-annotator mAP @ 0.5-0.95 (%) - All | triple inter-annotator mAP @ 0.5-0.95 (%) - Fin | triple inter-annotator mAP @ 0.5-0.95 (%) - Man | triple inter-annotator mAP @ 0.5-0.95 (%) - Sci | triple inter-annotator mAP @ 0.5-0.95 (%) - Law | triple inter-annotator mAP @ 0.5-0.95 (%) - Pat | triple inter-annotator mAP @ 0.5-0.95 (%) - Ten |\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Table | 34733 | 3.20 | 2.27 | 3.60 | 77-81 | 75-80 | 83-86 | 98-99 | 58-80 | 79-84 | 70-85 |\n",
-        "meta": {
-            "doc_items": [
-                "#/tables/3"
-            ],
-            "headings": [
-                "Docling Technical Report",
-                "Baselines for Object Detection"
-            ]
-        }
-    },
-    {
-        "text": "| class label | Count | % of Total - Train | % of Total - Test | % of Total - Val | triple inter-annotator mAP @ 0.5-0.95 (%) - All | triple inter-annotator mAP @ 0.5-0.95 (%) - Fin | triple inter-annotator mAP @ 0.5-0.95 (%) - Man | triple inter-annotator mAP @ 0.5-0.95 (%) - Sci | triple inter-annotator mAP @ 0.5-0.95 (%) - Law | triple inter-annotator mAP @ 0.5-0.95 (%) - Pat | triple inter-annotator mAP @ 0.5-0.95 (%) - Ten |\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Text | 510377 | 45.82 | 49.28 | 45.00 | 84-86 | 81-86 | 88-93 | 89-93 | 87-92 | 71-79 | 87-95 |\n",
-        "meta": {
-            "doc_items": [
-                "#/tables/3"
-            ],
-            "headings": [
-                "Docling Technical Report",
-                "Baselines for Object Detection"
-            ]
-        }
-    },
-    {
-        "text": "| class label | Count | % of Total - Train | % of Total - Test | % of Total - Val | triple inter-annotator mAP @ 0.5-0.95 (%) - All | triple inter-annotator mAP @ 0.5-0.95 (%) - Fin | triple inter-annotator mAP @ 0.5-0.95 (%) - Man | triple inter-annotator mAP @ 0.5-0.95 (%) - Sci | triple inter-annotator mAP @ 0.5-0.95 (%) - Law | triple inter-annotator mAP @ 0.5-0.95 (%) - Pat | triple inter-annotator mAP @ 0.5-0.95 (%) - Ten |\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Title | 5071 | 0.47 | 0.30 | 0.50 | 60-72 | 24-63 | 50-63 | 94-100 | 82-96 | 68-79 | 24-56 |\n",
-        "meta": {
-            "doc_items": [
-                "#/tables/3"
-            ],
-            "headings": [
-                "Docling Technical Report",
-                "Baselines for Object Detection"
-            ]
-        }
-    },
-    {
-        "text": "| class label | Count | % of Total - Train | % of Total - Test | % of Total - Val | triple inter-annotator mAP @ 0.5-0.95 (%) - All | triple inter-annotator mAP @ 0.5-0.95 (%) - Fin | triple inter-annotator mAP @ 0.5-0.95 (%) - Man | triple inter-annotator mAP @ 0.5-0.95 (%) - Sci | triple inter-annotator mAP @ 0.5-0.95 (%) - Law | triple inter-annotator mAP @ 0.5-0.95 (%) - Pat | triple inter-annotator mAP @ 0.5-0.95 (%) - Ten |\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Total | 1107470 | 941123 | 99816 | 66531 | 82-83 | 71-74 | 79-81 | 89-94 | 86-91 | 71-76 | 68-85 |",
-        "meta": {
-            "doc_items": [
-                "#/tables/3"
-            ],
-            "headings": [
-                "Docling Technical Report",
-                "Baselines for Object Detection"
-            ]
-        }
-    },
-    {
-        "text": "<!-- image -->\n\nIn this image I can see a blue circle.\ninclude publication repositories such as arXiv\nTable 1: DocLayNet dataset overview. Along with the frequency of each class label, we present the relative occurrence (as % of row \"Total\") in the train, test and validation sets. The inter-annotator agreement is computed as the mAP@0.5-0.95 metric between pairwise annotations from the triple-\nannotated pages, from which we obtain accuracy ranges.\n<!-- image -->\n\nA table with different columns and rows.",
-        "meta": {
-            "doc_items": [
+                "#/tables/3",
                 "#/pictures/10",
-                "#/texts/695",
+                "#/texts/695"
+            ],
+            "headings": [
+                "Docling Technical Report",
+                "Baselines for Object Detection"
+            ]
+        }
+    },
+    {
+        "text": "Table 1: DocLayNet dataset overview. Along with the frequency of each class label, we present the relative occurrence (as % of row \"Total\") in the train, test and validation sets. The inter-annotator agreement is computed as the mAP@0.5-0.95 metric between pairwise annotations from the triple-\nannotated pages, from which we obtain accuracy ranges.\n<!-- image -->\n\nA table with different columns and rows.",
+        "meta": {
+            "doc_items": [
                 "#/texts/696",
                 "#/texts/697",
                 "#/pictures/11"
@@ -930,7 +834,19 @@
         }
     },
     {
-        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| class label | Count | Train | Test | Val | All | Fin | Man | Sci | Law | Pat | Ten |\n| Caption | 22524 | 2.04 | 1.77 | 2.32 | 84-89 | 40-61 | 86-92 | 94-99 | 95-99 | 69-78 | n/a |\n",
+        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| class label | Count | Train | Test | Val | All | Fin | Man | Sci | Law | Pat | Ten |\n",
+        "meta": {
+            "doc_items": [
+                "#/tables/4"
+            ],
+            "headings": [
+                "Docling Technical Report",
+                "Baselines for Object Detection"
+            ]
+        }
+    },
+    {
+        "text": "|  |  | % of Total | % of Total | % of Total | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) | triple inter- annotator mAP @ 0.5-0.95 (%) |\n| - | - | - | - | - | - | - | - | - | - | - | - |\n| Caption | 22524 | 2.04 | 1.77 | 2.32 | 84-89 | 40-61 | 86-92 | 94-99 | 95-99 | 69-78 | n/a |\n",
         "meta": {
             "doc_items": [
                 "#/tables/4"
