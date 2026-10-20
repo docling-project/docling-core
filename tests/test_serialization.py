@@ -1605,6 +1605,172 @@ def test_html_rich_table_cell_formatting_inside_paragraph():
     )
 
 
+class _HTMLProbe(HTMLParser):
+    """Collects the elements, attributes and per-element text of a parsed HTML document."""
+
+    _VOID_TAGS = frozenset({"img", "br", "meta", "link"})
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.elements: list[tuple[str, dict[str, str | None]]] = []
+        self._open: list[str] = []
+        self._text: dict[str, list[str]] = {}
+
+    @property
+    def tags(self) -> set[str]:
+        return {tag for tag, _ in self.elements}
+
+    def text_of(self, tag: str) -> str:
+        """Returns the text directly contained in the elements with the given tag."""
+        return "".join(self._text.get(tag, []))
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.elements.append((tag, dict(attrs)))
+        if tag not in self._VOID_TAGS:
+            self._open.append(tag)
+
+    def handle_endtag(self, tag: str) -> None:
+        if self._open and self._open[-1] == tag:
+            self._open.pop()
+
+    def handle_data(self, data: str) -> None:
+        if self._open:
+            self._text.setdefault(self._open[-1], []).append(data)
+
+
+def _parse_html(markup: str) -> _HTMLProbe:
+    probe = _HTMLProbe()
+    probe.feed(markup)
+    return probe
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        'conda create -n <CONDA_NAME>\nDict<str> x = "<div>";',
+        "if a && b:\n    print('&amp; stays literal')",
+    ],
+)
+def test_html_code_item_text_is_escaped(code: str):
+    doc = DoclingDocument(name="code-escape")
+    doc.add_code(text=code)
+
+    probe = _parse_html(HTMLDocSerializer(doc=doc).serialize().text)
+
+    assert probe.text_of("code") == code
+
+
+def test_html_formula_without_mathml_keeps_text():
+    doc = DoclingDocument(name="formula-fallback")
+    doc.add_formula(text="a<b && c>d")
+
+    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(formula_to_mathml=False)).serialize().text
+
+    assert "Formula not decoded" not in actual
+    assert _parse_html(actual).text_of("pre") == "a<b && c>d"
+
+
+def test_html_inline_formula_without_mathml_keeps_text():
+    doc = DoclingDocument(name="formula-inline-fallback")
+    heading = doc.add_heading(text="", level=1)
+    ig = doc.add_inline_group(parent=heading)
+    doc.add_formula(text="x<y", parent=ig)
+
+    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(formula_to_mathml=False)).serialize().text
+
+    assert _parse_html(actual).text_of("code") == "x<y"
+
+
+def test_html_formula_without_mathml_does_not_warn_about_mathml(caplog: pytest.LogCaptureFixture):
+    doc = DoclingDocument(name="formula-no-mathml-warning")
+    doc.add_formula(text="a<b")
+
+    with caplog.at_level("WARNING", logger="docling_core.transforms.serializer.html"):
+        HTMLDocSerializer(doc=doc, params=HTMLParams(formula_to_mathml=False)).serialize()
+
+    assert not caplog.records
+
+
+def test_html_formula_mathml_failure_falls_back_to_escaped_pre():
+    doc = DoclingDocument(name="formula-mathml-failure")
+    doc.add_formula(text="a<b & c")
+
+    with patch(
+        "docling_core.transforms.serializer.html.latex2mathml.converter.convert_to_element",
+        side_effect=ValueError("unsupported LaTeX"),
+    ):
+        actual = HTMLDocSerializer(doc=doc).serialize().text
+
+    assert "Formula not decoded" not in actual
+    assert _parse_html(actual).text_of("pre") == "a<b & c"
+
+
+@pytest.mark.parametrize(
+    "formula",
+    [
+        "a<b && c>d",
+        r"\text{<svg/onload=alert(1)>}",
+        "x</annotation></math><img src=x onerror=alert(1)>",
+    ],
+)
+def test_html_mathml_annotation_is_escaped(formula: str):
+    doc = DoclingDocument(name="formula-mathml-annotation")
+    doc.add_formula(text=formula)
+
+    probe = _parse_html(HTMLDocSerializer(doc=doc).serialize().text)
+
+    assert probe.tags.isdisjoint({"img", "svg", "b"})
+    assert probe.text_of("annotation") == formula
+
+
+def test_html_mathml_keeps_symbol_character_references():
+    doc = DoclingDocument(name="formula-mathml-symbols")
+    doc.add_formula(text=r"\alpha \leq \beta")
+
+    actual = HTMLDocSerializer(doc=doc).serialize().text
+
+    assert "<mi>&#x003B1;</mi><mo>&#x02264;</mo><mi>&#x003B2;</mi>" in actual
+    assert "&amp;#x" not in actual
+
+
+def test_html_formula_image_fallback_escapes_alt_attribute(doc_with_handwritten: DoclingDocument):
+    doc = doc_with_handwritten
+    doc.pages[1].image = ImageRef.from_pil(Image.new("RGB", (100, 100), "white"), dpi=72)
+    orig = 'x" onerror="alert(1)" y="<b>'
+    doc.add_formula(text="", orig=orig, prov=doc.texts[1].prov[0])
+
+    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(image_mode=ImageRefMode.EMBEDDED)).serialize().text
+
+    probe = _parse_html(actual)
+    imgs = [attrs for tag, attrs in probe.elements if tag == "img"]
+    assert len(imgs) == 1
+    assert imgs[0]["alt"] == orig
+    assert "onerror" not in imgs[0]
+    assert "b" not in probe.tags
+
+
+@pytest.mark.parametrize(
+    ("inline_scope", "expected"),
+    [
+        (False, "<pre><span class='inline-group'>a&lt;b x</span></pre>"),
+        (True, "<code><span class='inline-group'>a&lt;b x</span></code>"),
+    ],
+)
+def test_html_formula_with_inline_group_is_not_double_escaped(inline_scope: bool, expected: str):
+    doc = DoclingDocument(name="formula-inline-group")
+    parent = None
+    if inline_scope:
+        parent = doc.add_inline_group(parent=doc.add_heading(text="", level=1))
+    formula = doc.add_formula(text="", parent=parent)
+    group = doc.add_inline_group(parent=formula)
+    doc.add_text(label=DocItemLabel.TEXT, text="a<b", parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text="x", parent=group)
+
+    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(formula_to_mathml=False)).serialize().text
+
+    assert expected in actual
+
+
 # ===============================
 # WebVTT tests
 # ===============================
@@ -2179,177 +2345,3 @@ def test_markdown_inline_code_span_outlasts_backticks_in_code(code: str, expecte
     doc.add_text(label=DocItemLabel.TEXT, text="see", parent=group)
     doc.add_code(text=code, parent=group)
     assert doc.export_to_markdown() == f"see {expected}"
-
-
-def test_html_code_item_text_is_escaped():
-    doc = DoclingDocument(name="code-escape")
-    doc.add_code(text='conda create -n <CONDA_NAME>\nDict<str> x = "<div>";')
-
-    ser = HTMLDocSerializer(doc=doc)
-    actual = ser.serialize().text
-
-    assert "&lt;CONDA_NAME&gt;" in actual
-    assert "&lt;div&gt;" in actual
-
-    class CodeGrab(HTMLParser):
-        def __init__(self):
-            super().__init__()
-            self.in_code = 0
-            self.code_text: list[str] = []
-
-        def handle_starttag(self, tag, attrs):
-            if tag == "code":
-                self.in_code += 1
-
-        def handle_endtag(self, tag):
-            if tag == "code":
-                self.in_code -= 1
-
-        def handle_data(self, data):
-            if self.in_code:
-                self.code_text.append(data)
-
-    parser = CodeGrab()
-    parser.feed(actual)
-    recovered = "".join(parser.code_text)
-    assert recovered == 'conda create -n <CONDA_NAME>\nDict<str> x = "<div>";'
-
-
-def test_html_formula_without_mathml_keeps_text():
-    doc = DoclingDocument(name="formula-fallback")
-    doc.add_formula(text="a<b && c>d")
-
-    ser = HTMLDocSerializer(
-        doc=doc,
-        params=HTMLParams(formula_to_mathml=False),
-    )
-    actual = ser.serialize().text
-
-    assert "Formula not decoded" not in actual
-    assert "a&lt;b &amp;&amp; c&gt;d" in actual
-
-
-def test_html_formula_mathml_failure_falls_back_to_escaped_pre():
-    doc = DoclingDocument(name="formula-mathml-failure")
-    doc.add_formula(text="a^{")  # latex2mathml raises on the dangling brace
-
-    ser = HTMLDocSerializer(doc=doc)
-    actual = ser.serialize().text
-
-    assert "Formula not decoded" not in actual
-    assert "<pre>a^{</pre>" in actual
-
-
-def test_html_inline_formula_without_mathml_keeps_text():
-    doc = DoclingDocument(name="formula-inline-fallback")
-    heading = doc.add_heading(text="", level=1)
-    ig = doc.add_inline_group(parent=heading)
-    doc.add_formula(text="x<y", parent=ig)
-
-    ser = HTMLDocSerializer(
-        doc=doc,
-        params=HTMLParams(formula_to_mathml=False),
-    )
-    actual = ser.serialize().text
-
-    assert "<code>x&lt;y</code>" in actual
-
-
-@pytest.mark.parametrize(
-    "formula",
-    [
-        "a<b && c>d",
-        r"\text{<svg/onload=alert(1)>}",
-        "x</annotation></math><img src=x onerror=alert(1)>",
-    ],
-)
-def test_html_mathml_annotation_is_escaped(formula: str):
-    doc = DoclingDocument(name="formula-mathml-annotation")
-    doc.add_formula(text=formula)
-
-    actual = HTMLDocSerializer(doc=doc).serialize().text
-
-    class TagCollector(HTMLParser):
-        def __init__(self):
-            super().__init__()
-            self.tags: set[str] = set()
-            self.in_annotation = False
-            self.annotation: list[str] = []
-
-        def handle_starttag(self, tag, attrs):
-            self.tags.add(tag)
-            self.in_annotation = tag == "annotation"
-
-        def handle_endtag(self, tag):
-            if tag == "annotation":
-                self.in_annotation = False
-
-        def handle_data(self, data):
-            if self.in_annotation:
-                self.annotation.append(data)
-
-    parser = TagCollector()
-    parser.feed(actual[actual.index("<body>") :])
-
-    assert parser.tags.isdisjoint({"img", "svg", "b"})
-    assert "".join(parser.annotation) == formula
-
-
-def test_html_mathml_keeps_symbol_character_references():
-    doc = DoclingDocument(name="formula-mathml-symbols")
-    doc.add_formula(text=r"\alpha \leq \beta")
-
-    actual = HTMLDocSerializer(doc=doc).serialize().text
-
-    assert "<mi>&#x003B1;</mi><mo>&#x02264;</mo><mi>&#x003B2;</mi>" in actual
-    assert "&amp;#x" not in actual
-
-
-def test_html_formula_image_fallback_escapes_alt_attribute(doc_with_handwritten: DoclingDocument):
-    doc = doc_with_handwritten
-    doc.pages[1].image = ImageRef.from_pil(Image.new("RGB", (100, 100), "white"), dpi=72)
-    orig = 'x" onerror="alert(1)" y="<b>'
-    doc.add_formula(text="", orig=orig, prov=doc.texts[1].prov[0])
-
-    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(image_mode=ImageRefMode.EMBEDDED)).serialize().text
-
-    class ImgCollector(HTMLParser):
-        def __init__(self):
-            super().__init__()
-            self.imgs: list[dict[str, str | None]] = []
-            self.tags: set[str] = set()
-
-        def handle_starttag(self, tag, attrs):
-            self.tags.add(tag)
-            if tag == "img":
-                self.imgs.append(dict(attrs))
-
-    parser = ImgCollector()
-    parser.feed(actual[actual.index("<body>") :])
-
-    assert len(parser.imgs) == 1
-    assert parser.imgs[0]["alt"] == orig
-    assert "onerror" not in parser.imgs[0]
-    assert "b" not in parser.tags
-
-
-@pytest.mark.parametrize(
-    ("inline_scope", "expected"),
-    [
-        (False, "<pre><span class='inline-group'>a&lt;b x</span></pre>"),
-        (True, "<code><span class='inline-group'>a&lt;b x</span></code>"),
-    ],
-)
-def test_html_formula_with_inline_group_is_not_double_escaped(inline_scope: bool, expected: str):
-    doc = DoclingDocument(name="formula-inline-group")
-    parent = None
-    if inline_scope:
-        parent = doc.add_inline_group(parent=doc.add_heading(text="", level=1))
-    formula = doc.add_formula(text="", parent=parent)
-    group = doc.add_inline_group(parent=formula)
-    doc.add_text(label=DocItemLabel.TEXT, text="a<b", parent=group)
-    doc.add_text(label=DocItemLabel.TEXT, text="x", parent=group)
-
-    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(formula_to_mathml=False)).serialize().text
-
-    assert expected in actual
