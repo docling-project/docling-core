@@ -2331,3 +2331,25 @@ def test_html_formula_image_fallback_escapes_alt_attribute(doc_with_handwritten:
     assert parser.imgs[0]["alt"] == orig
     assert "onerror" not in parser.imgs[0]
     assert "b" not in parser.tags
+
+
+@pytest.mark.parametrize(
+    ("inline_scope", "expected"),
+    [
+        (False, "<pre><span class='inline-group'>a&lt;b x</span></pre>"),
+        (True, "<code><span class='inline-group'>a&lt;b x</span></code>"),
+    ],
+)
+def test_html_formula_with_inline_group_is_not_double_escaped(inline_scope: bool, expected: str):
+    doc = DoclingDocument(name="formula-inline-group")
+    parent = None
+    if inline_scope:
+        parent = doc.add_inline_group(parent=doc.add_heading(text="", level=1))
+    formula = doc.add_formula(text="", parent=parent)
+    group = doc.add_inline_group(parent=formula)
+    doc.add_text(label=DocItemLabel.TEXT, text="a<b", parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text="x", parent=group)
+
+    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(formula_to_mathml=False)).serialize().text
+
+    assert expected in actual

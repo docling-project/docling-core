@@ -191,6 +191,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 image_mode=params.image_mode,
                 formula_to_mathml=params.formula_to_mathml,
                 is_inline_scope=is_inline_scope,
+                text_is_html=has_inline_repr,
             )
 
         elif isinstance(item, CodeItem):
@@ -287,8 +288,25 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         image_mode: ImageRefMode,
         formula_to_mathml: bool,
         is_inline_scope: bool,
+        text_is_html: bool = False,
     ) -> str:
-        """Process a formula item to HTML/MathML."""
+        """Process a formula item to HTML/MathML.
+
+        Args:
+            item: The formula item.
+            text: The formula text, or its serialized HTML if `text_is_html` is set.
+            orig: The original formula text, used for the image fallback.
+            doc: The document containing the item.
+            image_mode: The image mode of the export.
+            formula_to_mathml: Whether to convert the formula to MathML.
+            is_inline_scope: Whether the formula is rendered inline.
+            text_is_html: Whether `text` is already HTML and must not be escaped again.
+
+        Returns:
+            The HTML representation of the formula.
+        """
+        plain_text = text if text_is_html else html.escape(text, quote=False)
+
         # If formula is empty, try to use an image fallback
         if (
             text == ""
@@ -322,7 +340,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 if image_mode == ImageRefMode.EMBEDDED and len(item.prov) > 0 and img_fallback:
                     return img_fallback
                 elif text:
-                    return f"<pre>{html.escape(text, quote=False)}</pre>"
+                    return f"<pre>{plain_text}</pre>"
                 else:
                     return "<pre>Formula not decoded</pre>"
 
@@ -330,9 +348,9 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
 
         # Fallback options if we got here
         if text and is_inline_scope:
-            return f"<code>{html.escape(text, quote=False)}</code>"
+            return f"<code>{plain_text}</code>"
         elif text and (not is_inline_scope):
-            return f"<pre>{html.escape(text, quote=False)}</pre>"
+            return f"<pre>{plain_text}</pre>"
         elif is_inline_scope:
             return '<span class="formula-not-decoded">Formula not decoded</span>'
 
