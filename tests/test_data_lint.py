@@ -207,6 +207,40 @@ def test_json_serialize_failure(checks, tmp_path, monkeypatch):
     assert "cannot serialize" in status["json.serialize"].message
 
 
+def test_dclx_version(checks, tmp_path):
+    only_version = checks.Selection(only=["dclx.version"])
+    _simple_doc().save_as_doclang_archive(tmp_path / "doc.dclx")
+    (tmp_path / "unversioned.xml").write_text("<doclang><text>hello</text></doclang>")
+    (tmp_path / "broken.xml").write_text("not xml")
+
+    status = {r.check: r for r in checks.check_dclx(tmp_path / "doc.dclx", sel=only_version)}
+    assert status["dclx.version"].status == "ok"
+    status = {r.check: r for r in checks.check_dclx(tmp_path / "unversioned.xml", sel=only_version)}
+    assert status["dclx.version"].status == "warn"
+    assert status["dclx.version"].message == "no version declared"
+    status = {r.check: r for r in checks.check_dclx(tmp_path / "broken.xml", sel=only_version)}
+    assert status["dclx.version"].status == "fail"
+
+
+def test_dclx_validation_reports_no_version_only_once(checks, tmp_path, recwarn):
+    (tmp_path / "unversioned.xml").write_text("<doclang><text>hello</text></doclang>")
+    status = {
+        r.check: r.status
+        for r in checks.check_dclx(
+            tmp_path / "unversioned.xml", sel=checks.Selection(only=["dclx.version", "dclx.xsd"])
+        )
+    }
+    assert status == {"dclx.version": "warn", "dclx.xsd": "ok"}
+    assert not recwarn.list  # doclang's own warning is not leaked
+
+
+def test_dclx_xsd_failure_for_a_declared_version_without_schema(checks, tmp_path):
+    (tmp_path / "future.xml").write_text('<doclang version="0.99"><text>hello</text></doclang>')
+    status = {r.check: r for r in checks.check_dclx(tmp_path / "future.xml", sel=checks.Selection(only=["dclx.xsd"]))}
+    assert status["dclx.xsd"].status == "fail"
+    assert any("0.99" in line for line in status["dclx.xsd"].details)
+
+
 def test_dclx_xsd_failure(checks, tmp_path):
     (tmp_path / "bad.xml").write_text('<doclang version="0.7"><not_an_element/></doclang>')
     status = {r.check: r for r in checks.check_dclx(tmp_path / "bad.xml", sel=checks.Selection(only=["dclx.xsd"]))}

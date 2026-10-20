@@ -1,6 +1,7 @@
 """Define classes for DocLang serialization.
 
-Aligned to the DocLang specification version ``_DOCLANG_VERSION``.
+Aligned to the DocLang specification version ``_DOCLANG_VERSION``, partially:
+``<track>`` is not supported yet.
 """
 
 import copy
@@ -401,18 +402,10 @@ def _serialize_floating_caption_head(
     params: DocLangParams,
     **kwargs: Any,
 ) -> str:
-    """Serialize the first referenced caption for inclusion in the host element head.
-
-    The element head holds at most one ``<caption>``; any further captions are emitted
-    next to the host by ``_serialize_floating_satellites``.
-    """
+    """Serialize the referenced captions for inclusion in the host element head."""
     if not params.add_referenced_caption:
         return ""
-    captions = _resolve_satellites(refs=item.captions, doc_serializer=doc_serializer, doc=doc, **kwargs)
-    if not captions:
-        return ""
-    head_item = item.model_copy(update={"captions": [captions[0].get_ref()]})
-    cap_res = doc_serializer.serialize_captions(item=head_item, **kwargs)
+    cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
     return cap_res.text or ""
 
 
@@ -489,7 +482,7 @@ def _satellite_placement(
     host: FloatingItem,
     doc: DoclingDocument,
 ) -> tuple[bool, tuple[int, float, float]] | None:
-    """Place a satellite (extra caption or footnote) relative to its host by layout.
+    """Place a satellite (footnote) relative to its host by layout.
 
     The satellite goes after the host if it sits on a later page, entirely below the
     host, or (when overlapping it vertically) entirely to its right; if it overlaps
@@ -535,64 +528,41 @@ def _serialize_floating_satellites(
     params: DocLangParams,
     **kwargs: Any,
 ) -> tuple[list[SerializationResult], list[SerializationResult]]:
-    """Serialize the extra captions and the footnotes of a floating item.
+    """Serialize the footnotes of a floating item.
 
-    Captions beyond the first one (which goes in the host element head) become
-    ``<text>`` elements, footnotes become ``<footnote>`` elements. Each is placed
-    before or after the host by layout (see ``_satellite_placement``), and sorted in
-    reading order (page, top, left) on either side. Satellites without a determinable
-    position fall back to extra captions before and footnotes after the host.
+    Footnotes become ``<footnote>`` elements. Each is placed before or after the host
+    by layout (see ``_satellite_placement``), and sorted in reading order (page, top,
+    left) on either side. Footnotes without a determinable position go after the host.
 
     Returns the ``(before, after)`` serialization results.
     """
-    sats: list[tuple[TextItem, str, bool]] = []
-    if params.add_referenced_caption:
-        captions = _resolve_satellites(refs=item.captions, doc_serializer=doc_serializer, doc=doc, **kwargs)
-        for cap in captions[1:]:
-            text = _serialize_satellite(
-                item=cap,
-                tag=DocLangToken.TEXT,
-                content_type=ContentType.REF_CAPTION,
-                doc=doc,
-                params=params,
-                doc_serializer=doc_serializer,
-                **kwargs,
-            )
-            sats.append((cap, text, False))
-    if params.add_referenced_footnote:
-        footnotes = _resolve_satellites(refs=item.footnotes, doc_serializer=doc_serializer, doc=doc, **kwargs)
-        for ftn in footnotes:
-            text = _serialize_satellite(
-                item=ftn,
-                tag=DocLangToken.FOOTNOTE,
-                content_type=ContentType.REF_FOOTNOTE,
-                doc=doc,
-                params=params,
-                doc_serializer=doc_serializer,
-                **kwargs,
-            )
-            sats.append((ftn, text, True))
-
-    before_unplaced: list[SerializationResult] = []
-    after_unplaced: list[SerializationResult] = []
+    if not params.add_referenced_footnote:
+        return [], []
+    unplaced: list[SerializationResult] = []
     before: list[tuple[tuple[int, float, float], SerializationResult]] = []
     after: list[tuple[tuple[int, float, float], SerializationResult]] = []
-    for sat, text, default_after in sats:
+    for ftn in _resolve_satellites(refs=item.footnotes, doc_serializer=doc_serializer, doc=doc, **kwargs):
+        text = _serialize_satellite(
+            item=ftn,
+            tag=DocLangToken.FOOTNOTE,
+            content_type=ContentType.REF_FOOTNOTE,
+            doc=doc,
+            params=params,
+            doc_serializer=doc_serializer,
+            **kwargs,
+        )
         if not text:
             continue
-        res = create_ser_result(text=text, span_source=sat)
-        if (placement := _satellite_placement(sat=sat, host=item, doc=doc)) is None:
-            (after_unplaced if default_after else before_unplaced).append(res)
+        res = create_ser_result(text=text, span_source=ftn)
+        if (placement := _satellite_placement(sat=ftn, host=item, doc=doc)) is None:
+            unplaced.append(res)
         else:
             goes_after, key = placement
             (after if goes_after else before).append((key, res))
 
     before.sort(key=lambda x: x[0])
     after.sort(key=lambda x: x[0])
-    return (
-        before_unplaced + [res for _, res in before],
-        [res for _, res in after] + after_unplaced,
-    )
+    return [res for _, res in before], [res for _, res in after] + unplaced
 
 
 def _element_label_for_serialization(
@@ -1017,8 +987,8 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
 
         Depending on parameters, emits meta blocks, location tokens, and the
         item's textual content (prefixing code language for ``CodeItem``). For
-        floating items, the first caption goes in the element head and further
-        captions and footnotes are emitted around it (see
+        floating items, the captions go in the element head and the footnotes
+        are emitted around it (see
         ``_serialize_floating_satellites``). The result can be wrapped in a tag
         derived from the item's label when applicable.
 
