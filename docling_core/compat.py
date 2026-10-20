@@ -57,7 +57,7 @@ from __future__ import annotations
 
 import logging
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -187,6 +187,52 @@ def project_to(doc: DoclingDocument, target_version: str) -> DoclingDocument:
 def list_projectors() -> list[tuple[int, int]]:
     """Return a sorted list of registered projector keys ``(from_minor, to_minor)``."""
     return sorted(_projectors)
+
+
+# ---------------------------------------------------------------------------
+# Shared helpers
+# ---------------------------------------------------------------------------
+
+# The item lists a projected document can hold, next to the two roots.
+_ITEM_LIST_KEYS = ("groups", "texts", "pictures", "tables", "key_value_items", "form_items")
+
+# The node fields holding a list of references to other nodes.
+_REF_LIST_FIELDS = ("children", "captions", "references", "footnotes")
+
+
+def _iter_nodes(data: dict) -> Iterator[dict]:
+    """Iterate the node dicts of a serialised document: its roots and its item lists."""
+    for key in ("body", "furniture", *_ITEM_LIST_KEYS):
+        value = data.get(key)
+        if isinstance(value, dict):
+            yield value
+        elif isinstance(value, list):
+            yield from (node for node in value if isinstance(node, dict))
+
+
+def _ref_target(ref: dict) -> str | None:
+    """Return the item a reference dict points at; ``cref`` is also spelled ``$ref``."""
+    return ref.get("cref") or ref.get("$ref")
+
+
+def _prune_dangling_refs(data: dict) -> dict:
+    """Drop the references pointing at items that the projection removed.
+
+    A projector that drops whole item lists - such as the 1.10 ``field_regions`` and
+    ``field_items``, which 1.9 clients know neither as lists nor as labels - has to drop
+    the references to those items too. A ``cref`` left behind in a parent's ``children``
+    can no longer be resolved by the target client, which makes the projected document
+    invalid instead of downgraded.
+    """
+    known_refs = {node["self_ref"] for node in _iter_nodes(data) if "self_ref" in node}
+    for node in _iter_nodes(data):
+        for field in _REF_LIST_FIELDS:
+            refs = node.get(field)
+            if isinstance(refs, list):
+                node[field] = [
+                    ref for ref in refs if not (isinstance(ref, dict) and _ref_target(ref) not in known_refs)
+                ]
+    return data
 
 
 # ---------------------------------------------------------------------------
@@ -462,6 +508,8 @@ def _project_1_10_to_1_9(data: dict) -> dict:
     Handles:
     - Removes top-level ``field_regions`` and ``field_items`` lists
       (unknown to 1.9 clients).
+    - Drops the references to the items those lists held, so that the
+      remaining nodes do not point at items that no longer exist.
     - Converts field-related items still present in ``texts`` (e.g.
       FieldHeadingItem, FieldValueItem that have a text payload) to
       generic ``TextItem`` with label ``"text"``.
@@ -503,6 +551,9 @@ def _project_1_10_to_1_9(data: dict) -> dict:
 
     # Downgrade groups.
     data["groups"] = [_downgrade_item_to_1_9(item) for item in data.get("groups", [])]
+
+    # The dropped field lists take the references held to them with them.
+    data = _prune_dangling_refs(data)
 
     data["version"] = "1.9.0"
     return data
