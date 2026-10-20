@@ -478,7 +478,9 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
     ) -> str:
         """Format a heading or title item as a Markdown heading string.
 
-        Override this method to customize heading representation in subclasses.
+        The number of ``#`` markers is capped at 6, the deepest level Markdown
+        supports. Override this method to customize heading representation in
+        subclasses.
 
         Args:
             text: The heading text content, already post-processed.
@@ -493,7 +495,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         """
         if in_table_cell:
             return text
-        num_hashes = 1 if isinstance(item, TitleItem) else item.level + 1
+        num_hashes = 1 if isinstance(item, TitleItem) else min(item.level + 1, 6)
         return f"{num_hashes * '#'} {text}"
 
 

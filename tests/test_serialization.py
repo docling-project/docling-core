@@ -1078,6 +1078,16 @@ def test_md_traverse_pictures():
     assert "<!-- image -->" in result_with_traverse
 
 
+def test_md_deep_section_headers_stay_headings():
+    """Section headers deeper than level 5 are capped at six hashes."""
+    doc = DoclingDocument(name="deep")
+    for level in (4, 5, 6, 9):
+        doc.add_heading(text=f"Level {level}", level=level)
+    assert MarkdownDocSerializer(doc=doc).serialize().text == (
+        "##### Level 4\n\n###### Level 5\n\n###### Level 6\n\n###### Level 9"
+    )
+
+
 def test_md_line_breaks():
     """Newlines inside TextItem and its subclasses are serialized per GFM spec.
 
