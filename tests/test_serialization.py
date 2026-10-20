@@ -2147,3 +2147,33 @@ def test_triplet_column_spanning_rich_cell_keeps_text_in_every_column(col_span_r
     ser = MarkdownDocSerializer(doc=col_span_rich_table_doc, table_serializer=TripletTableSerializer())
     actual = ser.serialize().text
     assert actual == "Status, Partner = Done. Status, Partner = Open"
+
+
+@pytest.mark.parametrize(
+    ("code", "expected"),
+    [
+        ("print(1)", "```\nprint(1)\n```"),
+        ("x = '```'\n```\nprint(1)", "````\nx = '```'\n```\nprint(1)\n````"),
+        ("a\n`````\nb", "``````\na\n`````\nb\n``````"),
+    ],
+)
+def test_markdown_code_block_fence_outlasts_backticks_in_code(code: str, expected: str):
+    doc = DoclingDocument(name="code")
+    doc.add_code(text=code)
+    assert doc.export_to_markdown() == expected
+
+
+@pytest.mark.parametrize(
+    ("code", "expected"),
+    [
+        ("x", "`x`"),
+        ("a`b", "``a`b``"),
+        ("`tick", "`` `tick ``"),
+    ],
+)
+def test_markdown_inline_code_span_outlasts_backticks_in_code(code: str, expected: str):
+    doc = DoclingDocument(name="code")
+    group = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="see", parent=group)
+    doc.add_code(text=code, parent=group)
+    assert doc.export_to_markdown() == f"see {expected}"
