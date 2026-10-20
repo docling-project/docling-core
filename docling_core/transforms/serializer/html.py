@@ -344,7 +344,8 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 else:
                     return "<pre>Formula not decoded</pre>"
 
-        _logger.warning("Could not parse formula with MathML")
+        if formula_to_mathml:
+            _logger.warning("Could not parse formula with MathML")
 
         # Fallback options if we got here
         if text and is_inline_scope:
