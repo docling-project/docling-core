@@ -13,6 +13,9 @@ from docling_core.types.doc import (
     DocItemLabel,
     DoclingDocument,
     GroupLabel,
+    RichTableCell,
+    TableCell,
+    TableData,
 )
 
 from .test_data_gen_flag import GEN_TEST_DATA
@@ -98,6 +101,38 @@ def test_html_cite_attribute_is_escaped():
 
 def test_markdown_export():
     _verify(GT_DIR / "block_quote.gt.md", _build_doc().export_to_markdown())
+
+
+def test_markdown_quote_in_table_cell_is_one_line():
+    """A quote in a table cell keeps one marker; its blocks join on the cell's single line."""
+    doc = DoclingDocument(name="t")
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=2))
+    cell = doc.add_group(label=GroupLabel.UNSPECIFIED, parent=table)
+    doc.add_text(label=DocItemLabel.TEXT, text="Text:", parent=cell)
+    quote = doc.add_block_quote_group(parent=cell)
+    doc.add_text(label=DocItemLabel.TEXT, text="First para.", parent=quote)
+    doc.add_text(label=DocItemLabel.TEXT, text="Second para.", parent=quote)
+    attribution = doc.add_text(label=DocItemLabel.CAPTION, text="Author", parent=quote)
+    quote.captions.append(attribution.get_ref())
+    doc.add_table_cell(
+        table,
+        TableCell(
+            start_row_offset_idx=0, end_row_offset_idx=1, start_col_offset_idx=0, end_col_offset_idx=1, text="(1)"
+        ),
+    )
+    doc.add_table_cell(
+        table,
+        RichTableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+            ref=cell.get_ref(),
+        ),
+    )
+    markdown = doc.export_to_markdown()
+    assert "| Text: > First para. Second para. \u2014 Author |" in " ".join(markdown.split())
+    assert "> >" not in markdown
 
 
 def test_attribution_dash_is_normalized():
