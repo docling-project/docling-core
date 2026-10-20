@@ -89,41 +89,63 @@ class ImageRef(BaseModel):
     uri: AnyUrl | Path = Field(union_mode="left_to_right")
     _pil: PILImage.Image | None = None
 
+    def _local_path(self) -> Path | None:
+        """Return the local filesystem path of a file:// or plain path URI, else None."""
+        if isinstance(self.uri, Path):
+            return self.uri
+        if isinstance(self.uri, AnyUrl) and self.uri.scheme == "file":
+            return Path(unquote(str(self.uri.path)))
+        return None
+
+    def _load_local_image(self, base_dir: Path | None = None) -> None:
+        """Read a local image into memory, without the settings check.
+
+        Only for explicit opt-ins, see ``DoclingDocument.load_local_images``.
+        """
+        if self._pil is not None or (local_path := self._local_path()) is None:
+            return
+        if base_dir is not None:
+            local_path = base_dir / local_path
+        if not local_path.is_file():
+            raise ValueError(f"Image file not found or not a regular file: {local_path}")
+        _ensure_within_size_limit(
+            local_path,
+            max_size=settings.max_image_decoded_size,
+            label="Image file",
+        )
+        with PILImage.open(local_path) as pil:
+            self._pil = pil.copy()
+
     @property
     def pil_image(self) -> PILImage.Image | None:
         """Return the PIL Image."""
         if self._pil is not None:
             return self._pil
 
-        if isinstance(self.uri, AnyUrl):
-            if self.uri.scheme == "file":
-                if not settings.allow_image_file_uri:
-                    raise ValueError("file:// URI scheme is not enabled.")
-                file_path = Path(unquote(str(self.uri.path)))
-                _ensure_within_size_limit(
-                    file_path,
-                    max_size=settings.max_image_decoded_size,
-                    label="Image file",
+        if (local_path := self._local_path()) is not None:
+            if not settings.allow_image_file_uri:
+                raise ValueError(
+                    "Reading local image files (file:// URIs and filesystem paths) is not enabled; "
+                    "set DOCLINGCORE_ALLOW_IMAGE_FILE_URI=true, or call DoclingDocument.load_local_images() "
+                    "for trusted documents."
                 )
-                self._pil = PILImage.open(file_path)
-            elif self.uri.scheme == "data":
-                encoded_img = str(self.uri).split(",")[1]
-                decoded_img = base64.b64decode(encoded_img)
-
-                if len(decoded_img) > settings.max_image_decoded_size:
-                    raise ValueError(f"Decoded image exceeds size limit of {settings.max_image_decoded_size} bytes.")
-
-                self._pil = PILImage.open(BytesIO(decoded_img))
-            # else: HTTP(S) and other remote schemes are intentionally not fetched.
-            # If remote fetch is enabled, it must use host allowlists and block
-            # private, link-local, and cloud-metadata addresses (SSRF controls).
-        elif isinstance(self.uri, Path):
             _ensure_within_size_limit(
-                self.uri,
+                local_path,
                 max_size=settings.max_image_decoded_size,
                 label="Image file",
             )
-            self._pil = PILImage.open(self.uri)
+            self._pil = PILImage.open(local_path)
+        elif isinstance(self.uri, AnyUrl) and self.uri.scheme == "data":
+            encoded_img = str(self.uri).split(",")[1]
+            decoded_img = base64.b64decode(encoded_img)
+
+            if len(decoded_img) > settings.max_image_decoded_size:
+                raise ValueError(f"Decoded image exceeds size limit of {settings.max_image_decoded_size} bytes.")
+
+            self._pil = PILImage.open(BytesIO(decoded_img))
+        # else: HTTP(S) and other remote schemes are intentionally not fetched.
+        # If remote fetch is enabled, it must use host allowlists and block
+        # private, link-local, and cloud-metadata addresses (SSRF controls).
 
         return self._pil
 

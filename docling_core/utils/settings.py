@@ -7,7 +7,15 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class CoreSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="DOCLINGCORE_")
 
-    allow_image_file_uri: bool = False
+    allow_image_file_uri: Annotated[
+        bool,
+        Field(
+            description=(
+                "Allow reading local image files referenced by an ImageRef, "
+                "either as file:// URIs or as plain filesystem paths."
+            ),
+        ),
+    ] = False
     max_image_decoded_size: int = 20 * 1024 * 1024  # 20MB
     allowed_private_ips: Annotated[
         list[str],

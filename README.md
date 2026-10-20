@@ -3,11 +3,9 @@
 [![PyPI version](https://img.shields.io/pypi/v/docling-core)](https://pypi.org/project/docling-core/)
 ![Python](https://img.shields.io/badge/python-3.10%20%7C%20%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
-[![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json)](https://pydantic.dev)
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+[![prek](https://img.shields.io/badge/prek-enabled-brightgreen)](https://pypi.org/project/prek/)
 [![License MIT](https://img.shields.io/github/license/docling-project/docling-core)](https://opensource.org/licenses/MIT)
 
 Docling Core is a library that defines core data types and transformations in [Docling](https://github.com/docling-project/docling).
@@ -82,6 +80,40 @@ and visualization capabilities for analyzing document collections at scale.
 👉 More details:
 - [Document profiling example](./examples/document_profiling.py)
 - [Collection statistics visualization](./examples/visualize_collection_stats.py)
+
+## Configuration
+
+Runtime settings are read from environment variables with the `DOCLINGCORE_` prefix,
+or set in code via `docling_core.utils.settings.settings`.
+
+### Local image files
+
+Images in a DoclingDocument may reference a local file, either as a filesystem path or as
+a `file://` URI. Since such documents may come from untrusted sources, docling-core does
+not read these files by default, and raises a `ValueError` instead. This affects, for
+example, documents saved with `ImageRefMode.REFERENCED` and loaded again.
+
+For trusted documents, either enable it globally:
+
+```bash
+export DOCLINGCORE_ALLOW_IMAGE_FILE_URI=true
+```
+
+```python
+from docling_core.utils.settings import settings
+
+settings.allow_image_file_uri = True
+```
+
+or per document, reading its local images into memory at load time:
+
+```python
+from docling_core.types.doc import DoclingDocument
+
+doc = DoclingDocument.load_from_json("doc.json", allow_local_images=True)
+# or, for a document obtained otherwise:
+doc.load_local_images(base_dir=...)
+```
 
 ## Contributing
 

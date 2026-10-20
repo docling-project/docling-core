@@ -82,6 +82,9 @@ from docling_core.types.doc import (
 
 _logger = logging.getLogger(__name__)
 
+MARKDOWN_SEPARATOR_ROW_RE: re.Pattern[str] = re.compile(r"^\|(\s*:?-+:?\s*\|)+\s*$")
+"""Matches a Markdown table separator row, e.g. ``| - | :---: | --: |``."""
+
 
 def _cell_content_has_table(item: NodeItem, doc: DoclingDocument) -> bool:
     """Return True if *item* is, or has a descendant that is, a TableItem."""
@@ -687,9 +690,6 @@ class MarkdownTableSerializer(BaseTableSerializer):
       becomes ``native backend - TTS``
     """
 
-    _SEPARATOR_ROW_RE: re.Pattern = re.compile(r"^\|(\s*:?-+:?\s*\|)+\s*$")
-    """Matches a Markdown table separator row, e.g. ``| - | :---: | --: |``."""
-
     @override
     def get_header_and_body_lines(
         self,
@@ -716,7 +716,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
             remaining data rows.
         """
         all_lines = table_text.splitlines(True)
-        sep_idx = next((i for i, l in enumerate(all_lines) if self._SEPARATOR_ROW_RE.match(l.rstrip("\n"))), None)
+        sep_idx = next((i for i, l in enumerate(all_lines) if MARKDOWN_SEPARATOR_ROW_RE.match(l.rstrip("\n"))), None)
         if sep_idx is None or sep_idx == 0:
             return [], all_lines
         header_lines = all_lines[sep_idx - 1 : sep_idx + 1]

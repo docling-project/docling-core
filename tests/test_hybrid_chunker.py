@@ -1,4 +1,3 @@
-import re
 from collections import Counter
 from dataclasses import dataclass
 
@@ -20,8 +19,12 @@ from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
 from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
 from docling_core.transforms.serializer.html import HTMLTableSerializer
-from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
-from docling_core.types.doc import DocItemLabel, DoclingDocument, DocumentOrigin
+from docling_core.transforms.serializer.markdown import (
+    MARKDOWN_SEPARATOR_ROW_RE,
+    MarkdownParams,
+    MarkdownTableSerializer,
+)
+from docling_core.types.doc import DocItemLabel, DoclingDocument, DocumentOrigin, TableItem
 from docling_core.types.doc.common.content_layer import ContentLayer
 from docling_core.types.doc.items.table.table_data import TableCell, TableData
 
@@ -72,6 +75,31 @@ class HTMLSerializerProvider(ChunkingSerializerProvider):
             doc=doc,
             table_serializer=HTMLTableSerializer(),
         )
+
+
+def _build_wide_header_table(caption_text: str | None = None) -> tuple[DoclingDocument, TableItem]:
+    doc = DoclingDocument(name="wide_table")
+    doc.add_heading(text="Section heading", level=1)
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text=caption_text) if caption_text is not None else None
+    cells = [
+        TableCell(
+            text=f"Column {col} heading" if row == 0 else f"Value {col}",
+            row_span=1,
+            col_span=1,
+            start_row_offset_idx=row,
+            end_row_offset_idx=row + 1,
+            start_col_offset_idx=col,
+            end_col_offset_idx=col + 1,
+            column_header=row == 0,
+        )
+        for row in range(2)
+        for col in range(50)
+    ]
+    table = doc.add_table(
+        data=TableData(num_rows=2, num_cols=50, table_cells=cells),
+        caption=caption,
+    )
+    return doc, table
 
 
 # ---------------------------------------------------------------------------
@@ -554,7 +582,7 @@ def test_chunk_with_repeat_table_header(dl_doc_0, markdown_chunker_250):
     for table_ref, table_text in table_contents.items():
         # Get header and body lines from the serialized table
         if table_text:
-            header_lines, body_lines = serializer.table_serializer.get_header_and_body_lines(table_text=table_text)
+            _, body_lines = serializer.table_serializer.get_header_and_body_lines(table_text=table_text)
 
             # Find all chunks that contain content from this table
             chunks_with_table = [chunk for chunk in chunks if table_ref in [i.self_ref for i in chunk.meta.doc_items]]
@@ -562,22 +590,27 @@ def test_chunk_with_repeat_table_header(dl_doc_0, markdown_chunker_250):
             # Verify table content appears in at least one chunk
             assert len(chunks_with_table) > 0, f"Table {table_ref} content should appear in at least one chunk"
 
-            # If table is split across multiple chunks, verify header is repeated
-            if len(chunks_with_table) > 1:
-                # Each chunk with table content should have the header
-                for chunk in chunks_with_table:
-                    # Check if header lines are present
-                    has_header = all(header_line.strip() in chunk.text for header_line in header_lines)
-                    assert has_header, (
-                        f"Table {table_ref} split across chunks should have header repeated in each chunk. "
-                        f"Missing header in chunk: {chunk.text[:200]}..."
-                    )
-            # Verify all body lines appear somewhere in the chunks
+            # Verify every chunk for this table has a header-like structure
+            # (i.e. contains the separator row), which is produced by both
+            # row-wise and column-wise splitting.
             all_chunk_text = "\n".join(chunk.text for chunk in chunks_with_table)
+            if len(chunks_with_table) > 1:
+                for chunk in chunks_with_table:
+                    has_sep = any(MARKDOWN_SEPARATOR_ROW_RE.match(ln.rstrip("\n")) for ln in chunk.text.splitlines())
+                    assert has_sep, (
+                        f"Table {table_ref}: split chunk is missing the separator row "
+                        f"(no header-like structure). Chunk: {chunk.text[:200]!r}"
+                    )
+
+            # Verify all cell values from all body rows appear somewhere across
+            # the chunks for this table.  Row-wise splitting preserves whole rows;
+            # column-wise splitting distributes cells across column-slice sub-tables.
             for body_line in body_lines:
-                assert body_line.strip() in all_chunk_text, (
-                    f"Table {table_ref} body line '{body_line.strip()}' should appear in chunks"
-                )
+                cells = [c.strip() for c in body_line.strip().strip("|").split("|") if c.strip()]
+                for cell in cells:
+                    assert cell in all_chunk_text, (
+                        f"Table {table_ref}: cell value {cell!r} from row {body_line.strip()!r} not found in any chunk"
+                    )
 
     # Save chunks to output file for inspection
     chunks_data = [
@@ -595,19 +628,21 @@ def test_chunk_with_repeat_table_header(dl_doc_0, markdown_chunker_250):
 
 
 def test_repeat_table_header_produces_valid_markdown_in_all_chunks(dl_doc_0, markdown_chunker_250):
-    """Regression test: each chunk of a split table must be valid Markdown.
+    """Regression test: each chunk of a split table must contain only complete rows.
 
-    When a table is split across multiple chunks with repeat_table_header=True,
-    the separator row (| - | - |) must appear on the line immediately following
-    the header row in every chunk — not separated by a blank line.  A blank line
-    between them breaks Markdown rendering.
+    When a table is split across multiple chunks with repeat_table_header=True:
+    - Every table line in a chunk must start with '|' (no mid-cell fragments).
+    - When the header is present, the separator row must immediately follow it
+      with no blank line in between.
+    - When a row is too wide to fit alongside the header, it is emitted without
+      the header (graceful degradation) rather than split mid-cell.
     """
     dl_doc = dl_doc_0
     chunks = list(markdown_chunker_250.chunk(dl_doc=dl_doc))
 
     assert len(chunks) > 0, "Expected at least one chunk from the input document"
 
-    sep_re = re.compile(r"^\|(\s*:?-+:?\s*\|)+\s*$")
+    sep_re = MARKDOWN_SEPARATOR_ROW_RE
 
     # Collect all table self_refs that appear in more than one chunk (i.e. split tables).
     table_refs = {t.self_ref for t in dl_doc.tables}
@@ -625,26 +660,31 @@ def test_repeat_table_header_produces_valid_markdown_in_all_chunks(dl_doc_0, mar
         "check that the input document still contains a large enough table."
     )
 
-    # For every chunk that contains part of a split table, the Markdown must be
-    # well-formed: the separator row must immediately follow the header row with
-    # no blank line in between.
     for i, chunk in enumerate(chunks):
         chunk_table_refs = {item.self_ref for item in chunk.meta.doc_items} & split_table_refs
         if not chunk_table_refs:
             continue  # not a table chunk — skip
 
         lines = chunk.text.splitlines()
+        # Primary invariant: no mid-cell fragment lines.  A mid-cell fragment is
+        # a line that contains '|' but does not start with '|'.  Non-pipe lines
+        # (image placeholders, captions, etc.) are allowed anywhere in the chunk.
+        for j, ln in enumerate(lines):
+            if ln.strip() and not ln.startswith("|") and "|" in ln:
+                assert False, f"Chunk {i}, line {j}: mid-cell fragment — table row was split: {ln!r}"
+
+        # When the chunk begins with a header (has a separator row), the separator
+        # must immediately follow the header with no blank line in between.
         sep_indices = [j for j, ln in enumerate(lines) if sep_re.match(ln)]
-        assert sep_indices, f"Chunk {i} has no Markdown separator row: {chunk.text!r}"
-        sep_idx = sep_indices[0]
-        assert sep_idx > 0, f"Chunk {i}: separator is on the first line (no header above it)"
-        assert lines[sep_idx - 1].startswith("|"), (
-            f"Chunk {i}: line before separator is not a table row: {lines[sep_idx - 1]!r}"
-        )
-        # The critical assertion: no blank line between header and separator.
-        assert lines[sep_idx - 1] != "", (
-            f"Chunk {i}: blank line between header row and separator row — invalid Markdown table"
-        )
+        if sep_indices:
+            sep_idx = sep_indices[0]
+            assert sep_idx > 0, f"Chunk {i}: separator is on the first line (no header above it)"
+            assert lines[sep_idx - 1].startswith("|"), (
+                f"Chunk {i}: line before separator is not a table row: {lines[sep_idx - 1]!r}"
+            )
+            assert lines[sep_idx - 1] != "", (
+                f"Chunk {i}: blank line between header row and separator row — invalid Markdown table"
+            )
 
 
 def test_table_caption_not_repeated_in_split_chunks():
@@ -705,7 +745,7 @@ def test_table_caption_not_repeated_in_split_chunks():
         )
 
     # Every chunk must contain the real table header row, not the caption.
-    sep_re = re.compile(r"^\|(\s*:?-+:?\s*\|)+\s*$")
+    sep_re = MARKDOWN_SEPARATOR_ROW_RE
     for i, chunk in enumerate(chunks):
         lines = chunk.text.splitlines()
         sep_indices = [j for j, ln in enumerate(lines) if sep_re.match(ln)]
@@ -1069,3 +1109,484 @@ def test_merge_chunks_corrects_token_estimate(tokenizer_cls):
     merged = chunker._merge_chunks_with_matching_metadata(chunks)
 
     _assert_chunk_windows(chunker, merged, [it for c in chunks for it in c.meta.doc_items])
+
+
+def test_contextualized_markdown_table_chunks_respect_token_limit():
+    max_tokens = 64
+    doc, _ = _build_wide_header_table()
+    tokenizer = OpenAITokenizer(
+        tokenizer=tiktoken.encoding_for_model("text-embedding-3-small"),
+        max_tokens=max_tokens,
+    )
+    chunker = HybridChunker(
+        tokenizer=tokenizer,
+        merge_peers=False,
+        repeat_table_header=True,
+        serializer_provider=CompactMarkdownSerializerProvider(),
+    )
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    assert len(chunks) > 1
+    assert all(tokenizer.count_tokens(chunker.contextualize(chunk)) <= max_tokens for chunk in chunks)
+
+
+def test_contextualized_markdown_table_chunks_recheck_final_count():
+    max_tokens = 70
+    doc, _ = _build_wide_header_table(caption_text="\nA")
+    tokenizer = OpenAITokenizer(
+        tokenizer=tiktoken.get_encoding("cl100k_base"),
+        max_tokens=max_tokens,
+    )
+    chunker = HybridChunker(
+        tokenizer=tokenizer,
+        merge_peers=False,
+        repeat_table_header=True,
+        serializer_provider=CompactMarkdownSerializerProvider(),
+    )
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+    counts = [tokenizer.count_tokens(chunker.contextualize(chunk)) for chunk in chunks]
+
+    assert max(counts) <= max_tokens
+
+
+@pytest.mark.parametrize(
+    ("max_tokens", "cell_prefix", "heading_text"),
+    [
+        (96, "x", None),
+        (128, "a-b/", "Section heading"),
+    ],
+)
+def test_split_markdown_table_chunks_respect_exact_token_boundaries(
+    max_tokens: int,
+    cell_prefix: str,
+    heading_text: str | None,
+):
+    num_cols = 12
+    num_rows = 3
+    doc = DoclingDocument(name="overflow")
+    if heading_text is not None:
+        doc.add_heading(text=heading_text, level=1)
+    cells = [
+        TableCell(
+            text=f"{cell_prefix}{row}_{col}",
+            row_span=1,
+            col_span=1,
+            start_row_offset_idx=row,
+            end_row_offset_idx=row + 1,
+            start_col_offset_idx=col,
+            end_col_offset_idx=col + 1,
+            column_header=row == 0,
+        )
+        for row in range(num_rows)
+        for col in range(num_cols)
+    ]
+    doc.add_table(
+        data=TableData(
+            num_rows=num_rows,
+            num_cols=num_cols,
+            table_cells=cells,
+        )
+    )
+    tokenizer = OpenAITokenizer(
+        tokenizer=tiktoken.encoding_for_model("text-embedding-3-small"),
+        max_tokens=max_tokens,
+    )
+    chunker = HybridChunker(
+        tokenizer=tokenizer,
+        merge_peers=False,
+        repeat_table_header=True,
+        serializer_provider=CompactMarkdownSerializerProvider(),
+    )
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+    counts = [tokenizer.count_tokens(chunker.contextualize(chunk)) for chunk in chunks]
+
+    assert max(counts) <= max_tokens
+
+
+def test_split_markdown_table_preserves_all_cell_values():
+    """Splitting a wide table must preserve every cell value across all chunks.
+
+    When a table is too wide for its rows to fit alongside the repeated header,
+    ``HybridChunker`` splits it by columns (``omit_header_on_overflow=False``,
+    the default).  Each column-slice chunk is a complete, valid Markdown sub-table.
+    The union of all chunk texts must contain every cell value from the original.
+    """
+    doc, table = _build_wide_header_table(caption_text="Wide table caption")
+    tokenizer = OpenAITokenizer(
+        tokenizer=tiktoken.encoding_for_model("text-embedding-3-small"),
+        max_tokens=64,
+    )
+    chunker = HybridChunker(
+        tokenizer=tokenizer,
+        merge_peers=False,
+        repeat_table_header=True,
+        serializer_provider=CompactMarkdownSerializerProvider(),
+    )
+    serializer = chunker.serializer_provider.get_serializer(doc)
+    full_table_text = serializer.serialize(item=table).text
+
+    chunks = [
+        chunk
+        for chunk in chunker.chunk(dl_doc=doc)
+        if any(item.self_ref == table.self_ref for item in chunk.meta.doc_items)
+    ]
+
+    assert len(chunks) > 1
+
+    # Every chunk must be a structurally valid Markdown sub-table (has separator row).
+    for i, chunk in enumerate(chunks):
+        has_sep = any(MARKDOWN_SEPARATOR_ROW_RE.match(ln.rstrip("\n")) for ln in chunk.text.splitlines())
+        assert has_sep, f"Chunk {i} has no Markdown separator row: {chunk.text[:200]!r}"
+
+    # No chunk may contain a mid-cell fragment.
+    all_chunk_text = "\n".join(chunk.text for chunk in chunks)
+    for i, chunk in enumerate(chunks):
+        for j, ln in enumerate(chunk.text.splitlines()):
+            if ln.strip() and not ln.startswith("|") and "|" in ln:
+                raise AssertionError(f"Chunk {i}, line {j}: mid-cell fragment — row was split: {ln!r}")
+
+    # All cell values from the original table appear somewhere across all chunks.
+    _, body_lines = serializer.table_serializer.get_header_and_body_lines(table_text=full_table_text)
+    for body_line in body_lines:
+        cells = [c.strip() for c in body_line.strip().strip("|").split("|") if c.strip()]
+        for cell in cells:
+            assert cell in all_chunk_text, f"Cell value {cell!r} from row {body_line.strip()!r} not found in any chunk"
+
+
+def test_wide_table_is_split_by_columns_when_rows_do_not_fit_with_header():
+    """Regression: a table whose rows are too wide to fit with the header must be
+    split by columns (not mid-cell) when ``omit_header_on_overflow=False``.
+
+    Each resulting column-slice chunk must be a complete, valid Markdown sub-table
+    with its own header, and no chunk may exceed ``max_tokens``.
+
+    Scenario: header ≈ 137 tokens, body row ≈ 106 tokens, header+row ≈ 243 tokens.
+    With a 9-token heading context, available_length = max_tokens(250) - 9 = 241.
+    So header+row(243) > available_length(241) but header+row ≤ max_tokens(250).
+    """
+    max_tokens = 250
+    # 15 columns with 12-char cell text gives header≈137 tokens, body row≈106 tokens,
+    # and header+row≈243 tokens — just over available_length=241 but under max_tokens=250.
+    num_cols = 15
+    cell_text = "aaaaaaaaaaaa"  # 12 chars
+
+    # A heading that produces ~9 tokens of context overhead.
+    doc = DoclingDocument(name="ctx_overhead")
+    doc.add_heading(text="Baselines for Object Detection", level=1)
+
+    cells = [
+        TableCell(
+            text=cell_text if row == 0 else "vvvvvv",
+            row_span=1,
+            col_span=1,
+            start_row_offset_idx=row,
+            end_row_offset_idx=row + 1,
+            start_col_offset_idx=col,
+            end_col_offset_idx=col + 1,
+            column_header=row == 0,
+        )
+        for row in range(4)
+        for col in range(num_cols)
+    ]
+    doc.add_table(data=TableData(num_rows=4, num_cols=num_cols, table_cells=cells))
+
+    tokenizer = HuggingFaceTokenizer(
+        tokenizer=INNER_TOKENIZER,
+        max_tokens=max_tokens,
+    )
+    chunker = HybridChunker(
+        tokenizer=tokenizer,
+        merge_peers=False,
+        repeat_table_header=True,
+        serializer_provider=CompactMarkdownSerializerProvider(),
+    )
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    # The table must be split into more than one chunk.
+    assert len(chunks) > 1, "Wide table should be split into multiple chunks"
+
+    # No chunk may exceed max_tokens.
+    for i, chunk in enumerate(chunks):
+        tc = tokenizer.count_tokens(chunker.contextualize(chunk))
+        assert tc <= max_tokens, f"Chunk {i} exceeds token limit: {tc} > {max_tokens}"
+
+    # Every chunk must be a structurally valid Markdown sub-table (has separator row).
+    for i, chunk in enumerate(chunks):
+        has_sep = any(MARKDOWN_SEPARATOR_ROW_RE.match(ln.rstrip("\n")) for ln in chunk.text.splitlines())
+        assert has_sep, f"Chunk {i} has no Markdown separator row: {chunk.text[:200]!r}"
+
+    # No chunk may contain a mid-cell fragment (line with '|' not starting with '|').
+    for i, chunk in enumerate(chunks):
+        for j, ln in enumerate(chunk.text.splitlines()):
+            if ln.strip() and not ln.startswith("|") and "|" in ln:
+                raise AssertionError(f"Chunk {i}, line {j}: mid-cell fragment — row was split mid-cell: {ln!r}")
+
+    # All cell values from the original table appear somewhere across all chunks.
+    all_text = "\n".join(chunk.text for chunk in chunks)
+    expected_values = {cell_text, "vvvvvv"}
+    for val in expected_values:
+        assert val in all_text, f"Cell value {val!r} missing from all chunks"
+
+
+def test_table_under_heading_chunks_respect_token_limit():
+    """HybridChunker must not produce chunks exceeding max_tokens.
+
+    A 3-column table with 30 data rows placed under a heading causes
+    _split_using_plain_text to compute available_length = max_tokens - heading_overhead.
+    The segment() table path must honour available_length, not max_tokens, so that
+    contextualize() does not push the final chunk over the limit.
+    """
+    max_tokens = 64
+
+    doc = DoclingDocument(name="table_under_heading")
+    doc.add_heading(text="Quarterly revenue by region and product line", level=1)
+
+    num_rows = 31  # 1 header + 30 data rows
+    num_cols = 3
+    headers = ["Region", "Product", "Revenue"]
+    cells = []
+    for col in range(num_cols):
+        cells.append(
+            TableCell(
+                text=headers[col],
+                row_span=1,
+                col_span=1,
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=col,
+                end_col_offset_idx=col + 1,
+                column_header=True,
+            )
+        )
+    for row in range(1, num_rows):
+        cells.append(
+            TableCell(
+                text=f"North{row}",
+                row_span=1,
+                col_span=1,
+                start_row_offset_idx=row,
+                end_row_offset_idx=row + 1,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+                column_header=False,
+            )
+        )
+        cells.append(
+            TableCell(
+                text=f"Widget{row}",
+                row_span=1,
+                col_span=1,
+                start_row_offset_idx=row,
+                end_row_offset_idx=row + 1,
+                start_col_offset_idx=1,
+                end_col_offset_idx=2,
+                column_header=False,
+            )
+        )
+        cells.append(
+            TableCell(
+                text=f"${row * 1000}",
+                row_span=1,
+                col_span=1,
+                start_row_offset_idx=row,
+                end_row_offset_idx=row + 1,
+                start_col_offset_idx=2,
+                end_col_offset_idx=3,
+                column_header=False,
+            )
+        )
+    doc.add_table(data=TableData(num_rows=num_rows, num_cols=num_cols, table_cells=cells))
+
+    tokenizer = HuggingFaceTokenizer(
+        tokenizer=INNER_TOKENIZER,
+        max_tokens=max_tokens,
+    )
+    chunker = HybridChunker(
+        tokenizer=tokenizer,
+        merge_peers=False,
+        repeat_table_header=True,
+        serializer_provider=CompactMarkdownSerializerProvider(),
+    )
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    assert len(chunks) > 1, "Table should be split into multiple chunks"
+
+    for i, chunk in enumerate(chunks):
+        tc = tokenizer.count_tokens(chunker.contextualize(chunk))
+        assert tc <= max_tokens, (
+            f"Chunk {i} exceeds token limit: {tc} > {max_tokens} — "
+            f"contextualized text: {chunker.contextualize(chunk)!r}"
+        )
+
+
+def test_split_markdown_table_with_escaped_pipes_and_empty_cells():
+    """Verify that wide tables containing escaped pipes and empty cells are properly split across columns."""
+    num_cols = 12
+    num_rows = 3
+    doc = DoclingDocument(name="escaped_pipes_table")
+    cells = []
+    for col in range(num_cols):
+        # Column header
+        header_text = f"Header \\| {col}" if col % 2 == 0 else f"Header {col}"
+        cells.append(
+            TableCell(
+                text=header_text,
+                row_span=1,
+                col_span=1,
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=col,
+                end_col_offset_idx=col + 1,
+                column_header=True,
+            )
+        )
+    for row in range(1, num_rows):
+        for col in range(num_cols):
+            # Alternate between text with escaped pipe, empty text, and normal text
+            if col % 3 == 0:
+                cell_text = f"Val \\| {row}_{col}"
+            elif col % 3 == 1:
+                cell_text = ""
+            else:
+                cell_text = f"Val_{row}_{col}"
+            cells.append(
+                TableCell(
+                    text=cell_text,
+                    row_span=1,
+                    col_span=1,
+                    start_row_offset_idx=row,
+                    end_row_offset_idx=row + 1,
+                    start_col_offset_idx=col,
+                    end_col_offset_idx=col + 1,
+                    column_header=False,
+                )
+            )
+    doc.add_table(data=TableData(num_rows=num_rows, num_cols=num_cols, table_cells=cells))
+
+    tokenizer = OpenAITokenizer(
+        tokenizer=tiktoken.get_encoding("cl100k_base"),
+        max_tokens=64,
+    )
+    chunker = HybridChunker(
+        tokenizer=tokenizer,
+        merge_peers=False,
+        repeat_table_header=True,
+        serializer_provider=CompactMarkdownSerializerProvider(),
+    )
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    assert len(chunks) > 1, "Wide table should be split into multiple chunks"
+    for i, chunk in enumerate(chunks):
+        tc = tokenizer.count_tokens(chunker.contextualize(chunk))
+        assert tc <= 64, f"Chunk {i} exceeds token limit: {tc} > 64"
+        # Verify valid Markdown table structure
+        assert any(MARKDOWN_SEPARATOR_ROW_RE.match(ln.rstrip("\n")) for ln in chunk.text.splitlines())
+
+
+def test_tall_and_wide_table_chunks_respect_token_limit():
+    """Verify that a table with both many columns and many rows is partitioned across columns and rows."""
+    num_cols = 12
+    num_rows = 25  # 1 header + 24 body rows
+    max_tokens = 96
+
+    doc = DoclingDocument(name="tall_and_wide_table")
+    doc.add_heading(text="Large Financial Matrix Overview", level=1)
+
+    cells = []
+    for col in range(num_cols):
+        cells.append(
+            TableCell(
+                text=f"Metric_{col}",
+                row_span=1,
+                col_span=1,
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=col,
+                end_col_offset_idx=col + 1,
+                column_header=True,
+            )
+        )
+    for row in range(1, num_rows):
+        for col in range(num_cols):
+            cells.append(
+                TableCell(
+                    text=f"R{row}C{col}_val",
+                    row_span=1,
+                    col_span=1,
+                    start_row_offset_idx=row,
+                    end_row_offset_idx=row + 1,
+                    start_col_offset_idx=col,
+                    end_col_offset_idx=col + 1,
+                    column_header=False,
+                )
+            )
+    doc.add_table(data=TableData(num_rows=num_rows, num_cols=num_cols, table_cells=cells))
+
+    tokenizer = OpenAITokenizer(
+        tokenizer=tiktoken.get_encoding("cl100k_base"),
+        max_tokens=max_tokens,
+    )
+    chunker = HybridChunker(
+        tokenizer=tokenizer,
+        merge_peers=False,
+        repeat_table_header=True,
+        serializer_provider=CompactMarkdownSerializerProvider(),
+    )
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    assert len(chunks) > 2, "Tall and wide table should be split into multiple chunks across columns and rows"
+    all_chunk_text = "\n".join(chunk.text for chunk in chunks)
+
+    for i, chunk in enumerate(chunks):
+        tc = tokenizer.count_tokens(chunker.contextualize(chunk))
+        assert tc <= max_tokens, (
+            f"Chunk {i} exceeds token limit: {tc} > {max_tokens} — "
+            f"contextualized text: {chunker.contextualize(chunk)!r}"
+        )
+        # Verify valid Markdown table structure (has separator row)
+        assert any(MARKDOWN_SEPARATOR_ROW_RE.match(ln.rstrip("\n")) for ln in chunk.text.splitlines())
+
+    # Verify that cells from top and bottom rows, left and right columns are preserved
+    sample_values = [
+        "Metric_0",
+        f"Metric_{num_cols - 1}",
+        "R1C0_val",
+        f"R1C{num_cols - 1}_val",
+        f"R{num_rows - 1}C0_val",
+        f"R{num_rows - 1}C{num_cols - 1}_val",
+    ]
+    for val in sample_values:
+        assert val in all_chunk_text, f"Sample cell value {val!r} not found across chunks"
+
+
+def test_split_using_plain_text_no_headings_avoids_infinite_recursion():
+    """Verify that _split_using_plain_text does not recurse infinitely when headings and captions are absent."""
+    max_tokens = 32
+    doc = DoclingDocument(name="no_headings_doc")
+    # A single large paragraph without any headings or captions
+    long_text = "This is a long paragraph designed to exceed the chunk token budget. " * 10
+    doc.add_text(label=DocItemLabel.PARAGRAPH, text=long_text)
+
+    tokenizer = OpenAITokenizer(
+        tokenizer=tiktoken.get_encoding("cl100k_base"),
+        max_tokens=max_tokens,
+    )
+    chunker = HybridChunker(
+        tokenizer=tokenizer,
+        merge_peers=False,
+    )
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    assert len(chunks) > 1, "Large paragraph should be split into multiple chunks"
+    for i, chunk in enumerate(chunks):
+        tc = tokenizer.count_tokens(chunker.contextualize(chunk))
+        assert tc <= max_tokens, f"Chunk {i} exceeds token limit: {tc} > {max_tokens}"
+        assert chunk.meta.headings is None
