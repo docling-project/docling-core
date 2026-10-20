@@ -95,6 +95,11 @@ _logger = logging.getLogger(__name__)
 _DOUBLE_ESCAPED_CHAR_REF = re.compile(r"&amp;(#x[0-9A-Fa-f]+;)")
 
 
+def _escape_css_string(value: str) -> str:
+    """Escape a value so that it stays inside a single-quoted CSS string."""
+    return value.replace("\\", "\\\\").replace("'", "\\'").replace("\r", "").replace("\n", "\\A ")
+
+
 class HTMLOutputStyle(str, Enum):
     """HTML output style."""
 
@@ -228,7 +233,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                     html_tag="li",
                     text=text,
                     attrs=(
-                        {"style": f"list-style-type: '{item.marker} ';"}
+                        {"style": f"list-style-type: '{_escape_css_string(item.marker)} ';"}
                         if params.show_original_list_item_marker and item.marker
                         else {}
                     ),
@@ -609,7 +614,7 @@ class HTMLPictureSerializer(BasePictureSerializer):
                     and isinstance(item.image.uri, AnyUrl)
                     and item.image.uri.scheme == "data"
                 ):
-                    img_text = f'<img src="{item.image.uri}">'
+                    img_text = f'<img src="{html.escape(str(item.image.uri))}">'
                 elif len(item.prov) > 1:  # more than 1 provenance
                     img_text = '<table style="border-collapse: collapse; width: 100%;">\n'
                     for ind, prov in enumerate(item.prov):
@@ -1152,7 +1157,7 @@ class HTMLDocSerializer(DocSerializer):
         **kwargs: Any,
     ) -> str:
         """Apply HTML-specific hyperlink serialization."""
-        return f'<a href="{hyperlink_uri(hyperlink)}">{text}</a>'
+        return f'<a href="{html.escape(hyperlink_uri(hyperlink))}">{text}</a>'
 
     @override
     def serialize_doc(
@@ -1227,7 +1232,7 @@ class HTMLDocSerializer(DocSerializer):
                         and isinstance(page_img.uri, AnyUrl)
                         and page_img.uri.scheme == "data"
                     ):
-                        img_text = f'<img src="{page_img.uri}">'
+                        img_text = f'<img src="{html.escape(str(page_img.uri))}">'
                         html_parts.append(f"<figure>{img_text}</figure>")
 
                     elif (page_img is not None) and (page_img._pil is not None):

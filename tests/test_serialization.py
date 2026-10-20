@@ -1771,6 +1771,77 @@ def test_html_formula_with_inline_group_is_not_double_escaped(inline_scope: bool
     assert expected in actual
 
 
+@pytest.mark.parametrize(
+    ("marker", "expected_style"),
+    [
+        ('x" onmouseover="alert(1)" y="', 'list-style-type: \'x" onmouseover="alert(1)" y=" \';'),
+        ("it's", "list-style-type: 'it\\'s ';"),
+        ("'; color: red; content: '", "list-style-type: '\\'; color: red; content: \\' ';"),
+    ],
+)
+def test_html_list_item_marker_cannot_break_out_of_style_attribute(marker: str, expected_style: str):
+    doc = DoclingDocument(name="list-marker")
+    group = doc.add_list_group()
+    doc.add_list_item(text="item", parent=group, marker=marker)
+
+    probe = _parse_html(HTMLDocSerializer(doc=doc).serialize().text)
+
+    (li_attrs,) = [attrs for tag, attrs in probe.elements if tag == "li"]
+    assert li_attrs == {"style": expected_style}
+
+
+def test_html_path_hyperlink_cannot_break_out_of_href_attribute():
+    doc = DoclingDocument(name="path-hyperlink")
+    doc.add_text(label=DocItemLabel.TEXT, text="link", hyperlink=Path('a" onmouseover="alert(1)'))
+
+    probe = _parse_html(HTMLDocSerializer(doc=doc).serialize().text)
+
+    (anchor,) = [attrs for tag, attrs in probe.elements if tag == "a"]
+    assert anchor == {"href": 'a" onmouseover="alert(1)'}
+
+
+def test_html_url_hyperlink_keeps_query_separator():
+    doc = DoclingDocument(name="url-hyperlink")
+    doc.add_text(label=DocItemLabel.TEXT, text="link", hyperlink=AnyUrl("https://example.com/p?a=1&b=2"))
+
+    probe = _parse_html(HTMLDocSerializer(doc=doc).serialize().text)
+
+    (anchor,) = [attrs for tag, attrs in probe.elements if tag == "a"]
+    assert anchor == {"href": "https://example.com/p?a=1&b=2"}
+
+
+def test_html_embedded_data_uri_cannot_break_out_of_src_attribute():
+    doc = DoclingDocument(name="data-uri-picture")
+    uri = AnyUrl('data:image/png;base64,AAA"onerror="alert(1)')
+    doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=1, height=1), uri=uri))
+
+    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(image_mode=ImageRefMode.EMBEDDED)).serialize().text
+
+    (img,) = [attrs for tag, attrs in _parse_html(actual).elements if tag == "img"]
+    assert set(img) == {"src"}
+
+
+def test_html_split_page_data_uri_cannot_break_out_of_src_attribute():
+    doc = DoclingDocument(name="data-uri-page")
+    uri = AnyUrl('data:image/png;base64,AAA"onerror="alert(1)')
+    doc.add_page(
+        page_no=1,
+        size=Size(width=10, height=10),
+        image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=uri),
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="text",
+        prov=ProvenanceItem(page_no=1, bbox=BoundingBox(l=0, t=0, r=1, b=1), charspan=(0, 4)),
+    )
+
+    params = HTMLParams(image_mode=ImageRefMode.EMBEDDED, output_style=HTMLOutputStyle.SPLIT_PAGE)
+    actual = HTMLDocSerializer(doc=doc, params=params).serialize().text
+
+    (img,) = [attrs for tag, attrs in _parse_html(actual).elements if tag == "img"]
+    assert set(img) == {"src"}
+
+
 # ===============================
 # WebVTT tests
 # ===============================
