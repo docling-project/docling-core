@@ -1140,6 +1140,7 @@ class MarkdownBlockQuoteSerializer(BaseModel, BaseBlockQuoteSerializer):
         An attribution follows the quoted blocks as a last quoted line, introduced
         by one em dash and linked to the ``cite`` URL when both are present. A
         ``cite`` URL without an attribution has no Markdown representation.
+        Inside a table cell the quote is one line with a single marker.
         """
         my_visited: set[str] = visited if visited is not None else set()
         parts = doc_serializer.get_parts(
@@ -1160,7 +1161,14 @@ class MarkdownBlockQuoteSerializer(BaseModel, BaseBlockQuoteSerializer):
             attribution = f"\u2014 {attribution}"
             blocks.append(attribution)
             res_parts.append(cap_res)
-        text_res = "\n".join(f"> {line}".rstrip() for line in "\n\n".join(blocks).split("\n")) if blocks else ""
+        if not blocks:
+            text_res = ""
+        elif kwargs.get("in_table_cell"):
+            # A table cell holds a single line: one marker in front of the
+            # quote, and no marker between its blocks.
+            text_res = f"> {' '.join(blocks)}"
+        else:
+            text_res = "\n".join(f"> {line}".rstrip() for line in "\n\n".join(blocks).split("\n"))
         return create_ser_result(text=text_res, span_source=res_parts)
 
 
