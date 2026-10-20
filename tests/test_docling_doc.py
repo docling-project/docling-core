@@ -3538,3 +3538,47 @@ def test_table_data_grid_limit_is_configurable(monkeypatch):
     TableData(num_rows=2, num_cols=2)
     with pytest.raises(ValidationError):
         TableData(num_rows=2, num_cols=3)
+
+
+def _tables_doc_dict(body: int, furniture: int = 0, orphans: int = 0) -> dict:
+    """Build a document dict with 2x2 tables under body, under furniture, and outside the tree."""
+    placement = ["#/body"] * body + ["#/furniture"] * furniture + ["#/body"] * orphans
+    tables = [
+        {
+            "self_ref": f"#/tables/{i}",
+            "parent": {"$ref": parent},
+            "label": "table",
+            "data": {"num_rows": 2, "num_cols": 2, "table_cells": []},
+        }
+        for i, parent in enumerate(placement)
+    ]
+
+    def root(name: str, start: int, count: int) -> dict:
+        return {
+            "self_ref": f"#/{name}",
+            "name": "_root_",
+            "label": "unspecified",
+            "children": [{"$ref": f"#/tables/{i}"} for i in range(start, start + count)],
+        }
+
+    return {
+        "schema_name": "DoclingDocument",
+        "version": "1.10.0",
+        "name": "tables",
+        "body": root("body", 0, body),
+        "furniture": root("furniture", body, furniture),
+        "tables": tables,
+    }
+
+
+@pytest.mark.parametrize(
+    ("body", "furniture", "orphans"),
+    [(3, 0, 0), (1, 2, 0), (1, 0, 2)],
+    ids=["body", "body_and_furniture", "outside_tree"],
+)
+def test_validate_rejects_total_table_cells_over_limit(monkeypatch, body, furniture, orphans):
+    """The budget covers all tables, wherever they sit: every grid in `tables` is serialized."""
+    monkeypatch.setattr(settings, "max_total_table_cells", 8)
+    DoclingDocument.model_validate(_tables_doc_dict(body=2))
+    with pytest.raises(ValidationError, match="exceeding the limit of 8"):
+        DoclingDocument.model_validate(_tables_doc_dict(body=body, furniture=furniture, orphans=orphans))
