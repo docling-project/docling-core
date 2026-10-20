@@ -3430,6 +3430,7 @@ class DoclingDocument(BaseModel):
         root: NodeItem,
         raise_on_error: bool = False,
         _visited: set[str] | None = None,
+        _total_table_cells: list[int] | None = None,
     ) -> bool:
         """Validate that the subtree under `root` is a consistent tree.
 
@@ -3441,6 +3442,8 @@ class DoclingDocument(BaseModel):
             root: The node whose subtree is validated.
             raise_on_error: Raise a `ValueError` instead of returning `False`.
             _visited: Internal. Refs of the nodes already reached in this traversal.
+            _total_table_cells: Internal. Single-element list accumulating the total
+                grid cells seen so far across all tables in this traversal.
 
         Returns:
             True if the subtree is a valid tree, False otherwise.
@@ -3450,6 +3453,7 @@ class DoclingDocument(BaseModel):
         """
         # TODO add check if heading levels conflict with hierarchy (e.g. level-1 heading with level-2 parent)
         visited = _visited if _visited is not None else {root.self_ref}
+        total_table_cells = _total_table_cells if _total_table_cells is not None else [0]
         for child_ref in root.children:
             if child_ref.cref in visited:
                 if raise_on_error:
@@ -3462,7 +3466,7 @@ class DoclingDocument(BaseModel):
 
             child = child_ref.resolve(self)
             if child.parent.resolve(self) != root or not self.validate_tree(
-                child, raise_on_error=raise_on_error, _visited=visited
+                child, raise_on_error=raise_on_error, _visited=visited, _total_table_cells=total_table_cells
             ):
                 if raise_on_error:
                     raise ValueError(
@@ -3472,6 +3476,17 @@ class DoclingDocument(BaseModel):
                 return False
 
         if isinstance(root, TableItem):
+            table_cells = max(root.data.num_rows, 0) * max(root.data.num_cols, 0)
+            total_table_cells[0] += table_cells
+            limit = settings.max_total_table_cells
+            if total_table_cells[0] > limit:
+                if raise_on_error:
+                    raise ValueError(
+                        f"Document exceeds the total table cell limit of {limit}: "
+                        f"cumulative grid size reached {total_table_cells[0]} cells."
+                    )
+                return False
+
             root_children_crefs = {child.cref for child in root.children}
             seen_cell_crefs: set[str] = set()
             for cell in root.data.table_cells:

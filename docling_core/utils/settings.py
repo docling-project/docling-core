@@ -40,6 +40,16 @@ class CoreSettings(BaseSettings):
         ),
     ] = 1_000_000
 
+    max_total_table_cells: Annotated[
+        int,
+        Field(
+            description=(
+                "Maximum total number of grid cells summed across all tables in a single document. "
+                "Bounds the cost of documents that contain many tables each just under the per-table limit."
+            ),
+        ),
+    ] = 5_000_000
+
     # DocLang deserialize budgets (DoS protection for untrusted markup / .dclx)
     max_doclang_xml_bytes: int = 128 * 1024 * 1024  # 128 MiB
     max_doclang_xml_depth: int = 128
