@@ -168,11 +168,10 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             post_processed = True
         else:
             text = item.text
-            if isinstance(item, CodeItem):
+            if not isinstance(item, FormulaItem):
                 text = html.escape(text, quote=False)
-            elif not isinstance(item, FormulaItem):
-                text = html.escape(text, quote=False)
-                text = text.replace("\n", "<br>")
+                if not isinstance(item, CodeItem):
+                    text = text.replace("\n", "<br>")
             if not isinstance(item, CodeItem | FormulaItem | ListItem):
                 text = doc_serializer.post_process(text=text, formatting=item.formatting, hyperlink=item.hyperlink)
                 post_processed = True
@@ -305,7 +304,8 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         Returns:
             The HTML representation of the formula.
         """
-        plain_text = text if text_is_html else html.escape(text, quote=False)
+        escaped_text = html.escape(text, quote=False)
+        plain_text = text if text_is_html else escaped_text
 
         # If formula is empty, try to use an image fallback
         if (
@@ -326,7 +326,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 # latex2mathml stores numeric character references as literal element text, which
                 # ElementTree escapes again. Revert only those; any other text must stay escaped.
                 mathml = _DOUBLE_ESCAPED_CHAR_REF.sub(r"&\1", tostring(mathml_element, encoding="unicode"))
-                annotation = f'<annotation encoding="TeX">{html.escape(text, quote=False)}</annotation>'
+                annotation = f'<annotation encoding="TeX">{escaped_text}</annotation>'
                 mathml = mathml.removesuffix("</math>") + annotation + "</math>"
 
                 # Don't wrap in div for inline formulas
