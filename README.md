@@ -1,7 +1,7 @@
 # Docling Core
 
 [![PyPI version](https://img.shields.io/pypi/v/docling-core)](https://pypi.org/project/docling-core/)
-![Python](https://img.shields.io/badge/python-3.10%20%7C%20%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)
+![Python](https://img.shields.io/badge/python-3.10%20%7C%20%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14%20%7C%203.15-blue)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json)](https://pydantic.dev)
@@ -19,7 +19,7 @@ pip install docling-core
 
 ### Development setup
 
-To develop for Docling Core, you need Python 3.10 through 3.14 and the `uv` package. You can then install it from your local clone's root directory:
+To develop for Docling Core, you need Python 3.10 through 3.15 and the `uv` package. You can then install it from your local clone's root directory:
 ```bash
 uv sync --all-extras
 ```
