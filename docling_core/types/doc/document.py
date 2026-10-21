@@ -157,6 +157,7 @@ from docling_core.types.doc.labels import (
 from docling_core.types.doc.tokens import DocumentToken, TableToken
 from docling_core.types.doc.utils import (
     _ensure_within_size_limit,
+    _normalize_image_for_png,
     is_remote_path,
     parse_otsl_table_content,
     relative_path,
@@ -3674,7 +3675,7 @@ class DoclingDocument(BaseModel):
             (relative or absolute) for local paths.
         """
         buf = BytesIO()
-        img.save(buf, format="PNG")
+        _normalize_image_for_png(img).save(buf, format="PNG")
         loc_path.write_bytes(buf.getvalue())
 
         if uri_prefix is not None:
@@ -5293,7 +5294,7 @@ class DoclingDocument(BaseModel):
                     continue
                 page_path = pages_dir / f"{p_no}.png"
                 page_path.parent.mkdir(parents=True, exist_ok=True)
-                img.save(page_path)
+                _normalize_image_for_png(img).save(page_path)
                 pages[p_no] = page_path
             if pages:
                 pack_kwargs["pages"] = pages
