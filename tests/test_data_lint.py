@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from docling_core.types.doc import DocItemLabel, DoclingDocument
+from tests.doclang_validation import requires_schematron_backend
 
 _SCRIPTS = Path(__file__).parent.parent / "scripts"
 
@@ -38,6 +39,7 @@ def test_check_json_flags_empty_list_wrapper(checks, tmp_path):
     assert status["json.empty-list-wrapper"] == "warn"
 
 
+@requires_schematron_backend
 def test_check_pair_roundtrip(checks, tmp_path):
     doc = DoclingDocument(name="")
     doc.add_text(label=DocItemLabel.TEXT, text="hello")
@@ -79,6 +81,7 @@ def test_check_dclx_reports_a_failing_roundtrip(checks, tmp_path):
     assert any("field_region [furniture]" in line for line in pair["pair.dclx-to-json"].details)
 
 
+@requires_schematron_backend
 def test_cli_by_extension_and_check_pair(checks, tmp_path, capsys):
     doc = DoclingDocument(name="")
     doc.add_text(label=DocItemLabel.TEXT, text="hello")
@@ -148,6 +151,7 @@ def test_diff_normalizes_indentation_but_not_content_whitespace(checks):
     assert checks._diff("<text><content>a\nb</content></text>", "<text><content>a\nb</content></text>") == []
 
 
+@requires_schematron_backend
 def test_pair_accepts_dclg_markup(checks, tmp_path, capsys):
     doc = DoclingDocument(name="")
     doc.add_text(label=DocItemLabel.TEXT, text="hello")
