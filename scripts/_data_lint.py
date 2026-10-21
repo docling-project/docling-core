@@ -23,9 +23,11 @@ from __future__ import annotations
 
 import collections
 import difflib
+import io
 import re
 import tempfile
 import warnings
+import xml.etree.ElementTree as ET
 import zipfile
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -56,7 +58,8 @@ CHECKS: dict[str, tuple[str, str]] = {
     "json.rules": ("json", "DoclingDocument._validate_rules reports nothing"),
     "json.serialize": ("json", "the document serializes to DocLang"),
     "json.empty-list-wrapper": ("json", "empty list items that only wrap content (heuristic, warns)"),
-    "dclx.xsd": ("dclx", "XSD validity of document.xml"),
+    "dclx.version": ("dclx", "document.xml declares its DocLang version (warns)"),
+    "dclx.xsd": ("dclx", "XSD validity of document.xml (fails on a declared version without schema)"),
     "dclx.schematron": ("dclx", "Schematron validity of document.xml (needs the doclang[schematron-saxon] extra)"),
     "dclx.deserialize": ("dclx", "the DocLang deserializes without warnings"),
     "dclx.rules": ("dclx", "model validation and _validate_rules on the deserialized document"),
@@ -225,6 +228,21 @@ def check_json(path: str | Path, *, resolution: tuple[int, int] | None = None, s
 # --------------------------------------------------------------------------------------------------
 # DCLX
 # --------------------------------------------------------------------------------------------------
+def _check_version(xml: str) -> Result:
+    """Whether the document declares its DocLang version (its support is checked by the validation)."""
+    try:
+        _, root = next(ET.iterparse(io.StringIO(xml), events=("start",)))
+    except (ET.ParseError, StopIteration) as e:
+        return Result("dclx.version", "fail", f"could not read the root element: {type(e).__name__}: {str(e)[:200]}")
+    if (version := root.get("version")) is None:
+        return Result("dclx.version", "warn", "no version declared")
+    return Result("dclx.version", "ok", version)
+
+
+# reported by dclx.version
+_NO_VERSION_WARNING = "No DocLang version declared"
+
+
 def _validate_xml(xml: str, sel: Selection) -> list[Result]:
     from doclang.validation import ValidationError, validate
 
@@ -241,8 +259,12 @@ def _validate_xml(xml: str, sel: Selection) -> list[Result]:
         out = []
         for name, kwargs in checks:
             try:
-                validate(p, allow_empty_namespace=True, **kwargs)
-                out.append(Result(name, "ok"))
+                with warnings.catch_warnings(record=True) as caught:
+                    warnings.simplefilter("always")
+                    # a declared version without schema fails, rather than falling back to the latest schema
+                    validate(p, allow_empty_namespace=True, strict_declared_version=True, **kwargs)
+                w = [m for m in _warning_messages(caught) if not m.startswith(_NO_VERSION_WARNING)]
+                out.append(Result(name, "warn" if w else "ok", "warnings" if w else "", w))
             except ValidationError as e:
                 errs = [str(x)[:200] for x in list(e.xsd_errors) + list(e.schematron_errors)]
                 out.append(Result(name, "fail", f"{len(errs)} error(s)", errs[:_MAX_DETAILS]))
@@ -263,7 +285,8 @@ def check_dclx(path: str | Path, *, sel: Selection = _ALL) -> list[Result]:
     """Individual checks of a DocLang document: schema validity, deserializability, round trip."""
     path = Path(path)
     xml = _read_xml(path)
-    results = _validate_xml(xml, sel)
+    results = [_check_version(xml)] if sel.on("dclx.version") else []
+    results += _validate_xml(xml, sel)
     res = resolution_of(xml)
     if not sel.any_on("dclx.deserialize", "dclx.rules", "dclx.roundtrip"):
         return results

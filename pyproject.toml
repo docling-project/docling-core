@@ -51,7 +51,7 @@ dependencies = [
     'latex2mathml (>=3.77.0,<4.0.0)',
     "defusedxml (>=0.7.1, <0.8.0)",
     "pydantic-settings>=2.14.0",
-    "doclang>=0.7,<0.8",
+    "doclang>=0.8,<0.9",
     "requests (>=2.34.2,<3.0.0)",
 ]
 
@@ -70,7 +70,7 @@ docling-serialize = "docling_core.cli.serialize:app"
 
 [project.optional-dependencies]
 dclq = [
-    "doclang>=0.7,<0.8",
+    "doclang>=0.8,<0.9",
     "typer>=0.15.1,<0.25.0",
     "click>=8.0.0",
     "lxml>=6.0.2",
@@ -130,7 +130,7 @@ dev = [
     "ruff==0.16.10",
     "opencv-python-headless>=4.6.0.66,<5.0.0.0",
     "universal-pathlib>=0.3.10",
-    "doclang[schematron-saxon]>=0.7.1,<0.8",
+    "doclang[schematron-saxon]>=0.8,<0.9",
     # workspace member, so that `uv sync` gives lint/typecheck/test coverage of it
     "dclq",
 ]

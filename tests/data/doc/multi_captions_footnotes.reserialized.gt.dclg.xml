@@ -7,13 +7,6 @@
     Some introductory text.
   </text>
   <group>
-    <text>
-      <location value="85"/>
-      <location value="70"/>
-      <location value="427"/>
-      <location value="78"/>
-      Figure 1, caption 3 (above).
-    </text>
     <footnote>
       <location value="85"/>
       <location value="79"/>
@@ -21,13 +14,6 @@
       <location value="87"/>
       Figure 1, footnote 3 (above).
     </footnote>
-    <text>
-      <location value="17"/>
-      <location value="179"/>
-      <location value="81"/>
-      <location value="192"/>
-      Figure 1, caption 4 (left).
-    </text>
     <picture>
       <location value="85"/>
       <location value="96"/>
@@ -39,6 +25,27 @@
         <location value="427"/>
         <location value="238"/>
         Figure 1, caption 1 (main).
+      </caption>
+      <caption>
+        <location value="85"/>
+        <location value="250"/>
+        <location value="427"/>
+        <location value="257"/>
+        Figure 1, caption 2 (below).
+      </caption>
+      <caption>
+        <location value="85"/>
+        <location value="70"/>
+        <location value="427"/>
+        <location value="78"/>
+        Figure 1, caption 3 (above).
+      </caption>
+      <caption>
+        <location value="17"/>
+        <location value="179"/>
+        <location value="81"/>
+        <location value="192"/>
+        Figure 1, caption 4 (left).
       </caption>
     </picture>
     <footnote>
@@ -55,13 +62,6 @@
       <location value="248"/>
       Figure 1, footnote 1 (below).
     </footnote>
-    <text>
-      <location value="85"/>
-      <location value="250"/>
-      <location value="427"/>
-      <location value="257"/>
-      Figure 1, caption 2 (below).
-    </text>
     <footnote>
       <location value="85"/>
       <location value="259"/>
@@ -83,6 +83,13 @@
         <location value="296"/>
         Table 1, caption 1 (main).
       </caption>
+      <caption>
+        <location value="85"/>
+        <location value="374"/>
+        <location value="427"/>
+        <location value="382"/>
+        Table 1, caption 2 (below).
+      </caption>
       <ched/>
       Name
       <ched/>
@@ -99,13 +106,6 @@
       2
       <nl/>
     </table>
-    <text>
-      <location value="85"/>
-      <location value="374"/>
-      <location value="427"/>
-      <location value="382"/>
-      Table 1, caption 2 (below).
-    </text>
     <footnote>
       <location value="85"/>
       <location value="384"/>
@@ -122,13 +122,13 @@
     </footnote>
   </group>
   <group>
-    <text>Figure 2, caption 2.</text>
     <picture>
       <location value="85"/>
       <location value="416"/>
       <location value="427"/>
       <location value="480"/>
       <caption>Figure 2, caption 1.</caption>
+      <caption>Figure 2, caption 2.</caption>
     </picture>
     <footnote>Figure 2, footnote 1.</footnote>
     <footnote>Figure 2, footnote 2.</footnote>
@@ -154,14 +154,14 @@
         <location value="116"/>
         Listing 1, caption 1 (main).
       </caption>
+      <caption>
+        <location value="85"/>
+        <location value="198"/>
+        <location value="427"/>
+        <location value="206"/>
+        Listing 1, caption 2 (below).
+      </caption>
 <![CDATA[print('hello')]]>    </code>
-    <text>
-      <location value="85"/>
-      <location value="198"/>
-      <location value="427"/>
-      <location value="206"/>
-      Listing 1, caption 2 (below).
-    </text>
     <footnote>
       <location value="85"/>
       <location value="209"/>
