@@ -59,6 +59,31 @@ DoclingDocument helpers are actually based).
 - [Serialization docs](https://docling-project.github.io/docling/concepts/serialization/)
 - [Serialization example](https://docling-project.github.io/docling/examples/serialization/)
 
+To export numbered pages without the side-by-side page previews, use the HTML
+serializer's content-only style:
+
+```python
+from docling_core.transforms.serializer.html import (
+    HTMLDocSerializer,
+    HTMLOutputStyle,
+    HTMLParams,
+)
+
+html = (
+    HTMLDocSerializer(
+        doc=doc,  # a DoclingDocument with page provenance
+        params=HTMLParams(output_style=HTMLOutputStyle.SPLIT_PAGE_CONTENT_ONLY),
+    )
+    .serialize()
+    .text
+)
+```
+
+Each page is wrapped in `<div class="page" data-page="N">`. Document tables and
+pictures retain their usual serialization behavior; only the page previews and
+outer layout table are omitted. Use `HTMLParams(pages={2}, output_style=...)` to
+restrict the output to selected pages.
+
 ### Chunking
 
 Similarly to above, the Chunking API provides built-in chunking capabilities as well as

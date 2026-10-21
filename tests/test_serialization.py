@@ -1372,6 +1372,64 @@ def test_html_split_page_no_page_breaks():
     verify(exp_file=src.parent / f"{src.stem}_split.gt.html", actual=actual)
 
 
+@pytest.mark.parametrize(
+    "filename,pages",
+    [
+        ("2408.09869v3_enriched.json", None),
+        ("2408.09869v3_enriched.json", {2}),
+        ("2408.09869v3_enriched.json", {1, 3}),
+        ("2408.09869_p1.json", None),
+        ("activities.json", None),
+        ("activities.json", {2}),
+    ],
+)
+@pytest.mark.parametrize("image_mode", [ImageRefMode.PLACEHOLDER, ImageRefMode.EMBEDDED])
+def test_html_split_page_content_only(filename, pages, image_mode):
+    """Keep each page's content while omitting the preview and layout table."""
+    from lxml import html
+
+    doc = DoclingDocument.load_from_json(Path("tests/data/doc") / filename)
+    params = HTMLParams(
+        image_mode=image_mode,
+        pages=pages,
+        output_style=HTMLOutputStyle.SPLIT_PAGE,
+    )
+    previous = html.fromstring(HTMLDocSerializer(doc=doc, params=params).serialize().text)
+    params.output_style = HTMLOutputStyle.SPLIT_PAGE_CONTENT_ONLY
+    visualizer = MagicMock(spec=LayoutVisualizer)
+    result = HTMLDocSerializer(doc=doc, params=params).serialize(visualizer=visualizer)
+    actual = html.fromstring(result.text)
+    visualizer.get_visualization.assert_not_called()
+    page_blocks = actual.xpath("/html/body/div[@class='page']")
+    old_blocks = previous.xpath("/html/body/table/tbody/tr/td/div[@class='page']")
+    assert page_blocks
+    assert len(page_blocks) == len(old_blocks)
+    assert not actual.xpath("/html/body/table | /html/body/figure | /html/body/img")
+    expected_pages = HTMLDocSerializer(doc=doc, params=params)._get_applicable_pages()
+    assert [int(block.attrib["data-page"]) for block in page_blocks] == expected_pages
+    for block, old_block in zip(page_blocks, old_blocks, strict=True):
+        del block.attrib["data-page"]
+        assert html.tostring(block).strip() == html.tostring(old_block).strip()
+    assert "DOCLING_DOC_PAGE_BREAK" not in result.text
+
+
+def test_html_split_page_content_only_without_page_images():
+    """Page provenance suffices even when the document has no page images."""
+    doc = DoclingDocument.load_from_json(Path("tests/data/doc/activities.json"))
+    doc.pages.clear()
+    result = (
+        HTMLDocSerializer(
+            doc=doc,
+            params=HTMLParams(output_style=HTMLOutputStyle.SPLIT_PAGE_CONTENT_ONLY),
+        )
+        .serialize()
+        .text
+    )
+    assert "data-page='1'" in result
+    assert "data-page='2'" in result
+    assert "no page-image found" not in result
+
+
 def test_html_include_annotations_false():
     src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)

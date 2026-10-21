@@ -98,6 +98,7 @@ class HTMLOutputStyle(str, Enum):
 
     SINGLE_COLUMN = "single_column"
     SPLIT_PAGE = "split_page"
+    SPLIT_PAGE_CONTENT_ONLY = "split_page_content_only"
 
 
 class HTMLParams(CommonParams):
@@ -1157,7 +1158,7 @@ class HTMLDocSerializer(DocSerializer):
             "<body>",
         ]
 
-        if self.params.output_style == HTMLOutputStyle.SPLIT_PAGE:
+        if self.requires_page_break():
             applicable_pages = self._get_applicable_pages()
 
             html_content = "\n".join([p.text for p in parts if p.text])
@@ -1175,16 +1176,21 @@ class HTMLDocSerializer(DocSerializer):
             elif applicable_pages is not None and len(applicable_pages) == 1:
                 pages[applicable_pages[0]] = html_content
 
-            html_parts.append("<table>")
-            html_parts.append("<tbody>")
+            content_only = self.params.output_style == HTMLOutputStyle.SPLIT_PAGE_CONTENT_ONLY
+            if not content_only:
+                html_parts.append("<table>")
+                html_parts.append("<tbody>")
 
             vized_pages_dict: dict[int | None, Image] = {}
-            if visualizer:
+            if visualizer and not content_only:
                 vized_pages_dict = visualizer.get_visualization(doc=self.doc)
 
             for page_no, page in pages.items():
                 if isinstance(page_no, int):
                     if applicable_pages is not None and page_no not in applicable_pages:
+                        continue
+                    if content_only:
+                        html_parts.append(f"<div class='page' data-page='{page_no}'>\n{page}\n</div>")
                         continue
                     page_img = self.doc.pages[page_no].image
                     vized_page = vized_pages_dict.get(page_no)
@@ -1220,8 +1226,9 @@ class HTMLDocSerializer(DocSerializer):
                 else:
                     raise ValueError("We need page-indices to leverage `split_page_view`")
 
-            html_parts.append("</tbody>")
-            html_parts.append("</table>")
+            if not content_only:
+                html_parts.append("</tbody>")
+                html_parts.append("</table>")
 
         elif self.params.output_style == HTMLOutputStyle.SINGLE_COLUMN:
             # Add all pages
@@ -1313,7 +1320,10 @@ class HTMLDocSerializer(DocSerializer):
                 head_parts.append(f"<style>\n{params.css_styles}\n</style>")
         elif self.params.output_style == HTMLOutputStyle.SPLIT_PAGE:
             head_parts.append(_get_css_for_split_page())
-        elif self.params.output_style == HTMLOutputStyle.SINGLE_COLUMN:
+        elif self.params.output_style in {
+            HTMLOutputStyle.SINGLE_COLUMN,
+            HTMLOutputStyle.SPLIT_PAGE_CONTENT_ONLY,
+        }:
             head_parts.append(_get_css_for_single_column())
         else:
             raise ValueError(f"unknown output-style: {self.params.output_style}")
@@ -1332,4 +1342,7 @@ class HTMLDocSerializer(DocSerializer):
     @override
     def requires_page_break(self):
         """Whether to add page breaks."""
-        return self.params.output_style == HTMLOutputStyle.SPLIT_PAGE
+        return self.params.output_style in {
+            HTMLOutputStyle.SPLIT_PAGE,
+            HTMLOutputStyle.SPLIT_PAGE_CONTENT_ONLY,
+        }
