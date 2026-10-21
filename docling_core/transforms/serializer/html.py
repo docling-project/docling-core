@@ -18,6 +18,7 @@ from typing_extensions import override
 
 from docling_core.transforms.serializer.base import (
     BaseAnnotationSerializer,
+    BaseBlockQuoteSerializer,
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -47,6 +48,7 @@ from docling_core.transforms.visualizer.base import BaseVisualizer
 from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     BaseMeta,
+    BlockQuoteGroup,
     CodeItem,
     CodeMetaField,
     ContentLayer,
@@ -870,6 +872,49 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
         return create_ser_result(text=text_res, span_source=parts)
 
 
+class HTMLBlockQuoteSerializer(BaseModel, BaseBlockQuoteSerializer):
+    """HTML-specific block quote serializer."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: BlockQuoteGroup,
+        doc_serializer: "BaseDocSerializer",
+        doc: DoclingDocument,
+        list_level: int = 0,
+        is_inline_scope: bool = False,
+        visited: set[str] | None = None,  # refs of visited items
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serializes a block quote to a ``blockquote`` element.
+
+        The ``cite`` URL becomes the ``cite`` attribute. An attribution is placed
+        outside the quote, in a ``figcaption`` that shares a ``figure`` with it, as
+        the HTML specification recommends.
+        """
+        my_visited: set[str] = visited if visited is not None else set()
+        parts = doc_serializer.get_parts(
+            item=item,
+            list_level=list_level,
+            is_inline_scope=is_inline_scope,
+            visited=my_visited,
+            **kwargs,
+        )
+        body = "\n".join(p.text for p in parts if p.text)
+        cap_res = doc_serializer.serialize_captions(item=item, tag="figcaption", **kwargs)
+
+        if body:
+            cite_attr = f' cite="{html.escape(str(item.cite), quote=True)}"' if item.cite else ""
+            text_res = f"<blockquote{cite_attr}>\n{body}\n</blockquote>"
+            if cap_res.text:
+                text_res = f"<figure>{text_res}{cap_res.text}</figure>"
+        else:
+            text_res = cap_res.text
+        res_parts = [*parts, cap_res] if cap_res.text else parts
+        return create_ser_result(text=text_res, span_source=res_parts)
+
+
 class HTMLInlineSerializer(BaseInlineSerializer):
     """HTML-specific inline group serializer."""
 
@@ -1078,6 +1123,7 @@ class HTMLDocSerializer(DocSerializer):
 
     list_serializer: BaseListSerializer = HTMLListSerializer()
     inline_serializer: BaseInlineSerializer = HTMLInlineSerializer()
+    block_quote_serializer: BaseBlockQuoteSerializer = HTMLBlockQuoteSerializer()
 
     meta_serializer: BaseMetaSerializer = HTMLMetaSerializer()
     annotation_serializer: BaseAnnotationSerializer = HTMLAnnotationSerializer()
@@ -1242,7 +1288,7 @@ class HTMLDocSerializer(DocSerializer):
     @override
     def serialize_captions(
         self,
-        item: FloatingItem,
+        item: FloatingItem | BlockQuoteGroup,
         tag: str = "figcaption",
         **kwargs: Any,
     ) -> SerializationResult:

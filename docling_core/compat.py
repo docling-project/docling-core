@@ -198,6 +198,42 @@ def list_projectors() -> list[tuple[int, int]]:
 # the serialised dict without error.  Full semantic fidelity is not always
 # possible; the goal is a document that validates rather than crashes.
 
+# --- 1.11 → 1.10 -----------------------------------------------------------
+# Schema 1.11:
+#   • Added GroupLabel.BLOCK_QUOTE and the BlockQuoteGroup subtype with the
+#     optional "cite" (source URL) and "captions" (attribution refs) fields.
+#   Old clients reject the unknown label value and, with extra="forbid",
+#   the unknown fields.
+#
+# Downgrade strategy:
+#   • Relabel "block_quote" groups to "unspecified" and strip "cite" and
+#     "captions". The attribution item stays in place as a plain caption
+#     child, so old clients still read it after the quoted blocks.
+# ---------------------------------------------------------------------------
+
+
+@register_projector(from_minor=11, to_minor=10)
+def _project_1_11_to_1_10(data: dict) -> dict:
+    """Downgrade a schema 1.11 document dict to schema 1.10.
+
+    Handles:
+    - Relabels ``block_quote`` groups to ``unspecified``.
+    - Strips the ``cite`` and ``captions`` fields from group dicts.
+    """
+    data = dict(data)
+
+    new_groups = []
+    for group in data.get("groups", []):
+        group = {k: v for k, v in group.items() if k not in {"cite", "captions"}}
+        if group.get("label") == "block_quote":
+            group["label"] = "unspecified"
+        new_groups.append(group)
+    data["groups"] = new_groups
+
+    data["version"] = "1.10.0"
+    return data
+
+
 # --- 1.10 → 1.9 -----------------------------------------------------------
 # Schema 1.10 (docling-core v2.69.0, PR #519):
 #   • Added FieldRegionItem, FieldHeadingItem, FieldItem, FieldValueItem
