@@ -129,6 +129,7 @@ jobs:
         run: python -m dclq --help
 
   check:
+    # Keep the failure gate active, but skip summaries for cancelled workflows.
     if: ${{ !cancelled() }}
     needs:
       - lint
