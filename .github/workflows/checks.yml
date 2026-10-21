@@ -129,7 +129,7 @@ jobs:
         run: python -m dclq --help
 
   check:
-    if: ${{ always() }}
+    if: ${{ !cancelled() }}
     needs:
       - lint
       - run-checks
