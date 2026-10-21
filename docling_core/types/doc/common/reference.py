@@ -15,7 +15,7 @@ from typing_extensions import Self
 from docling_core.types.base import _JSON_POINTER_REGEX
 from docling_core.types.doc.base import BoundingBox, Size
 from docling_core.types.doc.common.scalars import CharSpan
-from docling_core.types.doc.utils import _ensure_within_size_limit
+from docling_core.types.doc.utils import _ensure_within_size_limit, _normalize_image_for_png
 from docling_core.utils.settings import settings
 
 try:
@@ -181,7 +181,7 @@ class ImageRef(BaseModel):
     @staticmethod
     def _to_img_str_pil(image: PILImage.Image) -> str:
         buffered = BytesIO()
-        image.save(buffered, format="PNG")
+        _normalize_image_for_png(image).save(buffered, format="PNG")
         img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
         return img_str
 
