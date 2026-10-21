@@ -387,6 +387,9 @@ def otsl_parse_texts(texts: list[str], tokens: list[str]) -> tuple[list["TableCe
                     end_row_offset_idx=r_idx + row_span,
                     start_col_offset_idx=c_idx,
                     end_col_offset_idx=c_idx + col_span,
+                    column_header=text == TableToken.OTSL_CHED.value,
+                    row_header=text == TableToken.OTSL_RHED.value,
+                    row_section=text == TableToken.OTSL_SROW.value,
                 )
             )
         if text in [
