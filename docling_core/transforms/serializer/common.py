@@ -80,6 +80,18 @@ inline link.
 _WINDOWS_DRIVE_RE: Final[re.Pattern[str]] = re.compile(r"[A-Za-z]:/")
 """Matches the drive prefix of an absolute Windows path, e.g. `C:/`."""
 
+SAFE_HYPERLINK_SCHEMES: Final[frozenset[str]] = frozenset(
+    {"http", "https", "ftp", "ftps", "sftp", "mailto", "tel", "file"}
+)
+"""URI schemes that are serialized as live hyperlinks; other schemes keep only the link text."""
+
+_URI_SCHEME_RE: Final[re.Pattern[str]] = re.compile(r"([A-Za-z][A-Za-z0-9+.\-]*):")
+_URI_IGNORED_CHARS_RE: Final[re.Pattern[str]] = re.compile(r"[\t\r\n]")
+_URI_LEADING_CHARS: Final[str] = "".join(chr(c) for c in range(0x21))
+
+_MD_DESTINATION_UNSAFE_RE: Final[re.Pattern[str]] = re.compile(r"[\x00-\x20\x7f()<>\"\\]")
+_MD_ENTITY_RE: Final[re.Pattern[str]] = re.compile(r"&(?=#?\w+;)")
+
 
 def _escape_uri_path(value: AnyUrl | PurePath) -> str:
     """Encode a URL or filesystem path as a link destination.
@@ -282,6 +294,51 @@ def hyperlink_uri(hyperlink: AnyUrl | PurePath) -> str:
     if isinstance(hyperlink, PurePath):
         return hyperlink.as_posix()
     return str(hyperlink)
+
+
+def is_safe_hyperlink(uri: str) -> bool:
+    """Tell whether a hyperlink destination may be rendered as a live link.
+
+    Hyperlink destinations come from the converted document, where `Path` accepts
+    any string and `AnyUrl` accepts any scheme. A destination with an active
+    scheme such as `javascript:` or `data:` must not become a clickable link.
+
+    The scheme is read the way browsers do: leading control characters and spaces
+    are ignored and tabs and newlines are removed anywhere. A destination without
+    a scheme is a relative reference. A single-letter scheme is a Windows drive
+    (`C:/...`), i.e. a path.
+
+    Args:
+        uri: The hyperlink destination, e.g. as returned by `hyperlink_uri`.
+
+    Returns:
+        `True` if the destination is relative or uses an allowlisted scheme.
+    """
+    cleaned = _URI_IGNORED_CHARS_RE.sub("", uri).lstrip(_URI_LEADING_CHARS)
+    match = _URI_SCHEME_RE.match(cleaned)
+    if match is None:
+        return True
+    scheme = match.group(1).lower()
+    return len(scheme) == 1 or scheme in SAFE_HYPERLINK_SCHEMES
+
+
+def markdown_link_destination(hyperlink: AnyUrl | PurePath) -> str:
+    """Render a hyperlink destination that cannot end a Markdown inline link early.
+
+    Percent-encodes control characters, whitespace, parentheses, angle brackets,
+    double quotes and backslashes, which would otherwise end the destination and
+    let the rest of the address be parsed as Markdown or raw HTML. An `&` that
+    starts an HTML entity is escaped as `&amp;`, since Markdown renderers decode
+    entities in destinations. Other characters are kept as they are.
+
+    Args:
+        hyperlink: The hyperlink destination.
+
+    Returns:
+        A string that can be used inside `[text](...)`.
+    """
+    res = _MD_ENTITY_RE.sub("&amp;", hyperlink_uri(hyperlink))
+    return _MD_DESTINATION_UNSAFE_RE.sub(lambda m: f"%{ord(m.group()):02X}", res)
 
 
 class CommonParams(BaseModel):
@@ -713,7 +770,10 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             elif formatting.script == Script.SUPER:
                 res = self.serialize_superscript(text=res, **kwargs)
         if params.include_hyperlinks and hyperlink:
-            res = self.serialize_hyperlink(text=res, hyperlink=hyperlink, **kwargs)
+            if is_safe_hyperlink(hyperlink_uri(hyperlink)):
+                res = self.serialize_hyperlink(text=res, hyperlink=hyperlink, **kwargs)
+            else:
+                _logger.warning("Dropping hyperlink with unsafe scheme; keeping the link text only.")
         return res
 
     @override

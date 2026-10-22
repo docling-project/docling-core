@@ -5,7 +5,6 @@ import warnings
 import xml.etree.ElementTree as ET
 from enum import Enum
 from typing import Any, ClassVar, Final, Optional
-from xml.sax.saxutils import escape
 
 from pydantic import BaseModel
 
@@ -30,6 +29,18 @@ ET.register_namespace("", DOCLANG_NAMESPACE)  # prevent prefix from ET.tostring(
 
 def _wrap(text: str, wrap_tag: str) -> str:
     return f"<{wrap_tag}>{text}</{wrap_tag}>"
+
+
+def _escape_xml_attr(val: str) -> str:
+    """Escape special XML characters in an attribute value.
+
+    Args:
+        val: The attribute value to escape.
+
+    Returns:
+        The escaped attribute value safe for inclusion inside double quotes.
+    """
+    return val.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def _has_field_region_ancestor(*, item: DocItem, doc: DoclingDocument) -> bool:
@@ -682,7 +693,7 @@ class DocLangVocabulary(BaseModel):
         if name is None:
             return f"<{token.value}>"
         assert DocLangAttributeKey.NAME in cls.ALLOWED_ATTRIBUTES.get(token, set())
-        safe = escape(name, {'"': "&quot;"})
+        safe = _escape_xml_attr(name)
         return f'<{token.value} {DocLangAttributeKey.NAME.value}="{safe}">'
 
     @classmethod
