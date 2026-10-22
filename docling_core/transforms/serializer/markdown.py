@@ -969,7 +969,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
                 and isinstance(item.image.uri, AnyUrl)
                 and item.image.uri.scheme == "data"
             ):
-                text = f"![Image]({item.image.uri})"
+                text = f"![Image]({markdown_link_destination(item.image.uri)})"
                 text_res = text
             else:
                 # get the item.image._pil or crop it out of the page-image

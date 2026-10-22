@@ -584,7 +584,7 @@ class HTMLPictureSerializer(BasePictureSerializer):
                     and isinstance(item.image.uri, AnyUrl)
                     and item.image.uri.scheme == "data"
                 ):
-                    img_text = f'<img src="{item.image.uri}">'
+                    img_text = f'<img src="{html.escape(str(item.image.uri), quote=True)}">'
                 elif len(item.prov) > 1:  # more than 1 provenance
                     img_text = '<table style="border-collapse: collapse; width: 100%;">\n'
                     for ind, prov in enumerate(item.prov):
@@ -1202,7 +1202,7 @@ class HTMLDocSerializer(DocSerializer):
                         and isinstance(page_img.uri, AnyUrl)
                         and page_img.uri.scheme == "data"
                     ):
-                        img_text = f'<img src="{page_img.uri}">'
+                        img_text = f'<img src="{html.escape(str(page_img.uri), quote=True)}">'
                         html_parts.append(f"<figure>{img_text}</figure>")
 
                     elif (page_img is not None) and (page_img._pil is not None):

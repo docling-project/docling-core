@@ -1969,16 +1969,17 @@ def _doc_with_hyperlink(hyperlink: AnyUrl | Path) -> DoclingDocument:
     return doc
 
 
+class _TagCollector(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.tags: list[tuple[str, dict[str, str | None]]] = []
+
+    def handle_starttag(self, tag, attrs):
+        self.tags.append((tag, dict(attrs)))
+
+
 def test_html_hyperlink_cannot_break_out_of_attribute():
     """An untrusted hyperlink stays inside the href attribute and injects no elements."""
-
-    class _TagCollector(HTMLParser):
-        def __init__(self):
-            super().__init__()
-            self.tags: list[tuple[str, dict[str, str | None]]] = []
-
-        def handle_starttag(self, tag, attrs):
-            self.tags.append((tag, dict(attrs)))
 
     collector = _TagCollector()
     collector.feed(_doc_with_hyperlink(_BREAKOUT).export_to_html())
@@ -2062,6 +2063,51 @@ def test_doclang_hyperlink_stays_inside_href_attribute():
 
     assert [el.get("uri") for el in root.iter("href")] == [payload.as_posix()]
     assert not list(root.iter("script"))
+
+
+_DATA_URI_BREAKOUT = AnyUrl('data:image/png;base64,x"><script>1</script>)<b>(')
+
+
+def _image_ref(uri: AnyUrl | Path) -> ImageRef:
+    return ImageRef(mimetype="image/png", dpi=72, size=Size(width=1, height=1), uri=uri)
+
+
+def test_html_embedded_data_uri_stays_inside_src_attribute():
+    """A data URI from the document stays inside the src attribute of picture and page images."""
+    doc = DoclingDocument(name="x")
+    doc.add_page(page_no=1, size=Size(width=1, height=1), image=_image_ref(_DATA_URI_BREAKOUT))
+    prov = ProvenanceItem(page_no=1, bbox=BoundingBox(l=0, t=0, r=1, b=1), charspan=(0, 1))
+    doc.add_picture(image=_image_ref(_DATA_URI_BREAKOUT), prov=prov)
+
+    for html in (
+        doc.export_to_html(image_mode=ImageRefMode.EMBEDDED),
+        doc.export_to_html(image_mode=ImageRefMode.EMBEDDED, split_page_view=True),
+    ):
+        collector = _TagCollector()
+        collector.feed(html)
+        srcs = [attrs["src"] for tag, attrs in collector.tags if tag == "img"]
+        assert srcs and set(srcs) == {str(_DATA_URI_BREAKOUT)}
+        assert "script" not in [tag for tag, _ in collector.tags]
+
+
+def test_markdown_embedded_data_uri_is_encoded():
+    """A data URI from the document cannot end the Markdown image destination early."""
+    doc = DoclingDocument(name="x")
+    doc.add_picture(image=_image_ref(_DATA_URI_BREAKOUT))
+
+    md = doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED).strip()
+
+    assert md == "![Image](data:image/png;base64,x%22%3E%3Cscript%3E1%3C/script%3E%29%3Cb%3E%28)"
+
+
+def test_doclang_src_stays_inside_attribute():
+    """The DocLang output remains well-formed XML and round-trips the image URI."""
+    uri = Path('a"<b>.png')
+    doc = DoclingDocument(name="x")
+    doc.add_picture(image=_image_ref(uri))
+    root = ET.fromstring(doc.export_to_doclang(image_mode=ImageRefMode.REFERENCED))
+
+    assert [el.get("uri") for el in root.iter("src")] == [str(uri)]
 
 
 def test_export_to_markdown_image_dir_saves_and_references_images(sample_doc, tmp_path):
