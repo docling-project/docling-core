@@ -36,6 +36,7 @@ from docling_core.transforms.serializer._doclang_utils import (
     _code_language_label_to_doclang,
     _create_location_tokens_for_bbox,
     _create_location_tokens_for_item,
+    _escape_xml_attr,
     _merge_table_data,
     _picture_classification_label_from_doclang,
     _picture_classification_label_to_doclang,
@@ -300,18 +301,6 @@ def _create_layer_token(
             attrs={DocLangAttributeKey.VALUE: item.content_layer.value},
         )
     return ""
-
-
-def _escape_xml_attr(val: str) -> str:
-    """Escape special XML characters in an attribute value.
-
-    Args:
-        val: The attribute value to escape.
-
-    Returns:
-        The escaped attribute value safe for inclusion inside double quotes.
-    """
-    return val.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def _create_label_token(*, value: str) -> str:
