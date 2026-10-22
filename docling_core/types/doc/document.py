@@ -4527,6 +4527,83 @@ class DoclingDocument(BaseModel):
             # notation like "P < 0.05 ... P > 0.05"). See #618.
             return re.sub(r"<(?!_.*?_>)[a-zA-Z/][^>]*>", "", text_chunk).strip()
 
+        list_tags = (DocumentToken.ORDERED_LIST.value, DocumentToken.UNORDERED_LIST.value)
+        list_item_tag = DocItemLabel.LIST_ITEM.value
+
+        def find_balanced_blocks(
+            text: str, tags: tuple[str, ...], nesting_tags: tuple[str, ...]
+        ) -> list[tuple[str, int, int, int, int, bool]]:
+            """Find the top-level <tag>...</tag> blocks of `tags` in `text`.
+
+            Opening and closing tags of `nesting_tags` are counted, so a block ends at
+            its own closing tag, not at the closing tag of a nested block of the same
+            kind. Returns (tag, start, inner_start, inner_end, end, closed) per block;
+            an unclosed block runs to the end of `text`.
+            """
+            token = re.compile(rf"<(/?)({'|'.join(nesting_tags)})>")
+            blocks: list[tuple[str, int, int, int, int, bool]] = []
+            stack: list[tuple[str, int, int]] = []
+            for m in token.finditer(text):
+                name = m.group(2)
+                if not m.group(1):
+                    stack.append((name, m.start(), m.end()))
+                elif stack and stack[-1][0] == name:
+                    _, start, inner_start = stack.pop()
+                    if not stack and name in tags:
+                        blocks.append((name, start, inner_start, m.start(), m.end(), True))
+            if stack and stack[0][0] in tags:
+                name, start, inner_start = stack[0]
+                blocks.append((name, start, inner_start, len(text), len(text), False))
+            return blocks
+
+        def add_list(
+            list_tag: str,
+            content: str,
+            parent: NodeItem | None,
+            page_no: int,
+            pg_width: float,
+            pg_height: float,
+            with_prov: bool,
+        ) -> None:
+            """Add a list group, its items and, recursively, their sub-lists."""
+            ordered = list_tag == DocumentToken.ORDERED_LIST.value
+            group = doc.add_list_group(name="list", parent=parent)
+            enum_value = 0
+            last_item: ListItem | None = None
+            items = find_balanced_blocks(content, (list_item_tag,), (list_item_tag, *list_tags))
+            for _, _, inner_start, inner_end, _, _ in items:
+                inner = content[inner_start:inner_end]
+                sub_lists = find_balanced_blocks(inner, list_tags, list_tags)
+                own = inner
+                for _, start, _, _, end, _ in reversed(sub_lists):
+                    own = own[:start] + own[end:]
+                text_content = extract_inner_text(own)
+                if not text_content and sub_lists and last_item is not None:
+                    # export_to_doctags() writes a sub-list in a list_item of its
+                    # own, right after the item it belongs to.
+                    item = last_item
+                else:
+                    enum_value += 1
+                    li_bbox = extract_bounding_box(own) if with_prov else None
+                    item = doc.add_list_item(
+                        marker=f"{enum_value}." if ordered else "",
+                        enumerated=ordered,
+                        parent=group,
+                        text=text_content,
+                        prov=(
+                            ProvenanceItem(
+                                bbox=li_bbox.resize_by_scale(pg_width, pg_height),
+                                charspan=(0, len(text_content)),
+                                page_no=page_no,
+                            )
+                            if li_bbox
+                            else None
+                        ),
+                    )
+                    last_item = item
+                for sub_tag, _, sub_start, sub_end, _, _ in sub_lists:
+                    add_list(sub_tag, inner[sub_start:sub_end], item, page_no, pg_width, pg_height, with_prov)
+
         def extract_caption(
             text_chunk: str,
         ) -> tuple[TextItem | None, BoundingBox | None]:
@@ -4825,7 +4902,10 @@ class DoclingDocument(BaseModel):
             pattern = re.compile(tag_pattern, re.DOTALL)
 
             # Go through each match in order
+            consumed_until = 0  # end of the last list, which may contain nested lists
             for match in pattern.finditer(page_doctags):
+                if match.start() < consumed_until:
+                    continue
                 full_chunk = match.group(0)
                 tag_name = match.group("tag")
 
@@ -4999,41 +5079,26 @@ class DoclingDocument(BaseModel):
                     DocumentToken.ORDERED_LIST.value,
                     DocumentToken.UNORDERED_LIST.value,
                 ]:
-                    GroupLabel.LIST
-                    enum_marker = ""
-                    enum_value = 0
-                    if tag_name == DocumentToken.ORDERED_LIST.value:
-                        GroupLabel.ORDERED_LIST
-
-                    list_item_pattern = rf"<(?P<tag>{DocItemLabel.LIST_ITEM})>.*?</(?P=tag)>"
-                    li_pattern = re.compile(list_item_pattern, re.DOTALL)
-                    # Add list group:
-                    new_list = doc.add_list_group(name="list")
-                    # Pricess list items
-                    for li_match in li_pattern.finditer(full_chunk):
-                        enum_value += 1
-                        if tag_name == DocumentToken.ORDERED_LIST.value:
-                            enum_marker = str(enum_value) + "."
-
-                        li_full_chunk = li_match.group(0)
-                        li_bbox = extract_bounding_box(li_full_chunk) if image else None
-                        text_content = extract_inner_text(li_full_chunk)
-                        # Add list item
-                        doc.add_list_item(
-                            marker=enum_marker,
-                            enumerated=(tag_name == DocumentToken.ORDERED_LIST.value),
-                            parent=new_list,
-                            text=text_content,
-                            prov=(
-                                ProvenanceItem(
-                                    bbox=li_bbox.resize_by_scale(pg_width, pg_height),
-                                    charspan=(0, len(text_content)),
-                                    page_no=page_no,
-                                )
-                                if li_bbox
-                                else None
-                            ),
-                        )
+                    content = ""
+                    if match.group("closed"):
+                        # The non-greedy match ends at the first closing tag, which
+                        # belongs to a nested list if there is one; find the real end.
+                        blocks = find_balanced_blocks(page_doctags[match.start() :], list_tags, list_tags)
+                        if blocks and blocks[0][1] == 0 and blocks[0][5]:
+                            _, _, inner_start, inner_end, end, _ = blocks[0]
+                            content = page_doctags[match.start() + inner_start : match.start() + inner_end]
+                            consumed_until = match.start() + end
+                        else:
+                            content = match.group("content")
+                    add_list(
+                        tag_name,
+                        content,
+                        None,
+                        page_no,
+                        pg_width,
+                        pg_height,
+                        with_prov=image is not None,
+                    )
                 else:
                     # For everything else, treat as text
                     _add_text(
