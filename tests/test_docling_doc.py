@@ -798,6 +798,52 @@ def test_pil_image():
     assert reloaded_image.tobytes() == fig_image.tobytes()
 
 
+def test_get_image_of_an_undecodable_ref_returns_none():
+    """A reference whose data Pillow cannot open must not raise.
+
+    ``FloatingItem.get_image`` is typed and documented as returning ``None`` when
+    no image is available, but it forwarded ``ImageRef.pil_image``, which called
+    ``PILImage.open`` unguarded. An inline ``data:image/svg+xml`` reference (which
+    a Markdown or HTML backend produces when the inline image is an SVG) made
+    ``get_image`` raise ``UnidentifiedImageError`` instead of returning ``None``,
+    so callers that skip a picture without an image crashed - the picture
+    enrichment models through ``prepare_element``, and any consumer that walks
+    the pictures of such a document.
+    """
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80">'
+        '<rect width="120" height="80" fill="#1e64c8"/></svg>'
+    )
+    svg_data_uri = "data:image/svg+xml;base64," + base64.b64encode(svg.encode()).decode()
+
+    doc = DoclingDocument(name="Untitled 1")
+    doc.add_picture(
+        image=ImageRef(
+            dpi=72,
+            mimetype="image/svg+xml",
+            size=Size(width=120, height=80),
+            uri=AnyUrl(svg_data_uri),
+        )
+    )
+
+    picture = doc.pictures[0]
+    assert picture.image is not None  # the payload is still referenced
+    assert picture.image.pil_image is None  # but there are no pixels to decode
+    assert picture.get_image(doc=doc) is None
+
+
+def test_pil_image_of_a_corrupt_data_uri_returns_none():
+    """The same holds for a data URI that simply is not image data."""
+    image_ref = ImageRef(
+        dpi=72,
+        mimetype="image/png",
+        size=Size(width=1, height=1),
+        uri=AnyUrl("data:image/png;base64," + base64.b64encode(b"not an image").decode()),
+    )
+
+    assert image_ref.pil_image is None
+
+
 def test_image_ref():
     data_uri = {
         "dpi": 72,

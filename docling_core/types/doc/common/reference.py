@@ -118,7 +118,14 @@ class ImageRef(BaseModel):
 
     @property
     def pil_image(self) -> PILImage.Image | None:
-        """Return the PIL Image."""
+        """Return the PIL Image, or None if its data cannot be decoded.
+
+        A URI may point at data that Pillow cannot open: an inline
+        ``data:image/svg+xml`` (Pillow has no SVG decoder), a ``data:`` payload
+        that is not an image, or a local image file that is no longer readable.
+        Refusal to read a source at all stays an error - a blocked ``file:``
+        URI and an oversized payload keep raising :class:`ValueError`.
+        """
         if self._pil is not None:
             return self._pil
 
@@ -134,7 +141,10 @@ class ImageRef(BaseModel):
                 max_size=settings.max_image_decoded_size,
                 label="Image file",
             )
-            self._pil = PILImage.open(local_path)
+            try:
+                self._pil = PILImage.open(local_path)
+            except PILImage.UnidentifiedImageError:
+                return None
         elif isinstance(self.uri, AnyUrl) and self.uri.scheme == "data":
             encoded_img = str(self.uri).split(",")[1]
             decoded_img = base64.b64decode(encoded_img)
@@ -142,7 +152,10 @@ class ImageRef(BaseModel):
             if len(decoded_img) > settings.max_image_decoded_size:
                 raise ValueError(f"Decoded image exceeds size limit of {settings.max_image_decoded_size} bytes.")
 
-            self._pil = PILImage.open(BytesIO(decoded_img))
+            try:
+                self._pil = PILImage.open(BytesIO(decoded_img))
+            except PILImage.UnidentifiedImageError:
+                return None
         # else: HTTP(S) and other remote schemes are intentionally not fetched.
         # If remote fetch is enabled, it must use host allowlists and block
         # private, link-local, and cloud-metadata addresses (SSRF controls).
