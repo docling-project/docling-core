@@ -1,6 +1,7 @@
 """Test serialization."""
 
 import threading
+from html.parser import HTMLParser
 from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
 from typing import TypeAlias, Union
 from unittest.mock import MagicMock, patch
@@ -1957,6 +1958,110 @@ def test_relative_hyperlink_export_latex_keeps_fragment():
 
     tex = LaTeXDocSerializer(doc=doc).serialize().text
     assert "\\href{sub/next.html#section}" in tex
+
+
+_BREAKOUT = Path('x">\n<script>1</script>\n<a href="')
+
+
+def _doc_with_hyperlink(hyperlink: AnyUrl | Path) -> DoclingDocument:
+    doc = DoclingDocument(name="x")
+    doc.add_text(label=DocItemLabel.TEXT, text="c", hyperlink=hyperlink)
+    return doc
+
+
+def test_html_hyperlink_cannot_break_out_of_attribute():
+    """An untrusted hyperlink stays inside the href attribute and injects no elements."""
+
+    class _TagCollector(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.tags: list[tuple[str, dict[str, str | None]]] = []
+
+        def handle_starttag(self, tag, attrs):
+            self.tags.append((tag, dict(attrs)))
+
+    collector = _TagCollector()
+    collector.feed(_doc_with_hyperlink(_BREAKOUT).export_to_html())
+
+    assert "script" not in [tag for tag, _ in collector.tags]
+    assert [attrs["href"] for tag, attrs in collector.tags if tag == "a"] == [_BREAKOUT.as_posix()]
+
+
+@pytest.mark.parametrize(
+    "hyperlink",
+    [
+        Path("javascript:alert(1)"),
+        AnyUrl("javascript:alert(1)"),
+        AnyUrl("JaVaScRiPt:alert(1)"),
+        Path("  javascript:alert(1)"),
+        Path("java\tscript:alert(1)"),
+        AnyUrl("data:text/html,<script>1</script>"),
+        Path("vbscript:msgbox(1)"),
+    ],
+)
+def test_unsafe_hyperlink_scheme_is_dropped(hyperlink: AnyUrl | Path):
+    """Hyperlinks with an active scheme keep the link text but are not emitted as links."""
+    doc = _doc_with_hyperlink(hyperlink)
+
+    assert doc.export_to_markdown().strip() == "c"
+    html = doc.export_to_html()
+    assert "<a " not in html
+    assert "<p>c</p>" in html
+    assert "\\href" not in LaTeXDocSerializer(doc=doc).serialize().text
+
+
+@pytest.mark.parametrize(
+    ("hyperlink", "expected_md", "expected_html"),
+    [
+        (AnyUrl("https://example.com/x"), "[c](https://example.com/x)", '<a href="https://example.com/x">'),
+        (AnyUrl("mailto:a@example.com"), "[c](mailto:a@example.com)", '<a href="mailto:a@example.com">'),
+        (Path("sub/next.html"), "[c](sub/next.html)", '<a href="sub/next.html">'),
+        (Path("C:/docs/a.pdf"), "[c](C:/docs/a.pdf)", '<a href="C:/docs/a.pdf">'),
+        (Path("#anchor"), "[c](#anchor)", '<a href="#anchor">'),
+    ],
+)
+def test_safe_hyperlink_is_preserved(hyperlink: AnyUrl | Path, expected_md: str, expected_html: str):
+    """Relative references and allowlisted schemes are still emitted as links."""
+    doc = _doc_with_hyperlink(hyperlink)
+
+    assert doc.export_to_markdown().strip() == expected_md
+    assert expected_html in doc.export_to_html()
+
+
+def test_malformed_hyperlink_does_not_fail_export():
+    """A malformed URL, which makes `urlsplit` raise, must not abort the export."""
+    doc = _doc_with_hyperlink(Path("//[::1/x"))
+
+    assert doc.export_to_markdown().strip() == "[c](//[::1/x)"
+    assert '<a href="//[::1/x">' in doc.export_to_html()
+    assert "\\href{" in LaTeXDocSerializer(doc=doc).serialize().text
+
+
+@pytest.mark.parametrize(
+    ("hyperlink", "expected"),
+    [
+        (_BREAKOUT, "x%22%3E%0A%3Cscript%3E1%3C/script%3E%0A%3Ca%20href=%22"),
+        (Path("a(b)c d"), "a%28b%29c%20d"),
+        # Markdown renderers decode entities in link destinations, which would
+        # rebuild a scheme the allowlist has already rejected.
+        (Path("&#106;avascript:alert(1)"), "&amp;#106;avascript:alert%281%29"),
+        (Path("a?x=1&y=2"), "a?x=1&y=2"),
+    ],
+)
+def test_markdown_hyperlink_destination_is_encoded(hyperlink: Path, expected: str):
+    """Characters that end or alter a Markdown link destination are encoded."""
+    md = _doc_with_hyperlink(hyperlink).export_to_markdown().strip()
+
+    assert md == f"[c]({expected})"
+
+
+def test_doclang_hyperlink_stays_inside_href_attribute():
+    """The DocLang output remains well-formed XML and round-trips the destination."""
+    payload = Path('x"><script>1</script><a href="')
+    root = ET.fromstring(_doc_with_hyperlink(payload).export_to_doclang())
+
+    assert [el.get("uri") for el in root.iter("href")] == [payload.as_posix()]
+    assert not list(root.iter("script"))
 
 
 def test_export_to_markdown_image_dir_saves_and_references_images(sample_doc, tmp_path):

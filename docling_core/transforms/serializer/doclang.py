@@ -322,7 +322,7 @@ def _create_src_token(*, uri: str) -> str:
 
 def _create_href_token(*, uri: str) -> str:
     """Emit `<href uri="..."/>` in element head."""
-    safe = uri.replace("&", "&amp;").replace('"', "&quot;")
+    safe = uri.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
     return DocLangVocabulary._create_selfclosing_token(
         token=DocLangToken.HREF,
         attrs={DocLangAttributeKey.URI: safe},

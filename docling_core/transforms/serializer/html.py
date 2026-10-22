@@ -337,7 +337,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         item_image = item.get_image(doc=doc)
         if item_image is not None:
             img_ref = ImageRef.from_pil(item_image, dpi=72)
-            return f'<figure><img src="{img_ref.uri}" alt="{orig}" /></figure>'
+            return f'<figure><img src="{img_ref.uri}" alt="{html.escape(orig, quote=True)}" /></figure>'
         return None
 
 
@@ -1127,7 +1127,7 @@ class HTMLDocSerializer(DocSerializer):
         **kwargs: Any,
     ) -> str:
         """Apply HTML-specific hyperlink serialization."""
-        return f'<a href="{hyperlink_uri(hyperlink)}">{text}</a>'
+        return f'<a href="{html.escape(hyperlink_uri(hyperlink), quote=True)}">{text}</a>'
 
     @override
     def serialize_doc(
