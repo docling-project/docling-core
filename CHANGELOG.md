@@ -1,3 +1,12 @@
+## [v2.103.1](https://github.com/docling-project/docling-core/releases/tag/v2.103.1) - 2026-10-20
+
+### Fix
+
+* **markdown:** Fence code longer than any backtick run inside it ([#867](https://github.com/docling-project/docling-core/issues/867)) ([`1ab3af3`](https://github.com/docling-project/docling-core/commit/1ab3af3d7e5a75770baac3113574f52cfc871dd3))
+* **webvtt:** Ignore tags that are not cue spans instead of dropping the cue ([#896](https://github.com/docling-project/docling-core/issues/896)) ([`29c740f`](https://github.com/docling-project/docling-core/commit/29c740fd4cb9b5604687d3d897de3da172273cc6))
+* **markdown:** Cap section header depth at six heading levels ([#872](https://github.com/docling-project/docling-core/issues/872)) ([`4422110`](https://github.com/docling-project/docling-core/commit/44221107646cd6f19cd72538ae41c5c8554f40b8))
+* Reject DAG-shaped documents and oversized tables to prevent DoS ([#899](https://github.com/docling-project/docling-core/issues/899)) ([`67c5109`](https://github.com/docling-project/docling-core/commit/67c51098b9194ee4fec7e57d5a2ff2d523b950af))
+
 ## [v2.103.0](https://github.com/docling-project/docling-core/releases/tag/v2.103.0) - 2026-10-19
 
 ### Feature

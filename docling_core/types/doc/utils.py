@@ -8,10 +8,17 @@ import zipfile
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any
 
+from PIL import Image as PILImage
+
 from docling_core.types.doc.tokens import _LOC_PREFIX, DocumentToken, TableToken
 
 if TYPE_CHECKING:
     from docling_core.types.doc.document import TableCell, TableData
+
+
+def _normalize_image_for_png(image: PILImage.Image) -> PILImage.Image:
+    """Keep the PNG 16-bit clipping behavior removed in Pillow 13."""
+    return image.convert("I;16") if image.mode == "I" else image
 
 
 def is_remote_path(p: Any) -> bool:

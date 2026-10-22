@@ -85,6 +85,7 @@ from docling_core.types.doc.document import (
 )
 from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.utils import (
+    _normalize_image_for_png,
     get_html_tag_with_text_direction,
     get_text_direction,
 )
@@ -1139,7 +1140,7 @@ class HTMLDocSerializer(DocSerializer):
 
         def _serialize_page_img(page_img: Image):
             buffered = BytesIO()
-            page_img.save(buffered, format="PNG")  # Save the image to the byte stream
+            _normalize_image_for_png(page_img).save(buffered, format="PNG")
             img_bytes = buffered.getvalue()  # Get the byte data
 
             # Encode to Base64 and decode to string

@@ -2816,6 +2816,20 @@ def test_empty_text_keeps_its_locations_and_layer() -> None:
     assert not doc.groups
 
 
+def test_track_is_skipped_with_a_warning() -> None:
+    xml = (
+        '<doclang version="0.8"><text>Before</text>'
+        "<track><caption>Talk</caption>"
+        '<bdiv/><seconds value="0"/><seconds value="4"/><chapter><text>Intro</text></chapter>Hello world'
+        '<bdiv/><seconds value="4"/>Second cue</track>'
+        "<text>After</text></doclang>"
+    )
+    with pytest.warns(UserWarning, match="<track> is not supported yet"):
+        doc = _deserialize(xml)
+
+    assert [t.text for t in doc.texts] == ["Before", "After"]
+
+
 def test_empty_formula_is_kept() -> None:
     doc = DocLangDocDeserializer().deserialize_str('<doclang version="0.7"><formula></formula><formula/></doclang>')
 

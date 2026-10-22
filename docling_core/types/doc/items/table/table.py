@@ -233,10 +233,10 @@ class TableItem(FloatingItem):
         if len(self.prov) > 0:
             page_no = self.prov[0].page_no
 
+        grid = self.data.grid  # computed on every access, so build it only once
         for i in range(nrows):
             for j in range(ncols):
-                cell: TableCell = self.data.grid[i][j]
-                content = cell._get_text(doc=doc, doc_serializer=doc_serializer, **kwargs).strip()
+                cell: TableCell = grid[i][j]
                 rowspan, rowstart = (
                     cell.row_span,
                     cell.start_row_offset_idx,
@@ -261,6 +261,8 @@ class TableItem(FloatingItem):
                     )
 
                 if rowstart == i and colstart == j:
+                    # Only the origin slot renders content: a spanning (rich) cell is not rendered per covered slot
+                    content = cell._get_text(doc=doc, doc_serializer=doc_serializer, **kwargs).strip()
                     if len(content) > 0:
                         if cell.column_header:
                             body.append(str(table_token.OTSL_CHED.value))
