@@ -217,7 +217,7 @@ def safe_extract_zip_archive(
 
 
 def _escape_attr_value(value: str) -> str:
-    """Escape a value for use inside a double-quoted HTML attribute."""
+    """Escape a double-quoted HTML attribute value, including embedded quotes."""
     return html.escape(value, quote=False).replace('"', "&quot;")
 
 
