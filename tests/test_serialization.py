@@ -1,12 +1,14 @@
 """Test serialization."""
 
 import threading
+from html.parser import HTMLParser
 from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
 from typing import TypeAlias, Union
 from unittest.mock import MagicMock, patch
 from xml.etree import ElementTree as ET
 
 import pytest
+from PIL import Image
 from pydantic import AnyUrl
 
 from docling_core.transforms.chunker.hierarchical_chunker import TripletTableSerializer
@@ -1601,6 +1603,244 @@ def test_html_rich_table_cell_formatting_inside_paragraph():
         "<tr><td><p><strong>Bold cell</strong></p></td><td>Plain cell</td></tr>"
         "</tbody></table>"
     )
+
+
+class _HTMLProbe(HTMLParser):
+    """Collects the elements, attributes and per-element text of a parsed HTML document."""
+
+    _VOID_TAGS = frozenset({"img", "br", "meta", "link"})
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.elements: list[tuple[str, dict[str, str | None]]] = []
+        self._open: list[str] = []
+        self._text: dict[str, list[str]] = {}
+
+    @property
+    def tags(self) -> set[str]:
+        return {tag for tag, _ in self.elements}
+
+    def text_of(self, tag: str) -> str:
+        """Returns the text directly contained in the elements with the given tag."""
+        return "".join(self._text.get(tag, []))
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.elements.append((tag, dict(attrs)))
+        if tag not in self._VOID_TAGS:
+            self._open.append(tag)
+
+    def handle_endtag(self, tag: str) -> None:
+        if self._open and self._open[-1] == tag:
+            self._open.pop()
+
+    def handle_data(self, data: str) -> None:
+        if self._open:
+            self._text.setdefault(self._open[-1], []).append(data)
+
+
+def _parse_html(markup: str) -> _HTMLProbe:
+    probe = _HTMLProbe()
+    probe.feed(markup)
+    return probe
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        'conda create -n <CONDA_NAME>\nDict<str> x = "<div>";',
+        "if a && b:\n    print('&amp; stays literal')",
+    ],
+)
+def test_html_code_item_text_is_escaped(code: str):
+    doc = DoclingDocument(name="code-escape")
+    doc.add_code(text=code)
+
+    probe = _parse_html(HTMLDocSerializer(doc=doc).serialize().text)
+
+    assert probe.text_of("code") == code
+
+
+def test_html_formula_without_mathml_keeps_text():
+    doc = DoclingDocument(name="formula-fallback")
+    doc.add_formula(text="a<b && c>d")
+
+    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(formula_to_mathml=False)).serialize().text
+
+    assert "Formula not decoded" not in actual
+    assert _parse_html(actual).text_of("pre") == "a<b && c>d"
+
+
+def test_html_inline_formula_without_mathml_keeps_text():
+    doc = DoclingDocument(name="formula-inline-fallback")
+    heading = doc.add_heading(text="", level=1)
+    ig = doc.add_inline_group(parent=heading)
+    doc.add_formula(text="x<y", parent=ig)
+
+    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(formula_to_mathml=False)).serialize().text
+
+    assert _parse_html(actual).text_of("code") == "x<y"
+
+
+def test_html_formula_without_mathml_does_not_warn_about_mathml(caplog: pytest.LogCaptureFixture):
+    doc = DoclingDocument(name="formula-no-mathml-warning")
+    doc.add_formula(text="a<b")
+
+    with caplog.at_level("WARNING", logger="docling_core.transforms.serializer.html"):
+        HTMLDocSerializer(doc=doc, params=HTMLParams(formula_to_mathml=False)).serialize()
+
+    assert not caplog.records
+
+
+def test_html_formula_mathml_failure_falls_back_to_escaped_pre():
+    doc = DoclingDocument(name="formula-mathml-failure")
+    doc.add_formula(text="a<b & c")
+
+    with patch(
+        "docling_core.transforms.serializer.html.latex2mathml.converter.convert_to_element",
+        side_effect=ValueError("unsupported LaTeX"),
+    ):
+        actual = HTMLDocSerializer(doc=doc).serialize().text
+
+    assert "Formula not decoded" not in actual
+    assert _parse_html(actual).text_of("pre") == "a<b & c"
+
+
+@pytest.mark.parametrize(
+    "formula",
+    [
+        "a<b && c>d",
+        r"\text{<svg/onload=alert(1)>}",
+        "x</annotation></math><img src=x onerror=alert(1)>",
+    ],
+)
+def test_html_mathml_annotation_is_escaped(formula: str):
+    doc = DoclingDocument(name="formula-mathml-annotation")
+    doc.add_formula(text=formula)
+
+    probe = _parse_html(HTMLDocSerializer(doc=doc).serialize().text)
+
+    assert probe.tags.isdisjoint({"img", "svg", "b"})
+    assert probe.text_of("annotation") == formula
+
+
+def test_html_mathml_keeps_symbol_character_references():
+    # Escaping formula source must not double-escape MathML symbol references.
+    doc = DoclingDocument(name="formula-mathml-symbols")
+    doc.add_formula(text=r"\alpha \leq \beta")
+
+    actual = HTMLDocSerializer(doc=doc).serialize().text
+
+    assert "<mi>&#x003B1;</mi><mo>&#x02264;</mo><mi>&#x003B2;</mi>" in actual
+    assert "&amp;#x" not in actual
+
+
+def test_html_formula_image_fallback_escapes_alt_attribute(doc_with_handwritten: DoclingDocument):
+    doc = doc_with_handwritten
+    doc.pages[1].image = ImageRef.from_pil(Image.new("RGB", (100, 100), "white"), dpi=72)
+    orig = 'x" onerror="alert(1)" y="<b>'
+    doc.add_formula(text="", orig=orig, prov=doc.texts[1].prov[0])
+
+    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(image_mode=ImageRefMode.EMBEDDED)).serialize().text
+
+    probe = _parse_html(actual)
+    imgs = [attrs for tag, attrs in probe.elements if tag == "img"]
+    assert len(imgs) == 1
+    assert imgs[0]["alt"] == orig
+    assert "onerror" not in imgs[0]
+    assert "b" not in probe.tags
+
+
+@pytest.mark.parametrize(
+    ("inline_scope", "expected"),
+    [
+        (False, "<pre><span class='inline-group'>a&lt;b x</span></pre>"),
+        (True, "<code><span class='inline-group'>a&lt;b x</span></code>"),
+    ],
+)
+def test_html_formula_with_inline_group_is_not_double_escaped(inline_scope: bool, expected: str):
+    doc = DoclingDocument(name="formula-inline-group")
+    parent = None
+    if inline_scope:
+        parent = doc.add_inline_group(parent=doc.add_heading(text="", level=1))
+    formula = doc.add_formula(text="", parent=parent)
+    group = doc.add_inline_group(parent=formula)
+    doc.add_text(label=DocItemLabel.TEXT, text="a<b", parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text="x", parent=group)
+
+    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(formula_to_mathml=False)).serialize().text
+
+    assert expected in actual
+
+
+@pytest.mark.parametrize(
+    ("marker", "expected_style"),
+    [
+        ('x" onmouseover="alert(1)" y="', 'list-style-type: \'x" onmouseover="alert(1)" y=" \';'),
+        ("it's", "list-style-type: 'it\\'s ';"),
+        ("'; color: red; content: '", "list-style-type: '\\'; color: red; content: \\' ';"),
+    ],
+)
+def test_html_list_item_marker_cannot_break_out_of_style_attribute(marker: str, expected_style: str):
+    doc = DoclingDocument(name="list-marker")
+    group = doc.add_list_group()
+    doc.add_list_item(text="item", parent=group, marker=marker)
+
+    probe = _parse_html(HTMLDocSerializer(doc=doc).serialize().text)
+
+    (li_attrs,) = [attrs for tag, attrs in probe.elements if tag == "li"]
+    assert li_attrs == {"style": expected_style}
+
+
+def test_html_path_hyperlink_cannot_break_out_of_href_attribute():
+    doc = DoclingDocument(name="path-hyperlink")
+    doc.add_text(label=DocItemLabel.TEXT, text="link", hyperlink=Path('a" onmouseover="alert(1)'))
+
+    probe = _parse_html(HTMLDocSerializer(doc=doc).serialize().text)
+
+    (anchor,) = [attrs for tag, attrs in probe.elements if tag == "a"]
+    assert anchor == {"href": 'a" onmouseover="alert(1)'}
+
+
+def test_html_url_hyperlink_keeps_query_separator():
+    doc = DoclingDocument(name="url-hyperlink")
+    doc.add_text(label=DocItemLabel.TEXT, text="link", hyperlink=AnyUrl("https://example.com/p?a=1&b=2"))
+
+    probe = _parse_html(HTMLDocSerializer(doc=doc).serialize().text)
+
+    (anchor,) = [attrs for tag, attrs in probe.elements if tag == "a"]
+    assert anchor == {"href": "https://example.com/p?a=1&b=2"}
+
+
+def test_html_embedded_data_uri_cannot_break_out_of_src_attribute():
+    doc = DoclingDocument(name="data-uri-picture")
+    uri = AnyUrl('data:image/png;base64,AAA"onerror="alert(1)')
+    doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=1, height=1), uri=uri))
+
+    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(image_mode=ImageRefMode.EMBEDDED)).serialize().text
+
+    (img,) = [attrs for tag, attrs in _parse_html(actual).elements if tag == "img"]
+    assert set(img) == {"src"}
+
+
+def test_html_split_page_data_uri_cannot_break_out_of_src_attribute():
+    doc = DoclingDocument(name="data-uri-page")
+    uri = AnyUrl('data:image/png;base64,AAA"onerror="alert(1)')
+    doc.add_page(
+        page_no=1,
+        size=Size(width=10, height=10),
+        image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=uri),
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="text",
+        prov=ProvenanceItem(page_no=1, bbox=BoundingBox(l=0, t=0, r=1, b=1), charspan=(0, 4)),
+    )
+
+    params = HTMLParams(image_mode=ImageRefMode.EMBEDDED, output_style=HTMLOutputStyle.SPLIT_PAGE)
+    actual = HTMLDocSerializer(doc=doc, params=params).serialize().text
+
+    (img,) = [attrs for tag, attrs in _parse_html(actual).elements if tag == "img"]
+    assert set(img) == {"src"}
 
 
 # ===============================
