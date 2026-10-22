@@ -1724,6 +1724,7 @@ def test_html_mathml_annotation_is_escaped(formula: str):
 
 
 def test_html_mathml_keeps_symbol_character_references():
+    # Escaping formula source must not double-escape MathML symbol references.
     doc = DoclingDocument(name="formula-mathml-symbols")
     doc.add_formula(text=r"\alpha \leq \beta")
 
