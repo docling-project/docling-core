@@ -1198,7 +1198,7 @@ class MarkdownDocSerializer(DocSerializer):
         text: str,
         hyperlink: AnyUrl | PurePath,
         **kwargs: Any,
-    ):
+    ) -> str:
         """Apply Markdown-specific hyperlink serialization."""
         return f"[{text}]({markdown_link_destination(hyperlink)})"
 
