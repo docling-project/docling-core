@@ -152,6 +152,25 @@ def test_doctags_load_preserves_angle_brackets_in_text():
     assert [t.text for t in doc.texts] == [original]
 
 
+def test_doctags_load_keeps_table_header_flags():
+    # <ched>, <rhed> and <srow> were read as plain cells, so the flags that
+    # export_to_doctags() writes them from were lost on load
+    doctags = "<doctag><otsl><ched>Name<ched>Age<nl><srow>Staff<srow>All<nl><rhed>Bob<fcel>30<nl></otsl></doctag>"
+
+    doctags_doc = DocTagsDocument.from_doctags_and_image_pairs([doctags], None)
+    doc = DoclingDocument.load_from_doctags(doctags_doc)
+
+    cells = [(c.text, c.column_header, c.row_header, c.row_section) for c in doc.tables[0].data.table_cells]
+    assert cells == [
+        ("Name", True, False, False),
+        ("Age", True, False, False),
+        ("Staff", False, False, True),
+        ("All", False, False, True),
+        ("Bob", False, True, False),
+        ("30", False, False, False),
+    ]
+
+
 def test_doctags_inline():
     src_path = Path("tests/data/doc/2408.09869v3_enriched.dt")
     with open(src_path) as f:
