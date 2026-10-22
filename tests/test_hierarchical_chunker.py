@@ -327,16 +327,24 @@ def test_triplet_table_serializer_handles_empty_table_output():
 
 
 def test_chunk_table_keeps_footnotes():
-    """Table footnotes reach the chunk text once, after the table (#496)."""
+    """Table, picture and code footnotes reach the chunk text once, after the item (#496)."""
     doc = DoclingDocument(name="t")
     table_data = TableData(num_cols=1)
     table_data.add_row(["Country"])
     table_data.add_row(["Italy"])
     table = doc.add_table(data=table_data)
     table.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="Country footnote").get_ref())
+    doc.add_picture().footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="Picture footnote").get_ref())
+    doc.add_code(text="x = 1").footnotes.append(
+        doc.add_text(label=DocItemLabel.FOOTNOTE, text="Code footnote").get_ref()
+    )
 
     chunks = list(HierarchicalChunker().chunk(dl_doc=doc))
-    assert [c.text for c in chunks] == ["Country = Italy\n\nCountry footnote"]
+    assert [c.text for c in chunks] == [
+        "Country = Italy\n\nCountry footnote",
+        "Picture footnote",
+        "```\nx = 1\n```\n\nCode footnote",
+    ]
 
 
 def test_chunk_table_footnotes_496():

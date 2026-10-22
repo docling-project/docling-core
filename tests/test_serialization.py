@@ -2457,6 +2457,24 @@ def test_table_footnotes_serialized_to_markdown_and_html():
     assert "a < b & c > d" not in html_out
 
 
+def test_footnotes_kept_when_owner_label_is_excluded():
+    """Footnotes are serialized like captions when only the owner's label is excluded."""
+    doc = DoclingDocument(name="t")
+    td = TableData(num_rows=0, num_cols=1)
+    td.add_row(["Cell"])
+    table = doc.add_table(data=td)
+    table.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="Table note.").get_ref())
+    pic = doc.add_picture()
+    pic.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="Picture note.").get_ref())
+
+    labels = {DocItemLabel.TEXT, DocItemLabel.FOOTNOTE}
+    assert doc.export_to_markdown(labels=labels) == "Table note.\n\nPicture note."
+    html_out = doc.export_to_html(labels=labels)
+    assert "Cell" not in html_out
+    assert '<div class="footnote">Table note.</div>' in html_out
+    assert '<div class="footnote">Picture note.</div>' in html_out
+
+
 def test_picture_footnotes_serialized_to_markdown_and_html():
     """Picture footnotes are skipped by the doc serializer like table ones."""
     doc = DoclingDocument(name="t")
