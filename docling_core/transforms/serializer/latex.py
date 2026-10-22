@@ -38,6 +38,7 @@ from docling_core.types.doc.document import (
     DescriptionAnnotation,
     DescriptionMetaField,
     DocItem,
+    DocItemLabel,
     DoclingDocument,
     EntitiesMetaField,
     FloatingItem,
@@ -279,6 +280,9 @@ class LaTeXTextSerializer(BaseModel, BaseTextSerializer):
             cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
             if cap_res.text:
                 parts.append(cap_res)
+            footnote_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+            if footnote_res.text:
+                parts.append(footnote_res)
 
         joined = (" " if is_inline_scope else "\n\n").join([p.text for p in parts])
 
@@ -451,17 +455,25 @@ class LaTeXTableSerializer(BaseTableSerializer):
 
         cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
         cap_text = cap_res.text
+        footnote_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
 
-        # Wrap in table environment when we have either content or caption
-        if table_text or cap_text:
+        # Keep notes with their table, even when it has no cells or caption.
+        if table_text or cap_text or footnote_res.text:
             content = []
             content.append("\\begin{table}[h]")
             if cap_text:
                 content.append(f"\\caption{{{cap_text}}}")
             if table_text:
                 content.append(table_text)
+            if footnote_res.text:
+                content.extend(["", footnote_res.text])
             content.append("\\end{table}")
-            res_parts.append(create_ser_result(text="\n".join(content), span_source=item))
+            res_parts.append(
+                create_ser_result(
+                    text="\n".join(content),
+                    span_source=[create_ser_result(span_source=item), cap_res, footnote_res],
+                )
+            )
 
         return create_ser_result(
             text="\n\n".join([r.text for r in res_parts if r.text]),
@@ -515,8 +527,17 @@ class LaTeXPictureSerializer(BasePictureSerializer):
                 if ann_res.text:
                     fig_lines.append(ann_res.text)
 
+            footnote_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+            if footnote_res.text:
+                fig_lines.extend(["", footnote_res.text])
+
             fig_lines.append("\\end{figure}")
-            res_parts.append(create_ser_result(text="\n".join(fig_lines), span_source=item))
+            res_parts.append(
+                create_ser_result(
+                    text="\n".join(fig_lines),
+                    span_source=[create_ser_result(span_source=item), cap_res, footnote_res],
+                )
+            )
 
         # Optional chart data as a simple table after the figure
         if params.enable_chart_tables:
@@ -787,6 +808,26 @@ class LaTeXDocSerializer(DocSerializer):
         if meta_res.text:
             body_parts.append(meta_res)
         return self.serialize_doc(parts=body_parts, **my_kwargs)
+
+    @override
+    def serialize_footnotes(self, item: FloatingItem, **kwargs: Any) -> SerializationResult:
+        """Keep each note in a local small-text paragraph, including inside floats."""
+        params = self.params.merge_with_patch(patch=kwargs)
+        results: list[SerializationResult] = []
+        if DocItemLabel.FOOTNOTE in params.labels:
+            excluded_refs = self.get_excluded_refs(**kwargs)
+            for ref in item.footnotes:
+                footnote = ref.resolve(self.doc)
+                if (
+                    not isinstance(footnote, TextItem)
+                    or footnote.content_layer not in params.layers
+                    or footnote.self_ref in excluded_refs
+                ):
+                    continue
+                text = self.post_process(text=footnote.text, **kwargs)
+                if text:
+                    results.append(create_ser_result(text=f"{{\\footnotesize {text}\\par}}", span_source=footnote))
+        return create_ser_result(text="\n\n".join(r.text for r in results), span_source=results)
 
     @override
     def serialize_bold(self, text: str, **kwargs: Any) -> str:
