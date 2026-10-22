@@ -216,6 +216,11 @@ def safe_extract_zip_archive(
             total_uncompressed += written
 
 
+def _escape_attr_value(value: str) -> str:
+    """Escape a double-quoted HTML attribute value, including embedded quotes."""
+    return html.escape(value, quote=False).replace('"', "&quot;")
+
+
 def get_html_tag_with_text_direction(html_tag: str, text: str, attrs: dict | None = None) -> str:
     """Form the HTML element with tag, text, and optional dir attribute."""
     my_attrs = attrs or {}
@@ -223,9 +228,7 @@ def get_html_tag_with_text_direction(html_tag: str, text: str, attrs: dict | Non
         my_attrs["dir"] = get_text_direction(text)
     pieces: list[str] = [html_tag]
     if my_attrs:
-        attrs_str = " ".join(
-            [f'{html.escape(k, quote=False)}="{html.escape(my_attrs[k], quote=False)}"' for k in my_attrs]
-        )
+        attrs_str = " ".join([f'{html.escape(k, quote=False)}="{_escape_attr_value(my_attrs[k])}"' for k in my_attrs])
         pieces.append(attrs_str)
     return f"<{' '.join(pieces)}>{text}</{html_tag}>"
 
