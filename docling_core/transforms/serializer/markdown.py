@@ -48,6 +48,7 @@ from docling_core.types.doc import (
     DocItem,
     DocItemLabel,
     DoclingDocument,
+    EntitiesMetaField,
     FieldItem,
     FieldRegionItem,
     FloatingItem,
@@ -60,6 +61,7 @@ from docling_core.types.doc import (
     InlineGroup,
     KeyValueItem,
     KeywordsMetaField,
+    LanguageMetaField,
     ListGroup,
     ListItem,
     MoleculeMetaField,
@@ -571,6 +573,16 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
                 txt = ", ".join(field_val.values)
             elif isinstance(field_val, DescriptionMetaField):
                 txt = field_val.text
+            elif isinstance(field_val, LanguageMetaField):
+                # A language code describes the text; it is not content. Only a marked
+                # export lists it.
+                if not mark_meta:
+                    return None
+                txt = field_val.code.value
+            elif isinstance(field_val, EntitiesMetaField):
+                if not mark_meta:
+                    return None
+                txt = ", ".join(mention.text for mention in field_val.mentions)
             elif isinstance(field_val, PictureClassificationMetaField):
                 if not include_picture_classification:
                     return None
@@ -585,6 +597,10 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
                     txt = table_content
                 else:
                     return None
+            elif isinstance(field_val, BaseModel):
+                # A structured field with no renderer above: skip it rather than print its
+                # pydantic repr as a paragraph.
+                return None
             elif tmp := str(field_val or ""):
                 txt = tmp
             else:

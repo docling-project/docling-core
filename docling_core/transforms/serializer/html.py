@@ -110,7 +110,10 @@ class HTMLParams(CommonParams):
     image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER
 
     # HTML document properties
-    html_lang: str = "en"
+    # Language of the page, emitted as ``<html lang>``. None resolves to the document
+    # language: ``doc.body.meta.language``, else the character-weighted majority of the
+    # text items' ``meta.language``, else "en".
+    html_lang: str | None = None
     html_head: str | None = None
 
     css_styles: str | None = None
@@ -136,6 +139,42 @@ class HTMLParams(CommonParams):
     show_original_list_item_marker: bool = True
 
 
+_DEFAULT_HTML_LANG = "en"
+
+
+def resolve_document_language(doc: DoclingDocument) -> str:
+    """Return the language to declare on ``<html lang>`` for the document.
+
+    The document-level language (``doc.body.meta.language``) wins. Without it, the language
+    that covers most characters across the text items that carry ``meta.language`` is used.
+    Without any language metadata the result is ``"en"``.
+    """
+    if doc.body.meta is not None and doc.body.meta.language is not None:
+        return doc.body.meta.language.code.value
+    weights: dict[str, int] = {}
+    for item in doc.texts:
+        if item.meta is not None and item.meta.language is not None:
+            code = item.meta.language.code.value
+            weights[code] = weights.get(code, 0) + len(item.text)
+    if not weights:
+        return _DEFAULT_HTML_LANG
+    return max(weights, key=lambda code: (weights[code], code))
+
+
+def _primary_subtag(lang: str) -> str:
+    return lang.split("-", 1)[0].lower()
+
+
+def _lang_attrs(item: NodeItem, page_lang: str | None) -> dict[str, str]:
+    """``lang`` attribute for an item whose language differs from the page language."""
+    if item.meta is None or item.meta.language is None:
+        return {}
+    code = item.meta.language.code.value
+    if page_lang is not None and _primary_subtag(page_lang) == _primary_subtag(code):
+        return {}
+    return {"lang": code}
+
+
 class HTMLTextSerializer(BaseModel, BaseTextSerializer):
     """HTML-specific text item serializer."""
 
@@ -155,6 +194,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         my_visited: set[str] = visited if visited is not None else set()
         res_parts: list[SerializationResult] = []
         post_processed = False
+        lang_attrs = _lang_attrs(item, params.html_lang)
 
         has_inline_repr = (
             item.text == ""
@@ -176,7 +216,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         # Prepare the HTML based on item type
         if isinstance(item, TitleItem | SectionHeaderItem):
             section_level = min(item.level + 1, 6) if isinstance(item, SectionHeaderItem) else 1
-            text = get_html_tag_with_text_direction(html_tag=f"h{section_level}", text=text)
+            text = get_html_tag_with_text_direction(html_tag=f"h{section_level}", text=text, attrs=lang_attrs)
 
         elif isinstance(item, FormulaItem):
             text = self._process_formula(
@@ -223,11 +263,14 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 get_html_tag_with_text_direction(
                     html_tag="li",
                     text=text,
-                    attrs=(
-                        {"style": f"list-style-type: '{item.marker} ';"}
-                        if params.show_original_list_item_marker and item.marker
-                        else {}
-                    ),
+                    attrs={
+                        **lang_attrs,
+                        **(
+                            {"style": f"list-style-type: '{item.marker} ';"}
+                            if params.show_original_list_item_marker and item.marker
+                            else {}
+                        ),
+                    },
                 )
                 if text
                 else ""
@@ -235,7 +278,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
 
         elif not is_inline_scope:
             # Regular text item
-            text = get_html_tag_with_text_direction(html_tag="p", text=text)
+            text = get_html_tag_with_text_direction(html_tag="p", text=text, attrs=lang_attrs)
 
         # Apply formatting and hyperlinks to the parent's own text+tag.
         if not post_processed:
@@ -1084,6 +1127,12 @@ class HTMLDocSerializer(DocSerializer):
 
     params: HTMLParams = HTMLParams()
 
+    def model_post_init(self, __context: Any) -> None:
+        """Resolve the page language once so every element serializer sees the same value."""
+        super().model_post_init(__context)
+        if self.params.html_lang is None:
+            self.params = self.params.model_copy(update={"html_lang": resolve_document_language(self.doc)})
+
     @override
     def _item_wraps_meta(self, item: NodeItem) -> bool:
         """PictureItem meta is wrapped inside the figure element."""
@@ -1150,9 +1199,10 @@ class HTMLDocSerializer(DocSerializer):
             return f"<figure>{img_text}</figure>"
 
         # Create HTML structure
+        html_lang = self.params.html_lang or resolve_document_language(self.doc)
         html_parts = [
             "<!DOCTYPE html>",
-            "<html>",
+            f'<html lang="{html.escape(html_lang, quote=True)}">',
             self._generate_head(),
             "<body>",
         ]
