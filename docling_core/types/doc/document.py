@@ -4521,7 +4521,12 @@ class DoclingDocument(BaseModel):
     def load_from_doctags(  # noqa: C901
         doctag_document: DocTagsDocument, document_name: str = "Document"
     ) -> "DoclingDocument":
-        r"""Load Docling document from lists of DocTags and Images."""
+        r"""Load Docling document from lists of DocTags and Images.
+
+        Limitation: DocTags stores each ``<inline>`` run trimmed, so the boundary whitespace that
+        the inline whitespace contract expects in the runs (see ``add_inline_group``) is not in the
+        source and is not restored. Serializing such an inline group joins its runs without spaces.
+        """
         # Maps the recognized tag to a Docling label.
         # Code items will be given DocItemLabel.CODE
         tag_to_doclabel = {
@@ -4900,6 +4905,8 @@ class DoclingDocument(BaseModel):
                         doc.add_table(data=table_data, caption=caption)
 
                 elif tag_name == GroupLabel.INLINE:
+                    # DocTags runs are trimmed (by the serializer and by extract_inner_text), so the
+                    # source has lost their boundary whitespace; it is not guessed back here.
                     inline_group = doc.add_inline_group()
                     content = match.group("content")
                     common_bbox = extract_bounding_box(content)
