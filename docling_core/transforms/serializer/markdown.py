@@ -1096,7 +1096,9 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 # with no item before it is an indented code block, so hang the
                 # sub-list on an empty item of this list.
                 marker = self._orphan_sublist_marker(sublist=sublist, item=item, doc=doc)
-                my_texts.append(f"{indent_str}{marker}\n{c.text}")
+                my_texts.append(
+                    self._fold_orphan_sublist(text=c.text, marker=marker, indent_str=indent_str, indent=params.indent)
+                )
             elif c.text and c.text[0] == " ":
                 # avoid additional marker on already evaled sublists
                 my_texts.append(c.text)
@@ -1133,6 +1135,20 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 return node if isinstance(node, ListGroup) else None
             node = parent
         return None
+
+    @staticmethod
+    def _fold_orphan_sublist(*, text: str, marker: str, indent_str: str, indent: int) -> str:
+        """Put ``marker`` in front of the first line of an already indented sub-list.
+
+        The marker goes on the same line as the sub-list's first item: a bare marker on a
+        line of its own would be read as a setext heading underline when a paragraph line
+        (the text of an enclosing list item) precedes it. The marker is padded so that the
+        sub-list's own markers stay at the content column of the new item, which keeps the
+        following lines of the sub-list in that same list instead of nested one level deeper.
+        """
+        first, newline, rest = text.partition("\n")
+        gap = " " * min(max(indent - len(marker), 1), 4)
+        return f"{indent_str}{marker}{gap}{first.lstrip()}{newline}{rest}"
 
     @staticmethod
     def _orphan_sublist_marker(*, sublist: ListGroup, item: ListGroup, doc: DoclingDocument) -> str:
