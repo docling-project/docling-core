@@ -1696,11 +1696,16 @@ class DocLangTableSerializer(BaseTableSerializer):
             if otsl_text:
                 inner_parts.append(otsl_text)
 
+        custom_head = ""
+        if include_caption_head:
+            custom_head = _serialize_item_custom_head(item=item, doc_serializer=doc_serializer, params=params, **kwargs)
+
         head = _element_head_prefix(
             item=item,
             doc=doc,
             params=params,
             caption_text=caption_head or None,
+            custom_text=custom_head or None,
             thread_id=thread_id,
         )
         table_text = _wrap(text=head + "".join(inner_parts), wrap_tag=host_token.value)
