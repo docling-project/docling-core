@@ -1090,16 +1090,16 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
         my_texts: list[str] = []
         item_seen = False
         for c in my_parts:
-            if c.text and c.text[0] == " ":
+            sublist = self._sublist_child_of_part(part=c, item=item, doc=doc)
+            if sublist is not None and not item_seen:
+                # Markdown has no sub-list without a parent item: an indented block
+                # with no item before it is an indented code block, so hang the
+                # sub-list on an empty item of this list.
+                marker = self._orphan_sublist_marker(sublist=sublist, item=item, doc=doc)
+                my_texts.append(f"{indent_str}{marker}\n{c.text}")
+            elif c.text and c.text[0] == " ":
                 # avoid additional marker on already evaled sublists
-                if item_seen or isinstance(c, _PageBreakSerResult):
-                    my_texts.append(c.text)
-                else:
-                    # Markdown has no sub-list without a parent item: an indented block
-                    # with no item before it is an indented code block, so hang the
-                    # sub-list on an empty item of this list.
-                    marker = self._orphan_sublist_marker(part=c, item=item, doc=doc)
-                    my_texts.append(f"{indent_str}{marker}\n{c.text}")
+                my_texts.append(c.text)
             else:
                 my_texts.append(f"{indent_str}{c.text}")
             if not isinstance(c, _PageBreakSerResult):
@@ -1118,22 +1118,33 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
         return create_ser_result(text=text_res, span_source=my_parts)
 
     @staticmethod
-    def _orphan_sublist_marker(*, part: SerializationResult, item: ListGroup, doc: DoclingDocument) -> str:
+    def _sublist_child_of_part(*, part: SerializationResult, item: ListGroup, doc: DoclingDocument) -> ListGroup | None:
+        """Return the child ListGroup of ``item`` that ``part`` was serialized from, if any.
+
+        The spans of a part lead back to the child of the list it belongs to: a list item,
+        or a sub-list that is a child of the list group rather than of a list item.
+        """
+        if not part.spans:
+            return None
+        node: NodeItem = part.spans[0].item
+        while node.parent is not None:
+            parent = node.parent.resolve(doc)
+            if parent.self_ref == item.self_ref:
+                return node if isinstance(node, ListGroup) else None
+            node = parent
+        return None
+
+    @staticmethod
+    def _orphan_sublist_marker(*, sublist: ListGroup, item: ListGroup, doc: DoclingDocument) -> str:
         """Return the marker of the empty item that holds a sub-list no item precedes.
 
         The marker follows the numbering of the list: the position of the sub-list among the
         children of the list when the list is enumerated, a dash otherwise.
         """
-        if item.first_item_is_enumerated(doc) and part.spans:
-            node: NodeItem = part.spans[0].item
-            while node.parent is not None:
-                parent = node.parent.resolve(doc)
-                if parent.self_ref == item.self_ref:
-                    for pos, child in enumerate(item.children):
-                        if child.cref == node.self_ref:
-                            return f"{pos + 1}."
-                    break
-                node = parent
+        if item.first_item_is_enumerated(doc):
+            for pos, child in enumerate(item.children):
+                if child.cref == sublist.self_ref:
+                    return f"{pos + 1}."
         return "-"
 
 
