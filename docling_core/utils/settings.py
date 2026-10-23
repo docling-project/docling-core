@@ -29,6 +29,17 @@ class CoreSettings(BaseSettings):
             ],
         ),
     ] = []
+    trust_proxy_for_dns: Annotated[
+        bool,
+        Field(
+            description=(
+                "For URL sources fetched through a proxy (HTTP_PROXY / HTTPS_PROXY), skip the "
+                "local hostname lookup of the SSRF check and leave name resolution to the proxy. "
+                "Literal IP addresses are still checked. Defaults to False, which keeps the "
+                "local lookup for every URL."
+            ),
+        ),
+    ] = False
 
     max_table_cells: Annotated[
         int,
