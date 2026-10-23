@@ -775,7 +775,9 @@ class DocLangListSerializer(BaseModel, BaseListSerializer):
 
         ordered = item.first_item_is_enumerated(doc)
         list_close = f"</{DocLangToken.LIST.value}>"
-        spans_pages = any(
+        # A list is split into threaded per-page blocks only to place page breaks
+        # between them; without page breaks it stays one block.
+        spans_pages = params.add_page_break and any(
             child_segments[i][1] is not None
             and child_segments[i + 1][1] is not None
             and child_segments[i][1] != child_segments[i + 1][1]
@@ -861,6 +863,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
         Returns:
             SerializationResult containing the serialized text and span mappings.
         """
+        params = DocLangParams(**kwargs)
         if len(item.prov) > 1 and not isinstance(item, ListItem):
             # Split multi-provenance items into per-provenance fragments linked by
             # a shared thread_id; insert page breaks when page_no changes.
@@ -893,7 +896,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
 
             out_parts: list[str] = []
             for idp, tres in enumerate(res):
-                if idp > 0 and item.prov[idp - 1].page_no != item.prov[idp].page_no:
+                if idp > 0 and params.add_page_break and item.prov[idp - 1].page_no != item.prov[idp].page_no:
                     pb = _PageBreakNode(
                         self_ref=f"#/pb/{idp}",
                         prev_page=item.prov[idp - 1].page_no,
@@ -1770,7 +1773,7 @@ class DocLangTableSerializer(BaseTableSerializer):
 
             out_parts: list[str] = []
             for idp, tres in enumerate(res):
-                if idp > 0 and item.prov[idp - 1].page_no != item.prov[idp].page_no:
+                if idp > 0 and params.add_page_break and item.prov[idp - 1].page_no != item.prov[idp].page_no:
                     pb = _PageBreakNode(
                         self_ref=f"#/pb/{idp}",
                         prev_page=item.prov[idp - 1].page_no,

@@ -2483,6 +2483,41 @@ def test_cross_page_list_emits_thread_and_page_break():
         assert ser_txt.count("<list") == 2
 
 
+def test_cross_page_list_without_page_breaks_stays_one_block():
+    """With ``add_page_break=False`` a page-spanning list is one ``<list>``: no sentinel, no threading."""
+    doc = _doc_cross_page_list()
+
+    ser_txt = serialize_doclang(doc, params=DocLangParams(include_version=False, add_page_break=False))
+
+    assert "DOCLING_DOC_PAGE_BREAK" not in ser_txt
+    assert "<page_break" not in ser_txt
+    assert ser_txt.count("<list") == 1
+    assert "<thread thread_id=" not in ser_txt
+
+
+def test_cross_page_paragraph_without_page_breaks_has_no_sentinel():
+    """With ``add_page_break=False`` the threaded fragments of a paragraph are not separated by a sentinel."""
+    doc = _doc_cross_page_paragraph()
+
+    ser_txt = serialize_doclang(doc, params=DocLangParams(include_version=False, add_page_break=False))
+
+    assert "DOCLING_DOC_PAGE_BREAK" not in ser_txt
+    assert "<page_break" not in ser_txt
+    assert ser_txt.count("<thread thread_id=") == 2
+
+
+def test_cross_page_table_without_page_breaks_has_no_sentinel():
+    """With ``add_page_break=False`` the threaded fragments of a table are not separated by a sentinel."""
+    doc = _doc_cross_page_table()
+
+    ser_txt = serialize_doclang(doc, params=DocLangParams(include_version=False, add_page_break=False))
+
+    assert "DOCLING_DOC_PAGE_BREAK" not in ser_txt
+    assert "<page_break" not in ser_txt
+    assert ser_txt.count("<thread thread_id=") == 2
+    assert ser_txt.count("<table") == 2
+
+
 def _doc_cross_page_table() -> DoclingDocument:
     """Single table split across two pages via multi-prov bounding boxes."""
     doc = DoclingDocument(name="cross_page_table")
