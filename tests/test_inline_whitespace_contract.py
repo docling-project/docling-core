@@ -24,6 +24,7 @@ from docling_core.types.doc.document import (
     DocItemLabel,
     DoclingDocument,
     Formatting,
+    InlineGroup,
 )
 
 # (name, runs) where a run is (text, formatting, hyperlink)
@@ -407,6 +408,74 @@ def test_legacy_standalone_separator_survives_page_filters_with_its_runs(
     assert split.filter(page_nrs={1}).export_to_markdown() == first
     assert split.filter(page_nrs={2}).export_to_markdown() == second
     assert split.export_to_markdown(page_no=1) == first
+
+
+def _host(doc: DoclingDocument, group: InlineGroup, label: DocItemLabel, runs: list[str]) -> None:
+    """An empty-text item whose visible content is a child inline group."""
+    nested = doc.add_inline_group(parent=doc.add_text(label=label, text="", parent=group))
+    for text in runs:
+        doc.add_text(label=DocItemLabel.TEXT, text=text, parent=nested)
+
+
+def _nested(doc: DoclingDocument, group: InlineGroup, runs: list[str]) -> None:
+    nested = doc.add_inline_group(parent=group)
+    for text in runs:
+        doc.add_text(label=DocItemLabel.TEXT, text=text, parent=nested)
+
+
+@pytest.mark.parametrize(
+    ("build", "expected"),
+    [
+        pytest.param(
+            lambda d, g: (d.add_text(DocItemLabel.TEXT, "left", parent=g), _host(d, g, DocItemLabel.FORMULA, ["x"])),
+            "left $x$",
+            id="formula-host-last",
+        ),
+        pytest.param(
+            lambda d, g: (
+                d.add_text(DocItemLabel.TEXT, "left", parent=g),
+                _host(d, g, DocItemLabel.FORMULA, ["x"]),
+                d.add_text(DocItemLabel.TEXT, "right", parent=g),
+            ),
+            "left $x$ right",
+            id="formula-host",
+        ),
+        pytest.param(
+            lambda d, g: (
+                d.add_text(DocItemLabel.FORMULA, "l", parent=g),
+                _host(d, g, DocItemLabel.FORMULA, ["x"]),
+                d.add_text(DocItemLabel.CODE, "r", parent=g),
+            ),
+            "$l$ $x$ `r`",
+            id="formula-host-between-delimited",
+        ),
+        # The DocLang deserializer writes these two for nested mixed-content elements.
+        pytest.param(
+            lambda d, g: (
+                d.add_text(DocItemLabel.TEXT, "left", parent=g),
+                _host(d, g, DocItemLabel.FOOTNOTE, ["a", "b"]),
+                d.add_text(DocItemLabel.TEXT, "right", parent=g),
+            ),
+            "left a b right",
+            id="footnote-host",
+        ),
+        pytest.param(
+            lambda d, g: (
+                d.add_text(DocItemLabel.TEXT, "left", parent=g),
+                _nested(d, g, ["a", "b"]),
+                d.add_text(DocItemLabel.TEXT, "right", parent=g),
+            ),
+            "left a b right",
+            id="nested-group",
+        ),
+    ],
+)
+def test_legacy_separator_counts_runs_whose_text_is_in_a_child_group(build, expected: str) -> None:
+    """An empty host renders its child inline group, so the old join spaced it like any other run."""
+    doc = DoclingDocument(name="legacy")
+    build(doc, doc.add_inline_group())
+    data = doc.model_dump(mode="json") | {"version": _LEGACY_VERSION}
+    assert _load_once(data).export_to_markdown() == expected
 
 
 def test_legacy_migration_does_not_touch_caller_input() -> None:

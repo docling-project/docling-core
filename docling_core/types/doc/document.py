@@ -5661,23 +5661,38 @@ class DoclingDocument(BaseModel):
         if not isinstance(texts, list) or not isinstance(groups, list):
             return data
 
-        def resolve_run(child: Any) -> dict | None:
-            """Return the text item dict for an inline run reference, else None."""
-            if not isinstance(child, dict):
-                return None
-            ref = child.get("$ref") or child.get("cref")
-            if not isinstance(ref, str) or not ref.startswith("#/texts/"):
-                return None
-            try:
-                item = texts[int(ref.removeprefix("#/texts/"))]
-            except (ValueError, IndexError):
-                return None
-            return item if isinstance(item, dict) and isinstance(item.get("text"), str) else None
+        def resolve(child: Any) -> dict | None:
+            """Return the text or group dict an inline child reference points to, else None."""
+            ref = (child.get("$ref") or child.get("cref")) if isinstance(child, dict) else None
+            for prefix, items in (("#/texts/", texts), ("#/groups/", groups)):
+                if isinstance(ref, str) and ref.startswith(prefix):
+                    try:
+                        item = items[int(ref.removeprefix(prefix))]
+                    except (ValueError, IndexError):
+                        return None
+                    return item if isinstance(item, dict) else None
+            return None
+
+        def renders_text(item: dict, seen: set[int]) -> bool:
+            """Whether the item has text, or is an empty host or nested group whose subtree has text."""
+            if id(item) in seen:  # a reference cycle in malformed input
+                return False
+            seen.add(id(item))
+            if isinstance(item.get("text"), str) and item["text"]:
+                return True
+            children = item.get("children")
+            return isinstance(children, list) and any(
+                (sub := resolve(child)) is not None and renders_text(sub, seen) for child in children
+            )
 
         # Code and formula runs are wrapped in delimiters (`` ` ``, ``$``) by the serializers, so a
         # separator appended to their text would land *inside* the delimiter -- the same defect as
         # `**bold **`. Put it on the neighbouring plain run instead.
         delimited = {DocItemLabel.CODE.value, DocItemLabel.FORMULA.value}
+
+        def carries_separator(run: dict) -> bool:
+            """Only a plain run with its own text: an empty host's text must stay empty to render its group."""
+            return isinstance(run.get("text"), str) and bool(run["text"]) and run.get("label") not in delimited
 
         migrated = False
         for group in groups:
@@ -5686,20 +5701,23 @@ class DoclingDocument(BaseModel):
             children = group.get("children")
             if not isinstance(children, list):
                 continue
-            # ponytail: only `#/texts/N` children are treated as runs. A picture or table inside
-            # an inline group also received a separator, but whether it serialized to non-empty
-            # text is not knowable from the raw dict. Widen this if such a document shows up.
-            runs = [(idx, run) for idx, child in enumerate(children) if (run := resolve_run(child)) and run["text"]]
+            # shortcut: a child is a run when it or its subtree has text (an empty formula host
+            # holding an inline group, a nested inline group). A picture, table or empty formula also
+            # got the old separator, and HTML renders the empty formula, but whether such a child
+            # rendered text depends on the serializer. Widen this if such a document shows up.
+            runs = [
+                (idx, run) for idx, child in enumerate(children) if (run := resolve(child)) and renders_text(run, set())
+            ]
             # Boundaries where the separator fits in neither neighbour; filled in afterwards so
             # the indices collected here stay valid.
             standalone: list[tuple[int, list]] = []
             for (_, run), (nxt_idx, nxt) in itertools.pairwise(runs):
-                if run.get("label") not in delimited:
+                if carries_separator(run):
                     run["text"] += " "
-                elif nxt.get("label") not in delimited:
+                elif carries_separator(nxt):
                     nxt["text"] = " " + nxt["text"]
                 else:
-                    # Both sides are delimited: the separator would corrupt `` `a``b` `` or
+                    # Neither side can carry it: the separator would corrupt `` `a``b` `` or
                     # ``$a$$b$``, so it becomes a plain run of its own between them. Page filters
                     # keep only located items, so it takes the left run's location when both
                     # runs are on one page: it then survives exactly when both of them do.
