@@ -37,8 +37,8 @@ def test_chunk():
     ("caption", "expected"),
     [
         ("Table 1: results", "Table 1: results"),
-        ("Table <bold>1</bold>: results", "Table **1** : results"),
-        ("Table <formula>x</formula>: results", "Table $x$ : results"),
+        ("Table <bold>1</bold>: results", "Table **1**: results"),
+        ("Table <formula>x</formula>: results", "Table $x$: results"),
     ],
 )
 def test_chunk_caption_stays_with_owner(kind: str, caption: str, expected: str, tmp_path: Path) -> None:
@@ -74,7 +74,7 @@ def test_chunk_satellite_check_keeps_unrelated_inline_text() -> None:
         "<text>After</text></doclang>"
     )
     chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker().chunk(doc)]
-    assert [chunk.text for chunk in chunks] == ["Before **body**", "Table **1** : results\n\nA", "After"]
+    assert [chunk.text for chunk in chunks] == ["Before **body**", "Table **1**: results\n\nA", "After"]
     assert doc.tables[0].self_ref in {item.self_ref for item in chunks[1].meta.doc_items}
 
 

@@ -2810,7 +2810,7 @@ def test_inline_group_nested_word_boundary_when_minimized():
 
     root = ET.fromstring(txt)
     heading_el = root[0]
-    assert "".join(heading_el.itertext()).split() == ["Heading", "text", "bold"]
+    assert "".join(heading_el.itertext()) == "Heading text bold"
 
 
 def _prov(l: float, t: float, r: float, b: float) -> ProvenanceItem:

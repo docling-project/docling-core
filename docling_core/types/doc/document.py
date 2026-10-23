@@ -1568,6 +1568,10 @@ class DoclingDocument(BaseModel):
         put the boundary in the run text: ``["Advanced Topics", " in ", "Machine Learning"]``.
         Whitespace at the edge of a formatted run is fine -- the serializers move it outside the
         emphasis markers and hyperlink.
+
+        Children of a text item are block structure: serializers keep a parent text item's own
+        text apart from this group (by a space or a block break). To put text flush against the
+        runs, make it a run of the group.
         """
         _parent = parent or self.body
         cref = f"#/groups/{len(self.groups)}"

@@ -16,7 +16,9 @@ from pydantic import AnyUrl
 
 from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
+from docling_core.transforms.serializer.html import HTMLDocSerializer
 from docling_core.transforms.serializer.latex import LaTeXDocSerializer
+from docling_core.transforms.serializer.markdown import MarkdownDocSerializer
 from docling_core.types.doc.document import (
     CURRENT_VERSION,
     DocItemLabel,
@@ -206,6 +208,37 @@ def test_no_separator_is_invented_between_runs() -> None:
     for name, runs, _ in CONTRACT_TABLE:
         doc = _build(runs)
         assert doc.export_to_text() == "".join(text for text, _, _ in runs), name
+
+
+def test_host_text_stays_apart_from_its_inline_group() -> None:
+    """Children of a text item are block structure, so the host text keeps its separator.
+
+    Producers put a section's first paragraph under its heading; joining the two with "" would
+    read ``ResultsWe use bold words.``. Host boundaries match the pre-contract output; only the
+    runs inside the group are concatenated.
+    """
+    doc = DoclingDocument(name="host")
+    heading = doc.add_heading(text="Results", level=1)
+    group = doc.add_inline_group(parent=heading)
+    for text, formatting in [("We use ", None), ("bold", _BOLD), (" words.", None)]:
+        doc.add_text(label=DocItemLabel.TEXT, text=text, parent=group, formatting=formatting)
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text="Table")
+    picture = doc.add_picture()
+    picture.captions.append(caption.get_ref())
+    caption_group = doc.add_inline_group(parent=caption)
+    doc.add_text(label=DocItemLabel.TEXT, text="1", parent=caption_group, formatting=_BOLD)
+    doc.add_text(label=DocItemLabel.TEXT, text=": results", parent=caption_group)
+
+    assert heading._get_plain_text(doc) == "Results We use bold words."
+    assert doc.export_to_markdown().startswith("## Results\n\nWe use **bold** words.")
+    html = HTMLDocSerializer(doc=doc).serialize().text
+    assert "<h2>Results</h2>\n<span class='inline-group'>We use <strong>bold</strong> words.</span>" in html
+    assert _doclang_compact(doc).startswith(
+        '<doclang><heading level="2">Results <content>We use </content><bold>bold</bold>'
+        "<content> words.</content></heading>"
+    )
+    assert picture.caption_text(doc) == "Table 1: results"
+    assert MarkdownDocSerializer(doc=doc).serialize_captions(item=picture).text == "Table **1**: results"
 
 
 # --------------------------------------------------------------------------------------------

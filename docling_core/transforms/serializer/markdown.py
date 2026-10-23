@@ -173,8 +173,9 @@ def _mark_subtree_visited(
 def _collect_subtree_text(item: NodeItem, doc: DoclingDocument, excluded_refs: set[str]) -> str:
     """Collect all text from *item*'s subtree, flattening nested tables.
 
-    Returns a space-joined string of every piece of text found so that the
-    content of a nested table is preserved in a flat, readable form.
+    Returns every piece of text found, joined with spaces (the runs of an inline
+    group are concatenated as they are), so that the content of a nested table is
+    preserved in a flat, readable form.
 
     For TableItems the text is pulled from ``data.grid`` cells directly;
     RichTableCells are resolved through their references, without visiting the
@@ -213,7 +214,8 @@ def _collect_subtree_text(item: NodeItem, doc: DoclingDocument, excluded_refs: s
             if child_text:
                 parts.append(child_text)
 
-    return " ".join(parts)
+    # Inline runs carry their own boundary whitespace; everything else is joined as blocks.
+    return ("" if isinstance(item, InlineGroup) else " ").join(parts)
 
 
 def _longest_backtick_run(text: str) -> int:

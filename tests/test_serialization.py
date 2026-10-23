@@ -1764,7 +1764,7 @@ def test_html_formula_with_inline_group_is_not_double_escaped(inline_scope: bool
         parent = doc.add_inline_group(parent=doc.add_heading(text="", level=1))
     formula = doc.add_formula(text="", parent=parent)
     group = doc.add_inline_group(parent=formula)
-    doc.add_text(label=DocItemLabel.TEXT, text="a<b", parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text="a<b ", parent=group)
     doc.add_text(label=DocItemLabel.TEXT, text="x", parent=group)
 
     actual = HTMLDocSerializer(doc=doc, params=HTMLParams(formula_to_mathml=False)).serialize().text
@@ -2564,6 +2564,6 @@ def test_markdown_code_block_fence_outlasts_backticks_in_code(code: str, expecte
 def test_markdown_inline_code_span_outlasts_backticks_in_code(code: str, expected: str):
     doc = DoclingDocument(name="code")
     group = doc.add_inline_group()
-    doc.add_text(label=DocItemLabel.TEXT, text="see", parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text="see ", parent=group)
     doc.add_code(text=code, parent=group)
     assert doc.export_to_markdown() == f"see {expected}"
