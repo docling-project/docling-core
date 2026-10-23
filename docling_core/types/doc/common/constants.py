@@ -22,7 +22,7 @@ SCHEMA_VERSION_HISTORY: Final[list[dict]] = [
     {"schema": "1.10.0", "library_version": "v2.69.0", "note": "FieldItem types, 7 new DocItemLabel values"},
     {
         "schema": "1.11.0",
-        "library_version": "v2.86.0",
+        "library_version": "v2.105.0",
         "note": "InlineGroup runs carry their own significant whitespace",
     },
 ]
