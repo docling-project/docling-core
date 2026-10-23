@@ -374,6 +374,41 @@ def test_legacy_separator_never_lands_inside_a_delimiter(
     assert doc.export_to_text() == expected_txt
 
 
+def _load_once(data: dict) -> DoclingDocument:
+    """Load a legacy dict, checking that the caller's value is untouched and a re-load is stable."""
+    pristine = copy.deepcopy(data)
+    doc = _load(data)
+    assert data == pristine
+    assert _load(json.loads(doc.model_dump_json())).export_to_markdown() == doc.export_to_markdown()
+    return doc
+
+
+def _locate(data: dict, pages: list[int]) -> dict:
+    data["pages"] = {str(p): {"page_no": p, "size": {"width": 100, "height": 100}} for p in set(pages)}
+    for item, page in zip(data["texts"], pages):
+        bbox = {"l": 0, "t": 0, "r": 10, "b": 10, "coord_origin": "BOTTOMLEFT"}
+        item["prov"] = [{"page_no": page, "bbox": bbox, "charspan": [0, len(item["text"])]}]
+    return data
+
+
+@pytest.mark.parametrize(
+    ("label", "both", "first", "second"),
+    [("code", "`a` `b`", "`a`", "`b`"), ("formula", "$a$ $b$", "$a$", "$b$")],
+)
+def test_legacy_standalone_separator_survives_page_filters_with_its_runs(
+    label: str, both: str, first: str, second: str
+) -> None:
+    """Page filters keep only located items; the separator must survive exactly when both runs do."""
+    same_page = _load_once(_locate(_legacy_doc_dict(["a", "b"], label=label), [1, 1]))
+    assert same_page.filter(page_nrs={1}).export_to_markdown() == both
+    assert same_page.export_to_markdown(page_no=1) == both
+
+    split = _load_once(_locate(_legacy_doc_dict(["a", "b"], label=label), [1, 2]))
+    assert split.filter(page_nrs={1}).export_to_markdown() == first
+    assert split.filter(page_nrs={2}).export_to_markdown() == second
+    assert split.export_to_markdown(page_no=1) == first
+
+
 def test_legacy_migration_does_not_touch_caller_input() -> None:
     """The caller owns the dict it passes in, and repeated validation must be stable.
 

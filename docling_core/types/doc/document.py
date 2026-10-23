@@ -5692,7 +5692,7 @@ class DoclingDocument(BaseModel):
             runs = [(idx, run) for idx, child in enumerate(children) if (run := resolve_run(child)) and run["text"]]
             # Boundaries where the separator fits in neither neighbour; filled in afterwards so
             # the indices collected here stay valid.
-            standalone: list[int] = []
+            standalone: list[tuple[int, list]] = []
             for (_, run), (nxt_idx, nxt) in itertools.pairwise(runs):
                 if run.get("label") not in delimited:
                     run["text"] += " "
@@ -5700,18 +5700,27 @@ class DoclingDocument(BaseModel):
                     nxt["text"] = " " + nxt["text"]
                 else:
                     # Both sides are delimited: the separator would corrupt `` `a``b` `` or
-                    # ``$a$$b$``, so it becomes a plain run of its own between them.
-                    standalone.append(nxt_idx)
+                    # ``$a$$b$``, so it becomes a plain run of its own between them. Page filters
+                    # keep only located items, so it takes the left run's location when both
+                    # runs are on one page: it then survives exactly when both of them do.
+                    left = (run.get("prov") or [None])[-1]
+                    right = (nxt.get("prov") or [None])[0]
+                    same_page = (
+                        isinstance(left, dict)
+                        and isinstance(right, dict)
+                        and left.get("page_no") == right.get("page_no")
+                    )
+                    standalone.append((nxt_idx, [{**left, "charspan": [0, 1]}] if same_page else []))
                 migrated = True
 
-            for shift, insert_at in enumerate(standalone):
+            for shift, (insert_at, prov) in enumerate(standalone):
                 ref = f"#/texts/{len(texts)}"
                 texts.append(
                     {
                         "self_ref": ref,
                         "parent": {"$ref": group.get("self_ref")},
                         "label": DocItemLabel.TEXT.value,
-                        "prov": [],
+                        "prov": prov,
                         "orig": " ",
                         "text": " ",
                         "children": [],
