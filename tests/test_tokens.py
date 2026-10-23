@@ -1,5 +1,7 @@
 """Unit tests for document tokens."""
 
+from docling_core.types.doc.document import CodeItem, DoclingDocument, DocTagsDocument
+from docling_core.types.doc.labels import CodeLanguageLabel
 from docling_core.types.doc.tokens import DocumentToken
 
 
@@ -49,3 +51,31 @@ def test_get_location_fully_inverted_bbox():
         page_h=1000.0,
     )
     assert inverted == ordered
+
+
+def test_code_language_tokens_cover_all_labels():
+    """Every CodeLanguageLabel value has a DocTags code-language token.
+
+    Regression test: `JSON`, `DocLang`, `Latex` and `Tikz` were added to
+    CodeLanguageLabel without a matching entry in the token table, so DocTags
+    export of a code item with one of those languages raised
+    `ValueError: '<_JSON_>' is not a valid _CodeLanguageToken`.
+    """
+    for code_language in CodeLanguageLabel:
+        assert DocumentToken.get_code_language_token(code_language.value) == f"<_{code_language.value}_>"
+
+
+def test_code_languages_roundtrip_through_doctags():
+    """A code item of any valid language exports to DocTags and loads back."""
+    for code_language in CodeLanguageLabel:
+        doc = DoclingDocument(name="test")
+        doc.add_code(text="code snippet", code_language=code_language)
+
+        doctags = doc.export_to_doctags()
+        assert f"<_{code_language.value}_>code snippet" in doctags
+
+        reloaded = DoclingDocument.load_from_doctags(DocTagsDocument.from_doctags_and_image_pairs([doctags], None))
+        assert len(reloaded.texts) == 1
+        reloaded_code = reloaded.texts[0]
+        assert isinstance(reloaded_code, CodeItem)
+        assert reloaded_code.code_language == code_language
