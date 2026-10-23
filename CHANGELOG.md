@@ -1,3 +1,15 @@
+## [v2.104.0](https://github.com/docling-project/docling-core/releases/tag/v2.104.0) - 2026-10-22
+
+### Feature
+
+* **doclang:** Add partial DocLang 0.8 support with multiple captions ([#880](https://github.com/docling-project/docling-core/issues/880)) ([`1707a2d`](https://github.com/docling-project/docling-core/commit/1707a2dda4235dad1daba2e166701bc39e4cf5f3))
+
+### Fix
+
+* **serializer:** Escape hyperlink destinations and skip unsupported schemes ([#920](https://github.com/docling-project/docling-core/issues/920)) ([`0aca4e5`](https://github.com/docling-project/docling-core/commit/0aca4e559441c33513d3b1131c3352bd2fe1fc79))
+* **html:** Escape code text and restore non-MathML block formula fallback ([#894](https://github.com/docling-project/docling-core/issues/894)) ([`50dc473`](https://github.com/docling-project/docling-core/commit/50dc47320deac11f093f9731325f36e8369323ea))
+* Support Pillow 13 and integer PNG exports ([#907](https://github.com/docling-project/docling-core/issues/907)) ([`e1b282a`](https://github.com/docling-project/docling-core/commit/e1b282ab8d61b19f458c99ef7d6549f6a03fb86f))
+
 ## [v2.103.1](https://github.com/docling-project/docling-core/releases/tag/v2.103.1) - 2026-10-20
 
 ### Fix

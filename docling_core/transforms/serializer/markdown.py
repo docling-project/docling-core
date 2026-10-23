@@ -35,7 +35,7 @@ from docling_core.transforms.serializer.common import (
     _PageBreakSerResult,
     _should_use_legacy_annotations,
     create_ser_result,
-    hyperlink_uri,
+    markdown_link_destination,
 )
 from docling_core.types.doc import (
     BaseMeta,
@@ -969,7 +969,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
                 and isinstance(item.image.uri, AnyUrl)
                 and item.image.uri.scheme == "data"
             ):
-                text = f"![Image]({item.image.uri})"
+                text = f"![Image]({markdown_link_destination(item.image.uri)})"
                 text_res = text
             else:
                 # get the item.image._pil or crop it out of the page-image
@@ -1198,9 +1198,9 @@ class MarkdownDocSerializer(DocSerializer):
         text: str,
         hyperlink: AnyUrl | PurePath,
         **kwargs: Any,
-    ):
+    ) -> str:
         """Apply Markdown-specific hyperlink serialization."""
-        return f"[{text}]({hyperlink_uri(hyperlink)})"
+        return f"[{text}]({markdown_link_destination(hyperlink)})"
 
     @classmethod
     def _escape_underscores(cls, text: str):

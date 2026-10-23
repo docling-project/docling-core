@@ -36,6 +36,7 @@ from docling_core.transforms.serializer._doclang_utils import (
     _code_language_label_to_doclang,
     _create_location_tokens_for_bbox,
     _create_location_tokens_for_item,
+    _escape_xml_attr,
     _merge_table_data,
     _picture_classification_label_from_doclang,
     _picture_classification_label_to_doclang,
@@ -304,28 +305,25 @@ def _create_layer_token(
 
 def _create_label_token(*, value: str) -> str:
     """Emit `<label value="..."/>` for element head (e.g. code language)."""
-    safe = value.replace("&", "&amp;").replace('"', "&quot;")
     return DocLangVocabulary._create_selfclosing_token(
         token=DocLangToken.LABEL,
-        attrs={DocLangAttributeKey.VALUE: safe},
+        attrs={DocLangAttributeKey.VALUE: _escape_xml_attr(value)},
     )
 
 
 def _create_src_token(*, uri: str) -> str:
     """Emit `<src uri="..."/>` in the picture-specific body sequence (v0.6)."""
-    safe = uri.replace("&", "&amp;").replace('"', "&quot;")
     return DocLangVocabulary._create_selfclosing_token(
         token=DocLangToken.SRC,
-        attrs={DocLangAttributeKey.URI: safe},
+        attrs={DocLangAttributeKey.URI: _escape_xml_attr(uri)},
     )
 
 
 def _create_href_token(*, uri: str) -> str:
     """Emit `<href uri="..."/>` in element head."""
-    safe = uri.replace("&", "&amp;").replace('"', "&quot;")
     return DocLangVocabulary._create_selfclosing_token(
         token=DocLangToken.HREF,
-        attrs={DocLangAttributeKey.URI: safe},
+        attrs={DocLangAttributeKey.URI: _escape_xml_attr(uri)},
     )
 
 

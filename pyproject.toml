@@ -1,6 +1,6 @@
 [project]
 name = "docling-core"
-version = "2.103.1"  # DO NOT EDIT, updated automatically
+version = "2.104.0"  # DO NOT EDIT, updated automatically
 description = "A python library to define and validate data types in Docling."
 license = "MIT"
 license-files = ["LICENSE"]
@@ -36,6 +36,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
 ]
 requires-python = '>=3.10,<4.0'
 dependencies = [
@@ -97,7 +98,7 @@ chunking-openai = [
     'tree-sitter-typescript >=0.23.2',
 
     # specific:
-    'tiktoken (>=0.9.0,<0.13.0)',
+    'tiktoken (>=0.9.0,<0.15.0)',
 ]
 examples = [
     "datasets>=4.0.0",
@@ -130,7 +131,9 @@ dev = [
     "ruff==0.16.10",
     "opencv-python-headless>=4.6.0.66,<5.0.0.0",
     "universal-pathlib>=0.3.10",
-    "doclang[schematron-saxon]>=0.8,<0.9",
+    # saxonche ships only cp310-cp314 wheels and no sdist; on newer Pythons the
+    # Schematron tests skip until it publishes wheels for them.
+    'doclang[schematron-saxon]>=0.8,<0.9; python_version < "3.15"',
     # workspace member, so that `uv sync` gives lint/typecheck/test coverage of it
     "dclq",
 ]

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import os
 import tempfile
 import xml.etree.ElementTree as ET
@@ -30,6 +31,15 @@ doclang_validator = pytest.mark.skipif(
     reason="reference doclang package not installed (uv sync --extra doclang-validation)",
 )
 
+# The Schematron backend (doclang[schematron-saxon]) has no wheels for every Python
+# version; without it only the XSD part of the reference validation runs.
+SCHEMATRON_BACKEND_AVAILABLE = importlib.util.find_spec("saxonche") is not None
+
+requires_schematron_backend = pytest.mark.skipif(
+    not SCHEMATRON_BACKEND_AVAILABLE,
+    reason="Schematron backend not installed (doclang[schematron-saxon])",
+)
+
 
 def _spec_version(path: str | Path) -> str | None:
     """Spec version to validate against: the serializer's, unless the document declares one."""
@@ -41,7 +51,12 @@ def _spec_version(path: str | Path) -> str | None:
 
 
 def _validate(path: str | Path, *, allow_empty_namespace: bool) -> None:
-    doclang_validate(path, allow_empty_namespace=allow_empty_namespace, spec_version=_spec_version(path))
+    doclang_validate(
+        path,
+        allow_empty_namespace=allow_empty_namespace,
+        spec_version=_spec_version(path),
+        xsd_only=not SCHEMATRON_BACKEND_AVAILABLE,
+    )
 
 
 xfail_invalid_dclg_xml = pytest.mark.xfail(
