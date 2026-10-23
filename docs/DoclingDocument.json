@@ -314,19 +314,19 @@
           ],
           "default": null
         },
-        "label": {
-          "const": "code",
-          "default": "code",
-          "title": "Label",
-          "type": "string"
-        },
         "prov": {
-          "default": [],
+          "description": "Explicit layout provenance for this node; empty when its location is unknown.",
           "items": {
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
           "type": "array"
+        },
+        "label": {
+          "const": "code",
+          "default": "code",
+          "title": "Label",
+          "type": "string"
         },
         "source": {
           "default": [],
@@ -867,19 +867,19 @@
           ],
           "default": null
         },
-        "label": {
-          "const": "field_heading",
-          "default": "field_heading",
-          "title": "Label",
-          "type": "string"
-        },
         "prov": {
-          "default": [],
+          "description": "Explicit layout provenance for this node; empty when its location is unknown.",
           "items": {
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
           "type": "array"
+        },
+        "label": {
+          "const": "field_heading",
+          "default": "field_heading",
+          "title": "Label",
+          "type": "string"
         },
         "source": {
           "default": [],
@@ -1003,19 +1003,19 @@
           ],
           "default": null
         },
-        "label": {
-          "const": "field_item",
-          "default": "field_item",
-          "title": "Label",
-          "type": "string"
-        },
         "prov": {
-          "default": [],
+          "description": "Explicit layout provenance for this node; empty when its location is unknown.",
           "items": {
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
           "type": "array"
+        },
+        "label": {
+          "const": "field_item",
+          "default": "field_item",
+          "title": "Label",
+          "type": "string"
         },
         "source": {
           "default": [],
@@ -1093,19 +1093,19 @@
           ],
           "default": null
         },
-        "label": {
-          "const": "field_region",
-          "default": "field_region",
-          "title": "Label",
-          "type": "string"
-        },
         "prov": {
-          "default": [],
+          "description": "Explicit layout provenance for this node; empty when its location is unknown.",
           "items": {
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
           "type": "array"
+        },
+        "label": {
+          "const": "field_region",
+          "default": "field_region",
+          "title": "Label",
+          "type": "string"
         },
         "source": {
           "default": [],
@@ -1183,19 +1183,19 @@
           ],
           "default": null
         },
-        "label": {
-          "const": "field_value",
-          "default": "field_value",
-          "title": "Label",
-          "type": "string"
-        },
         "prov": {
-          "default": [],
+          "description": "Explicit layout provenance for this node; empty when its location is unknown.",
           "items": {
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
           "type": "array"
+        },
+        "label": {
+          "const": "field_value",
+          "default": "field_value",
+          "title": "Label",
+          "type": "string"
         },
         "source": {
           "default": [],
@@ -1479,19 +1479,19 @@
           ],
           "default": null
         },
-        "label": {
-          "const": "form",
-          "default": "form",
-          "title": "Label",
-          "type": "string"
-        },
         "prov": {
-          "default": [],
+          "description": "Explicit layout provenance for this node; empty when its location is unknown.",
           "items": {
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
           "type": "array"
+        },
+        "label": {
+          "const": "form",
+          "default": "form",
+          "title": "Label",
+          "type": "string"
         },
         "source": {
           "default": [],
@@ -1640,19 +1640,19 @@
           ],
           "default": null
         },
-        "label": {
-          "const": "formula",
-          "default": "formula",
-          "title": "Label",
-          "type": "string"
-        },
         "prov": {
-          "default": [],
+          "description": "Explicit layout provenance for this node; empty when its location is unknown.",
           "items": {
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
           "type": "array"
+        },
+        "label": {
+          "const": "formula",
+          "default": "formula",
+          "title": "Label",
+          "type": "string"
         },
         "source": {
           "default": [],
@@ -1886,6 +1886,14 @@
             }
           ],
           "default": null
+        },
+        "prov": {
+          "description": "Explicit layout provenance for this node; empty when its location is unknown.",
+          "items": {
+            "$ref": "#/$defs/ProvenanceItem"
+          },
+          "title": "Prov",
+          "type": "array"
         },
         "name": {
           "default": "group",
@@ -2195,6 +2203,14 @@
           ],
           "default": null
         },
+        "prov": {
+          "description": "Explicit layout provenance for this node; empty when its location is unknown.",
+          "items": {
+            "$ref": "#/$defs/ProvenanceItem"
+          },
+          "title": "Prov",
+          "type": "array"
+        },
         "name": {
           "default": "group",
           "title": "Name",
@@ -2256,19 +2272,19 @@
           ],
           "default": null
         },
-        "label": {
-          "const": "key_value_region",
-          "default": "key_value_region",
-          "title": "Label",
-          "type": "string"
-        },
         "prov": {
-          "default": [],
+          "description": "Explicit layout provenance for this node; empty when its location is unknown.",
           "items": {
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
           "type": "array"
+        },
+        "label": {
+          "const": "key_value_region",
+          "default": "key_value_region",
+          "title": "Label",
+          "type": "string"
         },
         "source": {
           "default": [],
@@ -2455,6 +2471,14 @@
           ],
           "default": null
         },
+        "prov": {
+          "description": "Explicit layout provenance for this node; empty when its location is unknown.",
+          "items": {
+            "$ref": "#/$defs/ProvenanceItem"
+          },
+          "title": "Prov",
+          "type": "array"
+        },
         "name": {
           "default": "group",
           "title": "Name",
@@ -2516,19 +2540,19 @@
           ],
           "default": null
         },
-        "label": {
-          "const": "list_item",
-          "default": "list_item",
-          "title": "Label",
-          "type": "string"
-        },
         "prov": {
-          "default": [],
+          "description": "Explicit layout provenance for this node; empty when its location is unknown.",
           "items": {
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
           "type": "array"
+        },
+        "label": {
+          "const": "list_item",
+          "default": "list_item",
+          "title": "Label",
+          "type": "string"
         },
         "source": {
           "default": [],
@@ -2919,6 +2943,14 @@
           ],
           "default": null
         },
+        "prov": {
+          "description": "Explicit layout provenance for this node; empty when its location is unknown.",
+          "items": {
+            "$ref": "#/$defs/ProvenanceItem"
+          },
+          "title": "Prov",
+          "type": "array"
+        },
         "label": {
           "default": "picture",
           "enum": [
@@ -2927,14 +2959,6 @@
           ],
           "title": "Label",
           "type": "string"
-        },
-        "prov": {
-          "default": [],
-          "items": {
-            "$ref": "#/$defs/ProvenanceItem"
-          },
-          "title": "Prov",
-          "type": "array"
         },
         "source": {
           "default": [],
@@ -3444,7 +3468,7 @@
       "type": "object"
     },
     "ProvenanceItem": {
-      "description": "Provenance information for elements extracted from a textual document.\n\nA `ProvenanceItem` object acts as a lightweight pointer back into the original\ndocument for an extracted element. It applies to documents with an explicit\nor implicit layout, such as PDF, HTML, docx, or pptx.",
+      "description": "Provenance information for elements extracted from a textual document.\n\nA `ProvenanceItem` object acts as a lightweight pointer back into the original\ndocument for an extracted element. It applies to documents with an explicit\nor implicit layout, such as PDF, HTML, docx, or pptx.\n\nGroups have no own text buffer and use ``charspan=(0, 0)``. Their provenance\ndescribes the group itself and is not inherited by its descendants.",
       "properties": {
         "page_no": {
           "description": "Page number",
@@ -3626,19 +3650,19 @@
           ],
           "default": null
         },
-        "label": {
-          "const": "section_header",
-          "default": "section_header",
-          "title": "Label",
-          "type": "string"
-        },
         "prov": {
-          "default": [],
+          "description": "Explicit layout provenance for this node; empty when its location is unknown.",
           "items": {
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
           "type": "array"
+        },
+        "label": {
+          "const": "section_header",
+          "default": "section_header",
+          "title": "Label",
+          "type": "string"
         },
         "source": {
           "default": [],
@@ -3941,6 +3965,14 @@
           ],
           "default": null
         },
+        "prov": {
+          "description": "Explicit layout provenance for this node; empty when its location is unknown.",
+          "items": {
+            "$ref": "#/$defs/ProvenanceItem"
+          },
+          "title": "Prov",
+          "type": "array"
+        },
         "label": {
           "default": "table",
           "enum": [
@@ -3949,14 +3981,6 @@
           ],
           "title": "Label",
           "type": "string"
-        },
-        "prov": {
-          "default": [],
-          "items": {
-            "$ref": "#/$defs/ProvenanceItem"
-          },
-          "title": "Prov",
-          "type": "array"
         },
         "source": {
           "default": [],
@@ -4158,6 +4182,14 @@
           ],
           "default": null
         },
+        "prov": {
+          "description": "Explicit layout provenance for this node; empty when its location is unknown.",
+          "items": {
+            "$ref": "#/$defs/ProvenanceItem"
+          },
+          "title": "Prov",
+          "type": "array"
+        },
         "label": {
           "enum": [
             "caption",
@@ -4177,14 +4209,6 @@
           ],
           "title": "Label",
           "type": "string"
-        },
-        "prov": {
-          "default": [],
-          "items": {
-            "$ref": "#/$defs/ProvenanceItem"
-          },
-          "title": "Prov",
-          "type": "array"
         },
         "source": {
           "default": [],
@@ -4303,19 +4327,19 @@
           ],
           "default": null
         },
-        "label": {
-          "const": "title",
-          "default": "title",
-          "title": "Label",
-          "type": "string"
-        },
         "prov": {
-          "default": [],
+          "description": "Explicit layout provenance for this node; empty when its location is unknown.",
           "items": {
             "$ref": "#/$defs/ProvenanceItem"
           },
           "title": "Prov",
           "type": "array"
+        },
+        "label": {
+          "const": "title",
+          "default": "title",
+          "title": "Label",
+          "type": "string"
         },
         "source": {
           "default": [],
@@ -4494,7 +4518,7 @@
       "type": "string"
     },
     "version": {
-      "default": "1.10.0",
+      "default": "1.11.0",
       "pattern": "^(?P<major>0|[1-9]\\d*)\\.(?P<minor>0|[1-9]\\d*)\\.(?P<patch>0|[1-9]\\d*)(?:-(?P<prerelease>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
       "title": "Version",
       "type": "string"

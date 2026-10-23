@@ -284,6 +284,44 @@ class TestSchemaSnapshotRendering:
         assert set(schema["$defs"]["FieldItem"]["properties"]) == set(FieldItem.model_fields)
 
 
+class TestProjector_1_11_to_1_10:
+    """Group geometry is dropped for old clients without changing content."""
+
+    def test_strips_group_provenance_and_preserves_content(self):
+        from docling_core.compat import _project_1_11_to_1_10
+        from docling_core.types.doc import BoundingBox, DocItemLabel, ProvenanceItem, Size
+
+        doc = DoclingDocument(name="located groups")
+        doc.add_page(page_no=1, size=Size(width=100, height=100))
+        prov = ProvenanceItem(page_no=1, bbox=BoundingBox(l=0, t=0, r=10, b=10), charspan=(0, 0))
+        doc.body.prov.append(prov)
+        group = doc.add_group(prov=prov)
+        doc.add_list_group(parent=group, prov=prov)
+        doc.add_inline_group(parent=group, prov=prov)
+        doc.add_text(label=DocItemLabel.TEXT, text="Content", parent=group, prov=prov)
+        data = doc.model_dump(mode="json", by_alias=True)
+        data["furniture"] = {**_minimal_doc_dict()["furniture"], "prov": [prov.model_dump(mode="json")]}
+
+        result = _project_1_11_to_1_10(data)
+        assert result["version"] == "1.10.0"
+        assert "prov" not in result["body"]
+        assert "prov" not in result["furniture"]
+        assert all("prov" not in item for item in result["groups"])
+        assert result["texts"] == data["texts"]
+        assert result["body"]["children"] == data["body"]["children"]
+        assert all(result["groups"][i]["children"] == item["children"] for i, item in enumerate(data["groups"]))
+        assert data["body"]["prov"]
+        assert data["furniture"]["prov"]
+        assert all(item["prov"] for item in data["groups"])
+        schema = json.loads((_SCHEMAS_DIR / "DoclingDocument_1_10.json").read_text())
+        jsonschema.validate(instance=result, schema=schema)
+        projected = project_to(doc, target_version="1.10.0")
+        jsonschema.validate(instance=projected.model_dump(mode="json", by_alias=True), schema=schema)
+        assert projected.version == "1.10.0"
+        assert all(not item.prov for item in projected.groups)
+        assert projected.texts[0].prov == doc.texts[0].prov
+
+
 class TestProjector_1_10_to_1_9:
     """Tests for the 1.10 → 1.9 downgrade projector."""
 
