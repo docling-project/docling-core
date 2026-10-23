@@ -241,6 +241,19 @@ def test_host_text_stays_apart_from_its_inline_group() -> None:
     assert MarkdownDocSerializer(doc=doc).serialize_captions(item=picture).text == "Table **1**: results"
 
 
+def test_list_item_text_stays_apart_from_its_inline_group() -> None:
+    """A list item's own text and its inline-group child follow the same host rule in Markdown."""
+    doc = DoclingDocument(name="host")
+    lst = doc.add_list_group()
+    item = doc.add_list_item(text="Intro", parent=lst)
+    group = doc.add_inline_group(parent=item)
+    for text, formatting in [("more ", None), ("x", _BOLD), (" y", None)]:
+        doc.add_text(label=DocItemLabel.TEXT, text=text, parent=group, formatting=formatting)
+
+    assert doc.export_to_markdown() == "- Intro more **x** y"
+    assert item._get_plain_text(doc) == "Intro more x y"
+
+
 # --------------------------------------------------------------------------------------------
 # Load normalization for pre-contract documents
 # --------------------------------------------------------------------------------------------

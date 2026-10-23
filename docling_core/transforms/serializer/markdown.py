@@ -1083,7 +1083,11 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 and p.spans[0].item.parent
                 and isinstance(p.spans[0].item.parent.resolve(doc), InlineGroup)
             ):
-                my_parts[-1].text = f"{my_parts[-1].text}{p.text}"  # append to last
+                # append to last; a group that is the child of a text item keeps the host separator
+                group = p.spans[0].item.parent.resolve(doc)
+                host = group.parent.resolve(doc) if group.parent else None
+                sep_host = " " if isinstance(host, TextItem) and host.text else ""
+                my_parts[-1].text = f"{my_parts[-1].text}{sep_host}{p.text}"
                 my_parts[-1].spans.extend(p.spans)
             else:
                 my_parts.append(p)
