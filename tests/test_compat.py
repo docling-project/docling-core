@@ -398,6 +398,41 @@ class TestProjector_1_10_to_1_9:
         result = self._apply(data)
         assert result["texts"][0]["code_language"] == "unknown"
 
+    def test_drops_references_to_the_removed_field_lists(self):
+        """The references to the dropped field items must not survive.
+
+        A ``cref`` left in a parent's ``children`` cannot be resolved once the
+        ``field_regions``/``field_items`` lists are gone, so the projected dict
+        is rejected instead of downgraded.
+        """
+        data = _minimal_doc_dict("1.10.0")
+        data["field_regions"] = [
+            {
+                "self_ref": "#/field_regions/0",
+                "parent": {"cref": "#/body"},
+                "children": [{"cref": "#/texts/0"}],
+                "content_layer": "body",
+                "label": "field_region",
+                "prov": [],
+            }
+        ]
+        data["texts"] = [
+            {
+                "self_ref": "#/texts/0",
+                "parent": {"cref": "#/field_regions/0"},
+                "children": [],
+                "content_layer": "body",
+                "label": "field_value",
+                "orig": "John",
+                "text": "John",
+                "prov": [],
+            }
+        ]
+        data["body"]["children"] = [{"cref": "#/field_regions/0"}, {"$ref": "#/texts/0"}]
+        result = self._apply(data)
+        # the dropped ref goes, the surviving one stays, whichever spelling it uses
+        assert result["body"]["children"] == [{"$ref": "#/texts/0"}]
+
 
 class TestProjector_1_9_to_1_8:
     """Tests for the 1.9 → 1.8 downgrade projector."""
@@ -596,6 +631,25 @@ class TestChainProjection:
         assert result.version == "1.9.0"
         # The field_value item should have been converted to a generic text item.
         assert all(t.label.value in ("text", "paragraph", "caption") or True for t in result.texts)
+
+    def test_chain_with_field_regions(self):
+        """A document holding a 1.10 field region projects instead of raising.
+
+        ``project_to()`` validates the projected dict, so a reference left behind by
+        the 1.10->1.9 projector makes it raise for any document that uses the field
+        structures.
+        """
+        doc = DoclingDocument(name="field_region_doc")
+        region = doc.add_field_region()
+        item = doc.add_field_item(parent=region)
+        doc.add_field_key(text="Key", parent=item)
+        doc.add_field_value(text="Value", parent=item)
+
+        result = project_to(doc, target_version="1.9.0")
+
+        assert result.version == "1.9.0"
+        # the dropped field region is no longer referenced by the root node
+        assert result.body.children == []
 
 
 # ---------------------------------------------------------------------------
