@@ -5389,6 +5389,11 @@ class DoclingDocument(BaseModel):
             ``document.xml`` is additionally capped by ``settings.max_doclang_xml_bytes`` before
             parsing. Archive ``assets/`` and ``pages/`` images are capped by
             ``settings.max_image_decoded_size`` before Pillow opens them.
+
+            Unlike JSON, DocLang carries no schema version, so archives written by docling-core
+            before schema 1.11.0 (the inline whitespace contract) are loaded as current: their
+            inline runs were stored without boundary whitespace and now join without a separator
+            (``Normal**bold**tail``). Re-convert the source, or keep JSON for long-term storage.
         """
         from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 
