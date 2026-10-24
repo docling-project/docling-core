@@ -486,6 +486,61 @@ def test_md_nested_lists():
     verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
 
 
+def test_md_list_item_block_children_are_indented():
+    doc = DoclingDocument(name="")
+    lst = doc.add_list_group()
+    first = doc.add_list_item(text="", enumerated=True, parent=lst)
+    doc.add_code(text="a\n\nb", parent=first)
+    doc.add_text(label=DocItemLabel.TEXT, text="First", parent=first)
+    second = doc.add_list_item(text="Second", enumerated=True, parent=lst)
+    doc.add_formula(text="x=1", parent=second)
+
+    # an empty item and its content stay one item, a blank line in the code included
+    assert doc.export_to_markdown() == "1. \n   ```\n   a\n\n   b\n   ```\n   First\n2. Second\n   $$x=1$$"
+
+
+def test_md_list_item_block_children_follow_marker_width():
+    doc = DoclingDocument(name="")
+    bullets = doc.add_list_group()
+    item = doc.add_list_item(text="Bullet", parent=bullets)
+    doc.add_code(text="code", parent=item)
+    numbers = doc.add_list_group()
+    for i in range(1, 11):
+        item = doc.add_list_item(text=f"Item {i}", enumerated=True, parent=numbers)
+    doc.add_code(text="code", parent=item)
+
+    actual = doc.export_to_markdown()
+    assert actual.startswith("- Bullet\n  ```\n  code\n  ```\n\n")
+    assert actual.endswith("10. Item 10\n    ```\n    code\n    ```")
+
+
+def test_md_nested_list_item_block_children_are_indented():
+    doc = DoclingDocument(name="")
+    outer = doc.add_list_group()
+    outer_item = doc.add_list_item(text="Outer", parent=outer)
+    inner = doc.add_list_group(parent=outer_item)
+    inner_item = doc.add_list_item(text="Inner", parent=inner)
+    doc.add_code(text="code", parent=inner_item)
+    doc.add_code(text="after", parent=outer_item)
+
+    assert doc.export_to_markdown() == "- Outer\n    - Inner\n      ```\n      code\n      ```\n  ```\n  after\n  ```"
+
+
+def test_md_list_item_table_with_caption_outside_list_is_indented():
+    doc = DoclingDocument(name="")
+    lst = doc.add_list_group()
+    item = doc.add_list_item(text="", enumerated=True, parent=lst)
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text="Cap")
+    cell = TableCell(
+        text="cell", start_row_offset_idx=0, end_row_offset_idx=1, start_col_offset_idx=0, end_col_offset_idx=1
+    )
+    doc.add_table(data=TableData(num_rows=1, num_cols=1, table_cells=[cell]), caption=caption, parent=item)
+    doc.add_list_item(text="Second", enumerated=True, parent=lst)
+
+    # the serialized table starts with its caption, which is not in the list
+    assert doc.export_to_markdown() == "1. \n   Cap\n\n   | cell   |\n   |--------|\n2. Second"
+
+
 def test_md_rich_table(rich_table_doc):
     exp_file = Path("./tests/data/doc/rich_table.gt.md")
 
