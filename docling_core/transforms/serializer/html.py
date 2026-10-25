@@ -748,8 +748,13 @@ class _HTMLGraphDataSerializer:
         child_links: dict,
         value_links: dict,
         level: int,
+        ancestors: frozenset[int] = frozenset(),
     ) -> str:
-        """Recursively render a cell and its children as a nested list."""
+        """Recursively render a cell and its children as a nested list.
+
+        A child that is already on the path from the root is skipped, so a cycle in the
+        to_child links ends instead of recursing without bound.
+        """
         cell = cell_map[cell_id]
         cell_text = html.escape(cell.text)
 
@@ -763,13 +768,16 @@ class _HTMLGraphDataSerializer:
 
             cell_text = f"<strong>{cell_text}</strong>: {', '.join(value_texts)}"
 
+        path = ancestors | {cell_id}
+        child_ids = [child_id for child_id in child_links.get(cell_id, []) if child_id not in path]
+
         # If this cell has children, create a nested list
-        if child_links.get(cell_id):
+        if child_ids:
             children_html = []
             children_html.append(f"<li>{cell_text}</li>")
             children_html.append("<ul>")
 
-            for child_id in child_links[cell_id]:
+            for child_id in child_ids:
                 children_html.append(
                     self._render_cell_tree(
                         cell_id=child_id,
@@ -777,6 +785,7 @@ class _HTMLGraphDataSerializer:
                         child_links=child_links,
                         value_links=value_links,
                         level=level + 1,
+                        ancestors=path,
                     )
                 )
 
