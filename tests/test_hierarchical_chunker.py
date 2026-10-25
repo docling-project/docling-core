@@ -32,6 +32,38 @@ def test_chunk():
     assert_or_generate_json_ground_truth(act_data, "tests/data/chunker/0_out_chunks.json")
 
 
+@pytest.mark.parametrize("kind", ["title", "section_header"])
+@pytest.mark.parametrize("body", ["Body.", ""])
+@pytest.mark.parametrize("prefix", ["Energy ", ""])
+def test_rich_heading_chunk_metadata(kind: str, body: str, prefix: str) -> None:
+    doc = DoclingDocument(name="rich-heading")
+    heading = doc.add_title(text="") if kind == "title" else doc.add_heading(text="", level=1)
+    parent = doc.add_inline_group(parent=heading) if prefix else heading
+    if prefix:
+        doc.add_text(label=DocItemLabel.TEXT, text=prefix.strip(), parent=parent)
+    doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=parent)
+    if body:
+        doc.add_text(label=DocItemLabel.TEXT, text=body)
+    chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker(always_emit_headings=True).chunk(doc)]
+    assert len(chunks) == 1
+    assert chunks[0].text == body
+    assert chunks[0].meta.headings == [f"{prefix}$E=mc^2$"]
+
+
+def test_rich_heading_is_emitted_before_a_sibling_heading() -> None:
+    doc = DoclingDocument(name="rich-heading")
+    heading = doc.add_heading(text="", level=1)
+    inline = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="Energy", parent=inline)
+    doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=inline)
+    doc.add_heading(text="Next", level=1)
+    doc.add_text(label=DocItemLabel.TEXT, text="Body.")
+
+    chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker(always_emit_headings=True).chunk(doc)]
+    assert [chunk.text for chunk in chunks] == ["", "Body."]
+    assert [chunk.meta.headings for chunk in chunks] == [["Energy $E=mc^2$"], ["Next"]]
+
+
 @pytest.mark.parametrize("kind", ["table", "picture"])
 @pytest.mark.parametrize(
     ("caption", "expected"),

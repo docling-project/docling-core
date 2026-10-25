@@ -32,6 +32,7 @@ from docling_core.types.doc.document import (
     CodeItem,
     DocItem,
     DoclingDocument,
+    FormulaItem,
     InlineGroup,
     LevelNumber,
     ListGroup,
@@ -204,6 +205,7 @@ class HierarchicalChunker(BaseChunker):
         """
         my_doc_ser = self.serializer_provider.get_serializer(doc=dl_doc)
         heading_by_level: dict[LevelNumber, TitleItem | SectionHeaderItem] = {}
+        heading_text_by_level: dict[LevelNumber, str] = {}
         heading_emitted: set[str] = set()
         visited: set[str] = set()
         ser_res = create_ser_result()
@@ -237,7 +239,7 @@ class HierarchicalChunker(BaseChunker):
                         text="",
                         meta=DocMeta(
                             doc_items=[heading_by_level[k] for k in sorted_keys],
-                            headings=[heading_by_level[k].text for k in sorted_keys],
+                            headings=[heading_text_by_level[k] for k in sorted_keys],
                         ),
                     )
                     heading_emitted.add(leaf_ref)
@@ -245,9 +247,18 @@ class HierarchicalChunker(BaseChunker):
                 # actually remove shadowed headings
                 for k in keys_to_del:
                     heading_by_level.pop(k, None)
+                    heading_text_by_level.pop(k, None)
 
                 # capture current heading
                 heading_by_level[level] = item
+                heading_text = item.text
+                if not heading_text and len(item.children) == 1:
+                    child = item.children[0].resolve(dl_doc)
+                    if isinstance(child, InlineGroup | FormulaItem | CodeItem):
+                        # Rich headings keep their text in inline children. Consume
+                        # those children here so they do not become body chunks.
+                        heading_text = my_doc_ser.serialize(item=child, visited=visited, is_inline_scope=True).text
+                heading_text_by_level[level] = heading_text
 
                 continue
             elif isinstance(item, ListGroup | InlineGroup | DocItem) and item.self_ref not in visited:
@@ -269,7 +280,7 @@ class HierarchicalChunker(BaseChunker):
                 continue
             if doc_items := [u.item for u in ser_res.spans]:
                 sorted_keys = sorted(heading_by_level)
-                headings = [heading_by_level[k].text for k in sorted_keys] or None
+                headings = [heading_text_by_level[k] for k in sorted_keys] or None
                 c = DocChunk(
                     text=ser_res.text,
                     meta=DocMeta(
@@ -293,7 +304,7 @@ class HierarchicalChunker(BaseChunker):
                 text="",
                 meta=DocMeta(
                     doc_items=[heading_by_level[k] for k in sorted_keys],
-                    headings=[heading_by_level[k].text for k in sorted_keys],
+                    headings=[heading_text_by_level[k] for k in sorted_keys],
                 ),
             )
             heading_emitted.add(leaf_ref)
