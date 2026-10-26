@@ -26,8 +26,8 @@ class PictureClassificationMetaField(_ExtraAllowingModel):
 
     def get_main_prediction(self) -> PictureClassificationPrediction:
         """Get prediction with highest confidence (if confidence not available, first is used by convention)."""
-        max_conf_pos: Optional[int] = None
-        max_conf: Optional[float] = None
+        max_conf_pos: int | None = None
+        max_conf: float | None = None
         for i, pred in enumerate(self.predictions):
             if pred.confidence is not None and (max_conf is None or pred.confidence > max_conf):
                 max_conf_pos = i
@@ -44,14 +44,14 @@ class MoleculeMetaField(BasePrediction):
 class TabularChartMetaField(BasePrediction):
     """Tabular chart metadata field."""
 
-    title: Optional[str] = None
+    title: str | None = None
     chart_data: TableData
 
 
 class PictureMeta(FloatingMeta):
     """Metadata model for pictures."""
 
-    classification: Optional[PictureClassificationMetaField] = None
-    molecule: Optional[MoleculeMetaField] = None
-    tabular_chart: Optional[TabularChartMetaField] = None
-    code: Optional[CodeMetaField] = None
+    classification: PictureClassificationMetaField | None = None
+    molecule: MoleculeMetaField | None = None
+    tabular_chart: TabularChartMetaField | None = None
+    code: CodeMetaField | None = None

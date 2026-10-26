@@ -19,15 +19,23 @@ class DocumentOrigin(BaseModel):
     filename: str  # The name of the original file, including extension, without path.
     # Could stem from filesystem, source URI, Content-Disposition header, ...
 
-    uri: Optional[AnyUrl] = (
+    uri: AnyUrl | None = (
         None  # any possible reference to a source file,
         # from any file handler protocol (e.g. https://, file://, s3://)
     )
 
     _extra_mimetypes: typing.ClassVar[list[str]] = [
+        "application/calendar+json",
+        "application/calendar+xml",
         "application/epub+zip",
+        "application/rtf",
+        "application/vnd.apple.pages",
+        "application/vnd.apple.numbers",
+        "application/vnd.apple.keynote",
         "application/vnd.box.boxnote",
-        "application/vnd.docling.ebcdic",  # accepted alias, see application/x-ebcdic
+        "application/vnd.cv+pdf",
+        "application/vnd.docling.ebcdic",
+        "application/vnd.ibm.modcap",
         "application/vnd.oasis.opendocument.presentation",
         "application/vnd.oasis.opendocument.spreadsheet",
         "application/vnd.oasis.opendocument.text",
@@ -37,17 +45,27 @@ class DocumentOrigin(BaseModel):
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
-        # EBCDIC data files have no IANA-registered media type, so they will never
-        # appear in mimetypes.types_map. "application/x-ebcdic" is the standard
-        # spelling docling emits; the vendor-tree alias above is accepted as well.
+        "application/x-afp",
         "application/x-ebcdic",
+        "application/x-iwork-pages-sffpages",
+        "application/x-iwork-numbers-sffnumbers",
+        "application/x-iwork-keynote-sffkey",
+        "application/x-mimearchive",
+        "application/zip",
+        "audio/flac",
+        "audio/m4a",
+        "audio/mp4",
         "audio/mp3",
+        "audio/ogg",
         "audio/wav",
         "audio/x-wav",
+        "multipart/related",
         "text/asciidoc",
+        "text/calendar",
         "text/csv",
         "text/markdown",
         "text/vtt",
+        "text/x-vcalendar",
     ]
 
     @field_validator("binary_hash", mode="before")

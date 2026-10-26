@@ -74,7 +74,7 @@ def _bbox_to_polygon_coords(
     return [l, t, r, t, r, b, l, b]
 
 
-def _bbox_to_polygon_for_item(doc: DoclingDocument, item: DocItem) -> Optional[list[float]]:
+def _bbox_to_polygon_for_item(doc: DoclingDocument, item: DocItem) -> list[float] | None:
     """Compute a TOPLEFT-origin polygon for the first provenance of the item."""
     if not item.prov:
         return None
@@ -102,7 +102,7 @@ class AzureParams(CommonParams):
     """
 
     include_words: bool = False
-    indent: Optional[int] = None
+    indent: int | None = None
 
 
 class _AzureBoundingRegion(BaseModel):
@@ -120,7 +120,7 @@ class _AzureParagraph(BaseModel):
 
     content: str
     boundingRegions: list["_AzureBoundingRegion"]
-    role: Optional[str] = None
+    role: str | None = None
 
 
 class _AzureTableCell(BaseModel):
@@ -131,8 +131,8 @@ class _AzureTableCell(BaseModel):
     columnIndex: int
     rowSpan: int = 1
     colSpan: int = 1
-    kind: Optional[str] = None
-    boundingRegions: Optional[list[_AzureBoundingRegion]] = None
+    kind: str | None = None
+    boundingRegions: list[_AzureBoundingRegion] | None = None
 
 
 class _AzureTable(BaseModel):
@@ -148,7 +148,7 @@ class _AzureImage(BaseModel):
     """Image/figure with bounding region and optional footnotes."""
 
     boundingRegions: list[_AzureBoundingRegion]
-    footnotes: Optional[list[_AzureParagraph]] = None
+    footnotes: list[_AzureParagraph] | None = None
 
 
 class _AzurePage(BaseModel):
@@ -195,7 +195,7 @@ class _AzureTextSerializer(BaseModel, BaseTextSerializer):
             page_no = 1
             polygon = None
 
-        role: Optional[str] = None
+        role: str | None = None
         if item.label == DocItemLabel.TITLE:
             role = "title"
         elif item.label == DocItemLabel.SECTION_HEADER:
@@ -266,7 +266,7 @@ class _AzureTableSerializer(BaseTableSerializer):
                 else:
                     content_text = cell.text
 
-                cell_poly: Optional[list[float]] = None
+                cell_poly: list[float] | None = None
                 if cell.bbox is not None:
                     # Normalize cell bbox to TOPLEFT origin
                     bbox = cell.bbox

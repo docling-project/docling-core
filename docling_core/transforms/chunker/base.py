@@ -20,6 +20,21 @@ class BaseMeta(BaseModel):
     excluded_embed: ClassVar[list[str]] = []
     excluded_llm: ClassVar[list[str]] = []
 
+    def _excluded_embed_field_names(self) -> set[str]:
+        """Return the Python attribute names for all fields listed in `excluded_embed`.
+
+        `excluded_embed` conventionally stores alias keys (the serialised field
+        names). `model_dump(exclude=...)` requires Python attribute names, not
+        aliases. This helper resolves each entry to its canonical attribute name
+        so that exclusion is correct even when a subclass assigns an alias that
+        differs from the Python attribute name.
+
+        Returns:
+            Python attribute names to exclude from embedding serialization.
+        """
+        alias_to_name = {(field_info.alias or name): name for name, field_info in type(self).model_fields.items()}
+        return {alias_to_name.get(key, key) for key in self.excluded_embed}
+
     def export_json_dict(self) -> dict[str, Any]:
         """Helper method for exporting non-None keys to JSON mode.
 
@@ -73,15 +88,19 @@ class BaseChunker(BaseModel, ABC):
         Returns:
             str: the serialized form of the chunk
         """
-        meta = chunk.meta.export_json_dict()
+        meta = chunk.meta.model_dump(
+            mode="json",
+            by_alias=True,
+            exclude_none=True,
+            exclude=chunk.meta._excluded_embed_field_names(),
+        )
 
         items = []
         for k in meta:
-            if k not in chunk.meta.excluded_embed:
-                if isinstance(meta[k], list):
-                    items.append(self.delim.join([d if isinstance(d, str) else json.dumps(d) for d in meta[k]]))
-                else:
-                    items.append(json.dumps(meta[k]))
+            if isinstance(meta[k], list):
+                items.append(self.delim.join([d if isinstance(d, str) else json.dumps(d) for d in meta[k]]))
+            else:
+                items.append(json.dumps(meta[k]))
         items.append(chunk.text)
 
         return self.delim.join(items)

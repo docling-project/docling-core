@@ -53,6 +53,7 @@ from typing_extensions import Self, deprecated, override
 from docling_core.types.base import _JSON_POINTER_REGEX, VERSION_PATTERN, UniqueList
 from docling_core.types.doc import BoundingBox, Size
 from docling_core.types.doc.base import (
+    CaptionPlacement,
     CoordOrigin,
     ImageRefMode,
     PydanticSerCtxKey,
@@ -158,6 +159,7 @@ from docling_core.types.doc.labels import (
 from docling_core.types.doc.tokens import DocumentToken, TableToken
 from docling_core.types.doc.utils import (
     _ensure_within_size_limit,
+    _normalize_image_for_png,
     is_remote_path,
     parse_otsl_table_content,
     relative_path,
@@ -208,7 +210,7 @@ class DoclingDocument(BaseModel):
     version: Annotated[str, StringConstraints(pattern=VERSION_PATTERN, strict=True)] = CURRENT_VERSION
     name: str  # The working name of this document, without extensions
     # (could be taken from originating doc, or just "Untitled 1")
-    origin: Optional[DocumentOrigin] = (
+    origin: DocumentOrigin | None = (
         None  # DoclingDocuments may specify an origin (converted to DoclingDocument).
         # This is optional, e.g. a DoclingDocument could also be entirely
         # generated from synthetic data.
@@ -220,18 +222,9 @@ class DoclingDocument(BaseModel):
     )  # List[RefItem] = []
     body: GroupItem = GroupItem(name="_root_", self_ref="#/body")  # List[RefItem] = []
 
-    groups: list[Union[ListGroup, InlineGroup, GroupItem]] = []
+    groups: list[ListGroup | InlineGroup | GroupItem] = []
     texts: list[
-        Union[
-            TitleItem,
-            SectionHeaderItem,
-            ListItem,
-            CodeItem,
-            FormulaItem,
-            FieldHeadingItem,
-            FieldValueItem,
-            TextItem,
-        ]
+        TitleItem | SectionHeaderItem | ListItem | CodeItem | FormulaItem | FieldHeadingItem | FieldValueItem | TextItem
     ] = []
     pictures: list[PictureItem] = []
     tables: list[TableItem] = []
@@ -483,6 +476,137 @@ class DoclingDocument(BaseModel):
 
         self._normalize_references()
 
+    def _furniture_sort_key(self, item: NodeItem, index: int) -> tuple[bool, tuple[int, int, float, int]]:
+        """Classify a furniture item as header or footer and give it a stable visual order."""
+        prov = item.prov[0] if isinstance(item, DocItem) and item.prov else None
+        page = self.pages.get(prov.page_no) if prov is not None else None
+        if prov is None or page is None:
+            # keep unlocated furniture before the body, in its source order
+            return False, (0, 0, 0.0, index)
+        bbox = prov.bbox.to_top_left_origin(page_height=page.size.height)
+        is_footer = (bbox.t + bbox.b) / 2 > page.size.height / 2
+        # treat nearby baselines as one visual line, so that left-to-right order wins
+        visual_line = round(bbox.t / 12.0)
+        return is_footer, (prov.page_no, visual_line, bbox.l, index)
+
+    def _migrate_furniture_to_body(self) -> int:
+        """Move the children of the deprecated furniture tree into body.
+
+        Headers are placed before the body content, footers after it. As being in the furniture tree
+        used to mark items as furniture, any of them (or their descendants) in the body layer are moved
+        to the furniture layer.
+
+        :return: The number of migrated furniture children.
+        """
+
+        def set_furniture_layer(item: NodeItem) -> None:
+            if item.content_layer == ContentLayer.BODY:
+                item.content_layer = ContentLayer.FURNITURE
+            for child_ref in item.children:
+                set_furniture_layer(child_ref.resolve(doc=self))
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            furniture = self.furniture
+        if not furniture.children:
+            return 0
+
+        headers: list[tuple[tuple[int, int, float, int], RefItem]] = []
+        footers: list[tuple[tuple[int, int, float, int], RefItem]] = []
+        for index, ref in enumerate(furniture.children):
+            item = ref.resolve(doc=self)
+            is_footer, key = self._furniture_sort_key(item=item, index=index)
+            (footers if is_footer else headers).append((key, ref))
+            item.parent = self.body.get_ref()
+            set_furniture_layer(item)
+
+        self.body.children = [
+            *(ref for _, ref in sorted(headers, key=lambda x: x[0])),
+            *self.body.children,
+            *(ref for _, ref in sorted(footers, key=lambda x: x[0])),
+        ]
+        num_migrated = len(furniture.children)
+        furniture.children = []
+        return num_migrated
+
+    def _repair_referenced_orphans(self) -> int:
+        """Add orphaned captions, footnotes and references to the children of their referencing parent.
+
+        Only orphans whose parent references them via ``captions``, ``footnotes`` or ``references``
+        are repaired, as this is where they unambiguously belong.
+
+        :return: The number of repaired orphans.
+        """
+        num_repaired = 0
+        for node in self._iterate_all_nodes():
+            if not isinstance(node, FloatingItem):
+                continue
+            node_ref = node.get_ref()
+            for ref in [*node.captions, *node.footnotes, *node.references]:
+                try:
+                    item = ref.resolve(doc=self)
+                except (IndexError, AttributeError):
+                    continue
+                if item.parent == node_ref and ref not in node.children:
+                    node.children.append(ref)
+                    num_repaired += 1
+        return num_repaired
+
+    def _migrate_non_list_item_list_children(self) -> int:
+        """Wrap each non-ListItem child of a ListGroup into a new, empty ListItem.
+
+        The child keeps its position in the list, e.g. a list directly nested in a list becomes a
+        sublist of a new list item. Children whose parent does not point back to the list are skipped.
+
+        :return: The number of wrapped children.
+        """
+        to_wrap: list[tuple[ListGroup, NodeItem]] = []
+        for node in self._iterate_all_nodes():
+            if isinstance(node, ListGroup):
+                for ref in node.children:
+                    child = ref.resolve(doc=self)
+                    if not isinstance(child, ListItem) and child.parent == node.get_ref():
+                        to_wrap.append((node, child))
+
+        for list_group, child in to_wrap:
+            list_item = ListItem(
+                self_ref="#",
+                text="",
+                orig="",
+                marker="",
+                content_layer=child.content_layer,
+            )
+            item_ref = self._append_item(item=list_item, parent_ref=list_group.get_ref())
+            list_group.children.insert(list_group.children.index(child.get_ref()), item_ref)
+            self._move_subtree(old_subroot=child, new_subroot=list_item)
+        return len(to_wrap)
+
+    def _remove_empty_groups(self) -> int:
+        """Remove groups without children, whether listed by their parent or not.
+
+        Groups still claimed as parent by some item (an orphan) are kept. As a removal can make
+        another group removable, this is repeated until no removable group is left.
+
+        :return: The number of removed groups.
+        """
+        num_removed = 0
+        while True:
+            claimed = {node.parent.cref for node in self._iterate_all_nodes() if node.parent is not None}
+            refs = [
+                group.get_ref()
+                for group in self.groups
+                if group.parent is not None and not group.children and group.self_ref not in claimed
+            ]
+            if not refs:
+                return num_removed
+
+            lookup: dict[str, dict[int, int]] = {"groups": {int(ref.cref.split("/")[2]): -1 for ref in refs}}
+            for index in sorted(lookup["groups"], reverse=True):
+                del self.groups[index]
+            for node in self._iterate_all_nodes():
+                self._update_node_with_lookup(node=node, refs_to_be_deleted=refs, lookup=lookup)
+            num_removed += len(refs)
+
     class _KVMigrData(BaseModel):
         value_crefs: list[str] = []
         key_cell: GraphCell = GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="", orig="")
@@ -496,7 +620,7 @@ class DoclingDocument(BaseModel):
             return False  # TODO: can normalize and compare but needs page size
         return prov1.bbox.intersection_over_union(other=prov2.bbox, eps=0.0) > iou_threshold
 
-    def _build_prov_index(self, kvi: KeyValueItem, pos_by_cell_id: dict[int, int]) -> dict[str, Optional[NodeItem]]:
+    def _build_prov_index(self, kvi: KeyValueItem, pos_by_cell_id: dict[int, int]) -> dict[str, NodeItem | None]:
         visited: set[str] = set()
         prov_index: dict[str, NodeItem | None] = {}
         text_index: dict[str, str | None] = {}
@@ -798,7 +922,7 @@ class DoclingDocument(BaseModel):
     # Public Manipulation methods
     # ---------------------------
 
-    def append_child_item(self, *, child: NodeItem, parent: Optional[NodeItem] = None) -> None:
+    def append_child_item(self, *, child: NodeItem, parent: NodeItem | None = None) -> None:
         """Adds an item."""
         if len(child.children) > 0:
             raise ValueError("Can not append a child with children")
@@ -1080,7 +1204,10 @@ class DoclingDocument(BaseModel):
                 _logger.debug(f"deleting item in doc for {item_label} for {item_index}")
                 del self.__getattribute__(item_label)[item_index]
 
-        self._update_breadth_first_with_lookup(node=self.body, refs_to_be_deleted=refs, lookup=lookup)
+        # Update all nodes, not only those reachable from body via children: orphaned items
+        # (e.g. captions whose parent does not list them as children) must be renumbered too
+        for node in self._iterate_all_nodes():
+            self._update_node_with_lookup(node=node, refs_to_be_deleted=refs, lookup=lookup)
 
     # Update the references
     def _update_ref_with_lookup(self, item_label: str, item_index: int, lookup: dict[str, dict[int, int]]) -> RefItem:
@@ -1118,13 +1245,32 @@ class DoclingDocument(BaseModel):
 
         return new_refitems
 
-    def _update_breadth_first_with_lookup(
+    def _iterate_all_nodes(self) -> Iterable[NodeItem]:
+        """Iterate over body, furniture and all items, regardless of tree reachability."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            furniture = self.furniture
+        yield self.body
+        yield furniture
+        for item_list in (
+            self.groups,
+            self.texts,
+            self.pictures,
+            self.tables,
+            self.key_value_items,
+            self.form_items,
+            self.field_regions,
+            self.field_items,
+        ):
+            yield from item_list
+
+    def _update_node_with_lookup(
         self,
         node: NodeItem,
         refs_to_be_deleted: list[RefItem],
         lookup: dict[str, dict[int, int]],
     ):
-        """Update breadth first with lookup."""
+        """Update the references of a single node with lookup."""
         # Update the comments references on any DocItem
         if isinstance(node, DocItem):
             node.comments = [ref_item for ref_item in node.comments if ref_item not in refs_to_be_deleted]
@@ -1158,6 +1304,18 @@ class DoclingDocument(BaseModel):
                             lookup=lookup,
                         )
 
+        # Update the item references of key-value and form graph cells
+        if isinstance(node, KeyValueItem | FormItem):
+            for graph_cell in node.graph.cells:
+                if graph_cell.item_ref is None or len(path := graph_cell.item_ref._split_ref_to_path()) != 3:
+                    continue
+                if int(path[2]) in lookup.get(path[1], {}):  # the referenced item was deleted
+                    graph_cell.item_ref = None
+                else:
+                    graph_cell.item_ref = self._update_ref_with_lookup(
+                        item_label=path[1], item_index=int(path[2]), lookup=lookup
+                    )
+
         # Update the self_ref reference
         if node.parent is not None:
             path = node.parent._split_ref_to_path()
@@ -1177,10 +1335,6 @@ class DoclingDocument(BaseModel):
             refs_to_be_deleted=refs_to_be_deleted,
             lookup=lookup,
         )
-
-        for i, child_ref in enumerate(node.children):
-            node = child_ref.resolve(self)
-            self._update_breadth_first_with_lookup(node=node, refs_to_be_deleted=refs_to_be_deleted, lookup=lookup)
 
     def _shift_up(self, *, old_subroot: NodeItem) -> None:
         """Move a subtree up in the document tree, removing the old subroot.
@@ -1238,7 +1392,7 @@ class DoclingDocument(BaseModel):
         # link old subroot => new subroot
         old_subroot.parent = new_subroot.get_ref()
 
-    def _get_heading_level(self, node: NodeItem) -> Optional[int]:
+    def _get_heading_level(self, node: NodeItem) -> int | None:
         """Get the level of a node if it has heading semantics (TitleItem, SectionHeaderItem or root), else None."""
         if isinstance(node, TitleItem):
             return 0
@@ -1260,8 +1414,8 @@ class DoclingDocument(BaseModel):
 
     def _hierarchize(self):
         """Structure the document's titles and headings into an explicit hierarchy based on their levels."""
-        section_root_by_level: dict[int, Union[TitleItem, SectionHeaderItem]] = {-1: self.body}
-        resume_node: Optional[NodeItem] = self.body
+        section_root_by_level: dict[int, TitleItem | SectionHeaderItem] = {-1: self.body}
+        resume_node: NodeItem | None = self.body
 
         while resume_node:
             for item, _ in self.iterate_items(
@@ -1314,7 +1468,7 @@ class DoclingDocument(BaseModel):
 
     def _flatten(self):
         """Flatten the document's titles and headings into a single level."""
-        resume_node: Optional[NodeItem] = self.body
+        resume_node: NodeItem | None = self.body
 
         while resume_node:
             for item, _ in self.iterate_items(
@@ -1355,9 +1509,9 @@ class DoclingDocument(BaseModel):
 
     def add_list_group(
         self,
-        name: Optional[str] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
+        name: str | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
     ) -> ListGroup:
         """add_list_group."""
         _parent = parent or self.body
@@ -1375,9 +1529,9 @@ class DoclingDocument(BaseModel):
     @deprecated("Use add_list_group() instead.")
     def add_ordered_list(
         self,
-        name: Optional[str] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
+        name: str | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
     ) -> GroupItem:
         """add_ordered_list."""
         return self.add_list_group(
@@ -1389,9 +1543,9 @@ class DoclingDocument(BaseModel):
     @deprecated("Use add_list_group() instead.")
     def add_unordered_list(
         self,
-        name: Optional[str] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
+        name: str | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
     ) -> GroupItem:
         """add_unordered_list."""
         return self.add_list_group(
@@ -1402,9 +1556,9 @@ class DoclingDocument(BaseModel):
 
     def add_inline_group(
         self,
-        name: Optional[str] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
+        name: str | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
     ) -> InlineGroup:
         """Add an inline group, whose children are runs of one visual line of text.
 
@@ -1429,10 +1583,10 @@ class DoclingDocument(BaseModel):
 
     def add_group(
         self,
-        label: Optional[GroupLabel] = None,
-        name: Optional[str] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
+        label: GroupLabel | None = None,
+        name: str | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
     ) -> GroupItem:
         """add_group.
 
@@ -1477,15 +1631,15 @@ class DoclingDocument(BaseModel):
         self,
         text: str,
         enumerated: bool = False,
-        marker: Optional[str] = None,
-        orig: Optional[str] = None,
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        marker: str | None = None,
+        orig: str | None = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         *,
-        source: Optional[SourceType] = None,
+        source: SourceType | None = None,
     ):
         """add_list_item.
 
@@ -1534,14 +1688,14 @@ class DoclingDocument(BaseModel):
         self,
         label: DocItemLabel,
         text: str,
-        orig: Optional[str] = None,
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        orig: str | None = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         *,
-        source: Optional[SourceType] = None,
+        source: SourceType | None = None,
         **kwargs: Any,
     ):
         """add_text.
@@ -1674,10 +1828,10 @@ class DoclingDocument(BaseModel):
         self,
         *,
         text: str,
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
-        targets: Optional[list[Union[DocItem, tuple[DocItem, tuple[int, int]]]]] = None,
-        source: Optional[SourceType] = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
+        targets: list[DocItem | tuple[DocItem, tuple[int, int]]] | None = None,
+        source: SourceType | None = None,
     ):
         """Adds a comment to the document, assigning it to the given targets.
 
@@ -1707,14 +1861,14 @@ class DoclingDocument(BaseModel):
     def add_table(
         self,
         data: TableData,
-        caption: Optional[Union[TextItem, RefItem]] = None,  # This is not cool yet.
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
+        caption: TextItem | RefItem | None = None,  # This is not cool yet.
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
         label: DocItemLabel = DocItemLabel.TABLE,
-        content_layer: Optional[ContentLayer] = None,
-        annotations: Optional[list[TableAnnotationType]] = None,
+        content_layer: ContentLayer | None = None,
+        annotations: list[TableAnnotationType] | None = None,
         *,
-        source: Optional[SourceType] = None,
+        source: SourceType | None = None,
     ):
         """add_table.
 
@@ -1755,14 +1909,14 @@ class DoclingDocument(BaseModel):
 
     def add_picture(
         self,
-        annotations: Optional[list[PictureDataType]] = None,
-        image: Optional[ImageRef] = None,
-        caption: Optional[Union[TextItem, RefItem]] = None,
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
+        annotations: list[PictureDataType] | None = None,
+        image: ImageRef | None = None,
+        caption: TextItem | RefItem | None = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
         *,
-        source: Optional[SourceType] = None,
+        source: SourceType | None = None,
     ):
         """add_picture.
 
@@ -1802,14 +1956,14 @@ class DoclingDocument(BaseModel):
     def add_title(
         self,
         text: str,
-        orig: Optional[str] = None,
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        orig: str | None = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         *,
-        source: Optional[SourceType] = None,
+        source: SourceType | None = None,
     ):
         """add_title.
 
@@ -1850,16 +2004,16 @@ class DoclingDocument(BaseModel):
     def add_code(
         self,
         text: str,
-        code_language: Optional[CodeLanguageLabel] = None,
-        orig: Optional[str] = None,
-        caption: Optional[Union[TextItem, RefItem]] = None,
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        code_language: CodeLanguageLabel | None = None,
+        orig: str | None = None,
+        caption: TextItem | RefItem | None = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         *,
-        source: Optional[SourceType] = None,
+        source: SourceType | None = None,
     ):
         """add_code.
 
@@ -1907,14 +2061,14 @@ class DoclingDocument(BaseModel):
     def add_formula(
         self,
         text: str,
-        orig: Optional[str] = None,
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        orig: str | None = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         *,
-        source: Optional[SourceType] = None,
+        source: SourceType | None = None,
     ):
         """add_formula.
 
@@ -1955,15 +2109,15 @@ class DoclingDocument(BaseModel):
     def add_heading(
         self,
         text: str,
-        orig: Optional[str] = None,
+        orig: str | None = None,
         level: LevelNumber = 1,
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         *,
-        source: Optional[SourceType] = None,
+        source: SourceType | None = None,
     ):
         """add_heading.
 
@@ -2006,10 +2160,10 @@ class DoclingDocument(BaseModel):
     def add_key_values(
         self,
         graph: GraphData,
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
         *,
-        source: Optional[SourceType] = None,
+        source: SourceType | None = None,
     ):
         """add_key_values.
 
@@ -2041,10 +2195,10 @@ class DoclingDocument(BaseModel):
     def add_form(
         self,
         graph: GraphData,
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
         *,
-        source: Optional[SourceType] = None,
+        source: SourceType | None = None,
     ):
         """add_form.
 
@@ -2075,10 +2229,10 @@ class DoclingDocument(BaseModel):
 
     def add_field_region(
         self,
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
         *,
-        source: Optional[SourceType] = None,
+        source: SourceType | None = None,
     ) -> FieldRegionItem:
         """add_field_region.
 
@@ -2108,15 +2262,15 @@ class DoclingDocument(BaseModel):
     def add_field_heading(
         self,
         text: str,
-        orig: Optional[str] = None,
+        orig: str | None = None,
         level: LevelNumber = 1,
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         *,
-        source: Optional[SourceType] = None,
+        source: SourceType | None = None,
     ):
         """add_kv_heading.
 
@@ -2161,11 +2315,11 @@ class DoclingDocument(BaseModel):
 
     def add_field_item(
         self,
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
         *,
-        source: Optional[SourceType] = None,
+        source: SourceType | None = None,
     ) -> FieldItem:
         """add_kv_entry."""
         _parent = parent or self.body
@@ -2188,14 +2342,14 @@ class DoclingDocument(BaseModel):
     def add_field_key(
         self,
         text: str,
-        orig: Optional[str] = None,
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        orig: str | None = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         *,
-        source: Optional[SourceType] = None,
+        source: SourceType | None = None,
     ):
         """add_field_key.
 
@@ -2224,15 +2378,15 @@ class DoclingDocument(BaseModel):
     def add_field_value(
         self,
         text: str,
-        orig: Optional[str] = None,
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
-        kind: Optional[typing.Literal["read_only", "fillable"]] = "read_only",
+        orig: str | None = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
+        kind: typing.Literal["read_only", "fillable"] | None = "read_only",
         *,
-        source: Optional[SourceType] = None,
+        source: SourceType | None = None,
     ):
         """add_field_value.
 
@@ -2279,14 +2433,14 @@ class DoclingDocument(BaseModel):
     def add_field_hint(
         self,
         text: str,
-        orig: Optional[str] = None,
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        orig: str | None = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         *,
-        source: Optional[SourceType] = None,
+        source: SourceType | None = None,
     ):
         """add_field_hint.
 
@@ -2314,14 +2468,14 @@ class DoclingDocument(BaseModel):
     def add_marker(
         self,
         text: str,
-        orig: Optional[str] = None,
-        prov: Optional[ProvenanceItem] = None,
-        parent: Optional[NodeItem] = None,
-        content_layer: Optional[ContentLayer] = None,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        orig: str | None = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         *,
-        source: Optional[SourceType] = None,
+        source: SourceType | None = None,
     ):
         """add_marker.
 
@@ -2373,7 +2527,7 @@ class DoclingDocument(BaseModel):
         item: NodeItem,
         stack: list[int],
         after: bool,
-        created_parent: Optional[bool] = False,
+        created_parent: bool | None = False,
     ) -> None:
         """Insert item into the document structure at the specified stack and handle errors."""
         # Ensure the item has a parent reference
@@ -2398,8 +2552,8 @@ class DoclingDocument(BaseModel):
     def insert_list_group(
         self,
         sibling: NodeItem,
-        name: Optional[str] = None,
-        content_layer: Optional[ContentLayer] = None,
+        name: str | None = None,
+        content_layer: ContentLayer | None = None,
         after: bool = True,
     ) -> ListGroup:
         """Creates a new ListGroup item and inserts it into the document.
@@ -2428,8 +2582,8 @@ class DoclingDocument(BaseModel):
     def insert_inline_group(
         self,
         sibling: NodeItem,
-        name: Optional[str] = None,
-        content_layer: Optional[ContentLayer] = None,
+        name: str | None = None,
+        content_layer: ContentLayer | None = None,
         after: bool = True,
     ) -> InlineGroup:
         """Creates a new InlineGroup item and inserts it into the document.
@@ -2459,9 +2613,9 @@ class DoclingDocument(BaseModel):
     def insert_group(
         self,
         sibling: NodeItem,
-        label: Optional[GroupLabel] = None,
-        name: Optional[str] = None,
-        content_layer: Optional[ContentLayer] = None,
+        label: GroupLabel | None = None,
+        name: str | None = None,
+        content_layer: ContentLayer | None = None,
         after: bool = True,
     ) -> GroupItem:
         """Creates a new GroupItem item and inserts it into the document.
@@ -2511,12 +2665,12 @@ class DoclingDocument(BaseModel):
         sibling: NodeItem,
         text: str,
         enumerated: bool = False,
-        marker: Optional[str] = None,
-        orig: Optional[str] = None,
-        prov: Optional[ProvenanceItem] = None,
-        content_layer: Optional[ContentLayer] = None,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        marker: str | None = None,
+        orig: str | None = None,
+        prov: ProvenanceItem | None = None,
+        content_layer: ContentLayer | None = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         after: bool = True,
     ) -> ListItem:
         """Creates a new ListItem item and inserts it into the document.
@@ -2584,11 +2738,11 @@ class DoclingDocument(BaseModel):
         sibling: NodeItem,
         label: DocItemLabel,
         text: str,
-        orig: Optional[str] = None,
-        prov: Optional[ProvenanceItem] = None,
-        content_layer: Optional[ContentLayer] = None,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        orig: str | None = None,
+        prov: ProvenanceItem | None = None,
+        content_layer: ContentLayer | None = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         after: bool = True,
     ) -> TextItem:
         """Creates a new TextItem item and inserts it into the document.
@@ -2696,11 +2850,11 @@ class DoclingDocument(BaseModel):
         self,
         sibling: NodeItem,
         data: TableData,
-        caption: Optional[Union[TextItem, RefItem]] = None,
-        prov: Optional[ProvenanceItem] = None,
+        caption: TextItem | RefItem | None = None,
+        prov: ProvenanceItem | None = None,
         label: DocItemLabel = DocItemLabel.TABLE,
-        content_layer: Optional[ContentLayer] = None,
-        annotations: Optional[list[TableAnnotationType]] = None,
+        content_layer: ContentLayer | None = None,
+        annotations: list[TableAnnotationType] | None = None,
         after: bool = True,
     ) -> TableItem:
         """Creates a new TableItem item and inserts it into the document.
@@ -2742,11 +2896,11 @@ class DoclingDocument(BaseModel):
     def insert_picture(
         self,
         sibling: NodeItem,
-        annotations: Optional[list[PictureDataType]] = None,
-        image: Optional[ImageRef] = None,
-        caption: Optional[Union[TextItem, RefItem]] = None,
-        prov: Optional[ProvenanceItem] = None,
-        content_layer: Optional[ContentLayer] = None,
+        annotations: list[PictureDataType] | None = None,
+        image: ImageRef | None = None,
+        caption: TextItem | RefItem | None = None,
+        prov: ProvenanceItem | None = None,
+        content_layer: ContentLayer | None = None,
         after: bool = True,
     ) -> PictureItem:
         """Creates a new PictureItem item and inserts it into the document.
@@ -2788,11 +2942,11 @@ class DoclingDocument(BaseModel):
         self,
         sibling: NodeItem,
         text: str,
-        orig: Optional[str] = None,
-        prov: Optional[ProvenanceItem] = None,
-        content_layer: Optional[ContentLayer] = None,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        orig: str | None = None,
+        prov: ProvenanceItem | None = None,
+        content_layer: ContentLayer | None = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         after: bool = True,
     ) -> TitleItem:
         """Creates a new TitleItem item and inserts it into the document.
@@ -2837,13 +2991,13 @@ class DoclingDocument(BaseModel):
         self,
         sibling: NodeItem,
         text: str,
-        code_language: Optional[CodeLanguageLabel] = None,
-        orig: Optional[str] = None,
-        caption: Optional[Union[TextItem, RefItem]] = None,
-        prov: Optional[ProvenanceItem] = None,
-        content_layer: Optional[ContentLayer] = None,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        code_language: CodeLanguageLabel | None = None,
+        orig: str | None = None,
+        caption: TextItem | RefItem | None = None,
+        prov: ProvenanceItem | None = None,
+        content_layer: ContentLayer | None = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         after: bool = True,
     ) -> CodeItem:
         """Creates a new CodeItem item and inserts it into the document.
@@ -2894,11 +3048,11 @@ class DoclingDocument(BaseModel):
         self,
         sibling: NodeItem,
         text: str,
-        orig: Optional[str] = None,
-        prov: Optional[ProvenanceItem] = None,
-        content_layer: Optional[ContentLayer] = None,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        orig: str | None = None,
+        prov: ProvenanceItem | None = None,
+        content_layer: ContentLayer | None = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         after: bool = True,
     ) -> FormulaItem:
         """Creates a new FormulaItem item and inserts it into the document.
@@ -2943,12 +3097,12 @@ class DoclingDocument(BaseModel):
         self,
         sibling: NodeItem,
         text: str,
-        orig: Optional[str] = None,
+        orig: str | None = None,
         level: LevelNumber = 1,
-        prov: Optional[ProvenanceItem] = None,
-        content_layer: Optional[ContentLayer] = None,
-        formatting: Optional[Formatting] = None,
-        hyperlink: Optional[Union[AnyUrl, Path]] = None,
+        prov: ProvenanceItem | None = None,
+        content_layer: ContentLayer | None = None,
+        formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
         after: bool = True,
     ) -> SectionHeaderItem:
         """Creates a new SectionHeaderItem item and inserts it into the document.
@@ -2995,7 +3149,7 @@ class DoclingDocument(BaseModel):
         self,
         sibling: NodeItem,
         graph: GraphData,
-        prov: Optional[ProvenanceItem] = None,
+        prov: ProvenanceItem | None = None,
         after: bool = True,
     ) -> KeyValueItem:
         """Creates a new KeyValueItem item and inserts it into the document.
@@ -3024,7 +3178,7 @@ class DoclingDocument(BaseModel):
         self,
         sibling: NodeItem,
         graph: GraphData,
-        prov: Optional[ProvenanceItem] = None,
+        prov: ProvenanceItem | None = None,
         after: bool = True,
     ) -> FormItem:
         """Creates a new FormItem item and inserts it into the document.
@@ -3176,7 +3330,7 @@ class DoclingDocument(BaseModel):
     def add_document(
         self,
         doc: "DoclingDocument",
-        parent: Optional[NodeItem] = None,
+        parent: NodeItem | None = None,
     ) -> None:
         """Adds the content from the body of a DoclingDocument to this document under a specific parent.
 
@@ -3193,7 +3347,7 @@ class DoclingDocument(BaseModel):
         self,
         node_items: list[NodeItem],
         doc: "DoclingDocument",
-        parent: Optional[NodeItem] = None,
+        parent: NodeItem | None = None,
     ) -> None:
         """Adds multiple NodeItems and their children under a parent in this document.
 
@@ -3310,12 +3464,45 @@ class DoclingDocument(BaseModel):
         """num_pages."""
         return len(self.pages.values())
 
-    def validate_tree(self, root: NodeItem, raise_on_error: bool = False) -> bool:
-        """validate_tree."""
+    def validate_tree(
+        self,
+        root: NodeItem,
+        raise_on_error: bool = False,
+        _visited: set[str] | None = None,
+    ) -> bool:
+        """Validate that the subtree under `root` is a consistent tree.
+
+        Every child must point back to its parent and be reachable through exactly one
+        reference. The latter keeps the traversal linear, since a node listed more than
+        once would otherwise be walked once per reference (exponential for nested repeats).
+
+        Args:
+            root: The node whose subtree is validated.
+            raise_on_error: Raise a `ValueError` instead of returning `False`.
+            _visited: Internal. Refs of the nodes already reached in this traversal.
+
+        Returns:
+            True if the subtree is a valid tree, False otherwise.
+
+        Raises:
+            ValueError: If the subtree is invalid and `raise_on_error` is set.
+        """
         # TODO add check if heading levels conflict with hierarchy (e.g. level-1 heading with level-2 parent)
+        visited = _visited if _visited is not None else {root.self_ref}
         for child_ref in root.children:
+            if child_ref.cref in visited:
+                if raise_on_error:
+                    raise ValueError(
+                        f"Document hierarchy is inconsistent. {root.self_ref} references {child_ref.cref}, "
+                        "which is already reachable through another reference"
+                    )
+                return False
+            visited.add(child_ref.cref)
+
             child = child_ref.resolve(self)
-            if child.parent.resolve(self) != root or not self.validate_tree(child, raise_on_error=raise_on_error):
+            if child.parent.resolve(self) != root or not self.validate_tree(
+                child, raise_on_error=raise_on_error, _visited=visited
+            ):
                 if raise_on_error:
                     raise ValueError(
                         f"Document hierarchy is inconsistent. {root.self_ref} has child {child.self_ref} "
@@ -3325,9 +3512,16 @@ class DoclingDocument(BaseModel):
 
         if isinstance(root, TableItem):
             root_children_crefs = {child.cref for child in root.children}
+            seen_cell_crefs: set[str] = set()
             for cell in root.data.table_cells:
-                if isinstance(cell, RichTableCell) and (
-                    (par_ref := cell.ref.resolve(self).parent) is None
+                if not isinstance(cell, RichTableCell):
+                    continue
+                # a rich cell owns its subtree: sharing it between cells would multiply serialization work
+                is_shared = cell.ref.cref in seen_cell_crefs
+                seen_cell_crefs.add(cell.ref.cref)
+                if (
+                    is_shared
+                    or (par_ref := cell.ref.resolve(self).parent) is None
                     or par_ref.resolve(self) != root
                     or cell.ref.cref not in root_children_crefs
                 ):
@@ -3342,11 +3536,11 @@ class DoclingDocument(BaseModel):
 
     def iterate_items(
         self,
-        root: Optional[NodeItem] = None,
+        root: NodeItem | None = None,
         with_groups: bool = False,
         traverse_pictures: bool = False,
-        page_no: Optional[int] = None,
-        included_content_layers: Optional[set[ContentLayer]] = None,
+        page_no: int | None = None,
+        included_content_layers: set[ContentLayer] | None = None,
         _level: int = 0,  # deprecated
     ) -> typing.Iterable[tuple[NodeItem, int]]:  # tuple of node and level
         """Iterate elements with level."""
@@ -3361,12 +3555,12 @@ class DoclingDocument(BaseModel):
 
     def _iterate_items_with_stack(
         self,
-        root: Optional[NodeItem] = None,
+        root: NodeItem | None = None,
         with_groups: bool = False,
         traverse_pictures: bool = False,
-        page_nrs: Optional[set[int]] = None,
-        included_content_layers: Optional[set[ContentLayer]] = None,
-        _stack: Optional[list[int]] = None,
+        page_nrs: set[int] | None = None,
+        included_content_layers: set[ContentLayer] | None = None,
+        _stack: list[int] | None = None,
     ) -> typing.Iterable[tuple[NodeItem, list[int]]]:  # tuple of node and level
         """Iterate elements with stack."""
         my_layers = included_content_layers if included_content_layers is not None else DEFAULT_CONTENT_LAYERS
@@ -3427,6 +3621,30 @@ class DoclingDocument(BaseModel):
                 if item.image is not None and item.image._pil is not None:
                     item.image._pil.close()
 
+    def load_local_images(self, base_dir: Path | None = None) -> None:
+        """Read all images referenced by a local path into memory.
+
+        Images of items and pages may reference a local file, either as a
+        ``file://`` URI or as a filesystem path. Since these paths come from the
+        document content, reading them is disabled by default (see
+        ``settings.allow_image_file_uri``). Calling this method is an explicit
+        opt-in for a trusted document: the images are read now and kept in memory,
+        so later exports do not access these paths again.
+
+        Args:
+            base_dir: Directory to resolve relative paths against; defaults to the
+                current working directory. Absolute paths are used as they are.
+
+        Raises:
+            ValueError: If a referenced path is not a regular file or exceeds
+                ``settings.max_image_decoded_size``.
+        """
+        items: list[FloatingItem] = [*self.pictures, *self.tables, *self.key_value_items, *self.form_items]
+        image_refs = [item.image for item in items if item.image is not None]
+        image_refs += [page.image for page in self.pages.values() if page.image is not None]
+        for image_ref in image_refs:
+            image_ref._load_local_image(base_dir=base_dir)
+
     def _list_images_on_disk(self) -> list[Path]:
         """List all images on disk."""
         result: list[Path] = []
@@ -3456,14 +3674,10 @@ class DoclingDocument(BaseModel):
 
         for ix, (item, level) in enumerate(result.iterate_items(with_groups=True)):
             if isinstance(item, PictureItem):
-                if item.image is not None:
-                    if isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "file":
-                        assert isinstance(item.image.uri.path, str)
-                        tmp_image = PILImage.open(str(unquote(item.image.uri.path)))
-                        item.image = ImageRef.from_pil(tmp_image, dpi=item.image.dpi)
-
-                    elif isinstance(item.image.uri, Path):
-                        tmp_image = PILImage.open(str(item.image.uri))
+                if item.image is not None and item.image._local_path() is not None:
+                    # go through pil_image so local reads honor the same settings gate
+                    tmp_image = item.image.pil_image
+                    if tmp_image is not None:
                         item.image = ImageRef.from_pil(tmp_image, dpi=item.image.dpi)
 
         return result
@@ -3472,29 +3686,41 @@ class DoclingDocument(BaseModel):
     def _save_image_and_resolve_uri(
         img: PILImage.Image,
         loc_path: Path,
-        reference_path: Optional[Path],
-    ) -> Union[AnyUrl, Path]:
+        reference_path: Path | None,
+        uri_prefix: str | None = None,
+    ) -> AnyUrl | Path:
         """Save *img* to *loc_path* and return the URI to store on the ImageRef.
 
         Uses a BytesIO intermediate buffer so that the write is compatible with
         UPath remote backends (PIL cannot write directly to non-local paths).
-        For remote paths the URI is returned as an absolute AnyUrl string; for
-        local paths it is returned relative to *reference_path* when available,
-        or as the absolute *loc_path* when *reference_path* is None.
+        When *uri_prefix* is provided, the returned URI is *uri_prefix* joined
+        with the saved image's file name, yielding a portable reference that is
+        independent of the local filesystem layout. Otherwise, for remote paths
+        the URI is returned as an absolute AnyUrl string; for local paths it is
+        returned relative to *reference_path* when available, or as the absolute
+        *loc_path* when *reference_path* is None.
 
         Args:
             img: The PIL image to save.
             loc_path: Destination path (local or remote UPath).
             reference_path: Base path used to compute a relative URI for local
                 storage. Pass ``None`` to store the absolute path instead.
+            uri_prefix: Optional prefix prepended to the saved file name to form
+                a portable URI (e.g. ``"images/"`` or ``"https://cdn/assets/"``).
 
         Returns:
-            An AnyUrl for remote paths, or a Path (relative or absolute) for local paths.
+            An AnyUrl for remote paths or URL-scheme prefixes, or a Path
+            (relative or absolute) for local paths.
         """
         buf = BytesIO()
-        img.save(buf, format="PNG")
+        _normalize_image_for_png(img).save(buf, format="PNG")
         loc_path.write_bytes(buf.getvalue())
 
+        if uri_prefix is not None:
+            combined = f"{uri_prefix}{loc_path.name}"
+            if "://" in uri_prefix:
+                return AnyUrl(combined)
+            return Path(combined)
         if is_remote_path(loc_path) or is_remote_path(reference_path):
             return AnyUrl(str(loc_path))
         if reference_path is not None:
@@ -3504,9 +3730,10 @@ class DoclingDocument(BaseModel):
     def _with_pictures_refs(
         self,
         image_dir: Path,
-        page_no: Optional[int],
-        reference_path: Optional[Path] = None,
+        page_no: int | None,
+        reference_path: Path | None = None,
         include_page_images: bool = False,
+        uri_prefix: str | None = None,
     ) -> "DoclingDocument":
         """Document with images as refs.
 
@@ -3516,6 +3743,10 @@ class DoclingDocument(BaseModel):
         When ``include_page_images`` is True, the page images are saved to
         image_dir and referenced through file URIs as well (instead of being
         kept as embedded base64 blobs).
+
+        When ``uri_prefix`` is provided, the stored image URIs are built from
+        it and the saved file name, producing portable references that do not
+        depend on the local filesystem layout.
         """
         result: DoclingDocument = copy.deepcopy(self)
 
@@ -3529,7 +3760,7 @@ class DoclingDocument(BaseModel):
                     hexhash = PictureItem._image_to_hexhash(img)
                     if hexhash is not None:
                         loc_path = image_dir / f"image_{img_count:06}_{hexhash}.png"
-                        obj_path = self._save_image_and_resolve_uri(img, loc_path, reference_path)
+                        obj_path = self._save_image_and_resolve_uri(img, loc_path, reference_path, uri_prefix)
                         if item.image is None:
                             scale = img.size[0] / item.prov[0].bbox.width
                             item.image = ImageRef.from_pil(image=img, dpi=round(72 * scale))
@@ -3549,7 +3780,9 @@ class DoclingDocument(BaseModel):
                 if hexhash is None:
                     continue
                 loc_path = image_dir / f"page_{p_no:06}_{hexhash}.png"
-                page.image.uri = self._save_image_and_resolve_uri(img, loc_path, reference_path)  # type: ignore[assignment]
+                page.image.uri = self._save_image_and_resolve_uri(  # type: ignore[assignment]
+                    img, loc_path, reference_path, uri_prefix
+                )
 
         return result
 
@@ -3597,14 +3830,34 @@ class DoclingDocument(BaseModel):
 
     def save_as_json(
         self,
-        filename: Union[str, Path],
-        artifacts_dir: Optional[Path] = None,
+        filename: str | Path,
+        artifacts_dir: Path | None = None,
         image_mode: ImageRefMode = ImageRefMode.EMBEDDED,
         indent: int = 2,
-        coord_precision: Optional[int] = None,
-        confid_precision: Optional[int] = None,
-    ):
-        """Save as json."""
+        coord_precision: int | None = None,
+        confid_precision: int | None = None,
+        *,
+        ensure_ascii: bool = True,
+        sort_keys: bool = False,
+    ) -> None:
+        """Save the document to a JSON file.
+
+        Args:
+            filename: Output file path.
+            artifacts_dir: Directory for referenced image artifacts. Defaults to a
+                subdirectory next to `filename`.
+            image_mode: How to handle embedded images.
+            indent: Indentation level passed to `json.dumps`.
+            coord_precision: Decimal precision for bounding-box coordinates. If
+                `None`, full precision is used.
+            confid_precision: Decimal precision for confidence scores. If `None`,
+                full precision is used.
+            ensure_ascii: When `True` (the default), non-ASCII characters are
+                escaped as `\\uXXXX` sequences. Set to `False` to write literal
+                Unicode characters.
+            sort_keys: When `True`, object keys are sorted alphabetically,
+                producing deterministic output suitable for diffing.
+        """
         if isinstance(filename, str):
             filename = Path(filename)
         artifacts_dir, reference_path = self._get_output_paths(filename, artifacts_dir)
@@ -3621,14 +3874,21 @@ class DoclingDocument(BaseModel):
         )
 
         out = new_doc.export_to_dict(coord_precision=coord_precision, confid_precision=confid_precision)
-        filename.write_text(json.dumps(out, indent=indent), encoding="utf-8")
+        filename.write_text(
+            json.dumps(out, indent=indent, ensure_ascii=ensure_ascii, sort_keys=sort_keys),
+            encoding="utf-8",
+        )
 
     @classmethod
-    def load_from_json(cls, filename: Union[str, Path]) -> "DoclingDocument":
+    def load_from_json(cls, filename: str | Path, allow_local_images: bool = False) -> "DoclingDocument":
         """load_from_json.
 
         :param filename: The filename to load a saved DoclingDocument from a .json.
         :type filename: Path
+        :param allow_local_images: For trusted documents only: read images referenced
+            by a local path (relative to the file's directory) into memory, see
+            ``load_local_images``.
+        :type allow_local_images: bool
 
         :returns: The loaded DoclingDocument.
         :rtype: DoclingDocument
@@ -3636,16 +3896,19 @@ class DoclingDocument(BaseModel):
         """
         if isinstance(filename, str):
             filename = Path(filename)
-        return cls.model_validate_json(filename.read_text(encoding="utf-8"))
+        doc = cls.model_validate_json(filename.read_text(encoding="utf-8"))
+        if allow_local_images:
+            doc.load_local_images(base_dir=filename.parent)
+        return doc
 
     def save_as_yaml(
         self,
-        filename: Union[str, Path],
-        artifacts_dir: Optional[Path] = None,
+        filename: str | Path,
+        artifacts_dir: Path | None = None,
         image_mode: ImageRefMode = ImageRefMode.EMBEDDED,
         default_flow_style: bool = False,
-        coord_precision: Optional[int] = None,
-        confid_precision: Optional[int] = None,
+        coord_precision: int | None = None,
+        confid_precision: int | None = None,
     ):
         """Save as yaml."""
         if isinstance(filename, str):
@@ -3669,11 +3932,14 @@ class DoclingDocument(BaseModel):
         filename.write_text(stream.getvalue(), encoding="utf-8")
 
     @classmethod
-    def load_from_yaml(cls, filename: Union[str, Path]) -> "DoclingDocument":
+    def load_from_yaml(cls, filename: str | Path, allow_local_images: bool = False) -> "DoclingDocument":
         """load_from_yaml.
 
         Args:
             filename: The filename to load a YAML-serialized DoclingDocument from.
+            allow_local_images: For trusted documents only: read images referenced
+                by a local path (relative to the file's directory) into memory, see
+                ``load_local_images``.
 
         Returns:
             DoclingDocument: the loaded DoclingDocument
@@ -3681,15 +3947,18 @@ class DoclingDocument(BaseModel):
         if isinstance(filename, str):
             filename = Path(filename)
         data = yaml.load(filename.read_text(encoding="utf-8"), Loader=yaml.SafeLoader)
-        return DoclingDocument.model_validate(data)
+        doc = DoclingDocument.model_validate(data)
+        if allow_local_images:
+            doc.load_local_images(base_dir=filename.parent)
+        return doc
 
     def export_to_dict(
         self,
         mode: str = "json",
         by_alias: bool = True,
         exclude_none: bool = True,
-        coord_precision: Optional[int] = None,
-        confid_precision: Optional[int] = None,
+        coord_precision: int | None = None,
+        confid_precision: int | None = None,
     ) -> dict[str, Any]:
         """Export to dict."""
         context = {}
@@ -3703,12 +3972,12 @@ class DoclingDocument(BaseModel):
 
     def save_as_markdown(
         self,
-        filename: Union[str, Path],
-        artifacts_dir: Optional[Path] = None,
+        filename: str | Path,
+        artifacts_dir: Path | None = None,
         delim: str = "\n\n",
         from_element: int = 0,
         to_element: int = sys.maxsize,
-        labels: Optional[set[DocItemLabel]] = None,
+        labels: set[DocItemLabel] | None = None,
         strict_text: bool = False,
         escape_html: bool = True,
         escaping_underscores: bool = True,
@@ -3716,16 +3985,18 @@ class DoclingDocument(BaseModel):
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
         indent: int = 4,
         text_width: int = -1,
-        page_no: Optional[int] = None,
-        included_content_layers: Optional[set[ContentLayer]] = None,
-        page_break_placeholder: Optional[str] = None,
+        page_no: int | None = None,
+        included_content_layers: set[ContentLayer] | None = None,
+        page_break_placeholder: str | None = None,
         include_annotations: bool = True,
         compact_tables: bool = False,
         *,
         enable_chart_tables: bool = True,
         traverse_pictures: bool = False,
         mark_meta: bool = False,
-        use_legacy_annotations: Optional[bool] = None,  # deprecated
+        use_legacy_annotations: bool | None = None,  # deprecated
+        include_picture_classification: bool = True,
+        caption_placement: CaptionPlacement = CaptionPlacement.STANDARD,
     ):
         """Save to markdown."""
         if isinstance(filename, str):
@@ -3758,6 +4029,8 @@ class DoclingDocument(BaseModel):
             traverse_pictures=traverse_pictures,
             use_legacy_annotations=use_legacy_annotations,
             mark_meta=mark_meta,
+            include_picture_classification=include_picture_classification,
+            caption_placement=caption_placement,
         )
 
         filename.write_text(md_out, encoding="utf-8")
@@ -3767,7 +4040,7 @@ class DoclingDocument(BaseModel):
         delim: str = "\n\n",
         from_element: int = 0,
         to_element: int = sys.maxsize,
-        labels: Optional[set[DocItemLabel]] = None,
+        labels: set[DocItemLabel] | None = None,
         strict_text: bool = False,
         escape_html: bool = True,
         escape_underscores: bool = True,
@@ -3776,18 +4049,22 @@ class DoclingDocument(BaseModel):
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
         indent: int = 4,
         text_width: int = -1,
-        page_no: Optional[int] = None,
-        included_content_layers: Optional[set[ContentLayer]] = None,
-        page_break_placeholder: Optional[str] = None,  # e.g. "<!-- page break -->",
+        page_no: int | None = None,
+        included_content_layers: set[ContentLayer] | None = None,
+        page_break_placeholder: str | None = None,  # e.g. "<!-- page break -->",
         include_annotations: bool = True,
         mark_annotations: bool = False,
         compact_tables: bool = False,
         traverse_pictures: bool = False,
+        image_dir: str | Path | None = None,
+        image_uri_prefix: str | None = None,
         *,
-        use_legacy_annotations: Optional[bool] = None,  # deprecated
-        allowed_meta_names: Optional[set[str]] = None,
-        blocked_meta_names: Optional[set[str]] = None,
+        use_legacy_annotations: bool | None = None,  # deprecated
+        allowed_meta_names: set[str] | None = None,
+        blocked_meta_names: set[str] | None = None,
         mark_meta: bool = False,
+        include_picture_classification: bool = True,
+        caption_placement: CaptionPlacement = CaptionPlacement.STANDARD,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -3840,6 +4117,15 @@ class DoclingDocument(BaseModel):
             PDFs processed with full-page OCR, where the layout model places all OCR
             text as children of a top-level PictureItem. (Default value = False).
         :type traverse_pictures: bool = False
+        :param image_dir: Optional directory path where images will be saved when using
+            ImageRefMode.REFERENCED. If provided, images are automatically saved to this
+            directory and referenced in the markdown output. (Default value = None).
+        :type image_dir: Optional[Union[str, Path]] = None
+        :param image_uri_prefix: Optional prefix prepended to each saved image's file name
+            to build a portable image URI in the output (e.g. "images/" or
+            "https://cdn/assets/"). If None, the referenced image path is used as-is, which
+            may be an absolute filesystem path. (Default value = None).
+        :type image_uri_prefix: Optional[str] = None
         :param use_legacy_annotations: bool: Deprecated; legacy annotations considered only when meta not present.
         :type use_legacy_annotations: Optional[bool] = None
         :param mark_meta: bool: Whether to mark meta in the export
@@ -3850,6 +4136,16 @@ class DoclingDocument(BaseModel):
         :type allowed_meta_names: Optional[set[str]] = None
         :param blocked_meta_names: Optional[set[str]]: Meta names to block; takes precedence over allowed_meta_names.
         :type blocked_meta_names: Optional[set[str]] = None
+        :param include_picture_classification: bool: Whether to include the picture
+            classification prediction (the image's predicted class) in the export.
+            (Default value = True).
+        :type include_picture_classification: bool = True
+        :param caption_placement: Where captions go relative to their item: "standard" keeps
+            the per-type order (before tables and pictures, after code and formulas); "layout"
+            places a caption after its item if the caption's bbox center is lower on the page,
+            else before, falling back to "standard" when positions are unavailable.
+            (Default value = CaptionPlacement.STANDARD).
+        :type caption_placement: CaptionPlacement = CaptionPlacement.STANDARD
         """
         from docling_core.transforms.serializer.markdown import (
             MarkdownDocSerializer,
@@ -3865,8 +4161,21 @@ class DoclingDocument(BaseModel):
                 DeprecationWarning,
             )
 
+        if image_dir is not None and image_mode != ImageRefMode.REFERENCED:
+            raise ValueError("`image_dir` requires `image_mode=ImageRefMode.REFERENCED`")
+
+        doc = (
+            self._with_pictures_refs(
+                image_dir=Path(image_dir),
+                page_no=page_no,
+                uri_prefix=image_uri_prefix,
+            )
+            if image_dir is not None
+            else self
+        )
+
         serializer = MarkdownDocSerializer(
-            doc=self,
+            doc=doc,
             params=MarkdownParams(
                 labels=my_labels,
                 layers=my_layers,
@@ -3888,6 +4197,8 @@ class DoclingDocument(BaseModel):
                 mark_annotations=mark_annotations,
                 compact_tables=compact_tables,
                 traverse_pictures=traverse_pictures,
+                include_picture_classification=include_picture_classification,
+                caption_placement=caption_placement,
             ),
         )
         ser_res = serializer.serialize()
@@ -3908,10 +4219,10 @@ class DoclingDocument(BaseModel):
         delim: str = "\n\n",
         from_element: int = 0,
         to_element: int = sys.maxsize,
-        labels: Optional[set[DocItemLabel]] = None,
-        page_no: Optional[int] = None,
-        included_content_layers: Optional[set[ContentLayer]] = None,
-        page_break_placeholder: Optional[str] = None,
+        labels: set[DocItemLabel] | None = None,
+        page_no: int | None = None,
+        included_content_layers: set[ContentLayer] | None = None,
+        page_break_placeholder: str | None = None,
         traverse_pictures: bool = False,
     ) -> str:
         r"""Export to plain text.
@@ -3975,17 +4286,17 @@ class DoclingDocument(BaseModel):
 
     def save_as_html(
         self,
-        filename: Union[str, Path],
-        artifacts_dir: Optional[Path] = None,
+        filename: str | Path,
+        artifacts_dir: Path | None = None,
         from_element: int = 0,
         to_element: int = sys.maxsize,
-        labels: Optional[set[DocItemLabel]] = None,
+        labels: set[DocItemLabel] | None = None,
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
         formula_to_mathml: bool = True,
-        page_no: Optional[int] = None,
+        page_no: int | None = None,
         html_lang: str = "en",
         html_head: str = "null",  # should be deprecated
-        included_content_layers: Optional[set[ContentLayer]] = None,
+        included_content_layers: set[ContentLayer] | None = None,
         split_page_view: bool = False,
         include_annotations: bool = True,
     ):
@@ -4019,8 +4330,8 @@ class DoclingDocument(BaseModel):
     def _get_output_paths(
         self,
         filename: Path,
-        artifacts_dir: Optional[Path] = None,
-    ) -> tuple[Path, Optional[Path]]:
+        artifacts_dir: Path | None = None,
+    ) -> tuple[Path, Path | None]:
         """Resolve output and artifacts directory paths from the given filename.
 
         Both ``Path`` and ``UPath`` objects are accepted since ``UPath`` is ``Path``-compatible for local paths, and remote ``UPath`` objects implement the same interface used here (``with_suffix``, ``with_name``,
@@ -4052,8 +4363,8 @@ class DoclingDocument(BaseModel):
         self,
         artifacts_dir: Path,
         image_mode: ImageRefMode,
-        page_no: Optional[int],
-        reference_path: Optional[Path] = None,
+        page_no: int | None,
+        reference_path: Path | None = None,
         include_page_images: bool = False,
     ):
         new_doc = None
@@ -4076,16 +4387,18 @@ class DoclingDocument(BaseModel):
         self,
         from_element: int = 0,
         to_element: int = sys.maxsize,
-        labels: Optional[set[DocItemLabel]] = None,
+        labels: set[DocItemLabel] | None = None,
         enable_chart_tables: bool = True,
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
         formula_to_mathml: bool = True,
-        page_no: Optional[int] = None,
+        page_no: int | None = None,
         html_lang: str = "en",
         html_head: str = "null",  # should be deprecated ...
-        included_content_layers: Optional[set[ContentLayer]] = None,
+        included_content_layers: set[ContentLayer] | None = None,
         split_page_view: bool = False,
         include_annotations: bool = True,
+        image_dir: str | Path | None = None,
+        image_uri_prefix: str | None = None,
     ) -> str:
         r"""Serialize to HTML."""
         from docling_core.transforms.serializer.html import (
@@ -4119,8 +4432,21 @@ class DoclingDocument(BaseModel):
         if html_head == "null":
             params.html_head = None
 
+        if image_dir is not None and image_mode != ImageRefMode.REFERENCED:
+            raise ValueError("`image_dir` requires `image_mode=ImageRefMode.REFERENCED`")
+
+        doc = (
+            self._with_pictures_refs(
+                image_dir=Path(image_dir),
+                page_no=page_no,
+                uri_prefix=image_uri_prefix,
+            )
+            if image_dir is not None
+            else self
+        )
+
         serializer = HTMLDocSerializer(
-            doc=self,
+            doc=doc,
             params=params,
         )
         ser_res = serializer.serialize()
@@ -4221,7 +4547,7 @@ class DoclingDocument(BaseModel):
 
         doc = DoclingDocument(name=document_name)
 
-        def extract_bounding_box(text_chunk: str) -> Optional[BoundingBox]:
+        def extract_bounding_box(text_chunk: str) -> BoundingBox | None:
             """Extract <loc_...> coords from the chunk, normalized by / 500."""
             coords = re.findall(r"<loc_(\d+)>", text_chunk)
             if len(coords) > 4:
@@ -4241,7 +4567,7 @@ class DoclingDocument(BaseModel):
 
         def extract_caption(
             text_chunk: str,
-        ) -> tuple[Optional[TextItem], Optional[BoundingBox]]:
+        ) -> tuple[TextItem | None, BoundingBox | None]:
             """Extract caption text from the chunk."""
             caption = re.search(r"<caption>(.*?)</caption>", text_chunk)
             if caption is not None:
@@ -4336,8 +4662,8 @@ class DoclingDocument(BaseModel):
             return label
 
         def parse_key_value_item(
-            tokens: str, image: Optional[PILImage.Image] = None
-        ) -> tuple[GraphData, Optional[ProvenanceItem]]:
+            tokens: str, image: PILImage.Image | None = None
+        ) -> tuple[GraphData, ProvenanceItem | None]:
             if image is not None:
                 pg_width = image.width
                 pg_height = image.height
@@ -4426,14 +4752,14 @@ class DoclingDocument(BaseModel):
 
         def _add_text(
             full_chunk: str,
-            bbox: Optional[BoundingBox],
+            bbox: BoundingBox | None,
             pg_width: int,
             pg_height: int,
             page_no: int,
             tag_name: str,
             doc_label: DocItemLabel,
             doc: DoclingDocument,
-            parent: Optional[NodeItem],
+            parent: NodeItem | None,
         ):
             # For everything else, treat as text
             text_content = extract_inner_text(full_chunk)
@@ -4680,15 +5006,19 @@ class DoclingDocument(BaseModel):
                                     ]
                                 )
                                 # legacy annotations:
-                                pic.annotations.append(
-                                    PictureClassificationData(
-                                        provenance="load_from_doctags",
-                                        predicted_classes=[
-                                            # chart_type
-                                            PictureClassificationClass(class_name=image_classification, confidence=1.0)
-                                        ],
+                                with warnings.catch_warnings():
+                                    warnings.simplefilter("ignore", category=DeprecationWarning)
+                                    pic.annotations.append(
+                                        PictureClassificationData(
+                                            provenance="load_from_doctags",
+                                            predicted_classes=[
+                                                # chart_type
+                                                PictureClassificationClass(
+                                                    class_name=image_classification, confidence=1.0
+                                                )
+                                            ],
+                                        )
                                     )
-                                )
                             if table_data is not None:
                                 if pic.meta is None:
                                     pic.meta = PictureMeta()
@@ -4696,7 +5026,9 @@ class DoclingDocument(BaseModel):
                                 # legacy annotations:
                                 # Add chart data as PictureTabularChartData
                                 pd = PictureTabularChartData(chart_data=table_data, title=pic_title)
-                                pic.annotations.append(pd)
+                                with warnings.catch_warnings():
+                                    warnings.simplefilter("ignore", category=DeprecationWarning)
+                                    pic.annotations.append(pd)
 
                 elif tag_name == DocItemLabel.KEY_VALUE_REGION:
                     key_value_data, kv_item_prov = parse_key_value_item(full_chunk, image)
@@ -4762,11 +5094,11 @@ class DoclingDocument(BaseModel):
 
     def save_as_doctags(
         self,
-        filename: Union[str, Path],
+        filename: str | Path,
         delim: str = "",
         from_element: int = 0,
         to_element: int = sys.maxsize,
-        labels: Optional[set[DocItemLabel]] = None,
+        labels: set[DocItemLabel] | None = None,
         xsize: int = 500,
         ysize: int = 500,
         add_location: bool = True,
@@ -4808,7 +5140,7 @@ class DoclingDocument(BaseModel):
         delim: str = "",  # deprecated
         from_element: int = 0,
         to_element: int = sys.maxsize,
-        labels: Optional[set[DocItemLabel]] = None,
+        labels: set[DocItemLabel] | None = None,
         xsize: int = 500,
         ysize: int = 500,
         add_location: bool = True,
@@ -4818,7 +5150,7 @@ class DoclingDocument(BaseModel):
         add_table_cell_location: bool = False,
         add_table_cell_text: bool = True,
         minified: bool = False,
-        pages: Optional[set[int]] = None,
+        pages: set[int] | None = None,
     ) -> str:
         r"""Exports the document content to a DocumentToken format.
 
@@ -4871,42 +5203,94 @@ class DoclingDocument(BaseModel):
 
     def export_to_doclang(
         self,
+        *,
+        add_named_groups: bool = False,
+        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        xsize: int | None = None,
+        ysize: int | None = None,
     ) -> str:
-        """Export to DocLang."""
+        """Export to DocLang.
+
+        Args:
+            add_named_groups: When True, a plain ``GroupItem`` is emitted as a
+                ``<group name="...">`` element instead of being transparent, so
+                the grouping survives a round trip.
+            image_mode: How picture images are included: ``PLACEHOLDER`` emits no
+                picture source, ``REFERENCED`` the pictures' existing image URIs and
+                ``EMBEDDED`` the images as data URIs.
+            xsize: Width of the location coordinate grid (default: DocLang default resolution).
+            ysize: Height of the location coordinate grid (default: DocLang default resolution).
+        """
         from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 
         serializer = DocLangDocSerializer(
             doc=self,
-            params=DocLangParams(),
+            params=DocLangParams(
+                add_named_groups=add_named_groups,
+                image_mode=image_mode,
+                **self._doclang_resolution_kwargs(xsize=xsize, ysize=ysize),
+            ),
         )
         return serializer.serialize().text
 
+    @staticmethod
+    def _doclang_resolution_kwargs(*, xsize: int | None, ysize: int | None) -> dict[str, int]:
+        return {k: v for k, v in (("xsize", xsize), ("ysize", ysize)) if v is not None}
+
     def save_as_doclang(
         self,
-        filename: Union[str, Path],
+        filename: str | Path,
+        *,
+        add_named_groups: bool = False,
+        image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        xsize: int | None = None,
+        ysize: int | None = None,
     ) -> None:
-        """Save the document as DocLang."""
+        """Save the document as DocLang (see ``export_to_doclang`` for the options)."""
         if isinstance(filename, str):
             filename = Path(filename)
-        out = self.export_to_doclang()
+        out = self.export_to_doclang(add_named_groups=add_named_groups, image_mode=image_mode, xsize=xsize, ysize=ysize)
         filename.write_text(f"{out}\n", encoding="utf-8")
 
     def save_as_doclang_archive(
         self,
-        filename: Union[str, Path],
+        filename: str | Path,
         *,
-        artifacts_dir: Optional[Path] = None,
+        artifacts_dir: Path | None = None,
         validate: bool = False,
+        add_named_groups: bool = False,
+        include_namespace: bool = False,
+        image_mode: ImageRefMode = ImageRefMode.REFERENCED,
+        xsize: int | None = None,
+        ysize: int | None = None,
     ) -> None:
         """Save the document as a DocLang OPC archive (``.dclx``).
 
         Picture and page images are always stored outside the markup, under
         ``assets/`` and ``pages/`` in the archive respectively.
+
+        ``image_mode`` controls the picture images: ``REFERENCED`` (default) stores each
+        picture's image (cropped from its page image if it has none of its own) under
+        ``assets/`` and references it from the picture, ``PLACEHOLDER`` stores and
+        references none. ``EMBEDDED`` is not supported, as the archive keeps images
+        outside the markup. Page images are stored in either case.
+
+        ``add_named_groups`` emits plain ``GroupItem``s as ``<group name="...">``
+        elements so the grouping survives a round trip.
+
+        ``xsize`` / ``ysize`` set the location coordinate grid (default: DocLang default resolution).
+
+        ``include_namespace`` declares the DocLang namespace on the root element. It is
+        required for ``validate`` to pass, as the schema only declares the namespaced root.
+        Note that ``validate`` also runs the Schematron rules, which need a Schematron backend
+        to be installed for ``doclang``.
         """
         from doclang import pack
 
         from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 
+        if image_mode not in (ImageRefMode.REFERENCED, ImageRefMode.PLACEHOLDER):
+            raise ValueError(f"Unsupported image_mode for a DocLang archive: {image_mode}")
         if isinstance(filename, str):
             filename = Path(filename)
 
@@ -4916,14 +5300,19 @@ class DoclingDocument(BaseModel):
 
             doc = self._make_copy_with_refmode(
                 artifacts_dir=assets_dir,
-                image_mode=ImageRefMode.REFERENCED,
+                image_mode=image_mode,
                 page_no=None,
                 reference_path=staging_root,
             )
 
             serializer = DocLangDocSerializer(
                 doc=doc,
-                params=DocLangParams(image_mode=ImageRefMode.REFERENCED),
+                params=DocLangParams(
+                    image_mode=image_mode,
+                    add_named_groups=add_named_groups,
+                    include_namespace=include_namespace,
+                    **self._doclang_resolution_kwargs(xsize=xsize, ysize=ysize),
+                ),
             )
             document_path = staging_root / "document.dclg.xml"
             document_path.write_text(f"{serializer.serialize().text}\n", encoding="utf-8")
@@ -4943,7 +5332,7 @@ class DoclingDocument(BaseModel):
                     continue
                 page_path = pages_dir / f"{p_no}.png"
                 page_path.parent.mkdir(parents=True, exist_ok=True)
-                img.save(page_path)
+                _normalize_image_for_png(img).save(page_path)
                 pages[p_no] = page_path
             if pages:
                 pack_kwargs["pages"] = pages
@@ -4963,9 +5352,9 @@ class DoclingDocument(BaseModel):
     @classmethod
     def load_from_doclang_archive(
         cls,
-        filename: Union[str, Path],
+        filename: str | Path,
         *,
-        artifacts_dir: Optional[Path] = None,
+        artifacts_dir: Path | None = None,
         validate: bool = False,
         max_member_size: int = 512 * 1024 * 1024,  # 512 MiB
         max_total_size: int = 2 * 1024 * 1024 * 1024,  # 2 GiB
@@ -5058,12 +5447,15 @@ class DoclingDocument(BaseModel):
             with PILImage.open(resolved) as pil:
                 pil_copy = pil.copy()
             mimetype = mimetypes.guess_type(page_file.name)[0] or "image/png"
-            doc.pages[page_no].image = ImageRef(
+            page_image = ImageRef(
                 mimetype=mimetype,
                 dpi=72,
                 size=Size(width=pil_copy.width, height=pil_copy.height),
                 uri=resolved,
             )
+            # cache the validated image: re-reading the local path later is gated by settings
+            page_image._pil = pil_copy
+            doc.pages[page_no].image = page_image
 
     def _export_to_indented_text(
         self,
@@ -5154,7 +5546,7 @@ class DoclingDocument(BaseModel):
 
         return "\n".join(result)
 
-    def add_page(self, page_no: int, size: Size, image: Optional[ImageRef] = None) -> PageItem:
+    def add_page(self, page_no: int, size: Size, image: ImageRef | None = None) -> PageItem:
         """add_page.
 
         :param page_no: int:
@@ -5172,7 +5564,7 @@ class DoclingDocument(BaseModel):
         show_branch_numbering: bool = False,
         viz_mode: Literal["reading_order", "key_value"] = "reading_order",
         show_cell_id: bool = False,
-    ) -> dict[Optional[int], PILImage.Image]:
+    ) -> dict[int | None, PILImage.Image]:
         """Get visualization of the document as images by page.
 
         :param show_label: Show labels on elements (applies to all visualizers).
@@ -5258,7 +5650,7 @@ class DoclingDocument(BaseModel):
         if not isinstance(texts, list) or not isinstance(groups, list):
             return data
 
-        def resolve_run(child: Any) -> Optional[dict]:
+        def resolve_run(child: Any) -> dict | None:
             """Return the text item dict for an inline run reference, else None."""
             if not isinstance(child, dict):
                 return None
@@ -5360,6 +5752,15 @@ class DoclingDocument(BaseModel):
                     raise ValueError(f"Unknown element encountered: {item}")
         return self
 
+    @model_validator(mode="after")
+    def _validate_total_table_cells(self) -> Self:
+        # all tables are counted, not only those in the tree: serialization dumps every grid in `tables`
+        limit = settings.max_total_table_cells
+        total = sum(max(t.data.num_rows, 0) * max(t.data.num_cols, 0) for t in self.tables)
+        if total > limit:
+            raise ValueError(f"Document tables declare {total} cells in total, exceeding the limit of {limit}")
+        return self
+
     def _normalize_table_children_from_rich_cells(self):
         """Repair missing table child links for already-parented rich table cells."""
         for table in self.tables:
@@ -5388,11 +5789,20 @@ class DoclingDocument(BaseModel):
         return self
 
     @model_validator(mode="after")
+    def _validate_field_items(self) -> Self:
+        """A field item has at most one key (it can have several values)."""
+        for item in self.field_items:
+            num_keys = sum(1 for ref in item.children if ref.resolve(self).label == DocItemLabel.FIELD_KEY)
+            if num_keys > 1:
+                raise ValueError(f"Field item {item.self_ref} has {num_keys} keys, at most one is allowed")
+        return self
+
+    @model_validator(mode="after")
     def validate_misplaced_list_items(self) -> Self:
         """validate_misplaced_list_items."""
         # find list items without list parent, putting successive ones together
         misplaced_list_items: list[list[ListItem]] = []
-        prev: Optional[NodeItem] = None
+        prev: NodeItem | None = None
         for item, _ in self.iterate_items(
             traverse_pictures=True,
             included_content_layers=set(ContentLayer),
@@ -5409,6 +5819,7 @@ class DoclingDocument(BaseModel):
                     misplaced_list_items.append([item])
             prev = item
 
+        # moving relies on each item's parent listing it, which validate_document ensures
         for curr_list_items in reversed(misplaced_list_items):
             # add group
             new_group = ListGroup(self_ref="#")
@@ -5417,22 +5828,9 @@ class DoclingDocument(BaseModel):
                 sibling=curr_list_items[0],
             )
 
-            # delete list items from document (should not be affected by group addition)
-            self.delete_items(node_items=list(curr_list_items))
-
-            # add list items to new group
+            # move the list items into the new group, keeping their refs, fields and children
             for li in curr_list_items:
-                self.add_list_item(
-                    text=li.text,
-                    enumerated=li.enumerated,
-                    marker=li.marker,
-                    orig=li.orig,
-                    prov=li.prov[0] if li.prov else None,
-                    parent=new_group,
-                    content_layer=li.content_layer,
-                    formatting=li.formatting,
-                    hyperlink=li.hyperlink,
-                )
+                self._move_subtree(old_subroot=li, new_subroot=new_group)
         return self
 
     class _DocIndex(BaseModel):
@@ -5449,14 +5847,14 @@ class DoclingDocument(BaseModel):
 
         pages: dict[int, PageItem] = {}
 
-        _body: Optional[GroupItem] = None
+        _body: GroupItem | None = None
         _max_page: int = 0
         _names: list[str] = []
 
         def get_item_list(self, key: str) -> list[NodeItem]:
             return getattr(self, key)
 
-        def index(self, doc: "DoclingDocument", page_nrs: Optional[set[int]] = None) -> None:
+        def index(self, doc: "DoclingDocument", page_nrs: set[int] | None = None) -> None:
             if page_nrs is not None and (unavailable_page_nrs := page_nrs - set(doc.pages.keys())):
                 raise ValueError(f"The following page numbers are not present in the document: {unavailable_page_nrs}")
 
@@ -5573,6 +5971,11 @@ class DoclingDocument(BaseModel):
                             for fn in idx_item.footnotes
                             if fn.cref in orig_ref_to_new_ref
                         ]
+                    if isinstance(idx_item, KeyValueItem | FormItem):
+                        for graph_cell in idx_item.graph.cells:
+                            if graph_cell.item_ref is not None:
+                                mapped_cref = orig_ref_to_new_ref.get(graph_cell.item_ref.cref)
+                                graph_cell.item_ref = RefItem(cref=mapped_cref) if mapped_cref is not None else None
 
             # update pages
             new_max_page = None
@@ -5615,7 +6018,7 @@ class DoclingDocument(BaseModel):
         doc_index.index(doc=self)
         self._update_from_index(doc_index)
 
-    def filter(self, page_nrs: Optional[set[int]] = None) -> "DoclingDocument":
+    def filter(self, page_nrs: set[int] | None = None) -> "DoclingDocument":
         """Create a new document based on the provided filter parameters."""
         doc_index = DoclingDocument._DocIndex()
         doc_index.index(doc=self, page_nrs=page_nrs)
@@ -5644,10 +6047,20 @@ class DoclingDocument(BaseModel):
         def validate_furniture(doc: DoclingDocument):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=DeprecationWarning)
-                has_furniture_children = len(doc.furniture.children) > 0
-            if has_furniture_children:
+                furniture = doc.furniture
+            if furniture.children:
                 _handle(
-                    ValueError(f"Deprecated furniture node {doc.furniture.self_ref} has children"),
+                    ValueError(f"Deprecated furniture node {furniture.self_ref} has children"),
+                )
+
+        def validate_key_value_and_form_items(doc: DoclingDocument):
+            for kv_item in doc.key_value_items:
+                _handle(
+                    ValueError(f"Key-value item {kv_item.self_ref} is to be migrated to a field region"),
+                )
+            for form_item in doc.form_items:
+                _handle(
+                    ValueError(f"Form item {form_item.self_ref} is to be migrated to a field region"),
                 )
 
         def validate_list_group(doc: DoclingDocument, item: ListGroup):
@@ -5676,7 +6089,26 @@ class DoclingDocument(BaseModel):
                     ValueError(f"Group {item.self_ref} has no children"),
                 )
 
+        def validate_orphan(doc: DoclingDocument, item: NodeItem):
+            if item.parent is None:
+                return
+            try:
+                with warnings.catch_warnings():
+                    # the parent may be the deprecated furniture node
+                    warnings.simplefilter("ignore", category=DeprecationWarning)
+                    parent = item.parent.resolve(doc)
+            except (IndexError, AttributeError):
+                _handle(
+                    ValueError(f"{item.self_ref} has non-existent parent {item.parent.cref}"),
+                )
+                return
+            if item.get_ref() not in parent.children:
+                _handle(
+                    ValueError(f"{item.self_ref} is not a child of its parent {item.parent.cref}"),
+                )
+
         validate_furniture(self)
+        validate_key_value_and_form_items(self)
 
         for item, _ in self.iterate_items(
             with_groups=True,
@@ -5686,11 +6118,14 @@ class DoclingDocument(BaseModel):
             if isinstance(item, ListGroup):
                 validate_list_group(self, item)
 
-            elif isinstance(item, GroupItem):
-                validate_group(self, item)
-
             elif isinstance(item, ListItem):
                 validate_list_item(self, item)
+
+        # orphans (and orphaned empty groups) are not reachable via the tree, so check all items
+        for item in self._iterate_all_nodes():
+            validate_orphan(self, item)
+            if isinstance(item, GroupItem):
+                validate_group(self, item)
 
     def add_table_cell(self, table_item: TableItem, cell: TableCell) -> None:
         """Add a table cell to the table."""

@@ -47,7 +47,7 @@ class LayoutVisualizer(BaseVisualizer):
         show_label: bool = True
         content_layers: set[ContentLayer] = set(ContentLayer)
 
-    base_visualizer: Optional[BaseVisualizer] = None
+    base_visualizer: BaseVisualizer | None = None
     params: Params = Params()
 
     def _draw_clusters(self, image: Image, clusters: list[_TLCluster], scale_x: float, scale_y: float) -> None:
@@ -58,7 +58,7 @@ class LayoutVisualizer(BaseVisualizer):
         main_draw = ImageDraw.Draw(image)
 
         # Create a smaller font for the labels
-        font: Union[ImageFont.ImageFont, FreeTypeFont]
+        font: ImageFont.ImageFont | FreeTypeFont
         try:
             font = ImageFont.truetype("arial.ttf", 12)
         except OSError:
@@ -145,12 +145,12 @@ class LayoutVisualizer(BaseVisualizer):
     def _draw_doc_layout(
         self,
         doc: DoclingDocument,
-        images: Optional[dict[Optional[int], Image]] = None,
-        included_content_layers: Optional[set[ContentLayer]] = None,
+        images: dict[int | None, Image] | None = None,
+        included_content_layers: set[ContentLayer] | None = None,
     ):
         """Draw the document clusters and optionally the reading order."""
         clusters = []
-        my_images: dict[Optional[int], Image] = {}
+        my_images: dict[int | None, Image] = {}
 
         if images is not None:
             my_images = images
@@ -226,7 +226,7 @@ class LayoutVisualizer(BaseVisualizer):
         *,
         doc: DoclingDocument,
         **kwargs,
-    ) -> dict[Optional[int], Image]:
+    ) -> dict[int | None, Image]:
         """Get visualization of the document as images by page."""
         base_images = self.base_visualizer.get_visualization(doc=doc, **kwargs) if self.base_visualizer else None
         return self._draw_doc_layout(

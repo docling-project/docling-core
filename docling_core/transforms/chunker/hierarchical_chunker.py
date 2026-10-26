@@ -183,7 +183,7 @@ class HierarchicalChunker(BaseChunker):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     serializer_provider: BaseSerializerProvider = ChunkingSerializerProvider()
-    code_chunking_strategy: Optional[BaseCodeChunkingStrategy] = Field(default=None)
+    code_chunking_strategy: BaseCodeChunkingStrategy | None = Field(default=None)
     always_emit_headings: bool = False
 
     # deprecated:
@@ -203,7 +203,7 @@ class HierarchicalChunker(BaseChunker):
             Iterator[Chunk]: iterator over extracted chunks
         """
         my_doc_ser = self.serializer_provider.get_serializer(doc=dl_doc)
-        heading_by_level: dict[LevelNumber, Union[TitleItem, SectionHeaderItem]] = {}
+        heading_by_level: dict[LevelNumber, TitleItem | SectionHeaderItem] = {}
         heading_emitted: set[str] = set()
         visited: set[str] = set()
         ser_res = create_ser_result()
@@ -217,6 +217,8 @@ class HierarchicalChunker(BaseChunker):
             included_content_layers=included_content_layers,
         ):
             if item.self_ref in excluded_refs:
+                continue
+            if isinstance(my_doc_ser, DocSerializer) and my_doc_ser._skip_in_walk(node=item, root=None):
                 continue
             if isinstance(item, TitleItem | SectionHeaderItem):
                 level = item.level if isinstance(item, SectionHeaderItem) else 0

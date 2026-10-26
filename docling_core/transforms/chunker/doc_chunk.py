@@ -39,18 +39,18 @@ class DocMeta(BaseMeta):
         alias=_KEY_DOC_ITEMS,
         min_length=1,
     )
-    headings: Optional[list[str]] = Field(
+    headings: list[str] | None = Field(
         default=None,
         alias=_KEY_HEADINGS,
         min_length=1,
     )
-    captions: Optional[list[str]] = Field(  # deprecated
+    captions: list[str] | None = Field(  # deprecated
         deprecated=True,
         default=None,
         alias=_KEY_CAPTIONS,
         min_length=1,
     )
-    origin: Optional[DocumentOrigin] = Field(
+    origin: DocumentOrigin | None = Field(
         default=None,
         alias=_KEY_ORIGIN,
     )

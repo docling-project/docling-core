@@ -18,6 +18,6 @@ class BaseVisualizer(BaseModel, ABC):
         *,
         doc: DoclingDocument,
         **kwargs,
-    ) -> dict[Optional[int], Image]:
+    ) -> dict[int | None, Image]:
         """Get visualization of the document as images by page."""
         raise NotImplementedError()
