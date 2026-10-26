@@ -207,12 +207,12 @@ def list_projectors() -> list[tuple[int, int]]:
 # The 1.11 and 1.10 schemas are structurally identical -- no new fields,
 # labels, or lists.  The only difference is *semantic*: a 1.11 run's text
 # contains its boundary whitespace, whereas a 1.10 client re-inserts a
-# single " " between runs at serialization time.  A 1.10 client therefore
-# parses a 1.11 dict without error; it just renders the boundary twice
-# (e.g. "bold  tail"), the documented, harmless double-space case.  1.10
-# cannot represent a tight run boundary, so there is nothing to project
-# structurally -- only the version stamp is lowered so the old client's
-# version-compatibility gate accepts the document.
+# single " " between runs at serialization time.  Left as-is, a 1.10 client
+# renders every boundary twice and keeps the space inside the markup
+# (``**bold **``, which CommonMark does not render as bold).  The projector
+# therefore strips inline runs to the shape old producers emitted; the old
+# join puts one space back.  1.10 cannot represent a tight run boundary, so
+# ``H2O`` comes back as the old ``H 2 O``.
 # ---------------------------------------------------------------------------
 
 
@@ -221,12 +221,25 @@ def _project_1_11_to_1_10(data: dict) -> dict:
     """Downgrade a schema 1.11 document dict to schema 1.10.
 
     1.11 and 1.10 share an identical structure; the difference is only in how
-    inline-run whitespace is represented. A 1.10 client validates the dict
-    as-is and re-applies its own single-space join between runs, so the sole
-    transform is re-stamping the version.
+    inline-run whitespace is represented. A 1.10 client joins runs with ``" "``,
+    so the text of each inline-group child is stripped. A whitespace-only run
+    becomes ``""``, which old serializers skip, so no refs need renumbering.
+    ``orig`` is left alone.
     """
     data = dict(data)
     data["version"] = "1.10.0"
+    inline_runs = {
+        child.get("$ref", child.get("cref"))
+        for group in data.get("groups", [])
+        if group.get("label") == "inline"
+        for child in group.get("children", [])
+    }
+    data["texts"] = [
+        {**item, "text": item["text"].strip()}
+        if item.get("self_ref") in inline_runs and isinstance(item.get("text"), str)
+        else item
+        for item in data.get("texts", [])
+    ]
     return data
 
 

@@ -296,11 +296,8 @@ class TestProjector_1_11_to_1_10:
         result = self._apply(_minimal_doc_dict("1.11.0"))
         assert result["version"] == "1.10.0"
 
-    def test_inline_run_whitespace_is_preserved_verbatim(self):
-        """The projector must not touch run text: 1.11 runs own their boundary
-        whitespace, and a 1.10 client relies on that text being intact (it adds
-        its own join space on top). Stripping here would re-introduce word-merge.
-        """
+    def test_plain_text_keeps_its_whitespace(self):
+        """Only inline-group runs are stripped; other text items stay as they are."""
         data = _minimal_doc_dict("1.11.0")
         data["texts"] = [
             {
@@ -317,13 +314,44 @@ class TestProjector_1_11_to_1_10:
         result = self._apply(data)
         assert result["texts"][0]["text"] == "bold "
 
+    def test_inline_runs_are_stripped_to_the_old_shape(self):
+        """A 1.10 client joins runs with " ", so runs must not carry boundary whitespace."""
+        doc = DoclingDocument(name="runs")
+        caption = doc.add_text(label=DocItemLabel.CAPTION, text=" Caption ")
+        heading = doc.add_heading(text="Heading ")
+        group = doc.add_inline_group()
+        doc.add_text(label=DocItemLabel.TEXT, text="Some ", parent=group)
+        doc.add_text(label=DocItemLabel.TEXT, text="bold ", parent=group, formatting=Formatting(bold=True))
+        doc.add_text(label=DocItemLabel.TEXT, text="text with a ", parent=group)
+        doc.add_text(label=DocItemLabel.TEXT, text="link ", parent=group, hyperlink="https://example.com")
+        doc.add_text(label=DocItemLabel.TEXT, text=" ", parent=group)
+        doc.add_text(label=DocItemLabel.TEXT, text="core", parent=group, formatting=Formatting(bold=True))
+        data = json.loads(doc.model_dump_json())
+
+        result = self._apply(data)
+
+        assert len(result["texts"]) == len(data["texts"])
+        assert [t["text"] for t in result["texts"]] == [
+            " Caption ",
+            "Heading ",
+            "Some",
+            "bold",
+            "text with a",
+            "link",
+            "",
+            "core",
+        ]
+        assert [t["orig"] for t in result["texts"]] == [t["orig"] for t in data["texts"]]
+        assert data["texts"][2]["text"] == "Some "
+        assert caption.text == " Caption " and heading.text == "Heading "
+
     def test_does_not_mutate_caller_input(self):
         data = _minimal_doc_dict("1.11.0")
         self._apply(data)
         assert data["version"] == "1.11.0"
 
     def test_project_to_does_not_run_the_legacy_migration(self):
-        """The 1.10 stamp must not make project_to re-inject legacy separators."""
+        """project_to keeps the old-shape runs; reloading them on this core restores the spacing."""
         doc = DoclingDocument(name="projected")
         group = doc.add_inline_group()
         doc.add_text(label=DocItemLabel.TEXT, text="Normal ", parent=group)
@@ -331,10 +359,12 @@ class TestProjector_1_11_to_1_10:
         doc.add_text(label=DocItemLabel.TEXT, text=" tail", parent=group)
 
         result = project_to(doc, target_version="1.10.0")
+        dumped = json.loads(result.model_dump_json())
 
-        assert result.version == "1.10.0"
-        assert [t.text for t in result.texts] == ["Normal ", "bold", " tail"]
-        assert result.export_to_markdown() == "Normal **bold** tail"
+        assert dumped["version"] == "1.10.0"
+        assert [t["text"] for t in dumped["texts"]] == ["Normal", "bold", "tail"]
+        reloaded = DoclingDocument.model_validate(dumped)
+        assert reloaded.export_to_markdown() == "Normal **bold** tail"
 
 
 class TestProjector_1_10_to_1_9:
