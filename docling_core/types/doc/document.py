@@ -5716,11 +5716,26 @@ class DoclingDocument(BaseModel):
             # Boundaries where the separator fits in neither neighbour; filled in afterwards so
             # the indices collected here stay valid.
             standalone: list[tuple[int, list]] = []
-            for (_, run), (nxt_idx, nxt) in itertools.pairwise(runs):
+            for (idx, run), (nxt_idx, nxt) in itertools.pairwise(runs):
+                # An empty plain run between them is the separator the 1.11 -> 1.10 projector
+                # stripped; refilling it keeps repeated projection and migration from adding runs.
+                empty = next(
+                    (
+                        between
+                        for child in children[idx + 1 : nxt_idx]
+                        if (between := resolve(child)) is not None
+                        and between.get("text") == ""
+                        and between.get("label") == DocItemLabel.TEXT.value
+                        and not between.get("children")
+                    ),
+                    None,
+                )
                 if carries_separator(run):
                     run["text"] += " "
                 elif carries_separator(nxt):
                     nxt["text"] = " " + nxt["text"]
+                elif empty is not None:
+                    empty["text"] = " "
                 else:
                     # Neither side can carry it: the separator would corrupt `` `a``b` `` or
                     # ``$a$$b$``, so it becomes a plain run of its own between them. Page filters

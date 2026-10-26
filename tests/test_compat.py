@@ -350,6 +350,37 @@ class TestProjector_1_11_to_1_10:
         self._apply(data)
         assert data["version"] == "1.11.0"
 
+    @pytest.mark.parametrize(
+        "runs",
+        [
+            [("code", "a"), ("code", "b")],
+            [("formula", "x"), ("formula", "y")],
+            [("code", "a"), ("formula", "x"), ("code", "b")],
+            [("text", "Install with "), ("code", "pip"), ("text", ", then")],
+            [("text", "a"), ("text", " "), ("text", "b")],
+        ],
+    )
+    def test_repeated_projection_and_migration_do_not_drift(self, runs):
+        """Down-projecting and reloading again must not add runs or change the output."""
+        doc = DoclingDocument(name="drift")
+        group = doc.add_inline_group()
+        for kind, text in runs:
+            if kind == "code":
+                doc.add_code(text=text, parent=group)
+            elif kind == "formula":
+                doc.add_formula(text=text, parent=group)
+            else:
+                doc.add_text(label=DocItemLabel.TEXT, text=text, parent=group)
+
+        def round_trip(d: DoclingDocument) -> DoclingDocument:
+            return DoclingDocument.model_validate(json.loads(project_to(d, "1.10.0").model_dump_json()))
+
+        first = round_trip(doc)
+        again = first
+        for _ in range(3):
+            again = round_trip(again)
+        assert again.export_to_dict() == first.export_to_dict()
+
     def test_project_to_does_not_run_the_legacy_migration(self):
         """project_to keeps the old-shape runs; reloading them on this core restores the spacing."""
         doc = DoclingDocument(name="projected")
