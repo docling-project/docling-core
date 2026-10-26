@@ -189,15 +189,30 @@ def _rich_thread_fragments(item: TextItem, doc: DoclingDocument) -> list[list[tu
     fragments: list[list[tuple[TextItem, str]]] = []
     for prov in item.prov:
         lo, hi = prov.charspan
-        pieces: list[tuple[TextItem, str]] = []
+        raw: list[tuple[TextItem, str, bool]] = []
         for run, start, end in located:
             if run.label == DocItemLabel.FORMULA:
                 if lo <= start < hi:
-                    pieces.append((run, run.text))
+                    raw.append((run, run.text, True))
             elif start < hi and end > lo:
-                piece = orig[max(start, lo) : min(end, hi)].strip()
+                piece = orig[max(start, lo) : min(end, hi)]
                 if piece:
-                    pieces.append((run, piece))
+                    raw.append((run, piece, False))
+        # Strip whitespace only at the fragment's outer edges (where the charspan cut the text). Whitespace between a
+        # text run and a formula is content: the serializer keeps it in <content> (DocLang), so it must not be stripped.
+        while raw and not raw[0][2]:
+            text = raw[0][1].lstrip()
+            if text:
+                raw[0] = (raw[0][0], text, False)
+                break
+            raw.pop(0)
+        while raw and not raw[-1][2]:
+            text = raw[-1][1].rstrip()
+            if text:
+                raw[-1] = (raw[-1][0], text, False)
+                break
+            raw.pop()
+        pieces: list[tuple[TextItem, str]] = [(run, text) for run, text, _ in raw]
         fragments.append(pieces)
     return fragments
 
