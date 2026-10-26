@@ -72,7 +72,8 @@ docling-serialize = "docling_core.cli.serialize:app"
 [project.optional-dependencies]
 dclq = [
     "doclang>=0.8,<0.9",
-    "typer>=0.25.0,<0.27.0",
+    "typer>=0.15.1,<0.25.0",
+    "click>=8.0.0",
     "lxml>=6.0.2",
 ]
 chunking = [
