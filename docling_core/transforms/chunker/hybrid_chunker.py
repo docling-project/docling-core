@@ -343,7 +343,7 @@ class HybridChunker(BaseChunker):
           used as a prefix so they are reproduced at the top of every segment.
           Any preamble text that precedes the first table row (e.g. a caption) is
           included in the prefix to account for its token cost, but is stripped
-          from all segments after the first so it does not repeat.
+          from every later segment that repeats the prefix so it does not repeat.
 
           When ``omit_header_on_overflow`` is ``False`` and a body row is too
           wide to fit alongside the full header, the table is partitioned vertically
