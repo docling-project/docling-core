@@ -470,6 +470,9 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             res_parts.append(text_res)
 
         if isinstance(item, FloatingItem):
+            ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+            if ftn_res.text:
+                res_parts.append(ftn_res)
             cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
             if cap_res.text:
                 if _caption_goes_after(item, doc, params, standard_after=True):
@@ -877,6 +880,10 @@ class MarkdownTableSerializer(BaseTableSerializer):
             if table_text:
                 res_parts.append(create_ser_result(text=table_text, span_source=item))
 
+        ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+        if ftn_res.text:
+            res_parts.append(ftn_res)
+
         if cap_res.text and cap_after:
             res_parts.append(cap_res)
 
@@ -941,6 +948,10 @@ class MarkdownPictureSerializer(BasePictureSerializer):
                 md_table_content = temp_table.export_to_markdown(temp_doc)
                 if len(md_table_content) > 0:
                     res_parts.append(create_ser_result(text=md_table_content, span_source=item))
+
+        ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+        if ftn_res.text:
+            res_parts.append(ftn_res)
 
         if cap_res.text and cap_after:
             res_parts.append(cap_res)
@@ -1201,6 +1212,15 @@ class MarkdownDocSerializer(DocSerializer):
     ) -> str:
         """Apply Markdown-specific hyperlink serialization."""
         return f"[{text}]({markdown_link_destination(hyperlink)})"
+
+    @override
+    def serialize_footnotes(
+        self,
+        item: FloatingItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's footnotes, one paragraph each."""
+        return super().serialize_footnotes(item=item, **{**kwargs, "caption_delim": "\n\n"})
 
     @classmethod
     def _escape_underscores(cls, text: str):
