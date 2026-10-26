@@ -179,7 +179,9 @@ def project_to(doc: DoclingDocument, target_version: str) -> DoclingDocument:
     # The current SDK's version validator normalises the version field to
     # CURRENT_VERSION on success.  We restore the target version afterwards so
     # callers and downstream serialisation correctly reflect the projected schema.
-    result = DoclingDocument.model_validate(data)
+    # Validate under the source stamp: the projected stamp would trigger load-time upgrades
+    # (the inline separator migration) on data that is already current.
+    result = DoclingDocument.model_validate({**data, "version": doc.version})
     object.__setattr__(result, "version", data["version"])
     return result
 

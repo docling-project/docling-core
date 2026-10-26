@@ -44,7 +44,7 @@ from docling_core.types.doc.common.constants import (
     FIRST_SUPPORTED_MINOR,
     SCHEMA_VERSION_HISTORY,
 )
-from docling_core.types.doc.document import DoclingDocument
+from docling_core.types.doc.document import DocItemLabel, DoclingDocument, Formatting
 
 # Root of the repository, used to locate docs/schemas/.
 _REPO_ROOT = Path(__file__).parent.parent
@@ -321,6 +321,20 @@ class TestProjector_1_11_to_1_10:
         data = _minimal_doc_dict("1.11.0")
         self._apply(data)
         assert data["version"] == "1.11.0"
+
+    def test_project_to_does_not_run_the_legacy_migration(self):
+        """The 1.10 stamp must not make project_to re-inject legacy separators."""
+        doc = DoclingDocument(name="projected")
+        group = doc.add_inline_group()
+        doc.add_text(label=DocItemLabel.TEXT, text="Normal ", parent=group)
+        doc.add_text(label=DocItemLabel.TEXT, text="bold", parent=group, formatting=Formatting(bold=True))
+        doc.add_text(label=DocItemLabel.TEXT, text=" tail", parent=group)
+
+        result = project_to(doc, target_version="1.10.0")
+
+        assert result.version == "1.10.0"
+        assert [t.text for t in result.texts] == ["Normal ", "bold", " tail"]
+        assert result.export_to_markdown() == "Normal **bold** tail"
 
 
 class TestProjector_1_10_to_1_9:
