@@ -418,7 +418,11 @@ class HybridChunker(BaseChunker):
         else:
             if not _SEMCHUNK_AVAILABLE:
                 raise ImportError(_SEMCHUNK_INSTALL_HINT) from _SEMCHUNK_IMPORT_ERROR
-            sem_chunker = semchunk.chunkerify(self.tokenizer.get_tokenizer(), chunk_size=available_length)
+            # Each call builds a new token counter. Memoizing it would keep it, with
+            # its text cache, in semchunk's module-level memo for the process lifetime.
+            sem_chunker = semchunk.chunkerify(
+                self.tokenizer.get_tokenizer(), chunk_size=available_length, memoize=False
+            )
             sem_segments = sem_chunker(doc_chunk.text)
             segments = cast(list[str], sem_segments)
         return segments
