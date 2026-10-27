@@ -4546,6 +4546,39 @@ class DoclingDocument(BaseModel):
                 bbox = None
             return caption_item, bbox
 
+        def extract_footnotes(text_chunk: str) -> tuple[str, list[str]]:
+            """Separate nested notes before parsing their owner's text and location."""
+            pattern = r"<footnote>(.*?)</footnote>"
+            notes = re.findall(pattern, text_chunk, flags=re.DOTALL)
+            return re.sub(pattern, "", text_chunk, flags=re.DOTALL), notes
+
+        def add_footnotes(
+            item: FloatingItem,
+            notes: list[str],
+            pg_width: float,
+            pg_height: float,
+            page_no: int,
+        ) -> None:
+            """Attach parsed notes in order, retaining their own provenance."""
+            for content in notes:
+                text = extract_inner_text(content)
+                bbox = extract_bounding_box(content)
+                note = doc.add_text(
+                    label=DocItemLabel.FOOTNOTE,
+                    text=text,
+                    parent=item,
+                    prov=(
+                        ProvenanceItem(
+                            bbox=bbox.resize_by_scale(pg_width, pg_height),
+                            charspan=(0, len(text)),
+                            page_no=page_no,
+                        )
+                        if bbox
+                        else None
+                    ),
+                )
+                item.footnotes.append(note.get_ref())
+
         def extract_picture_classification(text_chunk: str):
             """Extract any picture classification label from the chunk."""
             label = None
@@ -4723,6 +4756,11 @@ class DoclingDocument(BaseModel):
             doc: DoclingDocument,
             parent: NodeItem | None,
         ):
+            code_footnotes: list[str] = []
+            if doc_label == DocItemLabel.CODE:
+                full_chunk, code_footnotes = extract_footnotes(full_chunk)
+                if code_footnotes and parent is None:
+                    bbox = extract_bounding_box(full_chunk)
             # For everything else, treat as text
             text_content = extract_inner_text(full_chunk)
             element_prov = (
@@ -4758,13 +4796,14 @@ class DoclingDocument(BaseModel):
                         code_language = CodeLanguageLabel(m.group(1))
                     except ValueError:
                         pass
-                doc.add_code(
+                code_item = doc.add_code(
                     text=text_content,
                     code_language=code_language,
                     prov=element_prov,
                     parent=parent,
                     content_layer=content_layer,
                 )
+                add_footnotes(code_item, code_footnotes, pg_width, pg_height, page_no)
 
             else:
                 doc.add_text(
@@ -4829,10 +4868,16 @@ class DoclingDocument(BaseModel):
                 full_chunk = match.group(0)
                 tag_name = match.group("tag")
 
+                footnotes: list[str] = []
+                floating_item: FloatingItem | None = None
+                if tag_name in (DocumentToken.OTSL.value, DocItemLabel.PICTURE, DocItemLabel.CHART):
+                    full_chunk, footnotes = extract_footnotes(full_chunk)
+
                 bbox = extract_bounding_box(full_chunk)  # Extracts first bbox
                 if not match.group("closed"):
                     # no closing tag; only the existence of the item is recovered
                     full_chunk = f"<{tag_name}></{tag_name}>"
+                    footnotes = []
 
                 doc_label = tag_to_doclabel.get(tag_name, DocItemLabel.TEXT)
 
@@ -4853,9 +4898,9 @@ class DoclingDocument(BaseModel):
                             charspan=(0, 0),
                             page_no=page_no,
                         )
-                        doc.add_table(data=table_data, prov=prov, caption=caption)
+                        floating_item = doc.add_table(data=table_data, prov=prov, caption=caption)
                     else:
-                        doc.add_table(data=table_data, caption=caption)
+                        floating_item = doc.add_table(data=table_data, caption=caption)
 
                 elif tag_name == GroupLabel.INLINE:
                     inline_group = doc.add_inline_group()
@@ -4904,6 +4949,7 @@ class DoclingDocument(BaseModel):
                                     )
                                 ),
                             )
+                            floating_item = pic
                             # If there is a caption to an image, add it as well
                             if caption is not None and caption_bbox is not None:
                                 caption.prov.append(
@@ -4945,6 +4991,7 @@ class DoclingDocument(BaseModel):
                                 parent=None,
                                 prov=ProvenanceItem(bbox=bbox, charspan=(0, 0), page_no=page_no),
                             )
+                            floating_item = pic
                             # If there is a caption to an image, add it as well
                             if caption is not None and caption_bbox is not None:
                                 caption.prov.append(
@@ -4991,6 +5038,9 @@ class DoclingDocument(BaseModel):
                                 with warnings.catch_warnings():
                                     warnings.simplefilter("ignore", category=DeprecationWarning)
                                     pic.annotations.append(pd)
+
+                    if floating_item is None and footnotes:
+                        floating_item = doc.add_picture()
 
                 elif tag_name == DocItemLabel.KEY_VALUE_REGION:
                     key_value_data, kv_item_prov = parse_key_value_item(full_chunk, image)
@@ -5047,6 +5097,8 @@ class DoclingDocument(BaseModel):
                         doc=doc,
                         parent=None,
                     )
+                if floating_item is not None:
+                    add_footnotes(floating_item, footnotes, pg_width, pg_height, page_no)
         return doc
 
     @deprecated("Use save_as_doctags instead.")
