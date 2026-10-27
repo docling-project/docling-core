@@ -1,3 +1,15 @@
+## [v2.105.0](https://github.com/docling-project/docling-core/releases/tag/v2.105.0) - 2026-10-27
+
+### Feature
+
+* Support Python 3.15 ([#911](https://github.com/docling-project/docling-core/issues/911)) ([`b501ec8`](https://github.com/docling-project/docling-core/commit/b501ec8011181db4a08a45b27a47fe7f66814cbe))
+
+### Fix
+
+* **dclq:** Use typer's vendored click; allow typer 0.27 ([#928](https://github.com/docling-project/docling-core/issues/928)) ([`e810e29`](https://github.com/docling-project/docling-core/commit/e810e290c4093f6467859baa7f278151f43f478c))
+* Preserve rich heading context in hierarchical chunks ([#924](https://github.com/docling-project/docling-core/issues/924)) ([`5634f7c`](https://github.com/docling-project/docling-core/commit/5634f7cd5d86f990cb8d2909dab5c087dcd9cc6a))
+* **serializer:** Serialize table footnotes in Markdown and HTML ([#675](https://github.com/docling-project/docling-core/issues/675)) ([`ba6a6ca`](https://github.com/docling-project/docling-core/commit/ba6a6ca5d77d4e81031f43f6a1e7e6ee482f3c1b))
+
 ## [v2.104.0](https://github.com/docling-project/docling-core/releases/tag/v2.104.0) - 2026-10-22
 
 ### Feature
