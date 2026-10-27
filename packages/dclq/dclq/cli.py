@@ -17,7 +17,6 @@ from lxml import etree
 
 # typer >=0.26 vendors its own copy of click (typer._click) and raises those
 # exceptions rather than the external click package's, so catch the vendored ones.
-from typer._click import Parameter as _ClickParameter
 from typer._click.exceptions import ClickException as _ClickException
 
 from dclq import __version__
@@ -78,9 +77,9 @@ def _main_callback(
     pass
 
 
-def _record_context(ctx: typer.Context, param: _ClickParameter, value: int | None) -> int | None:
+def _record_context(ctx: typer.Context, param: typer.CallbackParam, value: int | None) -> int | None:
     """Record context flags in command-line order, matching grep semantics."""
-    if value is not None and getattr(param, "param_type_name", None) == "option":
+    if value is not None and param.param_type_name == "option":
         ctx.meta.setdefault("context_events", []).append((param.opts[0], value))
     return value
 
