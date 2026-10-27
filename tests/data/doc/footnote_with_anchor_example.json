@@ -139,8 +139,8 @@
       "content_layer": "body",
       "label": "footnote",
       "prov": [],
-      "orig": "4 This footnote has no anchor and must not appear in the output.",
-      "text": "4 This footnote has no anchor and must not appear in the output."
+      "orig": "4 This footnote has no anchor and must remain as plain text",
+      "text": "4 This footnote has no anchor and must remain as plain text"
     },
     {
       "self_ref": "#/texts/11",
