@@ -279,6 +279,12 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
             if cap_res.text:
                 res_parts.append(cap_res)
+            ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+            if ftn_res.text:
+                res_parts.append(ftn_res)
+            if cap_res.text or ftn_res.text:
+                # <figcaption> is only valid inside <figure>, as for pictures
+                text = f"<figure>{''.join(r.text for r in res_parts)}</figure>"
 
         return create_ser_result(text=text, span_source=res_parts)
 
@@ -475,8 +481,13 @@ class HTMLTableSerializer(BaseTableSerializer):
                 body = f"<tbody>{body}</tbody>"
                 res_parts.append(create_ser_result(text=body, span_source=span_source))
 
-        text_res = "".join([r.text for r in res_parts])
-        text_res = f"<table>{text_res}</table>" if text_res else ""
+        text_table = "".join([r.text for r in res_parts])
+        text_table = f"<table>{text_table}</table>" if text_table else ""
+
+        ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+        if ftn_res.text:
+            res_parts.append(ftn_res)
+        text_res = f"{text_table}{ftn_res.text}"
 
         return create_ser_result(text=text_res, span_source=res_parts)
 
@@ -665,6 +676,10 @@ class HTMLPictureSerializer(BasePictureSerializer):
             meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
             if meta_res.text:
                 res_parts.append(meta_res)
+
+        ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+        if ftn_res.text:
+            res_parts.append(ftn_res)
 
         text_res = "".join([r.text for r in res_parts])
         if text_res:
@@ -1315,6 +1330,33 @@ class HTMLDocSerializer(DocSerializer):
         text_res = params.caption_delim.join([r.text for r in results])
         if text_res:
             text_res = f"<{tag}>{text_res}</{tag}>"
+        return create_ser_result(text=text_res, span_source=results)
+
+    @override
+    def serialize_footnotes(
+        self,
+        item: FloatingItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's footnotes."""
+        params = self.params.merge_with_patch(patch=kwargs)
+        results: list[SerializationResult] = []
+        excluded_refs = self.get_excluded_refs(**kwargs)
+
+        if DocItemLabel.FOOTNOTE in params.labels:
+            for ftn in item.footnotes:
+                if isinstance(it := ftn.resolve(self.doc), TextItem) and it.self_ref not in excluded_refs:
+                    text_ftn = it.text
+                    text_dir = get_text_direction(text_ftn)
+                    dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""
+                    results.append(
+                        create_ser_result(
+                            text=(f'<div class="footnote"{dir_str}>{html.escape(text_ftn)}</div>'),
+                            span_source=it,
+                        )
+                    )
+
+        text_res = "".join([r.text for r in results])
         return create_ser_result(text=text_res, span_source=results)
 
     def _generate_head(self) -> str:

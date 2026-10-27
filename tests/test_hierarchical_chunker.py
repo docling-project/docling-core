@@ -32,6 +32,38 @@ def test_chunk():
     assert_or_generate_json_ground_truth(act_data, "tests/data/chunker/0_out_chunks.json")
 
 
+@pytest.mark.parametrize("kind", ["title", "section_header"])
+@pytest.mark.parametrize("body", ["Body.", ""])
+@pytest.mark.parametrize("prefix", ["Energy ", ""])
+def test_rich_heading_chunk_metadata(kind: str, body: str, prefix: str) -> None:
+    doc = DoclingDocument(name="rich-heading")
+    heading = doc.add_title(text="") if kind == "title" else doc.add_heading(text="", level=1)
+    parent = doc.add_inline_group(parent=heading) if prefix else heading
+    if prefix:
+        doc.add_text(label=DocItemLabel.TEXT, text=prefix.strip(), parent=parent)
+    doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=parent)
+    if body:
+        doc.add_text(label=DocItemLabel.TEXT, text=body)
+    chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker(always_emit_headings=True).chunk(doc)]
+    assert len(chunks) == 1
+    assert chunks[0].text == body
+    assert chunks[0].meta.headings == [f"{prefix}$E=mc^2$"]
+
+
+def test_rich_heading_is_emitted_before_a_sibling_heading() -> None:
+    doc = DoclingDocument(name="rich-heading")
+    heading = doc.add_heading(text="", level=1)
+    inline = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="Energy", parent=inline)
+    doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=inline)
+    doc.add_heading(text="Next", level=1)
+    doc.add_text(label=DocItemLabel.TEXT, text="Body.")
+
+    chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker(always_emit_headings=True).chunk(doc)]
+    assert [chunk.text for chunk in chunks] == ["", "Body."]
+    assert [chunk.meta.headings for chunk in chunks] == [["Energy $E=mc^2$"], ["Next"]]
+
+
 @pytest.mark.parametrize("kind", ["table", "picture"])
 @pytest.mark.parametrize(
     ("caption", "expected"),
@@ -324,6 +356,35 @@ def test_triplet_table_serializer_handles_empty_table_output():
     assert len(rich_chunks) == 1
     assert rich_chunks[0].text == "Important body text inside layout table"
     assert [item.self_ref for item in rich_chunks[0].meta.doc_items] == [rich_doc.tables[0].self_ref]
+
+
+def test_chunk_table_keeps_footnotes():
+    """Table, picture and code footnotes reach the chunk text once, after the item (#496)."""
+    doc = DoclingDocument(name="t")
+    table_data = TableData(num_cols=1)
+    table_data.add_row(["Country"])
+    table_data.add_row(["Italy"])
+    table = doc.add_table(data=table_data)
+    table.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="Country footnote").get_ref())
+    doc.add_picture().footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="Picture footnote").get_ref())
+    doc.add_code(text="x = 1").footnotes.append(
+        doc.add_text(label=DocItemLabel.FOOTNOTE, text="Code footnote").get_ref()
+    )
+
+    chunks = list(HierarchicalChunker().chunk(dl_doc=doc))
+    assert [c.text for c in chunks] == [
+        "Country = Italy\n\nCountry footnote",
+        "Picture footnote",
+        "```\nx = 1\n```\n\nCode footnote",
+    ]
+
+
+def test_chunk_table_footnotes_496():
+    """Real conversion of the PDF from #496: the table chunk ends with its two footnotes."""
+    dl_doc = DoclingDocument.load_from_json("tests/data/doc/table_footnotes_496.json")
+    chunks = HierarchicalChunker().chunk(dl_doc=dl_doc)
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
+    assert_or_generate_json_ground_truth(act_data, "tests/data/chunker/table_footnotes_496_out_chunks.json")
 
 
 def test_chunk_rich_table_custom_serializer(rich_table_doc: DoclingDocument):
