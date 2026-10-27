@@ -72,6 +72,7 @@ docling-serialize = "docling_core.cli.serialize:app"
 [project.optional-dependencies]
 dclq = [
     "doclang>=0.8,<0.9",
+    # dclq.cli imports from private typer._click; check it still works before raising the cap
     "typer>=0.26.0,<0.28.0",
     "lxml>=6.0.2",
 ]
