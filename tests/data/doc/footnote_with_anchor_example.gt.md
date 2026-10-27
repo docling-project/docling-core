@@ -37,4 +37,4 @@ Figure 1: Pipeline overview diagram.
 
 The diagram above illustrates the end-to-end flow of documents through the system. Each stage operates independently, enabling modular replacement of individual components without disrupting the overall pipeline. Further details are available in the appendix.
 
-4 This footnote has no anchor and must not appear in the output.
+4 This footnote has no anchor and must remain as plain text

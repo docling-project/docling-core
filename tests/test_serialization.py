@@ -1180,7 +1180,7 @@ def test_md_anchored_footnote_example():
 
     # Unanchored footnote preserved as plain text
     assert "[^4]" not in actual
-    assert "This footnote has no anchor and must not appear in the output." in actual
+    assert "This footnote has no anchor and must remain as plain text" in actual
 
 
 def test_md_unanchored_footnote_is_plain_text():
@@ -1258,15 +1258,23 @@ def test_md_footnote_validation():
     with pytest.raises(ValueError, match="contains invalid markdown characters"):
         MarkdownTextSerializer._validate_and_format_footnote("[1] Example")
 
+    with pytest.raises(ValueError, match="not a numeric or symbol marker"):
+        MarkdownTextSerializer._validate_and_format_footnote("Table note.")
+
     # Test valid footnote text returns (identifier, definition)
     identifier, definition = MarkdownTextSerializer._validate_and_format_footnote("1 Example footnote")
     assert identifier == "1"
     assert definition == "[^1]: Example footnote"
 
     # Test footnote with only an (identifier)
-    identifier, definition = MarkdownTextSerializer._validate_and_format_footnote("table")
-    assert identifier == "table"
-    assert definition == "[^table]:"
+    identifier, definition = MarkdownTextSerializer._validate_and_format_footnote("12")
+    assert identifier == "12"
+    assert definition == "[^12]:"
+
+    # Symbol markers are accepted
+    identifier, definition = MarkdownTextSerializer._validate_and_format_footnote("* Example")
+    assert identifier == "*"
+    assert definition == "[^*]: Example"
 
 
 def test_md_footnotes_json():
@@ -1310,6 +1318,33 @@ def test_md_table_with_footnotes():
 
     assert "[^1]" in actual
     assert "[^1]: table footnote explanation" in actual
+
+
+@pytest.mark.parametrize("item_kind", ["table", "picture"])
+@pytest.mark.parametrize(
+    "footnote_text, expected_text",
+    [
+        ("Table note.", "Table note."),
+        ("The figures are estimates.", "The figures are estimates."),
+        ("a < b & c > d", "a &lt; b &amp; c &gt; d"),
+        ("a) Excludes tax.", "a) Excludes tax."),
+        ("1. Excludes tax.", "1. Excludes tax."),
+    ],
+)
+def test_md_floating_footnote_without_marker_is_plain_text(item_kind, footnote_text, expected_text):
+    doc = DoclingDocument(name="unmarked_footnote")
+    if item_kind == "table":
+        data = TableData(num_rows=0, num_cols=1)
+        data.add_row(["Cell"])
+        item = doc.add_table(data=data)
+    else:
+        item = doc.add_picture()
+    item.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text=footnote_text).get_ref())
+
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+
+    assert actual.count(expected_text) == 1
+    assert "[^" not in actual
 
 
 # ===============================

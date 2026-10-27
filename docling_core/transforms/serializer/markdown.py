@@ -341,9 +341,11 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
 
         Raises:
             ValueError: If ``text`` is empty, if the identifier is empty, if
-                the identifier contains whitespace or newline characters, or if
+                the identifier contains whitespace or newline characters, if
                 the identifier contains Markdown special characters
-                (``[``, ``]``, ``:``) that would break footnote syntax.
+                (``[``, ``]``, ``:``) that would break footnote syntax, or if
+                the identifier is neither a number nor a symbol (so ordinary
+                prose such as ``"Table note."`` is not read as a marker).
         """
         if not text or not text.strip():
             raise ValueError("Footnote cannot be empty")
@@ -363,6 +365,10 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         # These characters would break the Markdown footnote syntax
         if any(char in identifier for char in {"[", "]", ":"}):
             raise ValueError(f"Footnote identifier '{identifier}' contains invalid markdown characters")
+
+        # Only a number or a symbol (e.g. "1", "*") is a marker; a word is prose
+        if not (identifier.isdigit() or not any(char.isalnum() for char in identifier)):
+            raise ValueError(f"Footnote identifier '{identifier}' is not a numeric or symbol marker")
 
         definition = f"[^{identifier}]: {parts[1]}" if len(parts) == 2 else f"[^{identifier}]:"
 
@@ -1236,55 +1242,6 @@ class MarkdownDocSerializer(DocSerializer):
 
     params: MarkdownParams = MarkdownParams()
 
-    _logger: Logger = logging.getLogger(__name__)
-
-    @override
-    def serialize_footnotes(
-        self,
-        item: FloatingItem,
-        **kwargs: Any,
-    ) -> SerializationResult:
-        params: MarkdownParams = self.params.merge_with_patch(patch=kwargs)
-
-        if DocItemLabel.FOOTNOTE in params.labels:
-            excluded = self.get_excluded_refs(**kwargs)
-            results: list[SerializationResult] = []
-            for footnote in item.footnotes:
-                resolved = footnote.resolve(self.doc)
-                if resolved is None:
-                    self._logger.warning(f"Footnote reference {footnote.cref} could not be resolved (returned None)")
-                elif not isinstance(resolved, TextItem):
-                    self._logger.warning(
-                        f"Footnote reference {footnote.cref} resolved to {type(resolved).__name__} instead of TextItem"
-                    )
-                elif resolved.self_ref not in excluded:
-                    parsed: Optional[tuple[str, str]] = None
-                    try:
-                        parsed = MarkdownTextSerializer._validate_and_format_footnote(resolved.text)
-                    except ValueError as exc:
-                        self._logger.warning(f"Preserving malformed footnote {footnote.cref} as text: {exc}")
-                        # DocSerializer already skips owned footnotes during traversal.
-                        # Render unsupported markers through the normal text serializer
-                        # so their contents and source spans are not lost.
-                        results.append(
-                            self.text_serializer.serialize(
-                                item=resolved,
-                                doc_serializer=self,
-                                doc=self.doc,
-                                **(self.params.model_dump() | kwargs),
-                            )
-                        )
-                    if parsed is not None:
-                        identifier, definition = parsed
-                        anchor_ref = f"[^{identifier}]"
-                        combined = f"{anchor_ref}\n\n{definition}"
-                        results.append(create_ser_result(text=combined, span_source=resolved))
-
-            text_res = "\n\n".join([r.text for r in results])
-            return create_ser_result(text=text_res, span_source=results)
-
-        return create_ser_result(text="", span_source=[])
-
     @override
     def serialize_bold(self, text: str, **kwargs: Any):
         """Apply Markdown-specific bold serialization."""
@@ -1310,14 +1267,54 @@ class MarkdownDocSerializer(DocSerializer):
         """Apply Markdown-specific hyperlink serialization."""
         return f"[{text}]({markdown_link_destination(hyperlink)})"
 
+    _logger: Logger = logging.getLogger(__name__)
+
     @override
     def serialize_footnotes(
         self,
         item: FloatingItem,
         **kwargs: Any,
     ) -> SerializationResult:
-        """Serialize the item's footnotes, one paragraph each."""
-        return super().serialize_footnotes(item=item, **{**kwargs, "caption_delim": "\n\n"})
+        params: MarkdownParams = self.params.merge_with_patch(patch=kwargs)
+
+        if DocItemLabel.FOOTNOTE in params.labels:
+            excluded = self.get_excluded_refs(**kwargs)
+            results: list[SerializationResult] = []
+            for footnote in item.footnotes:
+                resolved = footnote.resolve(self.doc)
+                if resolved is None:
+                    self._logger.warning(f"Footnote reference {footnote.cref} could not be resolved (returned None)")
+                elif not isinstance(resolved, TextItem):
+                    self._logger.warning(
+                        f"Footnote reference {footnote.cref} resolved to {type(resolved).__name__} instead of TextItem"
+                    )
+                elif resolved.self_ref not in excluded:
+                    parsed: tuple[str, str] | None = None
+                    try:
+                        parsed = MarkdownTextSerializer._validate_and_format_footnote(resolved.text)
+                    except ValueError as exc:
+                        self._logger.warning(f"Preserving malformed footnote {footnote.cref} as text: {exc}")
+                        # DocSerializer already skips owned footnotes during traversal.
+                        # Render unsupported markers through the normal text serializer
+                        # so their contents and source spans are not lost.
+                        results.append(
+                            self.text_serializer.serialize(
+                                item=resolved,
+                                doc_serializer=self,
+                                doc=self.doc,
+                                **(self.params.model_dump() | kwargs),
+                            )
+                        )
+                    if parsed is not None:
+                        identifier, definition = parsed
+                        anchor_ref = f"[^{identifier}]"
+                        combined = f"{anchor_ref}\n\n{definition}"
+                        results.append(create_ser_result(text=combined, span_source=resolved))
+
+            text_res = "\n\n".join([r.text for r in results])
+            return create_ser_result(text=text_res, span_source=results)
+
+        return create_ser_result(text="", span_source=[])
 
     @classmethod
     def _escape_underscores(cls, text: str):
