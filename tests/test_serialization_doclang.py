@@ -1724,7 +1724,7 @@ def test_layer_filter_body_only(doc_with_layers):
     ],
 )
 def test_doclang_layers_use_xsd_values(layer, expected):
-    """Docling-only layers use the closest layer supported by DocLang 0.7."""
+    """Docling-only layers use the closest layer supported by DocLang."""
     doc = DoclingDocument(name="layers")
     doc.add_text(label=DocItemLabel.TEXT, text="content", content_layer=layer)
 
@@ -1735,7 +1735,7 @@ def test_doclang_layers_use_xsd_values(layer, expected):
 
 @doclang_validator
 def test_doclang_notes_and_invisible_layers_validate_against_xsd(tmp_path):
-    """DocLang 0.7 rejects notes and invisible layer values in XML."""
+    """DocLang rejects notes and invisible layer values in XML."""
     from doclang import validate
 
     doc = DoclingDocument(name="layers")
