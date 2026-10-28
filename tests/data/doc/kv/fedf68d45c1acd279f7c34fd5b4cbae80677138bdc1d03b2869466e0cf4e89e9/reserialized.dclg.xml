@@ -132,7 +132,12 @@
       <location value="110"/>
       Documentation searched other than minimum documentation to the extent that such documents are included in the fields searched
     </text>
-    <text></text>
+    <text>
+      <location value="57"/>
+      <location value="112"/>
+      <location value="391"/>
+      <location value="122"/>
+    </text>
     <text>
       <location value="54"/>
       <location value="126"/>

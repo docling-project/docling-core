@@ -4,6 +4,7 @@ import os
 import re
 import warnings
 from collections import deque
+from collections.abc import Callable
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
@@ -15,6 +16,7 @@ import yaml
 from PIL import Image as PILImage
 from pydantic import AnyUrl, BaseModel, ValidationError
 
+from docling_core.transforms.serializer.markdown import MarkdownDocSerializer
 from docling_core.types.doc import (
     BoundingBox,
     CodeItem,
@@ -37,6 +39,7 @@ from docling_core.types.doc import (
     ImageRef,
     ImageRefMode,
     KeyValueItem,
+    ListGroup,
     ListItem,
     NodeItem,
     Orientation,
@@ -404,14 +407,23 @@ def test_docitems():
         return yaml.safe_load(gold)
 
     def verify(dc, obj):
-        pred = serialise(obj).strip()
+        pred_text = serialise(obj).strip()
+        pred = yaml.safe_load(pred_text)
 
-        if dc is KeyValueItem or dc is FormItem:
-            write(dc.__name__, pred)
+        if GEN_TEST_DATA:
+            # Rewrite only when the content genuinely differs.  `safe_dump`
+            # sorts keys while the committed fixtures preserve insertion
+            # order, so writing unconditionally would reorder every file
+            # without changing what any of them mean.
+            try:
+                outdated = read(dc.__name__) != pred
+            except (FileNotFoundError, yaml.YAMLError):
+                # Missing or unparseable: regenerating is the whole point of
+                # the flag, so do not let a corrupt fixture block it.
+                outdated = True
+            if outdated:
+                write(dc.__name__, pred_text)
 
-        pred = yaml.safe_load(pred)
-
-        # print(f"\t{dc.__name__}:\n {pred}")
         gold = read(dc.__name__)
 
         assert pred == gold, f"pred!=gold for {dc.__name__}"
@@ -834,7 +846,7 @@ def test_image_ref_blocks_file_scheme():
 
     image_ref.uri = AnyUrl("file:///tmp/test.png")
 
-    with pytest.raises(ValueError, match="file:// URI scheme is not enabled"):
+    with pytest.raises(ValueError, match="Reading local image files"):
         _ = image_ref.pil_image
 
 
@@ -911,7 +923,7 @@ def test_file_uri_blocked_by_default():
         uri=AnyUrl("file:///tmp/test.png"),
     )
 
-    with pytest.raises(ValueError, match="file:// URI scheme is not enabled"):
+    with pytest.raises(ValueError, match="Reading local image files"):
         _ = image_ref.pil_image
 
 
@@ -975,8 +987,10 @@ def test_image_ref_path_rejects_oversize_file(tmp_path: Path):
     oversize.write_bytes(b"\x89PNG\r\n\x1a\n" + (b"\x00" * 256))
 
     orig_max = settings.max_image_decoded_size
+    orig_allow = settings.allow_image_file_uri
     try:
         settings.max_image_decoded_size = 64
+        settings.allow_image_file_uri = True
         image_ref = ImageRef(
             dpi=72,
             mimetype="image/png",
@@ -987,6 +1001,156 @@ def test_image_ref_path_rejects_oversize_file(tmp_path: Path):
             _ = image_ref.pil_image
     finally:
         settings.max_image_decoded_size = orig_max
+        settings.allow_image_file_uri = orig_allow
+
+
+def _doc_with_local_picture(uri: str) -> DoclingDocument:
+    """Build a document as loaded from untrusted JSON, with a picture pointing at ``uri``."""
+    doc = DoclingDocument(name="local_picture")
+    pic = doc.add_picture()
+    pic.image = ImageRef.from_pil(PILImage.new("RGB", (1, 1)), dpi=72)
+    data = doc.export_to_dict()
+    data["pictures"][0]["image"]["uri"] = uri
+    return DoclingDocument.model_validate(data)
+
+
+def _embedded_exports(doc: DoclingDocument, out_dir: Path) -> dict[str, Callable[[], str]]:
+    def _save(fn, name: str) -> str:
+        fn(out_dir / name, image_mode=ImageRefMode.EMBEDDED)
+        return (out_dir / name).read_text()
+
+    return {
+        "export_to_markdown": lambda: doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED),
+        "export_to_html": lambda: doc.export_to_html(image_mode=ImageRefMode.EMBEDDED),
+        "save_as_markdown": lambda: _save(doc.save_as_markdown, "out.md"),
+        "save_as_html": lambda: _save(doc.save_as_html, "out.html"),
+    }
+
+
+@pytest.mark.parametrize("as_file_uri", [False, True])
+@pytest.mark.parametrize("export", ["export_to_markdown", "export_to_html", "save_as_markdown", "save_as_html"])
+def test_local_image_blocked_in_embedded_exports(tmp_path: Path, as_file_uri: bool, export: str):
+    """Plain paths and file:// URIs must not be read on embedding unless enabled."""
+    secret = tmp_path / "secret.png"
+    PILImage.new("RGB", (4, 4), color=(11, 222, 33)).save(secret)
+    doc = _doc_with_local_picture(secret.as_uri() if as_file_uri else str(secret))
+
+    with pytest.raises(ValueError, match="Reading local image files"):
+        _embedded_exports(doc, tmp_path)[export]()
+
+
+@pytest.mark.parametrize("as_file_uri", [False, True])
+@pytest.mark.parametrize("export", ["export_to_markdown", "export_to_html", "save_as_markdown", "save_as_html"])
+def test_local_image_allowed_in_embedded_exports_when_enabled(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, as_file_uri: bool, export: str
+):
+    """With the opt-in, local images are embedded as before."""
+    monkeypatch.setattr(settings, "allow_image_file_uri", True)
+    img = tmp_path / "img.png"
+    PILImage.new("RGB", (4, 4), color=(11, 222, 33)).save(img)
+    doc = _doc_with_local_picture(img.as_uri() if as_file_uri else str(img))
+
+    assert "data:image/png;base64," in _embedded_exports(doc, tmp_path)[export]()
+
+
+def test_local_image_blocked_in_referenced_export(tmp_path: Path):
+    """Referenced exports must not copy local files into the artifacts directory."""
+    secret = tmp_path / "secret.png"
+    PILImage.new("RGB", (4, 4)).save(secret)
+    doc = _doc_with_local_picture(str(secret))
+
+    with pytest.raises(ValueError, match="Reading local image files"):
+        doc.save_as_markdown(tmp_path / "out.md", image_mode=ImageRefMode.REFERENCED)
+
+
+def test_local_page_image_blocked(tmp_path: Path):
+    """Page images with a local path must be gated when cropping pictures."""
+    secret = tmp_path / "page.png"
+    PILImage.new("RGB", (10, 10)).save(secret)
+    doc = DoclingDocument(name="local_page")
+    doc.add_page(
+        page_no=1,
+        size=Size(width=10, height=10),
+        image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=secret),
+    )
+    doc.add_picture(
+        prov=ProvenanceItem(
+            page_no=1, bbox=BoundingBox(l=0, t=10, r=5, b=5, coord_origin=CoordOrigin.BOTTOMLEFT), charspan=(0, 0)
+        )
+    )
+
+    with pytest.raises(ValueError, match="Reading local image files"):
+        doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
+
+
+def _save_referenced_doc(out_dir: Path, filename: str) -> Path:
+    """Save a document with a picture and a page image in referenced mode."""
+    doc = DoclingDocument(name="referenced")
+    page_image = PILImage.new("RGB", (10, 10), color=(11, 222, 33))
+    doc.add_page(page_no=1, size=Size(width=10, height=10), image=ImageRef.from_pil(page_image, dpi=72))
+    doc.add_picture(image=ImageRef.from_pil(PILImage.new("RGB", (4, 4), color=(1, 2, 3)), dpi=72))
+    path = out_dir / filename
+    if path.suffix == ".json":
+        doc.save_as_json(path, image_mode=ImageRefMode.REFERENCED)
+    else:
+        doc.save_as_yaml(path, image_mode=ImageRefMode.REFERENCED)
+    return path
+
+
+@pytest.mark.parametrize("filename", ["doc.json", "doc.yaml"])
+def test_load_with_allow_local_images(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, filename: str):
+    """Loaders read local images on explicit opt-in, relative to the file's directory."""
+    path = _save_referenced_doc(tmp_path, filename)
+    other_dir = tmp_path / "elsewhere"
+    other_dir.mkdir()
+    monkeypatch.chdir(other_dir)
+    load = DoclingDocument.load_from_json if filename.endswith(".json") else DoclingDocument.load_from_yaml
+
+    with pytest.raises(ValueError, match="Reading local image files"):
+        load(path).export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
+
+    doc = load(path, allow_local_images=True)
+    assert "data:image/png;base64," in doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
+    assert doc.pictures[0].image is not None
+    assert (picture_pil := doc.pictures[0].image.pil_image) is not None
+    assert picture_pil.getpixel((0, 0)) == (1, 2, 3)
+    assert doc.pages[1].image is not None
+    assert (page_pil := doc.pages[1].image.pil_image) is not None
+    assert page_pil.getpixel((0, 0)) == (11, 222, 33)
+
+
+def test_load_local_images_ignores_later_uri_changes(tmp_path: Path):
+    """Only the images present when opting in are read; later paths are not."""
+    doc = DoclingDocument.load_from_json(_save_referenced_doc(tmp_path, "doc.json"), allow_local_images=True)
+    secret = tmp_path / "secret.png"
+    PILImage.new("RGB", (4, 4), color=(255, 0, 0)).save(secret)
+
+    image = doc.pictures[0].image
+    assert image is not None
+    image.uri = secret
+    assert (pil := image.pil_image) is not None
+    assert pil.getpixel((0, 0)) == (1, 2, 3)
+
+    doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=4, height=4), uri=secret))
+    with pytest.raises(ValueError, match="Reading local image files"):
+        doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
+
+
+def test_load_local_images_rejects_non_regular_file(tmp_path: Path):
+    doc = _doc_with_local_picture(str(tmp_path))
+
+    with pytest.raises(ValueError, match="not a regular file"):
+        doc.load_local_images()
+
+
+def test_load_local_images_rejects_oversize_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    big = tmp_path / "big.png"
+    PILImage.new("RGB", (50, 50), color=(1, 2, 3)).save(big)
+    monkeypatch.setattr(settings, "max_image_decoded_size", 64)
+    doc = _doc_with_local_picture(str(big))
+
+    with pytest.raises(ValueError, match="exceeds size limit"):
+        doc.load_local_images()
 
 
 def test_upgrade_content_layer_from_1_0_0() -> None:
@@ -1744,6 +1908,27 @@ def test_document_manipulation(sample_doc: DoclingDocument) -> None:
     _verify(filename=filename, document=sample_doc, generate=GEN_TEST_DATA)
 
 
+def test_table_remove_rows_ignores_duplicate_indices() -> None:
+    table_cells = [
+        TableCell(
+            text=f"r{i}c{j}",
+            start_row_offset_idx=i,
+            end_row_offset_idx=i + 1,
+            start_col_offset_idx=j,
+            end_col_offset_idx=j + 1,
+        )
+        for i in range(4)
+        for j in range(2)
+    ]
+    data = TableData(num_rows=4, num_cols=2, table_cells=table_cells)
+
+    removed = data.remove_rows([1, 1])
+
+    assert [[c.text for c in row] for row in removed] == [["r1c0", "r1c1"]]
+    assert data.num_rows == 3
+    assert [c.text for row in data.grid for c in row] == ["r0c0", "r0c1", "r2c0", "r2c1", "r3c0", "r3c1"]
+
+
 def test_misplaced_list_items():
     filename = Path("tests/data/doc/misplaced_list_items.yaml")
     doc = DoclingDocument.load_from_yaml(filename)
@@ -1765,6 +1950,281 @@ def test_misplaced_list_items():
     else:
         exp_doc = DoclingDocument.load_from_yaml(exp_file)
         assert doc == exp_doc
+
+
+def test_delete_items_renumbers_orphaned_items():
+    # The caption is referenced by the picture but is not one of its children, so it is not
+    # reachable from body via children. Deleting an item before it must still renumber it.
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "orphaned_items",
+        "body": {
+            "self_ref": "#/body",
+            "children": [{"$ref": "#/texts/0"}, {"$ref": "#/pictures/0"}],
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        "texts": [
+            {
+                "self_ref": "#/texts/0",
+                "parent": {"$ref": "#/body"},
+                "label": "list_item",
+                "orig": "item",
+                "text": "item",
+                "enumerated": False,
+                "marker": "-",
+            },
+            {
+                "self_ref": "#/texts/1",
+                "parent": {"$ref": "#/pictures/0"},
+                "label": "caption",
+                "orig": "caption",
+                "text": "caption",
+            },
+        ],
+        "pictures": [
+            {
+                "self_ref": "#/pictures/0",
+                "parent": {"$ref": "#/body"},
+                "label": "picture",
+                "captions": [{"$ref": "#/texts/1"}],
+            }
+        ],
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+
+    # loading moves the misplaced list item into a new list, without renumbering anything
+    assert [it.text for it in doc.texts] == ["item", "caption"]
+    assert isinstance(doc.texts[0].parent.resolve(doc), ListGroup)
+
+    # the caption is an orphan, which the rules detect
+    with pytest.raises(ValueError, match="#/texts/1 is not a child of its parent #/pictures/0"):
+        doc._validate_rules()
+    with pytest.warns(UserWarning, match="#/texts/1 is not a child of its parent #/pictures/0"):
+        doc._validate_rules(raise_on_error=False)
+
+    # deleting the list (and so the list item) renumbers the orphaned caption too
+    doc.delete_items(node_items=[doc.groups[0]])
+    doc._validate_unique_refs()
+    for item in doc.texts:
+        assert item.get_ref().resolve(doc) is item
+    assert [it.text for it in doc.texts] == ["caption"]
+    assert doc.pictures[0].captions[0].resolve(doc).text == "caption"
+    assert doc.texts[0].parent.cref == "#/pictures/0"
+
+    # a dangling parent is reported, not crashed on
+    doc.texts[0].parent = RefItem(cref="#/pictures/1")
+    with pytest.raises(ValueError, match="#/texts/0 has non-existent parent #/pictures/1"):
+        doc._validate_rules()
+
+
+def test_validate_rules_key_value_and_form_items():
+    doc = DoclingDocument(name="")
+    doc.add_key_values(graph=GraphData(cells=[], links=[]))
+    doc.add_form(graph=GraphData(cells=[], links=[]))
+
+    with pytest.raises(ValueError, match="Key-value item #/key_value_items/0 is to be migrated to a field region"):
+        doc._validate_rules()
+    with pytest.warns(UserWarning) as record:
+        doc._validate_rules(raise_on_error=False)
+    messages = [str(w.message) for w in record]
+    assert "Key-value item #/key_value_items/0 is to be migrated to a field region" in messages
+    assert "Form item #/form_items/0 is to be migrated to a field region" in messages
+
+    doc._migrate_to_field_regions()
+    doc._validate_rules()
+
+
+def test_field_item_with_several_keys_is_invalid():
+    doc = DoclingDocument(name="")
+    region = doc.add_field_region()
+    item = doc.add_field_item(parent=region)
+    doc.add_field_key(text="a", parent=item)
+    doc.add_field_value(text="b", parent=item)
+    doc.add_field_value(text="c", parent=item)  # several values are fine
+    DoclingDocument.model_validate(doc.model_dump(mode="json"))
+
+    doc.add_field_key(text="d", parent=item)  # building through the API does not validate
+    with pytest.raises(ValueError, match="Field item #/field_items/0 has 2 keys, at most one is allowed"):
+        DoclingDocument.model_validate(doc.model_dump(mode="json"))
+
+
+def test_graph_cell_item_refs_follow_renumbering():
+    def build() -> tuple[DoclingDocument, KeyValueItem]:
+        doc = DoclingDocument(name="")
+        a = doc.add_text(label=DocItemLabel.TEXT, text="a")
+        b = doc.add_text(label=DocItemLabel.TEXT, text="b")
+        cells = [
+            GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="b", orig="b", item_ref=b.get_ref()),
+            GraphCell(label=GraphCellLabel.VALUE, cell_id=1, text="a", orig="a", item_ref=a.get_ref()),
+        ]
+        return doc, doc.add_key_values(graph=GraphData(cells=cells, links=[]))
+
+    # deletion: refs are renumbered, refs to deleted items dropped
+    doc, kv = build()
+    doc.delete_items(node_items=[doc.texts[0]])
+    assert [c.item_ref.cref if c.item_ref else None for c in kv.graph.cells] == ["#/texts/0", None]
+    assert kv.graph.cells[0].item_ref.resolve(doc).text == "b"
+
+    # normalization: refs follow the reordering
+    doc, _ = build()
+    doc.body.children = [doc.body.children[1], doc.body.children[0], doc.body.children[2]]  # b, a, kv
+    doc._normalize_references()
+    assert [t.text for t in doc.texts] == ["b", "a"]
+    cells = doc.key_value_items[0].graph.cells
+    assert [c.item_ref.resolve(doc).text for c in cells] == ["b", "a"]
+
+
+def test_delete_items_renumbers_furniture():
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "legacy_furniture",
+        "furniture": {
+            "self_ref": "#/furniture",
+            "children": [{"$ref": "#/texts/1"}],
+            "content_layer": "furniture",
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        "body": {"self_ref": "#/body", "children": [{"$ref": "#/texts/0"}], "name": "_root_", "label": "unspecified"},
+        "texts": [
+            {"self_ref": "#/texts/0", "parent": {"$ref": "#/body"}, "label": "text", "orig": "text", "text": "text"},
+            {
+                "self_ref": "#/texts/1",
+                "parent": {"$ref": "#/furniture"},
+                "content_layer": "furniture",
+                "label": "page_header",
+                "orig": "header",
+                "text": "header",
+            },
+        ],
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+    doc.delete_items(node_items=[doc.texts[0]])
+
+    assert doc.texts[0].self_ref == "#/texts/0"
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        assert [ref.resolve(doc).text for ref in doc.furniture.children] == ["header"]
+
+
+def test_migrate_furniture_to_body():
+    def text(idx: int, parent: str, label: str, top: float | None = None) -> dict:
+        item: dict = {
+            "self_ref": f"#/texts/{idx}",
+            "parent": {"$ref": parent},
+            "label": label,
+            "orig": label,
+            "text": label,
+        }
+        if top is not None:
+            item["prov"] = [
+                {
+                    "page_no": 1,
+                    "bbox": {"l": 10, "t": top, "r": 90, "b": top + 5, "coord_origin": "TOPLEFT"},
+                    "charspan": [0, len(label)],
+                }
+            ]
+        return item
+
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "legacy_furniture",
+        "furniture": {
+            "self_ref": "#/furniture",
+            "children": [{"$ref": "#/texts/1"}, {"$ref": "#/texts/2"}],
+            "content_layer": "furniture",
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        "body": {
+            "self_ref": "#/body",
+            "children": [{"$ref": "#/texts/0"}],
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        "texts": [
+            text(0, "#/body", "text", top=50),
+            text(1, "#/furniture", "page_footer", top=90),
+            text(2, "#/furniture", "page_header", top=5),
+        ],
+        "pages": {"1": {"page_no": 1, "size": {"width": 100, "height": 100}}},
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+    assert [ref.cref for ref in doc.body.children] == ["#/texts/0"]  # not migrated on load
+
+    assert doc._migrate_furniture_to_body() == 2
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        assert doc.furniture.children == []
+
+    assert [ref.resolve(doc).text for ref in doc.body.children] == ["page_header", "text", "page_footer"]
+    assert all(it.parent.cref == "#/body" for it in doc.texts)
+    assert [it.content_layer for it in doc.texts] == [
+        ContentLayer.BODY,
+        ContentLayer.FURNITURE,
+        ContentLayer.FURNITURE,
+    ]
+
+
+def test_misplaced_list_items_keep_children_and_refs():
+    # a list item outside a list, with a picture as child and a graph cell pointing to it
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "misplaced_with_children",
+        "body": {
+            "self_ref": "#/body",
+            "children": [{"$ref": "#/texts/0"}, {"$ref": "#/texts/1"}, {"$ref": "#/key_value_items/0"}],
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        "texts": [
+            {
+                "self_ref": "#/texts/0",
+                "parent": {"$ref": "#/body"},
+                "children": [{"$ref": "#/pictures/0"}],
+                "label": "list_item",
+                "orig": "item",
+                "text": "item",
+                "enumerated": False,
+                "marker": "-",
+            },
+            {"self_ref": "#/texts/1", "parent": {"$ref": "#/body"}, "label": "text", "orig": "text", "text": "text"},
+        ],
+        "pictures": [{"self_ref": "#/pictures/0", "parent": {"$ref": "#/texts/0"}, "label": "picture"}],
+        "key_value_items": [
+            {
+                "self_ref": "#/key_value_items/0",
+                "parent": {"$ref": "#/body"},
+                "label": "key_value_region",
+                "graph": {
+                    "cells": [
+                        {
+                            "label": "key",
+                            "cell_id": 0,
+                            "text": "item",
+                            "orig": "item",
+                            "item_ref": {"$ref": "#/texts/0"},
+                        }
+                    ],
+                    "links": [],
+                },
+            }
+        ],
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+
+    # the list item is moved into a new list, keeping its ref, its child and the refs to it
+    item = doc.texts[0]
+    assert item.text == "item" and isinstance(item.parent.resolve(doc), ListGroup)
+    assert [ref.cref for ref in doc.body.children] == ["#/groups/0", "#/texts/1", "#/key_value_items/0"]
+    assert len(doc.pictures) == 1 and doc.pictures[0].parent == item.get_ref()
+    assert [ref.cref for ref in item.children] == ["#/pictures/0"]
+    assert doc.key_value_items[0].graph.cells[0].item_ref.resolve(doc) is item
 
 
 def test_moving_within_same_parent():
@@ -1945,43 +2405,6 @@ def test_export_markdown_compact_tables():
     assert len(md_compact) < len(md_padded)
 
 
-def test_export_dataframe_with_row_spanning_column_header():
-    def cell(
-        text: str,
-        row: int,
-        column: int,
-        row_span: int = 1,
-        column_header: bool = False,
-    ) -> TableCell:
-        return TableCell(
-            text=text,
-            start_row_offset_idx=row,
-            end_row_offset_idx=row + row_span,
-            start_col_offset_idx=column,
-            end_col_offset_idx=column + 1,
-            row_span=row_span,
-            column_header=column_header,
-        )
-
-    doc = DoclingDocument(name="test")
-    table = doc.add_table(
-        data=TableData(
-            num_rows=2,
-            num_cols=2,
-            table_cells=[
-                cell("Name", 0, 0, column_header=True),
-                cell("", 0, 1, row_span=2, column_header=True),
-                cell("Alpha", 1, 0),
-            ],
-        )
-    )
-
-    dataframe = table.export_to_dataframe(doc)
-
-    assert list(dataframe.columns) == ["Name", ""]
-    assert dataframe.values.tolist() == [["Alpha", ""]]
-
-
 def test_export_traverse_pictures_ocr_scanned_pdf():
     """Test that OCR text nested under a PictureItem is included when traverse_pictures=True."""
     doc = DoclingDocument(name="Scanned Doc")
@@ -2131,6 +2554,28 @@ def test_doc_manipulation_with_rich_tables(rich_table_doc):
 
     exp_doc = DoclingDocument.load_from_yaml(exp_file)
     assert rich_table_doc == exp_doc
+
+
+def test_rich_table_cell_text_reuses_given_serializer(rich_table_doc, monkeypatch):
+    """A rich cell must not build a fallback serializer when the caller passes one.
+
+    Building a serializer validates the whole document, so doing it for every rich
+    cell made serializing documents with many rich tables quadratic in the document
+    size (docling-project/docling#3222).
+    """
+    serializer = MarkdownDocSerializer(doc=rich_table_doc)
+    rich_cells = [
+        cell for table in rich_table_doc.tables for cell in table.data.table_cells if isinstance(cell, RichTableCell)
+    ]
+    expected = [serializer.serialize(item=cell.ref.resolve(doc=rich_table_doc)).text for cell in rich_cells]
+
+    def fail_on_fallback(self, *args, **kwargs):
+        raise AssertionError("RichTableCell built its own serializer although one was passed")
+
+    monkeypatch.setattr(MarkdownDocSerializer, "__init__", fail_on_fallback)
+
+    assert rich_cells
+    assert [cell._get_text(doc=rich_table_doc, doc_serializer=serializer) for cell in rich_cells] == expected
 
 
 def test_invalid_rich_table_doc():
@@ -2366,6 +2811,124 @@ def test_meta_migration_warnings():
         _ = doc.pictures[0].annotations
     with pytest.warns(DeprecationWarning):
         _ = doc.tables[0].annotations
+
+
+def test_migrate_non_list_item_list_children():
+    doc = DoclingDocument(name="")
+    outer = doc.add_list_group()
+    doc.add_list_item(text="first", parent=outer)
+    inner = doc.add_list_group(parent=outer)
+    doc.add_list_item(text="nested", parent=inner)
+    text = doc.add_text(label=DocItemLabel.TEXT, text="stray", parent=outer)
+    with pytest.raises(ValueError, match="contains non-ListItem"):
+        doc._validate_rules()
+
+    assert doc._migrate_non_list_item_list_children() == 2
+
+    # the wrapped children keep their positions, each under a new, empty list item
+    first, wrap_inner, wrap_text = (ref.resolve(doc) for ref in outer.children)
+    assert first.text == "first"
+    for wrapper, child in ((wrap_inner, inner), (wrap_text, text)):
+        assert isinstance(wrapper, ListItem) and wrapper.text == ""
+        assert wrapper.parent == outer.get_ref()
+        assert [ref.resolve(doc) for ref in wrapper.children] == [child]
+        assert child.parent == wrapper.get_ref()
+    doc._validate_rules()
+    assert doc._migrate_non_list_item_list_children() == 0  # idempotent
+
+
+def test_empty_groups():
+    def group(idx: int, label: str, parent: str, children: list[str] | None = None) -> dict:
+        return {
+            "self_ref": f"#/groups/{idx}",
+            "parent": {"$ref": parent},
+            "children": [{"$ref": c} for c in children or []],
+            "label": label,
+            "name": "group",
+        }
+
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "empty_groups",
+        "body": {
+            "self_ref": "#/body",
+            "children": [{"$ref": "#/groups/0"}, {"$ref": "#/groups/1"}, {"$ref": "#/groups/4"}],
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        "groups": [
+            group(0, "list", "#/body"),  # empty, linked
+            group(1, "list", "#/body", ["#/texts/0"]),  # not empty
+            group(2, "list", "#/body"),  # empty, orphaned
+            group(3, "list", "#/groups/2"),  # empty, orphaned, claiming #/groups/2 as parent
+            group(4, "inline", "#/body"),  # empty, linked
+            group(5, "unspecified", "#/body"),  # empty, orphaned, but claimed by an orphan with content
+        ],
+        "texts": [
+            {"self_ref": "#/texts/0", "parent": {"$ref": "#/groups/1"}, "label": "list_item", "orig": "a", "text": "a"},
+            {"self_ref": "#/texts/1", "parent": {"$ref": "#/groups/5"}, "label": "text", "orig": "b", "text": "b"},
+        ],
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+
+    # detected: every empty group, also lists and orphaned ones
+    with pytest.warns(UserWarning) as record:
+        doc._validate_rules(raise_on_error=False)
+    empty = sorted(str(w.message) for w in record if str(w.message).endswith("has no children"))
+    assert empty == [f"Group #/groups/{i} has no children" for i in (0, 2, 3, 4, 5)]
+
+    assert doc._remove_empty_groups() == 4
+    assert [g.label.value for g in doc.groups] == ["list", "unspecified"]
+    assert [ref.cref for ref in doc.body.children] == ["#/groups/0"]
+    assert [ref.cref for ref in doc.groups[0].children] == ["#/texts/0"]
+    assert doc.texts[0].parent.cref == "#/groups/0"
+    assert doc.texts[1].parent.cref == "#/groups/1"  # the claimed group is kept (and renumbered)
+    doc._validate_unique_refs()
+    assert doc._remove_empty_groups() == 0  # idempotent
+
+
+def test_repair_referenced_orphans():
+    def text(idx: int, label: str) -> dict:
+        return {
+            "self_ref": f"#/texts/{idx}",
+            "parent": {"$ref": "#/pictures/0"},
+            "label": label,
+            "orig": label,
+            "text": label,
+        }
+
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "referenced_orphans",
+        "body": {
+            "self_ref": "#/body",
+            "children": [{"$ref": "#/pictures/0"}],
+            "name": "_root_",
+            "label": "unspecified",
+        },
+        # all three are orphans; only the caption and the footnote are referenced by the picture
+        "texts": [text(0, "caption"), text(1, "footnote"), text(2, "text")],
+        "pictures": [
+            {
+                "self_ref": "#/pictures/0",
+                "parent": {"$ref": "#/body"},
+                "label": "picture",
+                "captions": [{"$ref": "#/texts/0"}],
+                "footnotes": [{"$ref": "#/texts/1"}],
+            }
+        ],
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+
+    assert doc._repair_referenced_orphans() == 2
+    assert [ref.cref for ref in doc.pictures[0].children] == ["#/texts/0", "#/texts/1"]
+    assert doc._repair_referenced_orphans() == 0  # idempotent
+
+    # the unreferenced orphan is left as is
+    with pytest.raises(ValueError, match="#/texts/2 is not a child of its parent #/pictures/0"):
+        doc._validate_rules()
 
 
 @pytest.mark.parametrize(
@@ -2871,3 +3434,151 @@ def test_document_validation_clamps_table_cell_bbox() -> None:
     messages = [str(warning.message) for warning in caught]
     assert any("Table cell bbox coordinate l on page 1 is outside page bounds" in message for message in messages)
     assert any("Table cell bbox coordinate r on page 1 is outside page bounds" in message for message in messages)
+
+
+def _nested_doc_dict(depth: int, *, kind: str) -> dict:
+    """Build a document dict whose nodes reference their single child more than once.
+
+    kind="groups": every group lists its only child twice (a DAG, not a tree).
+    kind="rich_cells": every table holds the next table in a single 2x2-spanning rich cell.
+    """
+    node_list = "groups" if kind == "groups" else "tables"
+    nodes = []
+    for i in range(depth):
+        last = i == depth - 1
+        parent = {"$ref": "#/body" if i == 0 else f"#/{node_list}/{i - 1}"}
+        nxt = {"$ref": f"#/{node_list}/{i + 1}"}
+        node: dict = {
+            "self_ref": f"#/{node_list}/{i}",
+            "parent": parent,
+            "content_layer": "body",
+        }
+        if kind == "groups":
+            node |= {"name": "g", "label": "unspecified", "children": [] if last else [nxt, nxt]}
+        else:
+            cells = [] if last else [_span_rich_cell(nxt["$ref"])]
+            node |= {
+                "label": "table",
+                "children": [] if last else [nxt],
+                "data": {"num_rows": 2, "num_cols": 2, "table_cells": cells},
+            }
+        nodes.append(node)
+    return {
+        "schema_name": "DoclingDocument",
+        "version": "1.10.0",
+        "name": "nested",
+        "body": {
+            "self_ref": "#/body",
+            "name": "_root_",
+            "label": "unspecified",
+            "content_layer": "body",
+            "children": [{"$ref": f"#/{node_list}/0"}],
+        },
+        node_list: nodes,
+    }
+
+
+def _span_rich_cell(ref: str) -> dict:
+    return {
+        "text": "",
+        "ref": {"$ref": ref},
+        "start_row_offset_idx": 0,
+        "end_row_offset_idx": 2,
+        "start_col_offset_idx": 0,
+        "end_col_offset_idx": 2,
+    }
+
+
+def test_validate_rejects_repeated_child_references():
+    """A node listed more than once under its parent makes the tree a DAG with exponential traversal."""
+    data = _nested_doc_dict(60, kind="groups")  # 2**60 paths if walked once per reference
+    with pytest.raises(ValidationError, match="already reachable"):
+        DoclingDocument.model_validate(data)
+
+
+def test_validate_rejects_rich_cell_sharing_one_subtree():
+    """Two rich cells pointing at the same item would render its subtree twice."""
+    data = _nested_doc_dict(2, kind="rich_cells")
+    cells = data["tables"][0]["data"]["table_cells"]
+    cells.append(cells[0] | {"start_col_offset_idx": 1, "end_col_offset_idx": 2})
+    with pytest.raises(ValidationError):
+        DoclingDocument.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    "export",
+    [
+        lambda doc: doc.export_to_markdown(),
+        lambda doc: doc.export_to_doctags(),
+        lambda doc: doc.export_to_doclang(),
+    ],
+    ids=["markdown", "doctags", "doclang"],
+)
+def test_export_nested_spanning_rich_cells_is_not_exponential(export):
+    """A rich cell spanning N slots must be rendered once, not once per covered slot.
+
+    With 4 slots per cell and 25 nesting levels, per-slot rendering would take ~4**25 steps.
+    """
+    doc = DoclingDocument.model_validate(_nested_doc_dict(25, kind="rich_cells"))
+    assert export(doc)
+
+
+@pytest.mark.parametrize(
+    ("num_rows", "num_cols"),
+    [(2**40, 2**40), (2**40, 0), (0, 2**40), (1001, 1000)],
+)
+def test_table_data_rejects_oversized_grid(num_rows, num_cols):
+    """Rows and columns are bounded separately too: many rows with no columns still allocate one list each."""
+    with pytest.raises(ValidationError, match="exceeds the limit"):
+        TableData(num_rows=num_rows, num_cols=num_cols)
+
+
+def test_table_data_grid_limit_is_configurable(monkeypatch):
+    monkeypatch.setattr(settings, "max_table_cells", 4)
+    TableData(num_rows=2, num_cols=2)
+    with pytest.raises(ValidationError):
+        TableData(num_rows=2, num_cols=3)
+
+
+def _tables_doc_dict(body: int, furniture: int = 0, orphans: int = 0) -> dict:
+    """Build a document dict with 2x2 tables under body, under furniture, and outside the tree."""
+    placement = ["#/body"] * body + ["#/furniture"] * furniture + ["#/body"] * orphans
+    tables = [
+        {
+            "self_ref": f"#/tables/{i}",
+            "parent": {"$ref": parent},
+            "label": "table",
+            "data": {"num_rows": 2, "num_cols": 2, "table_cells": []},
+        }
+        for i, parent in enumerate(placement)
+    ]
+
+    def root(name: str, start: int, count: int) -> dict:
+        return {
+            "self_ref": f"#/{name}",
+            "name": "_root_",
+            "label": "unspecified",
+            "children": [{"$ref": f"#/tables/{i}"} for i in range(start, start + count)],
+        }
+
+    return {
+        "schema_name": "DoclingDocument",
+        "version": "1.10.0",
+        "name": "tables",
+        "body": root("body", 0, body),
+        "furniture": root("furniture", body, furniture),
+        "tables": tables,
+    }
+
+
+@pytest.mark.parametrize(
+    ("body", "furniture", "orphans"),
+    [(3, 0, 0), (1, 2, 0), (1, 0, 2)],
+    ids=["body", "body_and_furniture", "outside_tree"],
+)
+def test_validate_rejects_total_table_cells_over_limit(monkeypatch, body, furniture, orphans):
+    """The budget covers all tables, wherever they sit: every grid in `tables` is serialized."""
+    monkeypatch.setattr(settings, "max_total_table_cells", 8)
+    DoclingDocument.model_validate(_tables_doc_dict(body=2))
+    with pytest.raises(ValidationError, match="exceeding the limit of 8"):
+        DoclingDocument.model_validate(_tables_doc_dict(body=body, furniture=furniture, orphans=orphans))

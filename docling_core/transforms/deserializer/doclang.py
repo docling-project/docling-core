@@ -1,8 +1,11 @@
 """Define classes for DocLang deserialization.
 
-Aligned to the DocLang specification version ``_DOCLANG_VERSION``.
+Aligned to the DocLang specification version ``_DOCLANG_VERSION``, partially:
+``<track>`` is not supported yet and is skipped with a warning.
 """
 
+import re
+import warnings
 from collections.abc import Callable, Sequence
 from itertools import groupby
 from pathlib import Path
@@ -97,11 +100,51 @@ from docling_core.utils.settings import settings
 
 __all__ = ["DocLangDocDeserializer", "DocLangSourceMap", "DocLangSourceTarget"]
 
+# Mixed-content hosts preserve their semantic label or, for TEXT, their provenance.
+# A bare InlineGroup already serializes as <text>, so TEXT needs a host only when located.
+# FORMULA is absent because a formula cannot hold prose runs.
+_INLINE_HOST_LABELS: frozenset[DocItemLabel] = frozenset(
+    {DocItemLabel.TEXT, DocItemLabel.CAPTION, DocItemLabel.FOOTNOTE, DocItemLabel.PAGE_HEADER, DocItemLabel.PAGE_FOOTER}
+)
+
+# Formatting tags that can themselves hold mixed content, e.g. <bold>a <italic>b</italic></bold>.
+_FORMATTING_TAG_VALUES: frozenset[str] = frozenset(
+    {
+        DocLangToken.BOLD.value,
+        DocLangToken.ITALIC.value,
+        DocLangToken.UNDERLINE.value,
+        DocLangToken.STRIKETHROUGH.value,
+        DocLangToken.SUBSCRIPT.value,
+        DocLangToken.SUPERSCRIPT.value,
+    }
+)
+
 
 def _utf8_byte_length(text: str) -> int:
     """Return UTF-8 byte length of ``text`` without retaining the encoded buffer."""
     # encode builds a temporary bytes object; acceptable for a one-shot gate check.
     return len(text.encode("utf-8"))
+
+
+_CDATA_SECTION_RE = re.compile(r"(<!\[CDATA\[.*?\]\]>)", re.DOTALL)
+_XML_ILLEGAL_CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+_BARE_AMP_RE = re.compile(r"&(?!(?:[A-Za-z][\w.-]*|#[0-9]+|#x[0-9A-Fa-f]+);)")
+_BARE_LT_RE = re.compile(r"<(?![A-Za-z_:/!?])")
+
+
+def _repair_unescaped_xml_text(text: str) -> str:
+    """Escape characters that can only be text, leaving markup and CDATA untouched.
+
+    Fixes bare ``&``, a ``<`` that cannot start markup, a stray ``]]>``, and drops
+    control characters that XML 1.0 forbids. A ``<`` followed by a name character
+    is never touched, so no tag structure is guessed.
+    """
+    parts = _CDATA_SECTION_RE.split(_XML_ILLEGAL_CTRL_RE.sub("", text))
+    for i in range(0, len(parts), 2):  # even indices are outside CDATA sections
+        part = _BARE_AMP_RE.sub("&amp;", parts[i])
+        part = _BARE_LT_RE.sub("&lt;", part)
+        parts[i] = part.replace("]]>", "]]&gt;")
+    return "".join(parts)
 
 
 def _enforce_doclang_dom_budgets(
@@ -129,6 +172,10 @@ def _enforce_doclang_dom_budgets(
         for child in node.childNodes:
             if isinstance(child, Element):
                 stack.append((child, depth + 1))
+
+
+# DocLang 0.8 element not supported yet (not in ``DocLangToken``, so as not to advertise it in the vocabulary)
+_UNSUPPORTED_TRACK = "track"
 
 
 class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
@@ -186,6 +233,9 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             max_xml_depth: Optional override for ``settings.max_doclang_xml_depth``.
             max_xml_elements: Optional override for ``settings.max_doclang_xml_elements``.
             source_map: Optional recorder output populated with XPath-to-semantic bindings.
+            repair_unescaped_text: If ``True``, repair unescaped text (bare ``&``, a ``<`` that
+                cannot start markup, a stray ``]]>``, illegal control characters) before parsing.
+                Tag structure is never altered. Default ``False``: input must be well-formed XML.
 
         Returns:
             A populated `DoclingDocument` parsed from the input.
@@ -198,6 +248,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         self._max_xml_elements = int(kwargs.get("max_xml_elements", settings.max_doclang_xml_elements))
         self._source_recorder = _DocLangSourceRecorder(kwargs.get("source_map"))
 
+        if kwargs.get("repair_unescaped_text", False):
+            text = _repair_unescaped_xml_text(text)
         root = self._parse_xml_string(text)
         if root.tagName != DocLangToken.DOCUMENT.value:
             candidates = root.getElementsByTagName(DocLangToken.DOCUMENT.value)
@@ -306,7 +358,9 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
 
     def _dispatch_element(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         name = el.tagName
-        if name in {
+        if name == _UNSUPPORTED_TRACK:
+            warnings.warn(f"<{name}> is not supported yet; skipped with all its content", stacklevel=2)
+        elif name in {
             DocLangToken.TEXT.value,
             DocLangToken.CAPTION.value,
             DocLangToken.FOOTNOTE.value,
@@ -428,13 +482,28 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 }:
                     return None
                 elif tmp := self._get_children_simple_text_block(el):
+                    if result is not None:
+                        return None
                     result = tmp
+                elif self._get_text(el).strip():
+                    # The child holds text but is itself mixed content.
+                    return None
             elif isinstance(el, Text) and el.data.strip():  # TODO should still support whitespace-only
                 if result is None:
                     result = el.data if element.tagName == DocLangToken.CONTENT.value else el.data.strip()
                 else:
                     return None
         return result
+
+    def _is_empty_text_block(self, element: Element) -> bool:
+        """Return True when ``element`` has no text and no children other than element-head metadata tags."""
+        for node in element.childNodes:
+            if isinstance(node, Element):
+                if not self._is_element_head_tag(node):
+                    return False
+            elif isinstance(node, Text) and node.data.strip():
+                return False
+        return True
 
     def _parse_text_like(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         """Parse text-like tokens (text, caption, footnotes, code, formula)."""
@@ -444,14 +513,16 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
 
         thread_id = self._extract_thread_id(el)
         simple_text = self._get_children_simple_text_block(el)
-        if len(element_children) > 1 or (simple_text is None and thread_id is None):
-            self._parse_inline_group(doc=doc, el=el, parent=parent)
+        # an element without any content is an empty item, not a (childless) inline group
+        is_empty = simple_text is None and thread_id is None and self._is_empty_text_block(el)
+        if not is_empty and (len(element_children) > 1 or (simple_text is None and thread_id is None)):
+            self._parse_mixed_text_like(doc=doc, el=el, parent=parent)
             return
 
         prov_list = self._extract_provenance(doc=doc, el=el)
         content_layer = self._extract_layer(el=el)
         text, formatting = self._extract_text_with_formatting(el)
-        if not text:
+        if not text and not is_empty:
             if (
                 thread_id
                 and (existing := self._get_thread_item(thread_id, host=el.tagName)) is not None
@@ -467,8 +538,6 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         # Handle code separately (language + content extraction)
         if nm == DocLangToken.CODE.value:
             code_text, lang_label = self._extract_code_content_and_language(el)
-            if not code_text.strip():
-                return
             if (
                 thread_id
                 and (existing := self._get_thread_item(thread_id, host=nm)) is not None
@@ -485,7 +554,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 content_layer=content_layer,
             )
             self._apply_initial_text_provenance(item, text=code_text, prov_list=prov_list)
-            if (caption := self._extract_caption(doc=doc, el=el)) is not None:
+            for caption in self._extract_captions(doc=doc, el=el):
                 item.captions.append(caption.get_ref())
             if thread_id:
                 self._register_thread(thread_id=thread_id, host=nm, item=item)
@@ -1151,7 +1220,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 marker=marker_text,
                 prov_list=prov_list,
             )
-            self._parse_inline_group(doc=doc, el=el, parent=li, nodes=body_nodes)
+            if body_nodes:
+                self._parse_inline_group(doc=doc, el=el, parent=li, nodes=body_nodes)
 
     def _is_simple_virtual_text_nodes(self, nodes: Sequence[Node]) -> bool:
         """True when virtual-text body is plain text (optionally via ``<content>``)."""
@@ -1425,6 +1495,52 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     self._source_recorder.bind_item(ldiv_el, item)
 
     # ------------- Inline groups -------------
+    @staticmethod
+    def _merge_formatting_tag(nm: str, base: Formatting | None) -> Formatting:
+        """Apply a formatting tag's own style onto (a copy of) the accumulated formatting."""
+        formatting = base.model_copy(deep=True) if base is not None else Formatting()
+        if nm == DocLangToken.BOLD.value:
+            formatting.bold = True
+        elif nm == DocLangToken.ITALIC.value:
+            formatting.italic = True
+        elif nm == DocLangToken.UNDERLINE.value:
+            formatting.underline = True
+        elif nm == DocLangToken.STRIKETHROUGH.value:
+            formatting.strikethrough = True
+        elif nm == DocLangToken.SUBSCRIPT.value:
+            formatting.script = Script.SUB
+        elif nm == DocLangToken.SUPERSCRIPT.value:
+            formatting.script = Script.SUPER
+        return formatting
+
+    def _parse_inline_runs(
+        self,
+        *,
+        doc: DoclingDocument,
+        nodes: Sequence[Node],
+        parent: NodeItem | None,
+        formatting: Formatting | None,
+    ) -> None:
+        """Add text runs for ``nodes``, carrying ``formatting`` through nested formatting tags."""
+        for node in nodes:
+            if isinstance(node, Element):
+                if node.tagName in _FORMATTING_TAG_VALUES:
+                    # Accumulate this tag's style and keep descending, so e.g. <bold>a
+                    # <italic>b</italic></bold> gives "a" bold and "b" bold+italic.
+                    merged = self._merge_formatting_tag(node.tagName, formatting)
+                    self._parse_inline_runs(doc=doc, nodes=node.childNodes, parent=parent, formatting=merged)
+                else:
+                    self._dispatch_element(doc=doc, el=node, parent=parent)
+            elif isinstance(node, Text):
+                text_content = node.data.strip()
+                if text_content:
+                    doc.add_text(
+                        label=DocItemLabel.TEXT,
+                        text=text_content,
+                        parent=parent,
+                        formatting=formatting,
+                    )
+
     def _parse_inline_group(
         self,
         *,
@@ -1432,28 +1548,66 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         el: Element,
         parent: NodeItem | None,
         nodes: Sequence[Node] | None = None,
-    ) -> None:
+        formatting: Formatting | None = None,
+    ) -> InlineGroup:
         """Parse <inline> elements into InlineGroup objects."""
         # Create the inline group
         inline_group = doc.add_inline_group(parent=parent)
         if nodes is None:
             self._source_recorder.bind_item(el, inline_group)
 
-        # Process all child elements, adding them as children of the inline group
-        my_nodes = nodes or el.childNodes
-        for node in my_nodes:
-            if isinstance(node, Element):
-                # Recursively dispatch child elements with the inline group as parent
-                self._dispatch_element(doc=doc, el=node, parent=inline_group)
-            elif isinstance(node, Text):
-                # Handle direct text content
-                text_content = node.data.strip()
-                if text_content:
-                    doc.add_text(
-                        label=DocItemLabel.TEXT,
-                        text=text_content,
-                        parent=inline_group,
-                    )
+        my_nodes = nodes if nodes is not None else el.childNodes
+        self._parse_inline_runs(doc=doc, nodes=my_nodes, parent=inline_group, formatting=formatting)
+        return inline_group
+
+    def _parse_mixed_text_like(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
+        """Parse a text-like element with mixed content (text + formatting runs)."""
+        if el.tagName in _INLINE_HOST_LABELS and (
+            el.tagName != DocLangToken.TEXT.value or self._extract_provenance(doc=doc, el=el)
+        ):
+            self._parse_inline_host(doc=doc, el=el, parent=parent, label=DocItemLabel(el.tagName))
+            return
+        # If the mixed-content element is itself a formatting tag (e.g. <bold> with a
+        # leading text run before a nested <italic>), its own style must not be dropped.
+        formatting = self._merge_formatting_tag(el.tagName, None) if el.tagName in _FORMATTING_TAG_VALUES else None
+        node = self._parse_inline_group(doc=doc, el=el, parent=parent, formatting=formatting)
+        if (content_layer := self._extract_layer(el=el)) is not None:
+            # Runs carry no layer of their own; without this, furniture runs would leak into the body.
+            for it, _ in doc.iterate_items(root=node, with_groups=True, included_content_layers=set(ContentLayer)):
+                it.content_layer = content_layer
+
+    def _parse_inline_host(
+        self,
+        *,
+        doc: DoclingDocument,
+        el: Element,
+        parent: NodeItem | None,
+        label: DocItemLabel,
+    ) -> TextItem:
+        """Parse a labeled text-like element with mixed content as an empty host item holding an InlineGroup.
+
+        This is the shape the serializer writes back as ``<footnote>...runs...</footnote>``, so the host's
+        label, provenance and layer survive the round trip.
+        """
+        prov_list = self._extract_provenance(doc=doc, el=el)
+        content_layer = self._extract_layer(el=el)
+        item = doc.add_text(
+            label=label,
+            text="",
+            parent=parent,
+            prov=(prov_list[0] if prov_list else None),
+            content_layer=content_layer,
+        )
+        self._apply_initial_text_provenance(item, text="", prov_list=prov_list)
+        _, body_nodes = self._split_element_children_head_body(el)
+        self._parse_inline_group(doc=doc, el=el, parent=item, nodes=body_nodes)
+        if content_layer is not None:
+            # Inline runs inherit the host layer, including captions parsed directly.
+            for node, _ in doc.iterate_items(root=item, with_groups=True, included_content_layers=set(ContentLayer)):
+                node.content_layer = content_layer
+        self._apply_custom_meta_from_element(item=item, el=el)
+        self._source_recorder.bind_item(el, item)
+        return item
 
     # ------------- Floating items (table / picture) -------------
 
@@ -1474,18 +1628,18 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         extra_captions: list[TextItem] = []
         footnotes: list[TextItem] = []
         if el.tagName in {DocLangToken.TABLE.value, DocLangToken.INDEX.value}:
-            caption = self._extract_caption(doc=doc, el=el)
+            captions = self._extract_captions(doc=doc, el=el)
             otsl_el = el
             table_label = self._table_label_from_otsl_element(el)
         else:
             extra_captions, footnotes = self._extract_satellites(doc=doc, el=el)
             otsl_el = self._first_child(el, DocLangToken.TABLE.value) or self._first_child(el, DocLangToken.INDEX.value)
-            caption = self._extract_caption(doc=doc, el=el)
-            if caption is None and otsl_el is not None:
-                caption = self._extract_caption(doc=doc, el=otsl_el)
+            captions = self._extract_captions(doc=doc, el=el)
+            if not captions and otsl_el is not None:
+                captions = self._extract_captions(doc=doc, el=otsl_el)
             if otsl_el is None:
-                tbl = doc.add_table(data=TableData(), caption=caption, parent=parent)
-                self._attach_satellites(item=tbl, captions=extra_captions, footnotes=footnotes)
+                tbl = doc.add_table(data=TableData(), parent=parent)
+                self._attach_satellites(item=tbl, captions=captions + extra_captions, footnotes=footnotes)
                 return
             table_label = self._table_label_from_otsl_element(otsl_el)
 
@@ -1534,7 +1688,6 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         inner = self._nodes_to_xml(body_nodes)
         tbl = doc.add_table(
             data=TableData(),
-            caption=caption,
             parent=parent,
             prov=(tbl_provs[0] if tbl_provs else None),
             content_layer=content_layer,
@@ -1549,7 +1702,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             tbl.prov.append(p)
         if thread_id:
             self._register_thread(thread_id=thread_id, host=table_host, item=tbl)
-        self._attach_satellites(item=tbl, captions=extra_captions, footnotes=footnotes)
+        self._attach_satellites(item=tbl, captions=captions + extra_captions, footnotes=footnotes)
 
     def _parse_picture(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         """Parse ``<picture>`` or a ``<group>`` wrapping it (with satellites)."""
@@ -1557,14 +1710,14 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         extra_captions: list[TextItem] = []
         footnotes: list[TextItem] = []
         if el.tagName == DocLangToken.PICTURE.value:
-            caption = self._extract_caption(doc=doc, el=el)
+            captions = self._extract_captions(doc=doc, el=el)
             picture_el = el
         else:
             extra_captions, footnotes = self._extract_satellites(doc=doc, el=el)
             picture_el = self._first_child(el, DocLangToken.PICTURE.value)
-            caption = self._extract_caption(doc=doc, el=el)
-            if caption is None and picture_el is not None:
-                caption = self._extract_caption(doc=doc, el=picture_el)
+            captions = self._extract_captions(doc=doc, el=el)
+            if not captions and picture_el is not None:
+                captions = self._extract_captions(doc=doc, el=picture_el)
 
         prov_list: list[ProvenanceItem] = []
         content_layer: ContentLayer | None = None
@@ -1573,7 +1726,6 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             content_layer = self._extract_layer(el=picture_el)
 
         pic = doc.add_picture(
-            caption=caption,
             parent=parent,
             prov=(prov_list[0] if prov_list else None),
             content_layer=content_layer,
@@ -1582,7 +1734,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             self._source_recorder.bind_item(picture_el, pic)
         for p in prov_list[1:]:
             pic.prov.append(p)
-        self._attach_satellites(item=pic, captions=extra_captions, footnotes=footnotes)
+        self._attach_satellites(item=pic, captions=captions + extra_captions, footnotes=footnotes)
 
         if picture_el is not None:
             if label_val := self._extract_label_value(el=picture_el):
@@ -1675,12 +1827,15 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         with PILImage.open(resolved) as pil:
             pil_copy = pil.copy()
         mimetype = mimetypes.guess_type(resolved.name)[0] or "image/png"
-        return ImageRef(
+        image_ref = ImageRef(
             mimetype=mimetype,
             dpi=72,
             size=Size(width=pil_copy.width, height=pil_copy.height),
             uri=resolved,
         )
+        # cache the validated image: re-reading the local path later is gated by settings
+        image_ref._pil = pil_copy
+        return image_ref
 
     def _apply_custom_meta_from_element(self, *, item: NodeItem, el: Element) -> None:
         """Restore item meta from element-head property elements."""
@@ -1708,6 +1863,19 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             return namespace, name
         return None
 
+    def _custom_field_value(self, el: Element) -> Any:
+        """Read a custom field element: its text, or a dict of child tag -> value.
+
+        A tag that occurs once in the element maps to its value, a repeated tag to a list of values.
+        """
+        children = [c for c in el.childNodes if isinstance(c, Element) and c.tagName != DocLangToken.CONTENT.value]
+        if not children:
+            return self._get_text(el)
+        grouped: dict[str, list[Any]] = {}
+        for child in children:
+            grouped.setdefault(child.tagName, []).append(self._custom_field_value(child))
+        return {tag: vals[0] if len(vals) == 1 else vals for tag, vals in grouped.items()}
+
     def _apply_custom_meta_field_element(self, *, item: DocItem, field_el: Element) -> None:
         """Map one ``<custom>`` child element onto ``item.meta``."""
         tag = field_el.tagName
@@ -1726,7 +1894,12 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 picture_meta.molecule = MoleculeMetaField(smi=smi)
         elif parsed := self._split_namespace_field_tag(tag):
             namespace, name = parsed
-            meta.set_custom_field(namespace=namespace, name=name, value=value)
+            field_value = self._custom_field_value(field_el)
+            key = MetaUtils.create_meta_field_name(namespace=namespace, name=name)
+            if (existing := meta.get_custom_part().get(key)) is not None:
+                # repeated top-level tag: collect the values in a list
+                field_value = [*existing, field_value] if isinstance(existing, list) else [existing, field_value]
+            meta.set_custom_field(namespace=namespace, name=name, value=field_value)
 
     def _apply_meta_from_head_nodes(self, *, item: NodeItem, head_nodes: Sequence[Node]) -> None:
         """Restore item meta from element-head property elements."""
@@ -1749,19 +1922,31 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                         self._apply_custom_meta_field_element(item=item, field_el=child)
 
     # ------------- Helpers -------------
-    def _extract_caption(self, *, doc: DoclingDocument, el: Element) -> TextItem | None:
-        """Extract caption from element head or from a ``<group>`` wrapper around a float."""
-        cap_el = self._first_child(el, DocLangToken.CAPTION.value)
-        if cap_el is None:
-            return None
+    def _extract_captions(self, *, doc: DoclingDocument, el: Element) -> list[TextItem]:
+        """Extract the captions from an element head or from a ``<group>`` wrapper around a float."""
+        captions: list[TextItem] = []
+        for node in el.childNodes:
+            if (
+                isinstance(node, Element)
+                and node.tagName == DocLangToken.CAPTION.value
+                and (caption := self._extract_caption(doc=doc, cap_el=node)) is not None
+            ):
+                captions.append(caption)
+        return captions
+
+    def _extract_caption(self, *, doc: DoclingDocument, cap_el: Element) -> TextItem | None:
+        """Extract a caption from a ``<caption>`` element."""
         text = self._get_text(cap_el).strip()
         if not text:
             return None
+        if self._get_children_simple_text_block(cap_el) is None:
+            return self._parse_inline_host(doc=doc, el=cap_el, parent=None, label=DocItemLabel.CAPTION)
         prov_list = self._extract_provenance(doc=doc, el=cap_el)
         item = doc.add_text(
             label=DocItemLabel.CAPTION,
             text=text,
             prov=(prov_list[0] if prov_list else None),
+            content_layer=self._extract_layer(el=cap_el),
         )
         for p in prov_list[1:]:
             item.prov.append(p)
@@ -1771,9 +1956,10 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
     def _float_group_host(self, el: Element) -> Element | None:
         """Return the host of a float group, or ``None`` if ``el`` is not one.
 
-        DocLang has no dedicated construct for a float's extra captions and footnotes
-        yet, so by convention they are emitted as ``<text>`` and ``<footnote>`` siblings
-        of the host inside an unnamed ``<group>``. Such a group wraps exactly one
+        DocLang has no dedicated construct for a float's footnotes yet, so by convention
+        they are emitted as ``<footnote>`` siblings of the host inside an unnamed
+        ``<group>``. ``<text>`` siblings are read as extra captions, as emitted before
+        DocLang 0.8 allowed several captions in the element head. Such a group wraps exactly one
         ``<picture>``, ``<table>``, ``<index>`` or ``<code>`` and nothing but satellites
         besides it.
         """
@@ -1804,6 +1990,17 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         footnotes: list[TextItem] = []
         for node in el.childNodes:
             if isinstance(node, Element) and (label := labels.get(node.tagName)) is not None:
+                inline_tags = _FORMATTING_TAG_VALUES | {DocLangToken.BR.value, DocLangToken.CONTENT.value}
+                nested = [
+                    n
+                    for n in node.childNodes
+                    if isinstance(n, Element) and not self._is_element_head_tag(n) and n.tagName not in inline_tags
+                ]
+                if nested:
+                    # nested content (e.g. a field region): a host item whose body is parsed like any container's
+                    item = self._parse_container_host(doc=doc, el=node, label=label)
+                    (captions if label == DocItemLabel.CAPTION else footnotes).append(item)
+                    continue
                 text = self._get_text(node).strip()
                 if text:
                     prov_list = self._extract_provenance(doc=doc, el=node)
@@ -1817,6 +2014,21 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     self._source_recorder.bind_item(node, item)
                     (captions if label == DocItemLabel.CAPTION else footnotes).append(item)
         return captions, footnotes
+
+    def _parse_container_host(self, *, doc: DoclingDocument, el: Element, label: DocItemLabel) -> TextItem:
+        """Parse a text-like element holding block content as a host item with that content nested under it."""
+        prov_list = self._extract_provenance(doc=doc, el=el)
+        item = doc.add_text(
+            label=label,
+            text="",
+            prov=(prov_list[0] if prov_list else None),
+            content_layer=self._extract_layer(el=el),
+        )
+        self._apply_initial_text_provenance(item, text="", prov_list=prov_list)
+        _, body_nodes = self._split_element_children_head_body(el)
+        self._dispatch_body_nodes(doc=doc, body_nodes=body_nodes, parent=item)
+        self._source_recorder.bind_item(el, item)
+        return item
 
     def _parse_code_group(
         self, *, doc: DoclingDocument, el: Element, code_el: Element, parent: NodeItem | None
@@ -2233,7 +2445,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     out.append(node.data if el.tagName == DocLangToken.CONTENT.value else node.data.strip())
             elif isinstance(node, Element):
                 nm = node.tagName
-                if nm in {DocLangToken.LOCATION.value}:
+                if nm in {DocLangToken.LOCATION.value, DocLangToken.CUSTOM.value}:
                     continue
                 if nm == DocLangToken.BR.value:
                     out.append("\n")

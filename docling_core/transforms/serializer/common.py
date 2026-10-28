@@ -7,8 +7,9 @@ import warnings
 from abc import abstractmethod
 from collections.abc import Iterable
 from functools import cached_property
-from pathlib import Path
-from typing import Annotated, Any, Optional, Union
+from pathlib import Path, PurePath
+from typing import Annotated, Any, Final, Optional, Union
+from urllib.parse import quote, urlsplit, urlunsplit
 
 from pydantic import (
     AnyUrl,
@@ -52,6 +53,7 @@ from docling_core.types.doc import (
     PictureDataType,
     PictureItem,
     PictureMoleculeData,
+    RefItem,
     RichTableCell,
     Script,
     TableAnnotationType,
@@ -65,6 +67,93 @@ _DEFAULT_LAYERS = set(ContentLayer)
 
 
 _logger = logging.getLogger(__name__)
+
+_URI_KEEP_CHARS: Final[str] = "/%:@+,;=~$!&'*"
+"""Characters that survive percent-encoding in a link destination.
+
+Includes the RFC 3986 reserved characters that carry meaning in a URI, plus
+`%` so that an already-encoded destination is not encoded a second time.
+Whitespace and parentheses are deliberately absent: they would end a Markdown
+inline link.
+"""
+
+_WINDOWS_DRIVE_RE: Final[re.Pattern[str]] = re.compile(r"[A-Za-z]:/")
+"""Matches the drive prefix of an absolute Windows path, e.g. `C:/`."""
+
+SAFE_HYPERLINK_SCHEMES: Final[frozenset[str]] = frozenset(
+    {"http", "https", "ftp", "ftps", "sftp", "mailto", "tel", "file"}
+)
+"""URI schemes that are serialized as live hyperlinks; other schemes keep only the link text."""
+
+_URI_SCHEME_RE: Final[re.Pattern[str]] = re.compile(r"([A-Za-z][A-Za-z0-9+.\-]*):")
+_URI_IGNORED_CHARS_RE: Final[re.Pattern[str]] = re.compile(r"[\t\r\n]")
+_URI_LEADING_CHARS: Final[str] = "".join(chr(c) for c in range(0x21))
+
+_MD_DESTINATION_UNSAFE_RE: Final[re.Pattern[str]] = re.compile(r"[\x00-\x20\x7f()<>\"\\]")
+_MD_ENTITY_RE: Final[re.Pattern[str]] = re.compile(r"&(?=#?\w+;)")
+
+
+def _escape_uri_path(value: AnyUrl | PurePath) -> str:
+    """Encode a URL or filesystem path as a link destination.
+
+    Used for Markdown link destinations and HTML `src` values alike. Handles URLs of
+    any scheme (https/s3/ftp/...) as well as POSIX and Windows paths, keeps relative
+    paths relative, and never double-encodes. A Windows path is recognized by either
+    flavour, so a document authored on Windows still resolves when it is exported on
+    POSIX.
+
+    The only destination this gives a ``file://`` scheme to is an absolute Windows
+    path, where it is the sole spelling a renderer cannot misread as a URL scheme
+    (``C:``) or as an authority (``//server``). A URL that already carries the
+    scheme is passed through, since dropping it would turn an absolute filesystem
+    reference into a root-relative URL.
+
+    Known limitation: a backslash in a `PosixPath` string is ambiguous.
+    It may be a Windows separator surviving a JSON round-trip (correct to
+    convert) or a literal filename character (where converting it to `/`
+    would split one component into two). The two cases are indistinguishable
+    from `str()`. In practice this is not a concern because `ImageRef.uri`
+    is always populated from native filesystem operations, so a `PosixPath`
+    can only carry a literal backslash if the caller explicitly constructed one.
+
+    Args:
+        value: The URL or path to encode.
+
+    Returns:
+        A percent-encoded link destination.
+    """
+    keep = _URI_KEEP_CHARS
+    # A backslash is both the Windows separator and a Markdown escape character, and
+    # is read as a separator whatever flavour the path arrives in: a document authored
+    # on Windows keeps its backslashes once it is re-read on POSIX, where the flavour
+    # can no longer tell. A URL is unaffected, as pydantic normalizes backslashes away
+    # when parsing.
+    s = str(value).replace("\\", "/")
+
+    if s.startswith("//"):  # In case of a fileshare (//someserver/somefolder)
+        host, _, tail = s.lstrip("/").partition("/")  # get the end of the path
+        # file://<host>/<path>, with <host> being a possibly empty string.
+        return urlunsplit(("file", host, quote(f"/{tail}", safe=keep), "", ""))
+    if _WINDOWS_DRIVE_RE.match(s):  # In case of a Windows filename with drive letter
+        # file://<full_path_with_filename>
+        return urlunsplit(("file", "", quote(f"/{s}", safe=keep), "", ""))
+
+    # A URL keeps its scheme, authority and delimiters; only its components are
+    # encoded. A single-character scheme cannot be real, so it is read as a path.
+    parts = urlsplit(s)
+    if len(parts.scheme) > 1:
+        return urlunsplit(
+            (
+                parts.scheme,
+                parts.netloc,
+                quote(parts.path, safe=keep),
+                quote(parts.query, safe=keep + "="),
+                quote(parts.fragment, safe=keep),
+            )
+        )
+
+    # A relative or root-relative local path.
+    return quote(s, safe=keep)
 
 
 class _PageBreakNode(NodeItem):
@@ -183,6 +272,73 @@ def create_ser_result(
         text=text,
         spans=spans,
     )
+
+
+def hyperlink_uri(hyperlink: AnyUrl | PurePath) -> str:
+    """Render a hyperlink destination as a portable URI string.
+
+    A `Path` hyperlink that a parser read out of a document is a native path, so
+    on Windows `str()` yields backslash separators and the exported destination
+    stops being a portable URI. `Path.as_posix()` normalizes separators to `/`
+    and leaves everything else untouched, so `?`/`#` delimiters, percent escapes
+    and spaces keep their meaning. URLs are unaffected by definition.
+
+    Args:
+        hyperlink: The hyperlink destination. `PurePath` (rather than `Path`) is
+            accepted so foreign spellings such as `PureWindowsPath` can be
+            normalized directly in tests; `AnyUrl` values are returned unchanged.
+
+    Returns:
+        A portable URI string with `/` path separators.
+    """
+    if isinstance(hyperlink, PurePath):
+        return hyperlink.as_posix()
+    return str(hyperlink)
+
+
+def is_safe_hyperlink(uri: str) -> bool:
+    """Tell whether a hyperlink destination may be rendered as a live link.
+
+    Hyperlink destinations come from the converted document, where `Path` accepts
+    any string and `AnyUrl` accepts any scheme. A destination with an active
+    scheme such as `javascript:` or `data:` must not become a clickable link.
+
+    The scheme is read the way browsers do: leading control characters and spaces
+    are ignored and tabs and newlines are removed anywhere. A destination without
+    a scheme is a relative reference. A single-letter scheme is a Windows drive
+    (`C:/...`), i.e. a path.
+
+    Args:
+        uri: The hyperlink destination, e.g. as returned by `hyperlink_uri`.
+
+    Returns:
+        `True` if the destination is relative or uses an allowlisted scheme.
+    """
+    cleaned = _URI_IGNORED_CHARS_RE.sub("", uri).lstrip(_URI_LEADING_CHARS)
+    match = _URI_SCHEME_RE.match(cleaned)
+    if match is None:
+        return True
+    scheme = match.group(1).lower()
+    return len(scheme) == 1 or scheme in SAFE_HYPERLINK_SCHEMES
+
+
+def markdown_link_destination(hyperlink: AnyUrl | PurePath) -> str:
+    """Render a hyperlink destination that cannot end a Markdown inline link early.
+
+    Percent-encodes control characters, whitespace, parentheses, angle brackets,
+    double quotes and backslashes, which would otherwise end the destination and
+    let the rest of the address be parsed as Markdown or raw HTML. An `&` that
+    starts an HTML entity is escaped as `&amp;`, since Markdown renderers decode
+    entities in destinations. Other characters are kept as they are.
+
+    Args:
+        hyperlink: The hyperlink destination.
+
+    Returns:
+        A string that can be used inside `[text](...)`.
+    """
+    res = _MD_ENTITY_RE.sub("&amp;", hyperlink_uri(hyperlink))
+    return _MD_DESTINATION_UNSAFE_RE.sub(lambda m: f"%{ord(m.group()):02X}", res)
 
 
 class CommonParams(BaseModel):
@@ -517,7 +673,33 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
         return create_ser_result(text=delim.join([p.text for p in parts if p.text]), span_source=parts)
 
-    # making some assumptions about the kwargs it can pass
+    def _skip_in_walk(self, *, node: NodeItem, root: NodeItem | None) -> bool:
+        """Skip satellite descendants unless the walk starts inside that satellite."""
+        nested = self._satellite_descendants
+        return node.self_ref in nested and (
+            root is None or (root.self_ref not in nested and root.self_ref not in self._satellites_of_some_item)
+        )
+
+    @cached_property
+    def _satellites_of_some_item(self) -> set[str]:
+        """The captions emitted by their floating item."""
+        return self._captions_of_some_item
+
+    @cached_property
+    def _satellite_descendants(self) -> set[str]:
+        """Content emitted inside a satellite must not appear again in the outer walk."""
+        return {
+            node.self_ref
+            for ref in self._satellites_of_some_item
+            for node, _ in self.doc.iterate_items(
+                root=RefItem(cref=ref).resolve(self.doc),
+                with_groups=True,
+                traverse_pictures=True,
+                included_content_layers=set(ContentLayer),
+            )
+            if node.self_ref != ref
+        }
+
     @override
     def get_parts(
         self,
@@ -545,7 +727,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             traverse_pictures=params.traverse_pictures,
             add_page_breaks=self.requires_page_break(),
         ):
-            if node.self_ref in my_visited:
+            if node.self_ref in my_visited or self._skip_in_walk(node=node, root=item):
                 continue
             else:
                 my_visited.add(node.self_ref)
@@ -568,7 +750,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         text: str,
         *,
         formatting: Formatting | None = None,
-        hyperlink: AnyUrl | Path | None = None,
+        hyperlink: AnyUrl | PurePath | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply some text post-processing steps."""
@@ -588,7 +770,10 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             elif formatting.script == Script.SUPER:
                 res = self.serialize_superscript(text=res, **kwargs)
         if params.include_hyperlinks and hyperlink:
-            res = self.serialize_hyperlink(text=res, hyperlink=hyperlink, **kwargs)
+            if is_safe_hyperlink(hyperlink_uri(hyperlink)):
+                res = self.serialize_hyperlink(text=res, hyperlink=hyperlink, **kwargs)
+            else:
+                _logger.warning("Dropping hyperlink with unsafe scheme; keeping the link text only.")
         return res
 
     @override
@@ -625,7 +810,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: AnyUrl | Path,
+        hyperlink: AnyUrl | PurePath,
         **kwargs: Any,
     ) -> str:
         """Hook for hyperlink serialization."""
@@ -641,14 +826,18 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         params = self.params.merge_with_patch(patch=kwargs)
         results: list[SerializationResult] = []
         if DocItemLabel.CAPTION in params.labels:
-            results = [
-                create_ser_result(text=it.text, span_source=it)
-                for cap in item.captions
-                if isinstance(it := cap.resolve(self.doc), TextItem)
-                and it.self_ref not in self.get_excluded_refs(**kwargs)
-            ]
-            text_res = params.caption_delim.join([r.text for r in results])
-            text_res = self.post_process(text=text_res)
+            for ref in item.captions:
+                caption = ref.resolve(self.doc)
+                if (
+                    not isinstance(caption, TextItem)
+                    or caption.content_layer not in params.layers
+                    or caption.self_ref in self.get_excluded_refs(**kwargs)
+                ):
+                    continue
+                parts = [create_ser_result(text=self.post_process(text=caption.text, **kwargs), span_source=caption)]
+                parts.extend(self.get_parts(item=caption, is_inline_scope=True, **kwargs))
+                results.append(create_ser_result(text=" ".join(p.text for p in parts if p.text), span_source=parts))
+            text_res = params.caption_delim.join(r.text for r in results)
         else:
             text_res = ""
         return create_ser_result(text=text_res, span_source=results)
@@ -750,12 +939,20 @@ def _should_use_legacy_annotations(
 ) -> bool:
     if item.meta:
         return False
-    with warnings.catch_warnings(record=True) as caught_warnings:
-        warnings.simplefilter("ignore", DeprecationWarning)
-        if (incl_attr := getattr(params, "include_annotations", None)) is not None and not incl_attr:
-            return False
-        use_legacy = bool([ann for ann in item.annotations if ((ann.kind == kind) if kind is not None else True)])
-        if use_legacy:
-            for w in caught_warnings:
-                warnings.warn(w.message, w.category)
-        return use_legacy
+    # Read the deprecated `include_annotations` flag via __dict__ to avoid triggering
+    # its Pydantic deprecation warning before we know whether annotations are present.
+    incl_attr = params.__dict__.get("include_annotations")
+    if incl_attr is not None and not incl_attr:
+        return False
+    # Read `annotations` via __dict__ for the same reason: accessing the deprecated
+    # property fires a warning even when no annotations exist.  We re-emit the warning
+    # manually below, but only when the legacy path will actually be used.
+    raw_annotations: list[Any] = item.__dict__.get("annotations", [])
+    use_legacy = bool([ann for ann in raw_annotations if ((ann.kind == kind) if kind is not None else True)])
+    if use_legacy:
+        warnings.warn(
+            "Field `annotations` is deprecated; use `meta` instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    return use_legacy

@@ -1,7 +1,7 @@
 """Define base classes for serialization."""
 
 from abc import ABC, abstractmethod
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, Optional, Union
 
 from pydantic import AnyUrl, BaseModel
@@ -251,7 +251,7 @@ class BaseDocSerializer(ABC):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: AnyUrl | Path,
+        hyperlink: AnyUrl | PurePath,
         **kwargs: Any,
     ) -> str:
         """Hook for hyperlink serialization."""

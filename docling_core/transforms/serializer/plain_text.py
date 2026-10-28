@@ -1,6 +1,6 @@
 """Define classes for plain-text serialization."""
 
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, Union
 
 from pydantic import AnyUrl
@@ -89,7 +89,7 @@ class PlainTextDocSerializer(MarkdownDocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: AnyUrl | Path,
+        hyperlink: AnyUrl | PurePath,
         **kwargs: Any,
     ) -> str:
         """Return the link label only, discarding the URL."""

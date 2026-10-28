@@ -3,14 +3,13 @@
 import base64
 import html
 import logging
+import re
 from enum import Enum
 from html.parser import HTMLParser
 from io import BytesIO
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, Optional, Union
-from urllib.parse import quote
-from xml.etree.ElementTree import SubElement, tostring
-from xml.sax.saxutils import unescape
+from xml.etree.ElementTree import tostring
 
 import latex2mathml.converter
 from PIL.Image import Image
@@ -34,9 +33,11 @@ from docling_core.transforms.serializer.base import (
 from docling_core.transforms.serializer.common import (
     CommonParams,
     DocSerializer,
+    _escape_uri_path,
     _get_annotation_text,
     _should_use_legacy_annotations,
     create_ser_result,
+    hyperlink_uri,
 )
 from docling_core.transforms.serializer.html_styles import (
     _get_css_for_single_column,
@@ -84,11 +85,19 @@ from docling_core.types.doc.document import (
 )
 from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.utils import (
+    _normalize_image_for_png,
     get_html_tag_with_text_direction,
     get_text_direction,
 )
 
 _logger = logging.getLogger(__name__)
+
+_DOUBLE_ESCAPED_CHAR_REF = re.compile(r"&amp;(#x[0-9A-Fa-f]+;)")
+
+
+def _escape_css_string(value: str) -> str:
+    """Escape a value so that it stays inside a single-quoted CSS string."""
+    return value.replace("\\", "\\\\").replace("'", "\\'").replace("\r", "").replace("\n", "\\A ")
 
 
 class HTMLOutputStyle(str, Enum):
@@ -127,8 +136,8 @@ class HTMLParams(CommonParams):
 
     include_annotations: bool = Field(
         default=True,
-        description="Include item annotations.",
-        deprecated="Use include_meta instead.",
+        description="Include legacy annotations. Has no effect on meta-based output.",
+        deprecated="Setting this to False only suppresses legacy `annotations`; use `blocked_meta_names` to suppress specific meta fields.",
     )
 
     show_original_list_item_marker: bool = True
@@ -164,9 +173,13 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             post_processed = True
         else:
             text = item.text
-            if not isinstance(item, CodeItem | FormulaItem):
+            if not isinstance(item, FormulaItem):
                 text = html.escape(text, quote=False)
-                text = text.replace("\n", "<br>")
+                if not isinstance(item, CodeItem):
+                    text = text.replace("\n", "<br>")
+            if not isinstance(item, CodeItem | FormulaItem | ListItem):
+                text = doc_serializer.post_process(text=text, formatting=item.formatting, hyperlink=item.hyperlink)
+                post_processed = True
 
         # Prepare the HTML based on item type
         if isinstance(item, TitleItem | SectionHeaderItem):
@@ -182,6 +195,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 image_mode=params.image_mode,
                 formula_to_mathml=params.formula_to_mathml,
                 is_inline_scope=is_inline_scope,
+                text_is_html=has_inline_repr,
             )
 
         elif isinstance(item, CodeItem):
@@ -219,7 +233,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                     html_tag="li",
                     text=text,
                     attrs=(
-                        {"style": f"list-style-type: '{item.marker} ';"}
+                        {"style": f"list-style-type: '{_escape_css_string(item.marker)} ';"}
                         if params.show_original_list_item_marker and item.marker
                         else {}
                     ),
@@ -265,6 +279,12 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
             if cap_res.text:
                 res_parts.append(cap_res)
+            ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+            if ftn_res.text:
+                res_parts.append(ftn_res)
+            if cap_res.text or ftn_res.text:
+                # <figcaption> is only valid inside <figure>, as for pictures
+                text = f"<figure>{''.join(r.text for r in res_parts)}</figure>"
 
         return create_ser_result(text=text, span_source=res_parts)
 
@@ -278,8 +298,26 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         image_mode: ImageRefMode,
         formula_to_mathml: bool,
         is_inline_scope: bool,
+        text_is_html: bool = False,
     ) -> str:
-        """Process a formula item to HTML/MathML."""
+        """Process a formula item to HTML/MathML.
+
+        Args:
+            item: The formula item.
+            text: The formula text, or its serialized HTML if `text_is_html` is set.
+            orig: The original formula text, used for the image fallback.
+            doc: The document containing the item.
+            image_mode: The image mode of the export.
+            formula_to_mathml: Whether to convert the formula to MathML.
+            is_inline_scope: Whether the formula is rendered inline.
+            text_is_html: Whether `text` is already HTML and must not be escaped again.
+
+        Returns:
+            The HTML representation of the formula.
+        """
+        escaped_text = html.escape(text, quote=False)
+        plain_text = text if text_is_html else escaped_text
+
         # If formula is empty, try to use an image fallback
         if (
             text == ""
@@ -296,9 +334,11 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 # Set display mode based on context
                 display_mode = "inline" if is_inline_scope else "block"
                 mathml_element = latex2mathml.converter.convert_to_element(text, display=display_mode)
-                annotation = SubElement(mathml_element, "annotation", dict(encoding="TeX"))
-                annotation.text = text
-                mathml = unescape(tostring(mathml_element, encoding="unicode"))
+                # latex2mathml stores numeric character references as literal element text, which
+                # ElementTree escapes again. Revert only those; any other text must stay escaped.
+                mathml = _DOUBLE_ESCAPED_CHAR_REF.sub(r"&\1", tostring(mathml_element, encoding="unicode"))
+                annotation = f'<annotation encoding="TeX">{escaped_text}</annotation>'
+                mathml = mathml.removesuffix("</math>") + annotation + "</math>"
 
                 # Don't wrap in div for inline formulas
                 if is_inline_scope:
@@ -311,17 +351,18 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 if image_mode == ImageRefMode.EMBEDDED and len(item.prov) > 0 and img_fallback:
                     return img_fallback
                 elif text:
-                    return f"<pre>{text}</pre>"
+                    return f"<pre>{plain_text}</pre>"
                 else:
                     return "<pre>Formula not decoded</pre>"
 
-        _logger.warning("Could not parse formula with MathML")
+        if formula_to_mathml:
+            _logger.warning("Could not parse formula with MathML")
 
         # Fallback options if we got here
         if text and is_inline_scope:
-            return f"<code>{text}</code>"
+            return f"<code>{plain_text}</code>"
         elif text and (not is_inline_scope):
-            f"<pre>{text}</pre>"
+            return f"<pre>{plain_text}</pre>"
         elif is_inline_scope:
             return '<span class="formula-not-decoded">Formula not decoded</span>'
 
@@ -332,7 +373,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         item_image = item.get_image(doc=doc)
         if item_image is not None:
             img_ref = ImageRef.from_pil(item_image, dpi=72)
-            return f'<figure><img src="{img_ref.uri}" alt="{orig}" /></figure>'
+            return f'<figure><img src="{img_ref.uri}" alt="{html.escape(orig)}" /></figure>'
         return None
 
 
@@ -440,8 +481,13 @@ class HTMLTableSerializer(BaseTableSerializer):
                 body = f"<tbody>{body}</tbody>"
                 res_parts.append(create_ser_result(text=body, span_source=span_source))
 
-        text_res = "".join([r.text for r in res_parts])
-        text_res = f"<table>{text_res}</table>" if text_res else ""
+        text_table = "".join([r.text for r in res_parts])
+        text_table = f"<table>{text_table}</table>" if text_table else ""
+
+        ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+        if ftn_res.text:
+            res_parts.append(ftn_res)
+        text_res = f"{text_table}{ftn_res.text}"
 
         return create_ser_result(text=text_res, span_source=res_parts)
 
@@ -579,7 +625,7 @@ class HTMLPictureSerializer(BasePictureSerializer):
                     and isinstance(item.image.uri, AnyUrl)
                     and item.image.uri.scheme == "data"
                 ):
-                    img_text = f'<img src="{item.image.uri}">'
+                    img_text = f'<img src="{html.escape(str(item.image.uri))}">'
                 elif len(item.prov) > 1:  # more than 1 provenance
                     img_text = '<table style="border-collapse: collapse; width: 100%;">\n'
                     for ind, prov in enumerate(item.prov):
@@ -607,7 +653,7 @@ class HTMLPictureSerializer(BasePictureSerializer):
                 if isinstance(item.image, ImageRef) and not (
                     isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "data"
                 ):
-                    img_text = f'<img src="{quote(str(item.image.uri))}">'
+                    img_text = f'<img src="{html.escape(_escape_uri_path(item.image.uri))}">'
 
         if img_text:
             res_parts.append(create_ser_result(text=img_text, span_source=item))
@@ -630,6 +676,10 @@ class HTMLPictureSerializer(BasePictureSerializer):
             meta_res = doc_serializer.serialize_meta(item=item, **kwargs)
             if meta_res.text:
                 res_parts.append(meta_res)
+
+        ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+        if ftn_res.text:
+            res_parts.append(ftn_res)
 
         text_res = "".join([r.text for r in res_parts])
         if text_res:
@@ -1118,11 +1168,11 @@ class HTMLDocSerializer(DocSerializer):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: AnyUrl | Path,
+        hyperlink: AnyUrl | PurePath,
         **kwargs: Any,
     ) -> str:
         """Apply HTML-specific hyperlink serialization."""
-        return f'<a href="{hyperlink!s}">{text}</a>'
+        return f'<a href="{html.escape(hyperlink_uri(hyperlink))}">{text}</a>'
 
     @override
     def serialize_doc(
@@ -1135,7 +1185,7 @@ class HTMLDocSerializer(DocSerializer):
 
         def _serialize_page_img(page_img: Image):
             buffered = BytesIO()
-            page_img.save(buffered, format="PNG")  # Save the image to the byte stream
+            _normalize_image_for_png(page_img).save(buffered, format="PNG")
             img_bytes = buffered.getvalue()  # Get the byte data
 
             # Encode to Base64 and decode to string
@@ -1197,7 +1247,7 @@ class HTMLDocSerializer(DocSerializer):
                         and isinstance(page_img.uri, AnyUrl)
                         and page_img.uri.scheme == "data"
                     ):
-                        img_text = f'<img src="{page_img.uri}">'
+                        img_text = f'<img src="{html.escape(str(page_img.uri))}">'
                         html_parts.append(f"<figure>{img_text}</figure>")
 
                     elif (page_img is not None) and (page_img._pil is not None):
@@ -1249,12 +1299,18 @@ class HTMLDocSerializer(DocSerializer):
 
         if DocItemLabel.CAPTION in params.labels:
             for cap in item.captions:
-                if isinstance(it := cap.resolve(self.doc), TextItem) and it.self_ref not in excluded_refs:
-                    text_cap = it.text
-                    text_dir = get_text_direction(text_cap)
+                if (
+                    isinstance(it := cap.resolve(self.doc), TextItem)
+                    and it.content_layer in params.layers
+                    and it.self_ref not in excluded_refs
+                ):
+                    parts = [html.escape(it.text)]
+                    parts.extend(p.text for p in self.get_parts(item=it, is_inline_scope=True, **kwargs))
+                    text_cap = " ".join(p for p in parts if p)
+                    text_dir = get_text_direction(it._get_plain_text(self.doc))
                     dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""
                     cap_ser_res = create_ser_result(
-                        text=(f'<div class="caption"{dir_str}>{html.escape(text_cap)}</div>'),
+                        text=(f'<div class="caption"{dir_str}>{text_cap}</div>'),
                         span_source=it,
                     )
                     results.append(cap_ser_res)
@@ -1274,6 +1330,33 @@ class HTMLDocSerializer(DocSerializer):
         text_res = params.caption_delim.join([r.text for r in results])
         if text_res:
             text_res = f"<{tag}>{text_res}</{tag}>"
+        return create_ser_result(text=text_res, span_source=results)
+
+    @override
+    def serialize_footnotes(
+        self,
+        item: FloatingItem,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the item's footnotes."""
+        params = self.params.merge_with_patch(patch=kwargs)
+        results: list[SerializationResult] = []
+        excluded_refs = self.get_excluded_refs(**kwargs)
+
+        if DocItemLabel.FOOTNOTE in params.labels:
+            for ftn in item.footnotes:
+                if isinstance(it := ftn.resolve(self.doc), TextItem) and it.self_ref not in excluded_refs:
+                    text_ftn = it.text
+                    text_dir = get_text_direction(text_ftn)
+                    dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""
+                    results.append(
+                        create_ser_result(
+                            text=(f'<div class="footnote"{dir_str}>{html.escape(text_ftn)}</div>'),
+                            span_source=it,
+                        )
+                    )
+
+        text_res = "".join([r.text for r in results])
         return create_ser_result(text=text_res, span_source=results)
 
     def _generate_head(self) -> str:

@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import ClassVar
 
+import pytest
 from pydantic import Field
 
 from docling_core.transforms.chunker import HierarchicalChunker
@@ -11,6 +12,7 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
     DocChunk,
     TripletTableSerializer,
 )
+from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 from docling_core.transforms.serializer.html import HTMLDocSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
 from docling_core.types.doc import ContentLayer, DocItemLabel, DoclingDocument, PictureItem, TableData, TextItem
@@ -28,6 +30,84 @@ def test_chunk():
     chunks = chunker.chunk(dl_doc=dl_doc)
     act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
     assert_or_generate_json_ground_truth(act_data, "tests/data/chunker/0_out_chunks.json")
+
+
+@pytest.mark.parametrize("kind", ["title", "section_header"])
+@pytest.mark.parametrize("body", ["Body.", ""])
+@pytest.mark.parametrize("prefix", ["Energy ", ""])
+def test_rich_heading_chunk_metadata(kind: str, body: str, prefix: str) -> None:
+    doc = DoclingDocument(name="rich-heading")
+    heading = doc.add_title(text="") if kind == "title" else doc.add_heading(text="", level=1)
+    parent = doc.add_inline_group(parent=heading) if prefix else heading
+    if prefix:
+        doc.add_text(label=DocItemLabel.TEXT, text=prefix.strip(), parent=parent)
+    doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=parent)
+    if body:
+        doc.add_text(label=DocItemLabel.TEXT, text=body)
+    chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker(always_emit_headings=True).chunk(doc)]
+    assert len(chunks) == 1
+    assert chunks[0].text == body
+    assert chunks[0].meta.headings == [f"{prefix}$E=mc^2$"]
+
+
+def test_rich_heading_is_emitted_before_a_sibling_heading() -> None:
+    doc = DoclingDocument(name="rich-heading")
+    heading = doc.add_heading(text="", level=1)
+    inline = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="Energy", parent=inline)
+    doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=inline)
+    doc.add_heading(text="Next", level=1)
+    doc.add_text(label=DocItemLabel.TEXT, text="Body.")
+
+    chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker(always_emit_headings=True).chunk(doc)]
+    assert [chunk.text for chunk in chunks] == ["", "Body."]
+    assert [chunk.meta.headings for chunk in chunks] == [["Energy $E=mc^2$"], ["Next"]]
+
+
+@pytest.mark.parametrize("kind", ["table", "picture"])
+@pytest.mark.parametrize(
+    ("caption", "expected"),
+    [
+        ("Table 1: results", "Table 1: results"),
+        ("Table <bold>1</bold>: results", "Table **1** : results"),
+        ("Table <formula>x</formula>: results", "Table $x$ : results"),
+    ],
+)
+def test_chunk_caption_stays_with_owner(kind: str, caption: str, expected: str, tmp_path: Path) -> None:
+    table_body = "<fcel/>A<fcel/>B<nl/><fcel/>1<fcel/>2<nl/>" if kind == "table" else ""
+    doc = DocLangDocDeserializer().deserialize_str(
+        f'<doclang version="0.7"><{kind}><caption>{caption}</caption>{table_body}</{kind}></doclang>'
+    )
+    for cycle in range(2):
+        owner = doc.tables[0] if kind == "table" else doc.pictures[0]
+        caption_item = owner.captions[0].resolve(doc)
+        chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker().chunk(doc)]
+        assert len(chunks) == 1
+        chunk = chunks[0]
+        assert chunk.text.count(expected) == 1
+        if kind == "table":
+            assert chunk.text == expected + "\n\nA, 1 = B. 1, 1 = 2"
+        else:
+            assert chunk.text == expected
+        refs = {item.self_ref for item in chunk.meta.doc_items}
+        assert caption_item.self_ref in refs
+        if kind == "table":
+            assert owner.self_ref in refs
+        assert {item.self_ref for item, _ in doc.iterate_items(root=caption_item) if isinstance(item, TextItem)} <= refs
+        archive = tmp_path / f"caption-chunk-{cycle}.dclx"
+        doc.save_as_doclang_archive(archive)
+        doc = DoclingDocument.load_from_doclang_archive(archive)
+
+
+def test_chunk_satellite_check_keeps_unrelated_inline_text() -> None:
+    doc = DocLangDocDeserializer().deserialize_str(
+        '<doclang version="0.7"><text>Before <bold>body</bold></text>'
+        "<table><caption>Table <bold>1</bold>: results</caption><fcel/>A<nl/></table>"
+        "<text>After</text></doclang>"
+    )
+    chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker().chunk(doc)]
+    assert [chunk.text for chunk in chunks] == ["Before **body**", "Table **1** : results\n\nA", "After"]
+    assert doc.tables[0].self_ref in {item.self_ref for item in chunks[1].meta.doc_items}
 
 
 def test_chunk_custom_serializer():
@@ -276,6 +356,35 @@ def test_triplet_table_serializer_handles_empty_table_output():
     assert len(rich_chunks) == 1
     assert rich_chunks[0].text == "Important body text inside layout table"
     assert [item.self_ref for item in rich_chunks[0].meta.doc_items] == [rich_doc.tables[0].self_ref]
+
+
+def test_chunk_table_keeps_footnotes():
+    """Table, picture and code footnotes reach the chunk text once, after the item (#496)."""
+    doc = DoclingDocument(name="t")
+    table_data = TableData(num_cols=1)
+    table_data.add_row(["Country"])
+    table_data.add_row(["Italy"])
+    table = doc.add_table(data=table_data)
+    table.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="Country footnote").get_ref())
+    doc.add_picture().footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="Picture footnote").get_ref())
+    doc.add_code(text="x = 1").footnotes.append(
+        doc.add_text(label=DocItemLabel.FOOTNOTE, text="Code footnote").get_ref()
+    )
+
+    chunks = list(HierarchicalChunker().chunk(dl_doc=doc))
+    assert [c.text for c in chunks] == [
+        "Country = Italy\n\nCountry footnote",
+        "Picture footnote",
+        "```\nx = 1\n```\n\nCode footnote",
+    ]
+
+
+def test_chunk_table_footnotes_496():
+    """Real conversion of the PDF from #496: the table chunk ends with its two footnotes."""
+    dl_doc = DoclingDocument.load_from_json("tests/data/doc/table_footnotes_496.json")
+    chunks = HierarchicalChunker().chunk(dl_doc=dl_doc)
+    act_data = dict(root=[DocChunk.model_validate(n).export_json_dict() for n in chunks])
+    assert_or_generate_json_ground_truth(act_data, "tests/data/chunker/table_footnotes_496_out_chunks.json")
 
 
 def test_chunk_rich_table_custom_serializer(rich_table_doc: DoclingDocument):

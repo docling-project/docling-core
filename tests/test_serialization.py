@@ -1,14 +1,17 @@
 """Test serialization."""
 
 import threading
+from html.parser import HTMLParser
 from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
 from typing import TypeAlias, Union
 from unittest.mock import MagicMock, patch
 from xml.etree import ElementTree as ET
 
 import pytest
+from PIL import Image
 from pydantic import AnyUrl
 
+from docling_core.transforms.chunker.hierarchical_chunker import TripletTableSerializer
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
@@ -17,6 +20,7 @@ from docling_core.transforms.serializer.html import (
     HTMLParams,
     HTMLTableSerializer,
 )
+from docling_core.transforms.serializer.latex import LaTeXDocSerializer
 from docling_core.transforms.serializer.markdown import (
     CaptionPlacement,
     MarkdownDocSerializer,
@@ -36,6 +40,7 @@ from docling_core.types.doc.document import (
     DescriptionAnnotation,
     EntitiesMetaField,
     EntityMention,
+    Formatting,
     LanguageMetaField,
     PictureClassificationMetaField,
     PictureClassificationPrediction,
@@ -43,6 +48,7 @@ from docling_core.types.doc.document import (
     ProvenanceItem,
     RefItem,
     RichTableCell,
+    Script,
     SummaryMetaField,
     TableCell,
     TableData,
@@ -376,6 +382,27 @@ def test_md_list_item_markers(sample_doc):
             )
 
 
+@pytest.mark.parametrize(
+    ("marker", "expected"),
+    [
+        pytest.param("a)", "- a) item", id="ascii-letter"),
+        pytest.param("第九条", "- 第九条 item", id="cjk-article"),
+        pytest.param("\uff08一\uff09", "- \uff08一\uff09 item", id="cjk-fullwidth-parens"),
+        pytest.param("①", "- ① item", id="enclosed-circle"),
+        pytest.param("壹、", "- 壹、 item", id="cjk-legal"),
+        pytest.param("•", "- item", id="bullet-glyph"),
+    ],
+)
+def test_md_list_item_marker_auto_non_ascii(marker, expected):
+    doc = DoclingDocument(name="markers")
+    group = doc.add_list_group()
+    doc.add_list_item(text="item", enumerated=True, marker=marker, parent=group)
+
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+
+    assert actual == expected
+
+
 def test_md_mark_meta_true():
     src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
@@ -545,106 +572,145 @@ def test_md_table_stacked_header_drops_repeated_span_text():
     assert actual.splitlines()[0] == "| human   |   MRCNN - R50 |"
 
 
-def test_md_table_keeps_rows_under_a_vertically_spanning_header():
-    """A row-spanning header is repeated into each row it covers by `grid`.
+def _cell(text: str, row: int, col: int, *, row_span: int = 1, column_header: bool = False) -> TableCell:
+    return TableCell(
+        text=text,
+        start_row_offset_idx=row,
+        end_row_offset_idx=row + row_span,
+        start_col_offset_idx=col,
+        end_col_offset_idx=col + 1,
+        row_span=row_span,
+        column_header=column_header,
+    )
 
-    Only rows a header starts on are header rows, otherwise the data rows under
-    the span get flattened into the header and disappear from the body.
-    """
+
+@pytest.mark.parametrize(
+    ("num_rows", "num_cols", "cells", "md_table", "df_columns", "df_values"),
+    [
+        # "10.00" sits in the leading column, where unflagged text does not end the
+        # header block, so only the "header starts on this row" rule keeps row 1 out.
+        pytest.param(
+            2,
+            2,
+            [
+                _cell("Price", 0, 0, column_header=True),
+                _cell("Category", 0, 1, row_span=2, column_header=True),
+                _cell("10.00", 1, 0),
+            ],
+            "| Price | Category |\n| - | - |\n| 10.00 | Category |",
+            ["Price", "Category"],
+            [["10.00", "Category"]],
+            id="rows-under-row-spanning-header-stay-in-body",
+        ),
+        # "2025" is deliberately flagged as column_header, as the HTML backend did
+        # before docling-project/docling#4216, to model documents serialized then.
+        pytest.param(
+            3,
+            3,
+            [
+                _cell("Year", 0, 0, column_header=True),
+                _cell("Month", 0, 1, column_header=True),
+                _cell("Revenue", 0, 2, column_header=True),
+                _cell("2025", 1, 0, row_span=2, column_header=True),
+                _cell("January", 1, 1),
+                _cell("$134", 1, 2),
+                _cell("February", 2, 1),
+                _cell("$150", 2, 2),
+            ],
+            "| Year | Month | Revenue |\n| - | - | - |\n| 2025 | January | $134 |\n| 2025 | February | $150 |",
+            ["Year", "Month", "Revenue"],
+            [["2025", "January", "$134"], ["2025", "February", "$150"]],
+            id="row-header-flagged-as-column-header-stays-in-body",
+        ),
+        pytest.param(
+            3,
+            3,
+            [
+                _cell("", 0, 0, column_header=True),
+                _cell("% of Total", 0, 1, column_header=True),
+                _cell("% of Total", 0, 2, column_header=True),
+                _cell("class label", 1, 0),
+                _cell("Train", 1, 1, column_header=True),
+                _cell("Test", 1, 2, column_header=True),
+                _cell("Caption", 2, 0),
+                _cell("2.5", 2, 1),
+                _cell("2.4", 2, 2),
+            ],
+            "| class label | % of Total - Train | % of Total - Test |\n| - | - | - |\n| Caption | 2.5 | 2.4 |",
+            ["class label", "% of Total.Train", "% of Total.Test"],
+            [["Caption", "2.5", "2.4"]],
+            id="stacked-header-with-unmarked-row-label",
+        ),
+        pytest.param(
+            2,
+            2,
+            [
+                _cell("Name", 0, 0, column_header=True),
+                _cell("Value", 0, 1),
+                _cell("A", 1, 0),
+                _cell("1", 1, 1),
+            ],
+            "| Name | Value |\n| - | - |\n| A | 1 |",
+            ["Name", "Value"],
+            [["A", "1"]],
+            id="partially-flagged-first-row-stays-header",
+        ),
+        # Without any column_header flag, markdown promotes row 0 to the header since
+        # GFM requires one, while the dataframe keeps every row as data with default
+        # integer column names.
+        pytest.param(
+            2,
+            2,
+            [
+                _cell("Name", 0, 0),
+                _cell("Value", 0, 1),
+                _cell("A", 1, 0),
+                _cell("1", 1, 1),
+            ],
+            "| Name | Value |\n| - | - |\n| A | 1 |",
+            [0, 1],
+            [["Name", "Value"], ["A", "1"]],
+            id="no-flags-markdown-promotes-row-0-dataframe-does-not",
+        ),
+        # Row headers flagged as column_header in every row, with no header row, as
+        # the HTML backend produced before docling-project/docling#4216 for a body
+        # `<th>`. The leading-column flag on row 1 shows that row 0 holds a row
+        # header too, so row 0 is subject to the body-text check and no row is
+        # promoted: markdown keeps an empty header and the dataframe keeps every row.
+        pytest.param(
+            2,
+            2,
+            [
+                _cell("2025", 0, 0, column_header=True),
+                _cell("$134", 0, 1),
+                _cell("2026", 1, 0, column_header=True),
+                _cell("$150", 1, 1),
+            ],
+            "|  |  |\n| - | - |\n| 2025 | $134 |\n| 2026 | $150 |",
+            [0, 1],
+            [["2025", "$134"], ["2026", "$150"]],
+            id="row-headers-only-flagged-as-column-header-stay-in-body",
+        ),
+    ],
+)
+def test_table_header_rows_in_markdown_and_dataframe(
+    num_rows: int,
+    num_cols: int,
+    cells: list[TableCell],
+    md_table: str,
+    df_columns: list[str | int],
+    df_values: list[list[str]],
+):
+    """Markdown and dataframe exports agree on which leading rows form the column header."""
     doc = DoclingDocument(name="")
-    table = doc.add_table(data=TableData(num_rows=2, num_cols=2))
-    for cell in (
-        TableCell(
-            text="Category",
-            start_row_offset_idx=0,
-            end_row_offset_idx=2,
-            start_col_offset_idx=0,
-            end_col_offset_idx=1,
-            row_span=2,
-            column_header=True,
-        ),
-        TableCell(
-            text="Price",
-            start_row_offset_idx=0,
-            end_row_offset_idx=1,
-            start_col_offset_idx=1,
-            end_col_offset_idx=2,
-            column_header=True,
-        ),
-        TableCell(
-            text="10.00",
-            start_row_offset_idx=1,
-            end_row_offset_idx=2,
-            start_col_offset_idx=1,
-            end_col_offset_idx=2,
-        ),
-    ):
-        doc.add_table_cell(table_item=table, cell=cell)
+    table = doc.add_table(data=TableData(num_rows=num_rows, num_cols=num_cols, table_cells=cells))
 
-    actual = MarkdownDocSerializer(doc=doc).serialize().text
-    assert actual == ("| Category   |   Price |\n|------------|---------|\n| Category   |   10.00 |")
+    md_ser = MarkdownDocSerializer(doc=doc, params=MarkdownParams(compact_tables=True))
+    assert md_ser.serialize().text == md_table
 
-
-def test_md_table_row_header_above_the_body_is_not_promoted():
-    """A row header that starts on the first body row must stay in the body.
-
-    The ``"2025"`` cell below is intentionally mis-flagged with
-    ``column_header=True`` rather than ``row_header=True``. That reproduces the
-    erroneous output of the HTML backend prior to
-    ``docling-project/docling#4216``, and models documents already serialized
-    with those old flags. It is not a canonical model of a pivot table; this
-    test only verifies the defensive guard in the markdown serializer.
-    """
-    doc = DoclingDocument(name="")
-    table = doc.add_table(data=TableData(num_rows=3, num_cols=2))
-    for cell in (
-        TableCell(
-            text="Year",
-            start_row_offset_idx=0,
-            end_row_offset_idx=1,
-            start_col_offset_idx=0,
-            end_col_offset_idx=1,
-            column_header=True,
-        ),
-        TableCell(
-            text="Month",
-            start_row_offset_idx=0,
-            end_row_offset_idx=1,
-            start_col_offset_idx=1,
-            end_col_offset_idx=2,
-            column_header=True,
-        ),
-        TableCell(
-            text="2025",
-            start_row_offset_idx=1,
-            end_row_offset_idx=3,
-            start_col_offset_idx=0,
-            end_col_offset_idx=1,
-            row_span=2,
-            column_header=True,
-        ),
-        TableCell(
-            text="January",
-            start_row_offset_idx=1,
-            end_row_offset_idx=2,
-            start_col_offset_idx=1,
-            end_col_offset_idx=2,
-        ),
-        TableCell(
-            text="February",
-            start_row_offset_idx=2,
-            end_row_offset_idx=3,
-            start_col_offset_idx=1,
-            end_col_offset_idx=2,
-        ),
-    ):
-        doc.add_table_cell(table_item=table, cell=cell)
-
-    actual = MarkdownDocSerializer(doc=doc).serialize().text
-    lines = actual.splitlines()
-    assert lines[0].replace(" ", "") == "|Year|Month|"
-    assert lines[2].replace(" ", "") == "|2025|January|"
-    assert lines[3].replace(" ", "") == "|2025|February|"
+    dataframe = table.export_to_dataframe(doc)
+    assert list(dataframe.columns) == df_columns
+    assert dataframe.values.tolist() == df_values
 
 
 def test_md_table_with_header_flags_below_row_zero_keeps_every_row_as_data():
@@ -1014,6 +1080,16 @@ def test_md_traverse_pictures():
     assert "<!-- image -->" in result_with_traverse
 
 
+def test_md_deep_section_headers_stay_headings():
+    """Section headers deeper than level 5 are capped at six hashes."""
+    doc = DoclingDocument(name="deep")
+    for level in (4, 5, 6, 9):
+        doc.add_heading(text=f"Level {level}", level=level)
+    assert MarkdownDocSerializer(doc=doc).serialize().text == (
+        "##### Level 4\n\n###### Level 5\n\n###### Level 6\n\n###### Level 9"
+    )
+
+
 def test_md_line_breaks():
     """Newlines inside TextItem and its subclasses are serialized per GFM spec.
 
@@ -1045,7 +1121,7 @@ def test_md_line_breaks():
 
     # \n in a ListItem -> GFM hard line break.
     doc = DoclingDocument(name="lb")
-    lg = doc.add_group()
+    lg = doc.add_list_group()
     doc.add_list_item(text="Line one\nLine two", parent=lg)
     assert MarkdownDocSerializer(doc=doc).serialize().text == "- Line one  \nLine two"
 
@@ -1447,6 +1523,326 @@ def test_html_inline_and_formatting():
     verify(exp_file=src.with_suffix(".gt.html"), actual=actual)
 
 
+@pytest.mark.parametrize(
+    ("formatting", "hyperlink", "expected"),
+    [
+        (Formatting(bold=True), None, "<p><strong>Some text</strong></p>"),
+        (Formatting(italic=True), None, "<p><em>Some text</em></p>"),
+        (Formatting(underline=True), None, "<p><u>Some text</u></p>"),
+        (Formatting(strikethrough=True), None, "<p><del>Some text</del></p>"),
+        (Formatting(script=Script.SUB), None, "<p><sub>Some text</sub></p>"),
+        (Formatting(script=Script.SUPER), None, "<p><sup>Some text</sup></p>"),
+        (None, AnyUrl("https://example.com/page"), '<p><a href="https://example.com/page">Some text</a></p>'),
+        (
+            Formatting(bold=True, italic=True),
+            AnyUrl("https://example.com/page"),
+            '<p><a href="https://example.com/page"><em><strong>Some text</strong></em></a></p>',
+        ),
+    ],
+)
+def test_html_text_formatting_inside_paragraph(formatting, hyperlink, expected):
+    """Formatting and hyperlinks of a text item go inside its <p> tag."""
+    doc = DoclingDocument(name="formatted_text")
+    item = doc.add_text(label=DocItemLabel.TEXT, text="Some text", formatting=formatting, hyperlink=hyperlink)
+
+    assert HTMLDocSerializer(doc=doc).serialize(item=item).text == expected
+
+
+def test_html_heading_formatting_inside_heading_tag():
+    """Formatting and hyperlinks of a title or section header go inside its <hN> tag."""
+    doc = DoclingDocument(name="formatted_headings")
+    title = doc.add_title(text="A title", formatting=Formatting(italic=True))
+    heading = doc.add_heading(
+        text="A section",
+        level=1,
+        formatting=Formatting(bold=True),
+        hyperlink=AnyUrl("https://example.com/section"),
+    )
+
+    ser = HTMLDocSerializer(doc=doc)
+    assert ser.serialize(item=title).text == "<h1><em>A title</em></h1>"
+    assert ser.serialize(item=heading).text == (
+        '<h2><a href="https://example.com/section"><strong>A section</strong></a></h2>'
+    )
+
+
+def test_html_rich_table_cell_formatting_inside_paragraph():
+    """A bold-only rich table cell keeps the <strong> tag inside the <p> tag of the cell."""
+    doc = DoclingDocument(name="bold_rich_cells")
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=2))
+    for row, text in enumerate(["Bold header", "Bold cell"]):
+        bold_text = doc.add_text(label=DocItemLabel.TEXT, text=text, parent=table, formatting=Formatting(bold=True))
+        doc.add_table_cell(
+            table_item=table,
+            cell=RichTableCell(
+                start_row_offset_idx=row,
+                end_row_offset_idx=row + 1,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+                column_header=row == 0,
+                ref=bold_text.get_ref(),
+                text=text,
+            ),
+        )
+    for row, text in enumerate(["Plain header", "Plain cell"]):
+        doc.add_table_cell(
+            table_item=table,
+            cell=TableCell(
+                start_row_offset_idx=row,
+                end_row_offset_idx=row + 1,
+                start_col_offset_idx=1,
+                end_col_offset_idx=2,
+                column_header=row == 0,
+                text=text,
+            ),
+        )
+
+    assert HTMLDocSerializer(doc=doc).serialize(item=table).text == (
+        "<table><tbody>"
+        "<tr><th><p><strong>Bold header</strong></p></th><th>Plain header</th></tr>"
+        "<tr><td><p><strong>Bold cell</strong></p></td><td>Plain cell</td></tr>"
+        "</tbody></table>"
+    )
+
+
+class _HTMLProbe(HTMLParser):
+    """Collects the elements, attributes and per-element text of a parsed HTML document."""
+
+    _VOID_TAGS = frozenset({"img", "br", "meta", "link"})
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.elements: list[tuple[str, dict[str, str | None]]] = []
+        self._open: list[str] = []
+        self._text: dict[str, list[str]] = {}
+
+    @property
+    def tags(self) -> set[str]:
+        return {tag for tag, _ in self.elements}
+
+    def text_of(self, tag: str) -> str:
+        """Returns the text directly contained in the elements with the given tag."""
+        return "".join(self._text.get(tag, []))
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.elements.append((tag, dict(attrs)))
+        if tag not in self._VOID_TAGS:
+            self._open.append(tag)
+
+    def handle_endtag(self, tag: str) -> None:
+        if self._open and self._open[-1] == tag:
+            self._open.pop()
+
+    def handle_data(self, data: str) -> None:
+        if self._open:
+            self._text.setdefault(self._open[-1], []).append(data)
+
+
+def _parse_html(markup: str) -> _HTMLProbe:
+    probe = _HTMLProbe()
+    probe.feed(markup)
+    return probe
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        'conda create -n <CONDA_NAME>\nDict<str> x = "<div>";',
+        "if a && b:\n    print('&amp; stays literal')",
+    ],
+)
+def test_html_code_item_text_is_escaped(code: str):
+    doc = DoclingDocument(name="code-escape")
+    doc.add_code(text=code)
+
+    probe = _parse_html(HTMLDocSerializer(doc=doc).serialize().text)
+
+    assert probe.text_of("code") == code
+
+
+def test_html_formula_without_mathml_keeps_text():
+    doc = DoclingDocument(name="formula-fallback")
+    doc.add_formula(text="a<b && c>d")
+
+    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(formula_to_mathml=False)).serialize().text
+
+    assert "Formula not decoded" not in actual
+    assert _parse_html(actual).text_of("pre") == "a<b && c>d"
+
+
+def test_html_inline_formula_without_mathml_keeps_text():
+    doc = DoclingDocument(name="formula-inline-fallback")
+    heading = doc.add_heading(text="", level=1)
+    ig = doc.add_inline_group(parent=heading)
+    doc.add_formula(text="x<y", parent=ig)
+
+    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(formula_to_mathml=False)).serialize().text
+
+    assert _parse_html(actual).text_of("code") == "x<y"
+
+
+def test_html_formula_without_mathml_does_not_warn_about_mathml(caplog: pytest.LogCaptureFixture):
+    doc = DoclingDocument(name="formula-no-mathml-warning")
+    doc.add_formula(text="a<b")
+
+    with caplog.at_level("WARNING", logger="docling_core.transforms.serializer.html"):
+        HTMLDocSerializer(doc=doc, params=HTMLParams(formula_to_mathml=False)).serialize()
+
+    assert not caplog.records
+
+
+def test_html_formula_mathml_failure_falls_back_to_escaped_pre():
+    doc = DoclingDocument(name="formula-mathml-failure")
+    doc.add_formula(text="a<b & c")
+
+    with patch(
+        "docling_core.transforms.serializer.html.latex2mathml.converter.convert_to_element",
+        side_effect=ValueError("unsupported LaTeX"),
+    ):
+        actual = HTMLDocSerializer(doc=doc).serialize().text
+
+    assert "Formula not decoded" not in actual
+    assert _parse_html(actual).text_of("pre") == "a<b & c"
+
+
+@pytest.mark.parametrize(
+    "formula",
+    [
+        "a<b && c>d",
+        r"\text{<svg/onload=alert(1)>}",
+        "x</annotation></math><img src=x onerror=alert(1)>",
+    ],
+)
+def test_html_mathml_annotation_is_escaped(formula: str):
+    doc = DoclingDocument(name="formula-mathml-annotation")
+    doc.add_formula(text=formula)
+
+    probe = _parse_html(HTMLDocSerializer(doc=doc).serialize().text)
+
+    assert probe.tags.isdisjoint({"img", "svg", "b"})
+    assert probe.text_of("annotation") == formula
+
+
+def test_html_mathml_keeps_symbol_character_references():
+    # Escaping formula source must not double-escape MathML symbol references.
+    doc = DoclingDocument(name="formula-mathml-symbols")
+    doc.add_formula(text=r"\alpha \leq \beta")
+
+    actual = HTMLDocSerializer(doc=doc).serialize().text
+
+    assert "<mi>&#x003B1;</mi><mo>&#x02264;</mo><mi>&#x003B2;</mi>" in actual
+    assert "&amp;#x" not in actual
+
+
+def test_html_formula_image_fallback_escapes_alt_attribute(doc_with_handwritten: DoclingDocument):
+    doc = doc_with_handwritten
+    doc.pages[1].image = ImageRef.from_pil(Image.new("RGB", (100, 100), "white"), dpi=72)
+    orig = 'x" onerror="alert(1)" y="<b>'
+    doc.add_formula(text="", orig=orig, prov=doc.texts[1].prov[0])
+
+    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(image_mode=ImageRefMode.EMBEDDED)).serialize().text
+
+    probe = _parse_html(actual)
+    imgs = [attrs for tag, attrs in probe.elements if tag == "img"]
+    assert len(imgs) == 1
+    assert imgs[0]["alt"] == orig
+    assert "onerror" not in imgs[0]
+    assert "b" not in probe.tags
+
+
+@pytest.mark.parametrize(
+    ("inline_scope", "expected"),
+    [
+        (False, "<pre><span class='inline-group'>a&lt;b x</span></pre>"),
+        (True, "<code><span class='inline-group'>a&lt;b x</span></code>"),
+    ],
+)
+def test_html_formula_with_inline_group_is_not_double_escaped(inline_scope: bool, expected: str):
+    doc = DoclingDocument(name="formula-inline-group")
+    parent = None
+    if inline_scope:
+        parent = doc.add_inline_group(parent=doc.add_heading(text="", level=1))
+    formula = doc.add_formula(text="", parent=parent)
+    group = doc.add_inline_group(parent=formula)
+    doc.add_text(label=DocItemLabel.TEXT, text="a<b", parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text="x", parent=group)
+
+    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(formula_to_mathml=False)).serialize().text
+
+    assert expected in actual
+
+
+@pytest.mark.parametrize(
+    ("marker", "expected_style"),
+    [
+        ('x" onmouseover="alert(1)" y="', 'list-style-type: \'x" onmouseover="alert(1)" y=" \';'),
+        ("it's", "list-style-type: 'it\\'s ';"),
+        ("'; color: red; content: '", "list-style-type: '\\'; color: red; content: \\' ';"),
+    ],
+)
+def test_html_list_item_marker_cannot_break_out_of_style_attribute(marker: str, expected_style: str):
+    doc = DoclingDocument(name="list-marker")
+    group = doc.add_list_group()
+    doc.add_list_item(text="item", parent=group, marker=marker)
+
+    probe = _parse_html(HTMLDocSerializer(doc=doc).serialize().text)
+
+    (li_attrs,) = [attrs for tag, attrs in probe.elements if tag == "li"]
+    assert li_attrs == {"style": expected_style}
+
+
+def test_html_path_hyperlink_cannot_break_out_of_href_attribute():
+    doc = DoclingDocument(name="path-hyperlink")
+    doc.add_text(label=DocItemLabel.TEXT, text="link", hyperlink=Path('a" onmouseover="alert(1)'))
+
+    probe = _parse_html(HTMLDocSerializer(doc=doc).serialize().text)
+
+    (anchor,) = [attrs for tag, attrs in probe.elements if tag == "a"]
+    assert anchor == {"href": 'a" onmouseover="alert(1)'}
+
+
+def test_html_url_hyperlink_keeps_query_separator():
+    doc = DoclingDocument(name="url-hyperlink")
+    doc.add_text(label=DocItemLabel.TEXT, text="link", hyperlink=AnyUrl("https://example.com/p?a=1&b=2"))
+
+    probe = _parse_html(HTMLDocSerializer(doc=doc).serialize().text)
+
+    (anchor,) = [attrs for tag, attrs in probe.elements if tag == "a"]
+    assert anchor == {"href": "https://example.com/p?a=1&b=2"}
+
+
+def test_html_embedded_data_uri_cannot_break_out_of_src_attribute():
+    doc = DoclingDocument(name="data-uri-picture")
+    uri = AnyUrl('data:image/png;base64,AAA"onerror="alert(1)')
+    doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=1, height=1), uri=uri))
+
+    actual = HTMLDocSerializer(doc=doc, params=HTMLParams(image_mode=ImageRefMode.EMBEDDED)).serialize().text
+
+    (img,) = [attrs for tag, attrs in _parse_html(actual).elements if tag == "img"]
+    assert set(img) == {"src"}
+
+
+def test_html_split_page_data_uri_cannot_break_out_of_src_attribute():
+    doc = DoclingDocument(name="data-uri-page")
+    uri = AnyUrl('data:image/png;base64,AAA"onerror="alert(1)')
+    doc.add_page(
+        page_no=1,
+        size=Size(width=10, height=10),
+        image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=uri),
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="text",
+        prov=ProvenanceItem(page_no=1, bbox=BoundingBox(l=0, t=0, r=1, b=1), charspan=(0, 4)),
+    )
+
+    params = HTMLParams(image_mode=ImageRefMode.EMBEDDED, output_style=HTMLOutputStyle.SPLIT_PAGE)
+    actual = HTMLDocSerializer(doc=doc, params=params).serialize().text
+
+    (img,) = [attrs for tag, attrs in _parse_html(actual).elements if tag == "img"]
+    assert set(img) == {"src"}
+
+
 # ===============================
 # WebVTT tests
 # ===============================
@@ -1687,6 +2083,30 @@ def test_referenced_image_uri_is_encoded(uri, expected: str):
     assert doc.export_to_markdown(image_mode=ImageRefMode.REFERENCED) == f"![Image]({expected})"
 
 
+@pytest.mark.parametrize(
+    ("uri", "expected"),
+    [
+        (Path("doc_artifacts/image_000001_ab12.png"), "doc_artifacts/image_000001_ab12.png"),
+        (Path("My Report (final)_artifacts/img.png"), "My%20Report%20%28final%29_artifacts/img.png"),
+        # A Windows-authored separator must reach the page as "/", not as "%5C".
+        (Path("My Report_artifacts\\img.png"), "My%20Report_artifacts/img.png"),
+        # An absolute Windows path becomes a file:// URL, as in the Markdown output.
+        (Path("C:/Users/me/My Docs/img.png"), "file:///C:/Users/me/My%20Docs/img.png"),
+        # URLs keep their scheme and delimiters, and pydantic's escapes are not encoded twice.
+        (AnyUrl("file:///home/a b/img.png"), "file:///home/a%20b/img.png"),
+        (AnyUrl("s3://bucket/My Report_artifacts/img.png"), "s3://bucket/My%20Report_artifacts/img.png"),
+        # In an HTML attribute, "&" is written as "&amp;".
+        (AnyUrl("https://example.com/img.png?w=1&h=2"), "https://example.com/img.png?w=1&amp;h=2"),
+    ],
+)
+def test_html_referenced_image_uri_is_encoded(uri, expected: str):
+    """Test that the HTML serializer encodes a referenced image URI the same way as Markdown."""
+    doc = DoclingDocument(name="x")
+    doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=uri))
+
+    assert f'<img src="{expected}">' in doc.export_to_html(image_mode=ImageRefMode.REFERENCED)
+
+
 def test_referenced_image_uri_encoding_only_applies_to_referenced_mode():
     """Test that PLACEHOLDER mode still emits the placeholder, not an encoded URI."""
     doc = DoclingDocument(name="x")
@@ -1703,6 +2123,230 @@ def test_referenced_image_data_uri_is_not_encoded():
     doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=uri))
 
     assert doc.export_to_markdown(image_mode=ImageRefMode.REFERENCED) == "<!-- image -->"
+
+
+@pytest.mark.parametrize(
+    ("hyperlink", "expected"),
+    [
+        # The plain relative link from the report (native and POSIX spelling).
+        (Path("sub/next.html"), "sub/next.html"),
+        (PurePosixPath("sub/next.html"), "sub/next.html"),
+        # A Windows spelling normalizes on every host -- a native POSIX Path
+        # treats '\' as a legal filename character, so the foreign spelling
+        # must be expressed with PureWindowsPath to stay host-independent.
+        (PureWindowsPath("sub\\next.html"), "sub/next.html"),
+        # Fragment and query delimiters are part of the URL, not of the path, and must
+        # not be percent-encoded the way an image path would be.
+        (Path("sub/next.html#section"), "sub/next.html#section"),
+        (Path("sub/next.html?x=1#section"), "sub/next.html?x=1#section"),
+        # Spaces and existing escapes stay as they are.
+        (Path("dir with space/x.html"), "dir with space/x.html"),
+        (Path("a%20b/x.html"), "a%20b/x.html"),
+        # A URL is untouched, including its own backslash-free spelling.
+        (AnyUrl("https://example.com/a/b?q=1#f"), "https://example.com/a/b?q=1#f"),
+    ],
+)
+def test_hyperlink_uri_is_portable(hyperlink: AnyUrl | PurePath, expected: str):
+    """Test that `hyperlink_uri` emits a portable destination on every host."""
+    from docling_core.transforms.serializer.common import hyperlink_uri
+
+    assert hyperlink_uri(hyperlink) == expected
+
+
+@pytest.mark.parametrize(
+    ("hyperlink", "expected_md", "expected_html"),
+    [
+        (Path("sub/next.html"), "[next page](sub/next.html)", '<a href="sub/next.html">'),
+        (
+            Path("sub/next.html#section"),
+            "[next page](sub/next.html#section)",
+            '<a href="sub/next.html#section">',
+        ),
+        (
+            Path("sub/next.html?x=1#section"),
+            "[next page](sub/next.html?x=1#section)",
+            '<a href="sub/next.html?x=1#section">',
+        ),
+    ],
+)
+def test_relative_hyperlink_export_uses_forward_slashes(hyperlink: AnyUrl | Path, expected_md: str, expected_html: str):
+    """Test that Markdown and HTML export a relative hyperlink with `/` separators."""
+    doc = DoclingDocument(name="x")
+    doc.add_text(label=DocItemLabel.TEXT, text="next page", hyperlink=hyperlink)
+
+    assert doc.export_to_markdown().strip() == expected_md
+    html = doc.export_to_html(image_mode=ImageRefMode.PLACEHOLDER)
+    assert expected_html in html
+
+
+def test_relative_hyperlink_export_doclang_uses_forward_slashes():
+    """Test that DocLang exports a relative hyperlink with `/` separators."""
+    doc = DoclingDocument(name="x")
+    doc.add_text(label=DocItemLabel.TEXT, text="next page", hyperlink=Path("sub/next.html"))
+
+    doclang = doc.export_to_doclang()
+    assert '<href uri="sub/next.html"/>' in doclang
+    assert "sub\\next.html" not in doclang
+
+
+@pytest.mark.xfail(reason="LaTeX backslash-escapes '#' inside href URL args; pre-existing, out of scope")
+def test_relative_hyperlink_export_latex_keeps_fragment():
+    """LaTeX should keep the '#' fragment delimiter in a hyperlink destination."""
+    doc = DoclingDocument(name="x")
+    doc.add_text(label=DocItemLabel.TEXT, text="next page", hyperlink=Path("sub/next.html#section"))
+
+    tex = LaTeXDocSerializer(doc=doc).serialize().text
+    assert "\\href{sub/next.html#section}" in tex
+
+
+_BREAKOUT = Path('x">\n<script>1</script>\n<a href="')
+
+
+def _doc_with_hyperlink(hyperlink: AnyUrl | Path) -> DoclingDocument:
+    doc = DoclingDocument(name="x")
+    doc.add_text(label=DocItemLabel.TEXT, text="c", hyperlink=hyperlink)
+    return doc
+
+
+class _TagCollector(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.tags: list[tuple[str, dict[str, str | None]]] = []
+
+    def handle_starttag(self, tag, attrs):
+        self.tags.append((tag, dict(attrs)))
+
+
+def test_html_hyperlink_cannot_break_out_of_attribute():
+    """An untrusted hyperlink stays inside the href attribute and injects no elements."""
+
+    collector = _TagCollector()
+    collector.feed(_doc_with_hyperlink(_BREAKOUT).export_to_html())
+
+    assert "script" not in [tag for tag, _ in collector.tags]
+    assert [attrs["href"] for tag, attrs in collector.tags if tag == "a"] == [_BREAKOUT.as_posix()]
+
+
+@pytest.mark.parametrize(
+    "hyperlink",
+    [
+        Path("javascript:alert(1)"),
+        AnyUrl("javascript:alert(1)"),
+        AnyUrl("JaVaScRiPt:alert(1)"),
+        Path("  javascript:alert(1)"),
+        Path("java\tscript:alert(1)"),
+        AnyUrl("data:text/html,<script>1</script>"),
+        Path("vbscript:msgbox(1)"),
+    ],
+)
+def test_unsafe_hyperlink_scheme_is_dropped(hyperlink: AnyUrl | Path):
+    """Hyperlinks with an active scheme keep the link text but are not emitted as links."""
+    doc = _doc_with_hyperlink(hyperlink)
+
+    assert doc.export_to_markdown().strip() == "c"
+    html = doc.export_to_html()
+    assert "<a " not in html
+    assert "<p>c</p>" in html
+    assert "\\href" not in LaTeXDocSerializer(doc=doc).serialize().text
+
+
+@pytest.mark.parametrize(
+    ("hyperlink", "expected_md", "expected_html"),
+    [
+        (AnyUrl("https://example.com/x"), "[c](https://example.com/x)", '<a href="https://example.com/x">'),
+        (AnyUrl("mailto:a@example.com"), "[c](mailto:a@example.com)", '<a href="mailto:a@example.com">'),
+        (Path("sub/next.html"), "[c](sub/next.html)", '<a href="sub/next.html">'),
+        (Path("C:/docs/a.pdf"), "[c](C:/docs/a.pdf)", '<a href="C:/docs/a.pdf">'),
+        (Path("#anchor"), "[c](#anchor)", '<a href="#anchor">'),
+    ],
+)
+def test_safe_hyperlink_is_preserved(hyperlink: AnyUrl | Path, expected_md: str, expected_html: str):
+    """Relative references and allowlisted schemes are still emitted as links."""
+    doc = _doc_with_hyperlink(hyperlink)
+
+    assert doc.export_to_markdown().strip() == expected_md
+    assert expected_html in doc.export_to_html()
+
+
+def test_malformed_hyperlink_does_not_fail_export():
+    """A malformed URL, which makes `urlsplit` raise, must not abort the export."""
+    doc = _doc_with_hyperlink(Path("//[::1/x"))
+
+    assert doc.export_to_markdown().strip() == "[c](//[::1/x)"
+    assert '<a href="//[::1/x">' in doc.export_to_html()
+    assert "\\href{" in LaTeXDocSerializer(doc=doc).serialize().text
+
+
+@pytest.mark.parametrize(
+    ("hyperlink", "expected"),
+    [
+        (_BREAKOUT, "x%22%3E%0A%3Cscript%3E1%3C/script%3E%0A%3Ca%20href=%22"),
+        (Path("a(b)c d"), "a%28b%29c%20d"),
+        # Markdown renderers decode entities in link destinations, which would
+        # rebuild a scheme the allowlist has already rejected.
+        (Path("&#106;avascript:alert(1)"), "&amp;#106;avascript:alert%281%29"),
+        (Path("a?x=1&y=2"), "a?x=1&y=2"),
+    ],
+)
+def test_markdown_hyperlink_destination_is_encoded(hyperlink: Path, expected: str):
+    """Characters that end or alter a Markdown link destination are encoded."""
+    md = _doc_with_hyperlink(hyperlink).export_to_markdown().strip()
+
+    assert md == f"[c]({expected})"
+
+
+def test_doclang_hyperlink_stays_inside_href_attribute():
+    """The DocLang output remains well-formed XML and round-trips the destination."""
+    payload = Path('x"><script>1</script><a href="')
+    root = ET.fromstring(_doc_with_hyperlink(payload).export_to_doclang())
+
+    assert [el.get("uri") for el in root.iter("href")] == [payload.as_posix()]
+    assert not list(root.iter("script"))
+
+
+_DATA_URI_BREAKOUT = AnyUrl('data:image/png;base64,x"><script>1</script>)<b>(')
+
+
+def _image_ref(uri: AnyUrl | Path) -> ImageRef:
+    return ImageRef(mimetype="image/png", dpi=72, size=Size(width=1, height=1), uri=uri)
+
+
+def test_html_embedded_data_uri_stays_inside_src_attribute():
+    """A data URI from the document stays inside the src attribute of picture and page images."""
+    doc = DoclingDocument(name="x")
+    doc.add_page(page_no=1, size=Size(width=1, height=1), image=_image_ref(_DATA_URI_BREAKOUT))
+    prov = ProvenanceItem(page_no=1, bbox=BoundingBox(l=0, t=0, r=1, b=1), charspan=(0, 1))
+    doc.add_picture(image=_image_ref(_DATA_URI_BREAKOUT), prov=prov)
+
+    for html in (
+        doc.export_to_html(image_mode=ImageRefMode.EMBEDDED),
+        doc.export_to_html(image_mode=ImageRefMode.EMBEDDED, split_page_view=True),
+    ):
+        collector = _TagCollector()
+        collector.feed(html)
+        srcs = [attrs["src"] for tag, attrs in collector.tags if tag == "img"]
+        assert srcs and set(srcs) == {str(_DATA_URI_BREAKOUT)}
+        assert "script" not in [tag for tag, _ in collector.tags]
+
+
+def test_markdown_embedded_data_uri_is_encoded():
+    """A data URI from the document cannot end the Markdown image destination early."""
+    doc = DoclingDocument(name="x")
+    doc.add_picture(image=_image_ref(_DATA_URI_BREAKOUT))
+
+    md = doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED).strip()
+
+    assert md == "![Image](data:image/png;base64,x%22%3E%3Cscript%3E1%3C/script%3E%29%3Cb%3E%28)"
+
+
+def test_doclang_src_stays_inside_attribute():
+    """The DocLang output remains well-formed XML and round-trips the image URI."""
+    uri = Path('a"<b>.png')
+    doc = DoclingDocument(name="x")
+    doc.add_picture(image=_image_ref(uri))
+    root = ET.fromstring(doc.export_to_doclang(image_mode=ImageRefMode.REFERENCED))
+
+    assert [el.get("uri") for el in root.iter("src")] == [str(uri)]
 
 
 def test_export_to_markdown_image_dir_saves_and_references_images(sample_doc, tmp_path):
@@ -1870,3 +2514,137 @@ def test_export_and_save_markdown_caption_placement(tmp_path, placement):
     # default is unchanged
     assert doc.export_to_markdown().index("THE CAPTION") < doc.export_to_markdown().index("<!-- image -->")
     assert doc.export_to_markdown() == doc.export_to_markdown(caption_placement="standard")
+
+
+def test_md_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_table_doc):
+    params = MarkdownParams(compact_tables=True)
+    actual = MarkdownDocSerializer(doc=col_span_rich_table_doc, params=params).serialize().text
+    assert actual == "|  | Partner | Partner |\n| - | - | - |\n| Status | Done | Open |"
+
+    # same table with the spanning header as a plain TableCell
+    plain_doc = col_span_rich_table_doc.model_copy(deep=True)
+    plain_doc.tables[0].data.table_cells = [
+        TableCell(**cell.model_dump(exclude={"ref", "text"}), text="Partner")
+        if isinstance(cell, RichTableCell)
+        else cell
+        for cell in plain_doc.tables[0].data.table_cells
+    ]
+    plain_doc.delete_items(node_items=[ref.resolve(plain_doc) for ref in plain_doc.tables[0].children])
+    assert actual == MarkdownDocSerializer(doc=plain_doc, params=params).serialize().text
+
+
+def test_triplet_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_table_doc):
+    ser = MarkdownDocSerializer(doc=col_span_rich_table_doc, table_serializer=TripletTableSerializer())
+    actual = ser.serialize().text
+    assert actual == "Status, Partner = Done. Status, Partner = Open"
+
+
+@pytest.mark.parametrize(
+    ("code", "expected"),
+    [
+        ("print(1)", "```\nprint(1)\n```"),
+        ("x = '```'\n```\nprint(1)", "````\nx = '```'\n```\nprint(1)\n````"),
+        ("a\n`````\nb", "``````\na\n`````\nb\n``````"),
+    ],
+)
+def test_markdown_code_block_fence_outlasts_backticks_in_code(code: str, expected: str):
+    doc = DoclingDocument(name="code")
+    doc.add_code(text=code)
+    assert doc.export_to_markdown() == expected
+
+
+@pytest.mark.parametrize(
+    ("code", "expected"),
+    [
+        ("x", "`x`"),
+        ("a`b", "``a`b``"),
+        ("`tick", "`` `tick ``"),
+    ],
+)
+def test_markdown_inline_code_span_outlasts_backticks_in_code(code: str, expected: str):
+    doc = DoclingDocument(name="code")
+    group = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="see", parent=group)
+    doc.add_code(text=code, parent=group)
+    assert doc.export_to_markdown() == f"see {expected}"
+
+
+def test_md_html_table_footnotes():
+    """Real conversion of the PDF from #496: a table with two footnotes."""
+    src = Path("./tests/data/doc/table_footnotes_496.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+    verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
+
+    actual = HTMLDocSerializer(doc=doc).serialize().text
+    verify(exp_file=src.with_suffix(".gt.html"), actual=actual)
+
+
+def test_table_footnotes_serialized_to_markdown_and_html():
+    """Table footnotes must not be dropped by the Markdown and HTML serializers."""
+    doc = DoclingDocument(name="t")
+
+    td = TableData(num_rows=0, num_cols=2)
+    td.add_row(["Header 1", "Header 2"])
+    td.add_row(["Data 1", "Data 2"])
+    table = doc.add_table(data=td)
+
+    for text in ["First footnote.", "Second footnote.", "a < b & c > d"]:
+        table.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text=text).get_ref())
+
+    # one paragraph per footnote after the table
+    md_out = doc.export_to_markdown()
+    assert "|\n\nFirst footnote.\n\nSecond footnote.\n" in md_out
+
+    # footnotes are HTML-escaped divs after the table, with nothing between them
+    html_out = doc.export_to_html()
+    assert (
+        '</table><div class="footnote">First footnote.</div>'
+        '<div class="footnote">Second footnote.</div>'
+        '<div class="footnote">a &lt; b &amp; c &gt; d</div>'
+    ) in html_out
+    assert "a < b & c > d" not in html_out
+
+
+def test_footnotes_kept_when_owner_label_is_excluded():
+    """Footnotes are serialized like captions when only the owner's label is excluded."""
+    doc = DoclingDocument(name="t")
+    td = TableData(num_rows=0, num_cols=1)
+    td.add_row(["Cell"])
+    table = doc.add_table(data=td)
+    table.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="Table note.").get_ref())
+    pic = doc.add_picture()
+    pic.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="Picture note.").get_ref())
+
+    labels = {DocItemLabel.TEXT, DocItemLabel.FOOTNOTE}
+    assert doc.export_to_markdown(labels=labels) == "Table note.\n\nPicture note."
+    html_out = doc.export_to_html(labels=labels)
+    assert "Cell" not in html_out
+    assert '<div class="footnote">Table note.</div>' in html_out
+    assert '<div class="footnote">Picture note.</div>' in html_out
+
+
+def test_picture_footnotes_serialized_to_markdown_and_html():
+    """Picture footnotes are skipped by the doc serializer like table ones."""
+    doc = DoclingDocument(name="t")
+    pic = doc.add_picture()
+    pic.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="Picture note.").get_ref())
+
+    assert "Picture note." in doc.export_to_markdown()
+    # inside <figure>, so the footnote stays with its picture
+    assert '<div class="footnote">Picture note.</div></figure>' in doc.export_to_html()
+
+
+def test_code_footnotes_serialized_to_markdown_and_html():
+    """Code footnotes are skipped by the doc serializer like table ones."""
+    doc = DoclingDocument(name="t")
+    code = doc.add_code(text="print(1)")
+    code.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="Code note.").get_ref())
+
+    assert "Code note." in doc.export_to_markdown()
+    # wrapped in <figure> like a picture, so the footnote stays with its code
+    assert (
+        '<figure><pre><code>print(1)</code></pre><div class="footnote">Code note.</div></figure>'
+        in doc.export_to_html()
+    )

@@ -2871,3 +2871,111 @@ def test_inline_group_nested_word_boundary_when_minimized():
     root = ET.fromstring(txt)
     heading_el = root[0]
     assert "".join(heading_el.itertext()).split() == ["Heading", "text", "bold"]
+
+
+def _prov(l: float, t: float, r: float, b: float) -> ProvenanceItem:
+    return ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox(l=l, t=t, r=r, b=b, coord_origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 0),
+    )
+
+
+def test_table_footnote_with_nested_field_region():
+    """A table footnote serializes its nested content, once, and is placed by its first nested item.
+
+    The footnote is a satellite of the table (it is emitted in the table's group) and has neither
+    text nor location of its own: its field region must come out inside the ``<footnote>``, not
+    again as a sibling, and the footnote sorts by the location of its first key.
+    """
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100))
+    table = doc.add_table(data=TableData(num_rows=0, num_cols=0), prov=_prov(10, 90, 90, 50))
+
+    # a regular footnote, below the field region footnote
+    plain = doc.add_text(label=DocItemLabel.FOOTNOTE, text="Plain note.", prov=_prov(10, 30, 50, 25))
+    nested = doc.add_text(label=DocItemLabel.FOOTNOTE, text="")
+    region = doc.add_field_region(parent=nested)
+    item = doc.add_field_item(parent=region)
+    doc.add_field_key(text="K:", parent=item, prov=_prov(10, 45, 20, 40))
+    doc.add_field_value(text="V", parent=item, prov=_prov(22, 45, 30, 40))
+    table.footnotes = [plain.get_ref(), nested.get_ref()]
+
+    root = ET.fromstring(serialize_doclang(doc))
+
+    group = root.find("group")
+    assert group is not None
+    assert [c.tag for c in group] == ["table", "footnote", "footnote"]  # nested one first: it is higher
+    nested_ftn, plain_ftn = group.findall("footnote")
+    assert nested_ftn.find("field_region/field_item/key") is not None
+    assert "".join(plain_ftn.itertext()).strip().endswith("Plain note.")
+    assert len(list(root.iter("field_region"))) == 1  # not emitted a second time next to the group
+
+    # the nested content survives a round trip, under its footnote
+    ser_txt = serialize_doclang(doc)
+    doc2 = DocLangDocDeserializer().deserialize_str(ser_txt)
+    (table2,) = doc2.tables
+    nested2 = [ftn.resolve(doc2) for ftn in table2.footnotes if not ftn.resolve(doc2).text]
+    assert len(nested2) == 1
+    regions2 = [
+        it for it, _ in doc2.iterate_items(root=nested2[0], with_groups=True) if it.label == DocItemLabel.FIELD_REGION
+    ]
+    assert len(regions2) == 1
+    assert [t.text for t in doc2.texts if t.label in (DocItemLabel.FIELD_KEY, DocItemLabel.FIELD_VALUE)] == ["K:", "V"]
+    assert serialize_doclang(doc2) == ser_txt
+
+
+def _doc_field_region_in_inline_group() -> DoclingDocument:
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100))
+    group = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="(", parent=group, prov=_prov(5, 90, 10, 80))
+    item = doc.add_field_item(parent=doc.add_field_region(parent=group))
+    doc.add_field_key(text="K:", parent=item, prov=_prov(10, 90, 30, 80))
+    doc.add_field_value(text="V", parent=item, prov=_prov(40, 90, 90, 80))
+    doc.add_text(label=DocItemLabel.TEXT, text=")", parent=group, prov=_prov(90, 90, 95, 80))
+    return doc
+
+
+def test_field_region_in_inline_group_keeps_key_value_locations():
+    """Keys and values are elements with their own location, also when the region sits in an inline group."""
+    doc = _doc_field_region_in_inline_group()
+
+    root = ET.fromstring(serialize_doclang(doc))
+
+    item = root.find("text/field_region/field_item")
+    assert item is not None
+    for tag in ("key", "value"):
+        assert len(item.findall(f"{tag}/location")) == 4
+    # the runs of the group are still located by the group alone
+    assert len(root.findall("text/location")) == 4
+
+    # the locations survive a round trip
+    doc2 = DocLangDocDeserializer().deserialize_str(serialize_doclang(doc))
+    kv = [t for t in doc2.texts if t.label in (DocItemLabel.FIELD_KEY, DocItemLabel.FIELD_VALUE)]
+    assert [t.text for t in kv] == ["K:", "V"]
+    assert all(t.prov for t in kv)
+
+
+def test_field_region_in_inline_group_respects_add_location_off():
+    doc = _doc_field_region_in_inline_group()
+
+    root = ET.fromstring(serialize_doclang(doc, DocLangParams(include_version=False, add_location=False)))
+
+    assert not list(root.iter("location"))
+
+
+def test_picture_with_nested_field_region():
+    """A field region that is a child of a picture is serialized inside the picture."""
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100))
+    picture = doc.add_picture(prov=_prov(0, 100, 100, 0))
+    item = doc.add_field_item(parent=doc.add_field_region(parent=picture))
+    doc.add_field_key(text="K:", parent=item, prov=_prov(10, 90, 30, 80))
+    doc.add_field_value(text="V", parent=item, prov=_prov(40, 90, 90, 80))
+
+    root = ET.fromstring(serialize_doclang(doc))
+
+    assert len(list(root.iter("field_region"))) == 1
+    assert root.find("picture/field_region/field_item/key") is not None
+    assert root.find("picture/field_region/field_item/value") is not None
