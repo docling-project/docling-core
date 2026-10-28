@@ -361,7 +361,8 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
 
         has_inline_repr = (
             item.text == ""
-            and len(item.children) == 1
+            and len(item.children) > 0
+            and (len(item.children) == 1 or isinstance(item, TitleItem | SectionHeaderItem))
             and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
         )
         if has_inline_repr:
