@@ -873,7 +873,11 @@ class DoclingDocument(BaseModel):
             fi = FieldItem(self_ref="#")
             self.insert_item_before_sibling(new_item=fi, sibling=vg[0])
             for value_item in vg:
-                fv = FieldValueItem(self_ref="#", orig="", text="")
+                # CVAT empty_value is a fillable blank. Checkboxes stay read-only wrappers.
+                kind: typing.Literal["read_only", "fillable"] = (
+                    "fillable" if value_item.label == DocItemLabel.EMPTY_VALUE else "read_only"
+                )
+                fv = FieldValueItem(self_ref="#", orig="", text="", kind=kind)
                 self._shift_down(old_subroot=value_item, new_subroot=fv)
                 self._move_subtree(old_subroot=fv, new_subroot=fi)
 

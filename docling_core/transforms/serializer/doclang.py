@@ -1239,10 +1239,18 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 wrap_open_token = f'<{tok.value} class="{item.kind}">'
             elif isinstance(item, FieldHeadingItem):
                 wrap_open_token = DocLangVocabulary._create_field_heading_token(level=item.level)
+        elif isinstance(item, TextItem) and item.label == DocItemLabel.EMPTY_VALUE:
+            # CVAT empty_value / fillable_field. A parent field_value already
+            # carries the tag; otherwise emit the fillable value itself.
+            parent_item = item.parent.resolve(doc) if item.parent else None
+            if isinstance(parent_item, FieldValueItem):
+                wrap_open_token = None
+            else:
+                tok = DocLangToken.FIELD_VALUE
+                wrap_open_token = f'<{tok.value} class="fillable">'
         elif isinstance(item, TextItem) and (
             item.label
             in [  # FIXME: Catch all ...
-                DocItemLabel.EMPTY_VALUE,  # FIXME: this might need to become a FormItem with only a value key!
                 DocItemLabel.HANDWRITTEN_TEXT,
                 DocItemLabel.PARAGRAPH,
                 DocItemLabel.REFERENCE,
