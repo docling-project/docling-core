@@ -140,7 +140,14 @@ class HTMLParams(CommonParams):
         deprecated="Setting this to False only suppresses legacy `annotations`; use `blocked_meta_names` to suppress specific meta fields.",
     )
 
-    show_original_list_item_marker: bool = True
+    show_original_list_item_marker: bool = Field(
+        default=True,
+        description=(
+            "Render the original list item markers via `list-style-type`. In ordered lists where at least one "
+            "item has a detected marker, items without one get `list-style-type: none` so the browser does not "
+            "invent numbers for them."
+        ),
+    )
 
 
 class HTMLTextSerializer(BaseModel, BaseTextSerializer):
@@ -155,6 +162,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         doc: DoclingDocument,
         is_inline_scope: bool = False,
         visited: set[str] | None = None,
+        strict_list_markers: bool | None = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed text item to HTML."""
@@ -229,12 +237,14 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             if nested_parts:
                 text = f"\n{text}\n"
             if params.show_original_list_item_marker:
-                parent_group = item.parent.resolve(doc) if item.parent else None
-                if (
-                    isinstance(parent_group, ListGroup)
-                    and parent_group.first_item_is_enumerated(doc)
-                    and parent_group.any_item_has_marker(doc)
-                ):
+                if strict_list_markers is None:
+                    parent_group = item.parent.resolve(doc) if item.parent else None
+                    strict_list_markers = (
+                        isinstance(parent_group, ListGroup)
+                        and parent_group.first_item_is_enumerated(doc)
+                        and parent_group.any_item_has_marker(doc)
+                    )
+                if strict_list_markers:
                     # Ordered list with mixed markers: strict mode — suppress
                     # browser-invented numbers for items without a detected marker.
                     attrs = {
@@ -913,16 +923,24 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
         list_level: int = 0,
         is_inline_scope: bool = False,
         visited: set[str] | None = None,  # refs of visited items
+        strict_list_markers: bool | None = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes a list to HTML."""
         my_visited: set[str] = visited if visited is not None else set()
+        params = HTMLParams(**kwargs)
+        strict_list_markers = (
+            params.show_original_list_item_marker
+            and item.first_item_is_enumerated(doc)
+            and item.any_item_has_marker(doc)
+        )
         # Get all child parts
         parts = doc_serializer.get_parts(
             item=item,
             list_level=list_level + 1,
             is_inline_scope=is_inline_scope,
             visited=my_visited,
+            strict_list_markers=strict_list_markers,
             **kwargs,
         )
 

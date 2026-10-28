@@ -54,6 +54,7 @@ from docling_core.types.doc.document import (
     TableData,
     TextItem,
 )
+from docling_core.types.doc.items.group import ListGroup
 from docling_core.types.doc.labels import DocItemLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
@@ -1472,6 +1473,50 @@ def test_html_mixed_list_items_do_not_invent_markers():
     assert "<li style=\"list-style-type: '1. ';\">Purpose</li>" in html
     assert '<li style="list-style-type: none;">1.1 Scope</li>' in html
     assert "<li style=\"list-style-type: '2. ';\">Operation</li>" in html
+
+
+def test_html_ordered_list_with_later_marker_disables_invented_numbers(monkeypatch):
+    doc = DoclingDocument(name="ordered-list-late-marker")
+    list_group = doc.add_list_group(name="table-of-contents")
+
+    doc.add_list_item(
+        text="Introduction",
+        orig="Introduction",
+        enumerated=True,
+        marker="",
+        parent=list_group,
+    )
+    doc.add_list_item(
+        text="Scope",
+        orig="2. Scope",
+        enumerated=True,
+        marker="2.",
+        parent=list_group,
+    )
+
+    marker_checks = 0
+    has_marker = ListGroup.any_item_has_marker
+
+    def count_marker_checks(group: ListGroup, doc: DoclingDocument) -> bool:
+        nonlocal marker_checks
+        marker_checks += 1
+        return has_marker(group, doc)
+
+    monkeypatch.setattr(ListGroup, "any_item_has_marker", count_marker_checks)
+
+    html = (
+        HTMLDocSerializer(
+            doc=doc,
+            params=HTMLParams(prettify=False, show_original_list_item_marker=True),
+        )
+        .serialize()
+        .text
+    )
+
+    assert "<ol>" in html
+    assert '<li style="list-style-type: none;">Introduction</li>' in html
+    assert "<li style=\"list-style-type: '2. ';\">Scope</li>" in html
+    assert marker_checks == 1
 
 
 def test_html_all_empty_markers_use_browser_default():
