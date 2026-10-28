@@ -447,6 +447,19 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         params_json = params.model_dump_json()
         refs = self._excluded_refs_cache.get(params_json)
         if refs is None:
+            included_page_refs = (
+                {
+                    item.self_ref
+                    for item, _ in self.doc._iterate_items_with_stack(
+                        traverse_pictures=True,
+                        with_groups=True,
+                        included_content_layers=params.layers,
+                        page_nrs=params.pages,
+                    )
+                }
+                if params.pages is not None
+                else None
+            )
             refs = {
                 item.self_ref
                 for ix, (item, _) in enumerate(
@@ -463,10 +476,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                         and (
                             item.label not in params.labels
                             or item.content_layer not in params.layers
-                            or (
-                                params.pages is not None
-                                and ((not item.prov) or item.prov[0].page_no not in params.pages)
-                            )
+                            or (included_page_refs is not None and item.self_ref not in included_page_refs)
                         )
                     )
                 )
