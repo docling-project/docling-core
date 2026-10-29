@@ -3959,6 +3959,7 @@ class DoclingDocument(BaseModel):
         use_legacy_annotations: bool | None = None,  # deprecated
         include_picture_classification: bool = True,
         caption_placement: CaptionPlacement = CaptionPlacement.STANDARD,
+        serialize_spans_once: bool = False,
     ):
         """Save to markdown."""
         if isinstance(filename, str):
@@ -3993,6 +3994,7 @@ class DoclingDocument(BaseModel):
             mark_meta=mark_meta,
             include_picture_classification=include_picture_classification,
             caption_placement=caption_placement,
+            serialize_spans_once=serialize_spans_once,
         )
 
         filename.write_text(md_out, encoding="utf-8")
@@ -4027,6 +4029,7 @@ class DoclingDocument(BaseModel):
         mark_meta: bool = False,
         include_picture_classification: bool = True,
         caption_placement: CaptionPlacement = CaptionPlacement.STANDARD,
+        serialize_spans_once: bool = False,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -4108,6 +4111,11 @@ class DoclingDocument(BaseModel):
             else before, falling back to "standard" when positions are unavailable.
             (Default value = CaptionPlacement.STANDARD).
         :type caption_placement: CaptionPlacement = CaptionPlacement.STANDARD
+        :param serialize_spans_once: Render a spanning (merged) table cell once, at its
+            start position, leaving the other grid slots it covers empty. The default
+            repeats the cell text at every covered position, because Markdown has no
+            span syntax. (Default value = False).
+        :type serialize_spans_once: bool = False
         """
         from docling_core.transforms.serializer.markdown import (
             MarkdownDocSerializer,
@@ -4161,6 +4169,7 @@ class DoclingDocument(BaseModel):
                 traverse_pictures=traverse_pictures,
                 include_picture_classification=include_picture_classification,
                 caption_placement=caption_placement,
+                serialize_spans_once=serialize_spans_once,
             ),
         )
         ser_res = serializer.serialize()

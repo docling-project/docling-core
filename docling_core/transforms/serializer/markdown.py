@@ -281,6 +281,16 @@ class MarkdownParams(CommonParams):
             )
         ),
     ] = False
+    serialize_spans_once: bool = Field(
+        default=False,
+        description=(
+            "Whether to render each spanning (merged) table cell once, at its start "
+            "position, and leave the other grid slots it covers empty. The default "
+            "repeats the cell text at every grid position, because Markdown has no "
+            "span syntax; opt in when that duplication would hurt downstream consumers "
+            "such as RAG chunking. Covers both column and row spans."
+        ),
+    )
     include_picture_classification: bool = Field(
         default=True,
         description="Include the picture classification prediction (the image's predicted class).",
@@ -832,9 +842,24 @@ class MarkdownTableSerializer(BaseTableSerializer):
 
             rows = []
             rich_texts: dict[tuple[int, int], str] = {}
+            seen_spans: set[tuple[int, int]] = set()
             for row in item.data.grid:
                 rendered_row = []
                 for col in row:
+                    span_start = (
+                        getattr(col, "start_row_offset_idx", None),
+                        getattr(col, "start_col_offset_idx", None),
+                    )
+                    row_span = getattr(col, "row_span", 1) or 1
+                    col_span = getattr(col, "col_span", 1) or 1
+                    is_spanning = span_start[0] is not None and (row_span > 1 or col_span > 1)
+                    if params.serialize_spans_once and is_spanning:
+                        # The grid repeats a spanning cell at every slot it covers;
+                        # keep the text only at the start position.
+                        if span_start in seen_spans:
+                            rendered_row.append("")
+                            continue
+                        seen_spans.add(span_start)
                     if isinstance(col, RichTableCell):
                         key = (col.start_row_offset_idx, col.start_col_offset_idx)
                         if key not in rich_texts:
