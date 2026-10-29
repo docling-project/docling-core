@@ -54,6 +54,7 @@ from docling_core.types.doc.document import (
     TableData,
     TextItem,
 )
+from docling_core.types.doc.items.group import ListGroup
 from docling_core.types.doc.labels import DocItemLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
@@ -1428,6 +1429,117 @@ def test_html_list_item_markers(sample_doc):
             root_dir / f"constructed_orig_{str(orig).lower()}.gt.html",
             actual=actual,
         )
+
+
+def test_html_mixed_list_items_do_not_invent_markers():
+    doc = DoclingDocument(name="mixed-list")
+    list_group = doc.add_list_group(name="table-of-contents")
+
+    doc.add_list_item(
+        text="Purpose",
+        orig="1. Purpose",
+        enumerated=True,
+        marker="1.",
+        parent=list_group,
+    )
+    doc.add_list_item(
+        text="1.1 Scope",
+        orig="1.1 Scope",
+        enumerated=False,
+        marker="",
+        parent=list_group,
+    )
+    doc.add_list_item(
+        text="Operation",
+        orig="2. Operation",
+        enumerated=True,
+        marker="2.",
+        parent=list_group,
+    )
+
+    html = (
+        HTMLDocSerializer(
+            doc=doc,
+            params=HTMLParams(
+                prettify=False,
+                show_original_list_item_marker=True,
+            ),
+        )
+        .serialize()
+        .text
+    )
+
+    assert "<ol>" in html
+    assert "<li style=\"list-style-type: '1. ';\">Purpose</li>" in html
+    assert '<li style="list-style-type: none;">1.1 Scope</li>' in html
+    assert "<li style=\"list-style-type: '2. ';\">Operation</li>" in html
+
+
+def test_html_ordered_list_with_later_marker_disables_invented_numbers(monkeypatch):
+    doc = DoclingDocument(name="ordered-list-late-marker")
+    list_group = doc.add_list_group(name="table-of-contents")
+
+    doc.add_list_item(
+        text="Introduction",
+        orig="Introduction",
+        enumerated=True,
+        marker="",
+        parent=list_group,
+    )
+    doc.add_list_item(
+        text="Scope",
+        orig="2. Scope",
+        enumerated=True,
+        marker="2.",
+        parent=list_group,
+    )
+
+    marker_checks = 0
+    has_marker = ListGroup.any_item_has_marker
+
+    def count_marker_checks(group: ListGroup, doc: DoclingDocument) -> bool:
+        nonlocal marker_checks
+        marker_checks += 1
+        return has_marker(group, doc)
+
+    monkeypatch.setattr(ListGroup, "any_item_has_marker", count_marker_checks)
+
+    html = (
+        HTMLDocSerializer(
+            doc=doc,
+            params=HTMLParams(prettify=False, show_original_list_item_marker=True),
+        )
+        .serialize()
+        .text
+    )
+
+    assert "<ol>" in html
+    assert '<li style="list-style-type: none;">Introduction</li>' in html
+    assert "<li style=\"list-style-type: '2. ';\">Scope</li>" in html
+    assert marker_checks == 1
+
+
+def test_html_all_empty_markers_use_browser_default():
+    doc = DoclingDocument(name="all-empty-markers")
+    list_group = doc.add_list_group(name="items")
+
+    doc.add_list_item(text="Alpha", orig="Alpha", enumerated=False, marker="", parent=list_group)
+    doc.add_list_item(text="Beta", orig="Beta", enumerated=False, marker="", parent=list_group)
+    doc.add_list_item(text="Gamma", orig="Gamma", enumerated=False, marker="", parent=list_group)
+
+    html = (
+        HTMLDocSerializer(
+            doc=doc,
+            params=HTMLParams(prettify=False, show_original_list_item_marker=True),
+        )
+        .serialize()
+        .text
+    )
+
+    assert "list-style-type" not in html
+    assert "<li>Alpha</li>" in html
+    assert "<li>Beta</li>" in html
+    assert "<li>Gamma</li>" in html
 
 
 def test_html_nested_lists():
