@@ -1,7 +1,8 @@
 """Define classes for DocLang deserialization.
 
-Aligned to the DocLang specification version ``_DOCLANG_VERSION``, partially:
-``<track>`` is not supported yet and is skipped with a warning.
+Aligned to the DocLang specification version ``_DOCLANG_VERSION``. In a ``<track>``,
+``<chapter>`` and per-cue ``<audio>`` have no counterpart in ``DoclingDocument`` yet and
+are skipped with a warning.
 """
 
 import re
@@ -29,6 +30,7 @@ from docling_core.transforms.serializer._doclang_utils import (
     _DOCLANG_META_TAG_SMILES,
     _DOCLANG_META_TAG_SUMMARY,
     _ELEMENT_HEAD_TAGS,
+    _TRACK_POINT_MSECS,
     DOCLANG_DFLT_RESOLUTION,
     DocLangAttributeKey,
     DocLangAttributeValue,
@@ -79,6 +81,8 @@ from docling_core.types.doc import (
     TableItem,
     TabularChartMetaField,
     TextItem,
+    TrackItem,
+    TrackSource,
 )
 from docling_core.types.doc.base import CoordOrigin
 from docling_core.types.doc.document import (
@@ -172,10 +176,6 @@ def _enforce_doclang_dom_budgets(
         for child in node.childNodes:
             if isinstance(child, Element):
                 stack.append((child, depth + 1))
-
-
-# DocLang 0.8 element not supported yet (not in ``DocLangToken``, so as not to advertise it in the vocabulary)
-_UNSUPPORTED_TRACK = "track"
 
 
 class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
@@ -358,8 +358,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
 
     def _dispatch_element(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         name = el.tagName
-        if name == _UNSUPPORTED_TRACK:
-            warnings.warn(f"<{name}> is not supported yet; skipped with all its content", stacklevel=2)
+        if name == DocLangToken.TRACK.value:
+            self._parse_track(doc=doc, el=el, parent=parent)
         elif name in {
             DocLangToken.TEXT.value,
             DocLangToken.CAPTION.value,
@@ -1788,6 +1788,134 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         for node in body_nodes[idx:]:
             if isinstance(node, Element):
                 self._dispatch_element(doc=doc, el=node, parent=pic)
+
+    _TIMESTAMP_UNIT_MSECS: ClassVar[dict[str, int]] = {
+        DocLangToken.HOURS.value: 3_600_000,
+        DocLangToken.MINUTES.value: 60_000,
+        DocLangToken.SECONDS.value: 1000,
+        DocLangToken.MSECS.value: 1,
+    }
+
+    def _parse_track(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
+        """Parse ``<track>`` into a ``TrackItem`` with a cue item per frame and transcript turn."""
+        captions = self._extract_captions(doc=doc, el=el)
+        prov_list = self._extract_provenance(doc=doc, el=el)
+        track = doc.add_track(
+            parent=parent,
+            prov=(prov_list[0] if prov_list else None),
+            content_layer=self._extract_layer(el=el),
+        )
+        for prov in prov_list[1:]:
+            track.prov.append(prov)
+        self._attach_satellites(item=track, captions=captions, footnotes=[])
+        self._source_recorder.bind_item(el, track)
+        self._apply_custom_meta_from_element(item=track, el=el)
+
+        _, body_nodes = self._split_element_children_head_body(el)
+        block: list[Node] | None = None
+        for node in body_nodes:
+            if isinstance(node, Element) and node.tagName == DocLangToken.BDIV.value:
+                if block is not None:
+                    self._parse_track_cue_block(doc=doc, track=track, nodes=block)
+                block = [node]
+            elif block is not None:
+                block.append(node)
+            elif isinstance(node, Element) and node.tagName == DocLangToken.COVER.value:
+                track.image = self._track_media_image(node)
+        if block is not None:
+            self._parse_track_cue_block(doc=doc, track=track, nodes=block)
+
+    def _parse_track_cue_block(self, *, doc: DoclingDocument, track: TrackItem, nodes: list[Node]) -> None:
+        """Parse one cue block (``<bdiv/>`` and what follows it) into cue items of the track."""
+        runs: list[int] = []
+        run: dict[str, int] = {}
+        content: list[Node] = []
+        for node in nodes[1:]:
+            name = node.tagName if isinstance(node, Element) else None
+            if not content and name in self._TIMESTAMP_UNIT_MSECS:
+                # <seconds> anchors a run: a later unit than it, or a new <seconds>, starts the next one
+                if DocLangToken.SECONDS.value in run and name != DocLangToken.MSECS.value:
+                    runs.append(sum(self._TIMESTAMP_UNIT_MSECS[k] * v for k, v in run.items()))
+                    run = {}
+                run[name] = int(cast(Element, node).getAttribute(DocLangAttributeKey.VALUE.value) or 0)
+            elif not content and not (isinstance(node, Text) and not node.data.strip()):
+                if run:
+                    runs.append(sum(self._TIMESTAMP_UNIT_MSECS[k] * v for k, v in run.items()))
+                    run = {}
+                content.append(node)
+            elif content:
+                content.append(node)
+        if run:
+            runs.append(sum(self._TIMESTAMP_UNIT_MSECS[k] * v for k, v in run.items()))
+        if not runs:
+            warnings.warn("<track> cue block without a start time; skipped", stacklevel=2)
+            return
+        start = runs[0]
+        end = runs[1] if len(runs) > 1 and runs[1] - runs[0] > _TRACK_POINT_MSECS else start + _TRACK_POINT_MSECS
+
+        voice: str | None = None
+        turn: list[Node] = []
+        bound: Element = cast(Element, nodes[0])
+
+        def add_turn() -> None:
+            if text := self._track_turn_text(turn):
+                item = doc.add_text(
+                    label=DocItemLabel.TEXT,
+                    text=text,
+                    parent=track,
+                    source=TrackSource(start_time=start / 1000, end_time=end / 1000, voice=voice),
+                )
+                self._source_recorder.bind_item(bound, item)
+
+        for node in content:
+            name = node.tagName if isinstance(node, Element) else None
+            if name == DocLangToken.FRAME.value:
+                frame = doc.add_picture(
+                    parent=track,
+                    image=self._track_media_image(cast(Element, node)),
+                    source=TrackSource(start_time=start / 1000, end_time=end / 1000),
+                )
+                self._source_recorder.bind_item(cast(Element, node), frame)
+            elif name in {DocLangToken.CHAPTER.value, DocLangToken.AUDIO.value}:
+                warnings.warn(f"<{name}> in <track> is not supported yet; skipped", stacklevel=2)
+            elif name == DocLangToken.VOICE.value:
+                add_turn()
+                voice = self._get_text(cast(Element, node)).strip() or None
+                turn = []
+                bound = cast(Element, node)
+            else:
+                turn.append(node)
+        add_turn()
+
+    def _track_turn_text(self, nodes: list[Node]) -> str:
+        """Return the text of a transcript turn: whitespace collapsed, except inside ``<content>``."""
+        segments: list[tuple[str, bool]] = []  # (text, preserved)
+        for node in nodes:
+            if isinstance(node, Text):
+                segments.append((re.sub(r"\s+", " ", node.data), False))
+            elif isinstance(node, Element):
+                preserved = node.tagName == DocLangToken.CONTENT.value
+                segments.append((self._get_text(node), preserved))
+        # strip the edges, but not into preserved text
+        for order in (range(len(segments)), range(len(segments) - 1, -1, -1)):
+            for i in order:
+                text, preserved = segments[i]
+                if preserved:
+                    break
+                text = text.lstrip() if order.step == 1 else text.rstrip()
+                segments[i] = (text, preserved)
+                if text:
+                    break
+        return "".join(text for text, _ in segments)
+
+    def _track_media_image(self, el: Element) -> ImageRef | None:
+        """Return the image of a ``<cover>`` or ``<frame>``, restored like the image of a picture."""
+        if self._media_root is None:
+            return None
+        src = self._first_child(el, DocLangToken.SRC.value)
+        if src is None or not (uri := src.getAttribute(DocLangAttributeKey.URI.value)):
+            return None
+        return self._image_ref_from_archive_uri(uri)
 
     def _image_ref_from_archive_uri(self, uri: str) -> ImageRef:
         """Restore a picture ``<src uri=\"...\"/>`` from a DocLang archive package."""

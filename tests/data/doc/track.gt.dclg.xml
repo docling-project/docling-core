@@ -1,0 +1,47 @@
+<doclang version="0.8">
+  <text>
+    <location value="27"/>
+    <location value="28"/>
+    <location value="293"/>
+    <location value="66"/>
+    Quarterly review
+  </text>
+  <track>
+    <location value="27"/>
+    <location value="95"/>
+    <location value="197"/>
+    <location value="265"/>
+    <cover>
+      <src uri="https://example.com/poster.png"/>
+    </cover>
+    <bdiv/>
+    <seconds value="0"/>
+    <frame>
+      <src uri="https://example.com/frame_0.png"/>
+    </frame>
+    <bdiv/>
+    <seconds value="0"/>
+    <seconds value="2"/>
+    <msecs value="120"/>
+    <voice>Alice</voice>
+    Welcome to the quarterly review.
+    <voice>Bob</voice>
+<![CDATA[Thanks, Alice & team.]]>    <bdiv/>
+    <seconds value="3"/>
+    <msecs value="100"/>
+    <seconds value="5"/>
+    <msecs value="360"/>
+    <content> Revenue grew by 12% this quarter.</content>
+    <voice></voice>
+    Costs stayed flat.
+    <bdiv/>
+    <hours value="1"/>
+    <minutes value="2"/>
+    <seconds value="5"/>
+    <msecs value="500"/>
+    <hours value="1"/>
+    <minutes value="2"/>
+    <seconds value="6"/>
+    Thank you.
+  </track>
+</doclang>

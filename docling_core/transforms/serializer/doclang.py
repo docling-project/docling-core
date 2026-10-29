@@ -1,16 +1,20 @@
 """Define classes for DocLang serialization.
 
-Aligned to the DocLang specification version ``_DOCLANG_VERSION``, partially:
-``<track>`` is not supported yet.
+Aligned to the DocLang specification version ``_DOCLANG_VERSION``. A ``<track>`` is
+written without ``<chapter>`` and per-cue ``<audio>``, which have no counterpart in
+``DoclingDocument`` yet.
 """
 
+import base64
 import copy
 import re
 import warnings
 import xml.etree.ElementTree as ET
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from enum import Enum
 from functools import cached_property
+from io import BytesIO
 from itertools import groupby
 from pathlib import Path, PurePath
 from typing import Annotated, Any, Optional, Union, cast
@@ -25,6 +29,7 @@ from docling_core.transforms.serializer._doclang_utils import (
     _DOCLANG_LABEL_UNDEFINED,
     _DOCLANG_META_TAG_SMILES,
     _DOCLANG_VERSION,
+    _TRACK_POINT_MSECS,
     DOCLANG_DFLT_RESOLUTION,
     DOCLANG_NAMESPACE,
     DocLangAttributeKey,
@@ -102,6 +107,8 @@ from docling_core.types.doc import (
     TableItem,
     TabularChartMetaField,
     TextItem,
+    TrackItem,
+    TrackSource,
 )
 from docling_core.types.doc.base import CoordOrigin, ImageRefMode
 from docling_core.types.doc.document import (
@@ -120,7 +127,7 @@ from docling_core.types.doc.labels import (
     GroupLabel,
     PictureClassificationLabel,
 )
-from docling_core.types.doc.utils import get_text_direction
+from docling_core.types.doc.utils import _normalize_image_for_png, get_text_direction
 
 __all__ = [
     "ContentType",
@@ -328,6 +335,17 @@ def _create_src_token(*, uri: str) -> str:
         token=DocLangToken.SRC,
         attrs={DocLangAttributeKey.URI: _escape_xml_attr(uri)},
     )
+
+
+def _image_src_uri(*, item: FloatingItem, doc: DoclingDocument, params: DocLangParams) -> str | None:
+    """Return the ``<src>`` URI of the image of a floating item for the image mode, if any."""
+    if params.image_mode in [ImageRefMode.REFERENCED, ImageRefMode.EMBEDDED] and item.image and item.image.uri:
+        return str(item.image.uri)
+    if params.image_mode == ImageRefMode.EMBEDDED and (img := item.get_image(doc)):
+        buffer = BytesIO()
+        _normalize_image_for_png(img).save(buffer, format="PNG")
+        return f"data:image/png;base64,{base64.b64encode(buffer.getvalue()).decode('utf-8')}"
+    return None
 
 
 def _create_href_token(*, uri: str) -> str:
@@ -1440,12 +1458,7 @@ class DocLangPictureSerializer(BasePictureSerializer):
                     )
                     tabular_body = _wrap(text=otsl_content, wrap_tag=DocLangToken.TABULAR.value)
 
-        uri: str | None = None
-        if params.image_mode in [ImageRefMode.REFERENCED, ImageRefMode.EMBEDDED] and item.image and item.image.uri:
-            uri = str(item.image.uri)
-        elif params.image_mode == ImageRefMode.EMBEDDED and (img := item.get_image(doc)):
-            imgb64 = item._image_to_base64(img)
-            uri = f"data:image/png;base64,{imgb64}"
+        uri = _image_src_uri(item=item, doc=doc, params=params)
         # v0.6 picture body: preamble (<src>, <tabular>), then semantic children.
         if uri:
             picture_body_parts.append(_create_src_token(uri=uri))
@@ -1897,6 +1910,135 @@ class DocLangInlineSerializer(BaseInlineSerializer):
         return create_ser_result(text=text_res, span_source=parts)
 
 
+def _track_source(item: NodeItem) -> TrackSource | None:
+    """Return the track source of a cue item, if it has one."""
+    if isinstance(item, DocItem):
+        return next((source for source in item.source if isinstance(source, TrackSource)), None)
+    return None
+
+
+def _create_timestamp_tokens(*, msecs: int) -> str:
+    """Write a time offset as a DocLang timestamp run: ``<seconds>`` plus the other non-zero units."""
+    hours, rest = divmod(msecs, 3_600_000)
+    minutes, rest = divmod(rest, 60_000)
+    seconds, millis = divmod(rest, 1000)
+    return "".join(
+        DocLangVocabulary._create_selfclosing_token(token=token, attrs={DocLangAttributeKey.VALUE: value})
+        for token, value in (
+            (DocLangToken.HOURS, hours),
+            (DocLangToken.MINUTES, minutes),
+            (DocLangToken.SECONDS, seconds),
+            (DocLangToken.MSECS, millis),
+        )
+        if value or token == DocLangToken.SECONDS
+    )
+
+
+@dataclass
+class _TrackCueBlock:
+    """The cues of a track that share a start and an end time."""
+
+    start: int
+    end: int
+    frame: PictureItem | None = None
+    turns: list[TextItem] = field(default_factory=list)
+
+
+def _track_cue_blocks(cues: list[tuple[int, int, TextItem | PictureItem]]) -> list[_TrackCueBlock]:
+    """Group cues by time, in order of start time: one block per time, with at most one frame."""
+    blocks: list[_TrackCueBlock] = []
+    for start, end, cue in sorted(cues, key=lambda cue: cue[0]):
+        block = blocks[-1] if blocks and (blocks[-1].start, blocks[-1].end) == (start, end) else None
+        if isinstance(cue, PictureItem):
+            if block is None or block.frame is not None:
+                block = _TrackCueBlock(start=start, end=end)
+                blocks.append(block)
+            block.frame = cue
+        else:
+            if block is None:
+                block = _TrackCueBlock(start=start, end=end)
+                blocks.append(block)
+            block.turns.append(cue)
+    return blocks
+
+
+def _serialize_track(
+    *,
+    item: TrackItem,
+    doc_serializer: BaseDocSerializer,
+    doc: DoclingDocument,
+    **kwargs: Any,
+) -> SerializationResult:
+    """Serialize a track as ``<track>``: element head, ``<cover>``, then one cue block per time.
+
+    The cues are the children that are a text or a picture with a ``TrackSource``. Each
+    text is a transcript turn, after a ``<voice>`` when the source has one. A picture is
+    the ``<frame>`` of its cue block.
+    """
+    params = DocLangParams(**kwargs)
+    excluded = doc_serializer.get_excluded_refs(**kwargs)
+    if item.self_ref in excluded:
+        return create_ser_result()
+    visited: set[str] = kwargs.get("visited") or set()
+
+    caption_head = _serialize_floating_caption_head(
+        item=item, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
+    )
+    head = _element_head_prefix(item=item, doc=doc, params=params, caption_text=caption_head or None)
+    body: list[str] = []
+    if cover_uri := _image_src_uri(item=item, doc=doc, params=params):
+        body.append(_wrap(text=_create_src_token(uri=cover_uri), wrap_tag=DocLangToken.COVER.value))
+
+    caption_refs = {ref.cref for ref in item.captions}
+    cues: list[tuple[int, int, TextItem | PictureItem]] = []
+    for child_ref in item.children:
+        child = child_ref.resolve(doc)
+        if child.self_ref in caption_refs or child.self_ref in excluded:
+            continue
+        # the track writes its cues itself: the document walk must not write them again
+        visited.update(
+            node.self_ref
+            for node, _ in doc.iterate_items(
+                root=child, with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
+            )
+        )
+        source = _track_source(child)
+        if source is None or not isinstance(child, TextItem | PictureItem):
+            warnings.warn(
+                f"{child.self_ref} in track {item.self_ref} is not a text or picture with a track source, "
+                "so it is not serialized",
+                stacklevel=2,
+            )
+            continue
+        cues.append((round(source.start_time * 1000), round(source.end_time * 1000), child))
+
+    add_text = ContentType.TEXT_OTHER in params.content_types
+    for block in _track_cue_blocks(cues):
+        body.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.BDIV))
+        body.append(_create_timestamp_tokens(msecs=block.start))
+        if block.end - block.start > _TRACK_POINT_MSECS:
+            body.append(_create_timestamp_tokens(msecs=block.end))
+        if block.frame is not None:
+            frame_uri = _image_src_uri(item=block.frame, doc=doc, params=params)
+            body.append(
+                _wrap(text=_create_src_token(uri=frame_uri) if frame_uri else "", wrap_tag=DocLangToken.FRAME.value)
+            )
+        for index, turn in enumerate(block.turns):
+            voice = source.voice if (source := _track_source(turn)) else None
+            if voice:
+                body.append(_wrap(text=_escape_text(voice, params), wrap_tag=DocLangToken.VOICE.value))
+            elif index > 0:
+                # an empty voice ends the previous turn
+                body.append(_wrap(text="", wrap_tag=DocLangToken.VOICE.value))
+            if add_text:
+                body.append(_escape_text(turn.text, params))
+
+    inner = head + "".join(body)
+    if not inner and params.suppress_empty_elements:
+        return create_ser_result()
+    return create_ser_result(text=_wrap(text=inner, wrap_tag=DocLangToken.TRACK.value), span_source=item)
+
+
 class DocLangFallbackSerializer(BaseFallbackSerializer):
     """Fallback serializer concatenating text for list/inline groups."""
 
@@ -1946,6 +2088,8 @@ class DocLangFallbackSerializer(BaseFallbackSerializer):
             if isinstance(item, FieldItem):
                 text_res = _wrap_in_field_region_if_needed(text=text_res, item=item, doc=doc)
             return create_ser_result(text=text_res, span_source=parts)
+        elif isinstance(item, TrackItem):
+            return _serialize_track(item=item, doc_serializer=doc_serializer, doc=doc, **kwargs)
         return create_ser_result()
 
 
