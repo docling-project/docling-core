@@ -1143,6 +1143,18 @@ class DoclingDocument(BaseModel):
         if len(to_be_deleted_items) < len(refs):
             raise ValueError(f"Cannot find all provided RefItems in doc: {[r.cref for r in refs]}")
 
+        # A rich table cell must keep an item to refer to: refuse to delete an item a
+        # surviving table's rich cell points at, before anything is removed
+        deleted_crefs = set(to_be_deleted_items.values())
+        for table in self.tables:
+            if table.self_ref in deleted_crefs:
+                continue
+            for cell in table.data.table_cells:
+                if isinstance(cell, RichTableCell) and cell.ref.cref in deleted_crefs:
+                    raise ValueError(
+                        f"Cannot delete {cell.ref.cref}: it is referenced by a rich cell of table {table.self_ref}"
+                    )
+
         # Clean the tree, reverse the order to not have to update
         for stack_, ref_ in sorted(to_be_deleted_items.items(), reverse=True):
             success = self.body._delete_child(doc=self, stack=list(stack_))
@@ -1174,10 +1186,14 @@ class DoclingDocument(BaseModel):
                 _logger.debug(f"deleting item in doc for {item_label} for {item_index}")
                 del self.__getattribute__(item_label)[item_index]
 
+        # Every removed item counts as deleted, not only the ones handed in: a reference to a
+        # descendant of a deleted item must be dropped, not renumbered onto another item
+        deleted_refs = [RefItem(cref=ref_) for ref_ in to_be_deleted_items.values()]
+
         # Update all nodes, not only those reachable from body via children: orphaned items
         # (e.g. captions whose parent does not list them as children) must be renumbered too
         for node in self._iterate_all_nodes():
-            self._update_node_with_lookup(node=node, refs_to_be_deleted=refs, lookup=lookup)
+            self._update_node_with_lookup(node=node, refs_to_be_deleted=deleted_refs, lookup=lookup)
 
     # Update the references
     def _update_ref_with_lookup(self, item_label: str, item_index: int, lookup: dict[str, dict[int, int]]) -> RefItem:
@@ -1198,9 +1214,10 @@ class DoclingDocument(BaseModel):
         lookup: dict[str, dict[int, int]],
     ) -> list[RefItem]:
         """Update refitems with lookup."""
+        deleted_crefs = {ref.cref for ref in refs_to_be_deleted}
         new_refitems = []
         for ref_item in ref_items:
-            if ref_item not in refs_to_be_deleted:  # if ref_item is in ref, then delete/skip them
+            if ref_item.cref not in deleted_crefs:  # if ref_item is in ref, then delete/skip them
                 path = ref_item._split_ref_to_path()
                 if len(path) == 3:
                     new_refitems.append(
@@ -1241,9 +1258,11 @@ class DoclingDocument(BaseModel):
         lookup: dict[str, dict[int, int]],
     ):
         """Update the references of a single node with lookup."""
-        # Update the comments references on any DocItem
+        # Update the comments references on any DocItem; comments are FineRef, which never
+        # compares equal to a RefItem, so they are matched by cref
         if isinstance(node, DocItem):
-            node.comments = [ref_item for ref_item in node.comments if ref_item not in refs_to_be_deleted]
+            deleted_crefs = {ref.cref for ref in refs_to_be_deleted}
+            node.comments = [ref_item for ref_item in node.comments if ref_item.cref not in deleted_crefs]
             for ref_item in node.comments:
                 ref_item._update_with_lookup(lookup=lookup)
 
