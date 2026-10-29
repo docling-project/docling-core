@@ -1098,11 +1098,25 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 my_parts.append(p)
 
         indent_str = list_level * params.indent * " "
-        my_texts = [
-            # avoid additional marker on already evaled sublists
-            (c.text if c.text and c.text[0] == " " else f"{indent_str}{c.text}")
-            for c in my_parts
-        ]
+        my_texts: list[str] = []
+        item_seen = False
+        for c in my_parts:
+            sublist = self._sublist_child_of_part(part=c, item=item, doc=doc)
+            if sublist is not None and not item_seen:
+                # Markdown has no sub-list without a parent item: an indented block
+                # with no item before it is an indented code block, so hang the
+                # sub-list on an empty item of this list.
+                marker = self._orphan_sublist_marker(sublist=sublist, item=item, doc=doc)
+                my_texts.append(
+                    self._fold_orphan_sublist(text=c.text, marker=marker, indent_str=indent_str, indent=params.indent)
+                )
+            elif c.text and c.text[0] == " ":
+                # avoid additional marker on already evaled sublists
+                my_texts.append(c.text)
+            else:
+                my_texts.append(f"{indent_str}{c.text}")
+            if not isinstance(c, _PageBreakSerResult):
+                item_seen = True
         text_res = ""
         for i, text in enumerate(my_texts):
             if i:
@@ -1115,6 +1129,50 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 )
             text_res += text
         return create_ser_result(text=text_res, span_source=my_parts)
+
+    @staticmethod
+    def _sublist_child_of_part(*, part: SerializationResult, item: ListGroup, doc: DoclingDocument) -> ListGroup | None:
+        """Return the child ListGroup of ``item`` that ``part`` was serialized from, if any.
+
+        The spans of a part lead back to the child of the list it belongs to: a list item,
+        or a sub-list that is a child of the list group rather than of a list item.
+        """
+        if not part.spans:
+            return None
+        node: NodeItem = part.spans[0].item
+        while node.parent is not None:
+            parent = node.parent.resolve(doc)
+            if parent.self_ref == item.self_ref:
+                return node if isinstance(node, ListGroup) else None
+            node = parent
+        return None
+
+    @staticmethod
+    def _fold_orphan_sublist(*, text: str, marker: str, indent_str: str, indent: int) -> str:
+        """Put ``marker`` in front of the first line of an already indented sub-list.
+
+        The marker goes on the same line as the sub-list's first item: a bare marker on a
+        line of its own would be read as a setext heading underline when a paragraph line
+        (the text of an enclosing list item) precedes it. The marker is padded so that the
+        sub-list's own markers stay at the content column of the new item, which keeps the
+        following lines of the sub-list in that same list instead of nested one level deeper.
+        """
+        first, newline, rest = text.partition("\n")
+        gap = " " * min(max(indent - len(marker), 1), 4)
+        return f"{indent_str}{marker}{gap}{first.lstrip()}{newline}{rest}"
+
+    @staticmethod
+    def _orphan_sublist_marker(*, sublist: ListGroup, item: ListGroup, doc: DoclingDocument) -> str:
+        """Return the marker of the empty item that holds a sub-list no item precedes.
+
+        The marker follows the numbering of the list: the position of the sub-list among the
+        children of the list when the list is enumerated, a dash otherwise.
+        """
+        if item.first_item_is_enumerated(doc):
+            for pos, child in enumerate(item.children):
+                if child.cref == sublist.self_ref:
+                    return f"{pos + 1}."
+        return "-"
 
 
 class MarkdownInlineSerializer(BaseInlineSerializer):

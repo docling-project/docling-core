@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 from xml.etree import ElementTree as ET
 
 import pytest
+from markdown_it import MarkdownIt
 from PIL import Image
 from pydantic import AnyUrl
 
@@ -290,6 +291,140 @@ def test_md_nested_list_page_break_keeps_indent():
 
     # the marker keeps the indentation that holds it inside the outer item
     assert f"\n\n    {_PAGE_BREAK}\n\n" in doc.export_to_markdown(page_break_placeholder=_PAGE_BREAK)
+
+
+def _md_as_html(markdown: str) -> str:
+    """Render Markdown with a CommonMark parser, as a reader of the export would."""
+    return MarkdownIt("commonmark").render(markdown).replace("\n", "")
+
+
+def _paged_nested_list_doc(*, enumerated: bool = False) -> DoclingDocument:
+    """outer one (page 1) > [inner a (page 1), inner b (page 2)], outer two (page 2)."""
+    doc = DoclingDocument(name="paged")
+    for page_no in (1, 2):
+        doc.add_page(page_no=page_no, size=Size(width=595, height=842), image=None)
+
+    def _prov(page_no: int, text: str) -> ProvenanceItem:
+        return ProvenanceItem(
+            page_no=page_no,
+            bbox=BoundingBox(l=50, t=700, r=500, b=680, coord_origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, len(text)),
+        )
+
+    outer = doc.add_list_group(name="outer")
+    doc.add_list_item(text="outer one", parent=outer, enumerated=enumerated, prov=_prov(1, "outer one"))
+    inner = doc.add_list_group(name="inner", parent=outer)
+    doc.add_list_item(text="inner a", parent=inner, prov=_prov(1, "inner a"))
+    doc.add_list_item(text="inner b", parent=inner, prov=_prov(2, "inner b"))
+    doc.add_list_item(text="outer two", parent=outer, enumerated=enumerated, prov=_prov(2, "outer two"))
+    return doc
+
+
+def test_md_list_starting_with_sublist_hangs_it_on_an_empty_item():
+    doc = DoclingDocument(name="structural")
+    outer = doc.add_list_group(name="outer")
+    inner = doc.add_list_group(name="inner", parent=outer)
+    doc.add_list_item(text="inner a", parent=inner)
+    doc.add_list_item(text="inner b", parent=inner)
+    doc.add_list_item(text="outer two", parent=outer)
+
+    # an indented block with no item before it would be an indented code block; the marker
+    # is padded so that the sub-list's own markers stay at the content column of the new item
+    md = doc.export_to_markdown()
+    assert md == "-   - inner a\n    - inner b\n- outer two"
+    # protects: the sub-list is nested in an item of the outer list and keeps both items
+    assert _md_as_html(md) == "<ul><li><ul><li>inner a</li><li>inner b</li></ul></li><li>outer two</li></ul>"
+
+    md = doc.export_to_markdown(indent=2)
+    assert md == "- - inner a\n  - inner b\n- outer two"
+    assert _md_as_html(md) == "<ul><li><ul><li>inner a</li><li>inner b</li></ul></li><li>outer two</li></ul>"
+
+
+def test_md_list_starting_with_enumerated_sublist():
+    doc = DoclingDocument(name="structural")
+    outer = doc.add_list_group(name="outer")
+    inner = doc.add_list_group(name="inner", parent=outer)
+    doc.add_list_item(text="inner a", parent=inner, enumerated=True)
+    doc.add_list_item(text="inner b", parent=inner, enumerated=True)
+    doc.add_list_item(text="outer two", parent=outer)
+
+    md = doc.export_to_markdown()
+    assert md == "-   1. inner a\n    2. inner b\n- outer two"
+    # protects: the ordered sub-list keeps both items under the empty item
+    assert _md_as_html(md) == "<ul><li><ol><li>inner a</li><li>inner b</li></ol></li><li>outer two</li></ul>"
+
+
+def test_md_sublist_after_an_item_gets_no_extra_marker():
+    doc = DoclingDocument(name="nested")
+    outer = doc.add_list_group(name="outer")
+    doc.add_list_item(text="outer one", parent=outer)
+    inner = doc.add_list_group(name="inner", parent=outer)
+    doc.add_list_item(text="inner a", parent=inner)
+    doc.add_list_item(text="outer two", parent=outer)
+
+    md = doc.export_to_markdown()
+    assert md == "- outer one\n    - inner a\n- outer two"
+    assert _md_as_html(md) == "<ul><li>outer one<ul><li>inner a</li></ul></li><li>outer two</li></ul>"
+
+
+@pytest.mark.parametrize("enumerated", [False, True])
+def test_md_nested_orphan_sublist_does_not_turn_the_item_above_into_a_heading(enumerated: bool):
+    # outer item `one`, then a sub-list `i` that starts with a sub-list `k` followed by `mid`:
+    # what the HTML backend produces for <ul><li>one<ul><li><ul><li>deep</li></ul></li><li>mid</li></ul></li></ul>
+    doc = DoclingDocument(name="nested-orphan")
+    o = doc.add_list_group(name="o")
+    doc.add_list_item(text="one", parent=o, enumerated=enumerated)
+    i = doc.add_list_group(name="i", parent=o)
+    k = doc.add_list_group(name="k", parent=i)
+    doc.add_list_item(text="deep", parent=k, enumerated=enumerated)
+    doc.add_list_item(text="deep two", parent=k, enumerated=enumerated)
+    doc.add_list_item(text="mid", parent=i)
+
+    md = doc.export_to_markdown()
+    if enumerated:
+        assert md == "1. one\n    -   1. deep\n        2. deep two\n    - mid"
+        expected = "<ol><li>one<ul><li><ol><li>deep</li><li>deep two</li></ol></li><li>mid</li></ul></li></ol>"
+    else:
+        assert md == "- one\n    -   - deep\n        - deep two\n    - mid"
+        expected = "<ul><li>one<ul><li><ul><li>deep</li><li>deep two</li></ul></li><li>mid</li></ul></li></ul>"
+    # protects: a bare marker under the paragraph line `one` would make it a setext heading
+    # and the sub-list a code block; `one` stays an item and `deep` stays a nested list
+    assert _md_as_html(md) == expected
+
+
+def test_md_page_filtered_nested_list_keeps_the_sublist_in_the_list():
+    doc = _paged_nested_list_doc()
+
+    # page 2 starts inside the sub-list: its parent item is on page 1
+    md = doc.export_to_markdown(page_no=2)
+    assert md == "-   - inner b\n- outer two"
+    assert _md_as_html(md) == "<ul><li><ul><li>inner b</li></ul></li><li>outer two</li></ul>"
+
+    md = doc.export_to_markdown()
+    assert md == "- outer one\n    - inner a\n    - inner b\n- outer two"
+    assert _md_as_html(md) == "<ul><li>outer one<ul><li>inner a</li><li>inner b</li></ul></li><li>outer two</li></ul>"
+
+
+def test_md_orphan_sublist_in_enumerated_list_keeps_the_numbering():
+    doc = _paged_nested_list_doc(enumerated=True)
+
+    # the empty item takes the position of the sub-list among the list's children
+    md = doc.export_to_markdown(page_no=2)
+    assert md == "2.  - inner b\n3. outer two"
+    assert _md_as_html(md) == '<ol start="2"><li><ul><li>inner b</li></ul></li><li>outer two</li></ol>'
+
+    md = doc.export_to_markdown()
+    assert md == "1. outer one\n    - inner a\n    - inner b\n3. outer two"
+
+
+def test_md_text_with_leading_space_in_a_list_gets_no_empty_item():
+    # only a child ListGroup is a sub-list; other parts keep their previous output
+    doc = DoclingDocument(name="lead")
+    group = doc.add_list_group(name="list")
+    doc.add_text(label=DocItemLabel.TEXT, text=" lead", parent=group)
+    doc.add_list_item(text="item", parent=group)
+
+    assert doc.export_to_markdown() == " lead\n- item"
 
 
 def test_md_page_break_between_list_and_table():
