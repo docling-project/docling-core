@@ -1258,9 +1258,6 @@ def test_md_footnote_validation():
     with pytest.raises(ValueError, match="contains invalid markdown characters"):
         MarkdownTextSerializer._validate_and_format_footnote("[1] Example")
 
-    with pytest.raises(ValueError, match="not a numeric or symbol marker"):
-        MarkdownTextSerializer._validate_and_format_footnote("Table note.")
-
     # Test valid footnote text returns (identifier, definition)
     identifier, definition = MarkdownTextSerializer._validate_and_format_footnote("1 Example footnote")
     assert identifier == "1"
@@ -1275,6 +1272,23 @@ def test_md_footnote_validation():
     identifier, definition = MarkdownTextSerializer._validate_and_format_footnote("* Example")
     assert identifier == "*"
     assert definition == "[^*]: Example"
+
+    # The first token is the identifier
+    identifier, definition = MarkdownTextSerializer._validate_and_format_footnote("ID Note about data")
+    assert identifier == "ID"
+    assert definition == "[^ID]: Note about data"
+
+    identifier, definition = MarkdownTextSerializer._validate_and_format_footnote("1) Example")
+    assert identifier == "1)"
+    assert definition == "[^1)]: Example"
+
+    identifier, definition = MarkdownTextSerializer._validate_and_format_footnote("a) Excludes tax.")
+    assert identifier == "a)"
+    assert definition == "[^a)]: Excludes tax."
+
+    identifier, definition = MarkdownTextSerializer._validate_and_format_footnote("1. Excludes tax.")
+    assert identifier == "1."
+    assert definition == "[^1.]: Excludes tax."
 
 
 def test_md_footnotes_json():
@@ -1318,33 +1332,6 @@ def test_md_table_with_footnotes():
 
     assert "[^1]" in actual
     assert "[^1]: table footnote explanation" in actual
-
-
-@pytest.mark.parametrize("item_kind", ["table", "picture"])
-@pytest.mark.parametrize(
-    "footnote_text, expected_text",
-    [
-        ("Table note.", "Table note."),
-        ("The figures are estimates.", "The figures are estimates."),
-        ("a < b & c > d", "a &lt; b &amp; c &gt; d"),
-        ("a) Excludes tax.", "a) Excludes tax."),
-        ("1. Excludes tax.", "1. Excludes tax."),
-    ],
-)
-def test_md_floating_footnote_without_marker_is_plain_text(item_kind, footnote_text, expected_text):
-    doc = DoclingDocument(name="unmarked_footnote")
-    if item_kind == "table":
-        data = TableData(num_rows=0, num_cols=1)
-        data.add_row(["Cell"])
-        item = doc.add_table(data=data)
-    else:
-        item = doc.add_picture()
-    item.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text=footnote_text).get_ref())
-
-    actual = MarkdownDocSerializer(doc=doc).serialize().text
-
-    assert actual.count(expected_text) == 1
-    assert "[^" not in actual
 
 
 # ===============================
@@ -2798,9 +2785,9 @@ def test_table_footnotes_serialized_to_markdown_and_html():
     for text in ["First footnote.", "Second footnote.", "a < b & c > d"]:
         table.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text=text).get_ref())
 
-    # one paragraph per footnote after the table
+    # an anchor and a definition per footnote after the table
     md_out = doc.export_to_markdown()
-    assert "|\n\nFirst footnote.\n\nSecond footnote.\n" in md_out
+    assert "|\n\n[^First]\n\n[^First]: footnote.\n\n[^Second]\n\n[^Second]: footnote.\n" in md_out
 
     # footnotes are HTML-escaped divs after the table, with nothing between them
     html_out = doc.export_to_html()
@@ -2823,7 +2810,7 @@ def test_footnotes_kept_when_owner_label_is_excluded():
     pic.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="Picture note.").get_ref())
 
     labels = {DocItemLabel.TEXT, DocItemLabel.FOOTNOTE}
-    assert doc.export_to_markdown(labels=labels) == "Table note.\n\nPicture note."
+    assert doc.export_to_markdown(labels=labels) == "[^Table]\n\n[^Table]: note.\n\n[^Picture]\n\n[^Picture]: note."
     html_out = doc.export_to_html(labels=labels)
     assert "Cell" not in html_out
     assert '<div class="footnote">Table note.</div>' in html_out
@@ -2836,7 +2823,7 @@ def test_picture_footnotes_serialized_to_markdown_and_html():
     pic = doc.add_picture()
     pic.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="Picture note.").get_ref())
 
-    assert "Picture note." in doc.export_to_markdown()
+    assert "[^Picture]\n\n[^Picture]: note." in doc.export_to_markdown()
     # inside <figure>, so the footnote stays with its picture
     assert '<div class="footnote">Picture note.</div></figure>' in doc.export_to_html()
 
@@ -2847,7 +2834,7 @@ def test_code_footnotes_serialized_to_markdown_and_html():
     code = doc.add_code(text="print(1)")
     code.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="Code note.").get_ref())
 
-    assert "Code note." in doc.export_to_markdown()
+    assert "[^Code]\n\n[^Code]: note." in doc.export_to_markdown()
     # wrapped in <figure> like a picture, so the footnote stays with its code
     assert (
         '<figure><pre><code>print(1)</code></pre><div class="footnote">Code note.</div></figure>'

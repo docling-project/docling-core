@@ -343,9 +343,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             ValueError: If ``text`` is empty, if the identifier is empty, if
                 the identifier contains whitespace or newline characters, if
                 the identifier contains Markdown special characters
-                (``[``, ``]``, ``:``) that would break footnote syntax, or if
-                the identifier is neither a number nor a symbol (so ordinary
-                prose such as ``"Table note."`` is not read as a marker).
+                (``[``, ``]``, ``:``) that would break footnote syntax.
         """
         if not text or not text.strip():
             raise ValueError("Footnote cannot be empty")
@@ -365,10 +363,6 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         # These characters would break the Markdown footnote syntax
         if any(char in identifier for char in {"[", "]", ":"}):
             raise ValueError(f"Footnote identifier '{identifier}' contains invalid markdown characters")
-
-        # Only a number or a symbol (e.g. "1", "*") is a marker; a word is prose
-        if not (identifier.isdigit() or not any(char.isalnum() for char in identifier)):
-            raise ValueError(f"Footnote identifier '{identifier}' is not a numeric or symbol marker")
 
         definition = f"[^{identifier}]: {parts[1]}" if len(parts) == 2 else f"[^{identifier}]:"
 
