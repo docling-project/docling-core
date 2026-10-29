@@ -1,5 +1,6 @@
 """Models for the Docling's adoption of Web Video Text Tracks format."""
 
+import html
 import re
 import warnings
 from collections.abc import Iterator
@@ -11,8 +12,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from pydantic.types import StringConstraints
 from typing_extensions import Self, override
 
-# WebVTT cue text escapes and the characters they denote (W3C WebVTT 1, 6.3).
-# The names double as the validation whitelist so the two cannot drift apart.
+# The escapes written back out, and the characters they denote (W3C WebVTT 1, 6.3).
+# Reading accepts every HTML character reference (6.4), so this is no whitelist.
 _ENTITY_CHARS: dict[str, str] = {
     "amp": "&",
     "lt": "<",
@@ -22,13 +23,11 @@ _ENTITY_CHARS: dict[str, str] = {
     "nbsp": "\u00a0",
 }
 _ESCAPE_NAMES: dict[str, str] = {char: name for name, char in _ENTITY_CHARS.items()}
-_VALID_ENTITIES: set = set(_ENTITY_CHARS)
-_ENTITY_PATTERN: re.Pattern = re.compile(r"&([a-zA-Z0-9]+);")
 
 
 def _unescape(value: str) -> str:
-    """Replace WebVTT escape sequences with the characters they denote."""
-    return _ENTITY_PATTERN.sub(lambda m: _ENTITY_CHARS.get(m.group(1), m.group(0)), value)
+    """Resolve HTML character references; one that does not resolve stays literal."""
+    return html.unescape(value)
 
 
 def _escape(value: str, terminator: str) -> str:
@@ -213,19 +212,16 @@ class WebVTTCueTextSpan(BaseModel):
     @field_validator("text", mode="after")
     @classmethod
     def is_valid_text(cls, value: str) -> str:
-        """Ensure cue text contains only permitted characters and HTML entities."""
-        for match in _ENTITY_PATTERN.finditer(value):
-            entity = match.group(1)
-            if entity not in _VALID_ENTITIES:
-                raise ValueError(f"Cue text contains an invalid HTML entity: &{entity};")
-        if "&" in re.sub(_ENTITY_PATTERN, "", value):
-            raise ValueError("Found '&' not part of a valid entity in the cue text")
+        """Ensure cue text contains only permitted characters and resolve its character references."""
         if any(ch in value for ch in {"\n", "\r", "<"}):
             raise ValueError("Cue text contains invalid characters")
         if len(value) == 0:
             raise ValueError("Cue text cannot be empty")
 
-        return _unescape(value)
+        value = _unescape(value)
+        if any(ch in value for ch in {"\n", "\r"}):
+            raise ValueError("Cue text contains a character reference for a line terminator")
+        return value
 
     @override
     def __str__(self) -> str:
@@ -299,19 +295,16 @@ class WebVTTCueSpanStartTagAnnotated(WebVTTCueSpanStartTag):
     @field_validator("annotation", mode="after")
     @classmethod
     def is_valid_annotation(cls, value: str) -> str:
-        """Ensure annotation contains only permitted characters and HTML entities."""
-        for match in _ENTITY_PATTERN.finditer(value):
-            entity = match.group(1)
-            if entity not in _VALID_ENTITIES:
-                raise ValueError(f"Annotation contains an invalid HTML entity: &{entity};")
-        if "&" in re.sub(_ENTITY_PATTERN, "", value):
-            raise ValueError("Found '&' not part of a valid entity in annotation")
+        """Ensure annotation contains only permitted characters and resolve its character references."""
         if any(ch in value for ch in {"\n", "\r", ">"}):
             raise ValueError("Annotation contains invalid characters")
         if len(value) == 0:
             raise ValueError("Annotation cannot be empty")
 
-        return _unescape(value)
+        value = _unescape(value)
+        if any(ch in value for ch in {"\n", "\r"}):
+            raise ValueError("Annotation contains a character reference for a line terminator")
+        return value
 
     @override
     def __str__(self) -> str:
