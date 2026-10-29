@@ -5723,6 +5723,27 @@ class DoclingDocument(BaseModel):
         def get_item_list(self, key: str) -> list[NodeItem]:
             return getattr(self, key)
 
+        def _filter_and_remap_provenance(
+            self,
+            item: DocItem,
+            *,
+            page_nrs: set[int] | None,
+            page_delta: int,
+        ) -> None:
+            if page_nrs is not None:
+                item.prov = [prov for prov in item.prov if prov.page_no in page_nrs]
+
+            for prov in item.prov:
+                prov.page_no += page_delta
+
+            if isinstance(item, KeyValueItem | FormItem):
+                for graph_cell in item.graph.cells:
+                    if graph_cell.prov is not None:
+                        if page_nrs is not None and graph_cell.prov.page_no not in page_nrs:
+                            graph_cell.prov = None
+                        else:
+                            graph_cell.prov.page_no += page_delta
+
         def index(self, doc: "DoclingDocument", page_nrs: set[int] | None = None) -> None:
             if page_nrs is not None and (unavailable_page_nrs := page_nrs - set(doc.pages.keys())):
                 raise ValueError(f"The following page numbers are not present in the document: {unavailable_page_nrs}")
@@ -5772,13 +5793,11 @@ class DoclingDocument(BaseModel):
                     new_item.self_ref = new_cref
 
                     if isinstance(new_item, DocItem):
-                        # update page numbers
-                        for prov in new_item.prov:
-                            prov.page_no += page_delta
-                        if isinstance(new_item, KeyValueItem | FormItem):
-                            for graph_cell in new_item.graph.cells:
-                                if graph_cell.prov is not None:
-                                    graph_cell.prov.page_no += page_delta
+                        self._filter_and_remap_provenance(
+                            new_item,
+                            page_nrs=page_nrs,
+                            page_delta=page_delta,
+                        )
 
                     if item.parent:
                         # set item's parent
