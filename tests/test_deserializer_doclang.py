@@ -2816,7 +2816,8 @@ def test_empty_text_keeps_its_locations_and_layer() -> None:
     assert not doc.groups
 
 
-def test_track_is_skipped_with_a_warning() -> None:
+def test_track_is_read_and_its_chapter_skipped_with_a_warning() -> None:
+    """A track gets its caption and cues; a chapter is skipped, without leaking its text."""
     xml = (
         '<doclang version="0.8"><text>Before</text>'
         "<track><caption>Talk</caption>"
@@ -2824,10 +2825,17 @@ def test_track_is_skipped_with_a_warning() -> None:
         '<bdiv/><seconds value="4"/>Second cue</track>'
         "<text>After</text></doclang>"
     )
-    with pytest.warns(UserWarning, match="<track> is not supported yet"):
+    with pytest.warns(UserWarning, match="<chapter> in <track> is not supported yet"):
         doc = _deserialize(xml)
 
-    assert [t.text for t in doc.texts] == ["Before", "After"]
+    assert [t.text for t in doc.texts] == ["Before", "Talk", "Hello world", "Second cue", "After"]
+    track = doc.tracks[0]
+    assert [ref.resolve(doc).text for ref in track.captions] == ["Talk"]
+    cues = [ref.resolve(doc) for ref in track.children]
+    assert [(c.text, c.source[0].start_time, c.source[0].end_time) for c in cues] == [
+        ("Hello world", 0.0, 4.0),
+        ("Second cue", 4.0, 4.001),
+    ]
 
 
 def test_empty_formula_is_kept() -> None:
