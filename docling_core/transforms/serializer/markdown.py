@@ -846,7 +846,11 @@ class MarkdownTableSerializer(BaseTableSerializer):
                             ).text
                         cell_text = rich_texts[key]
                     else:
-                        cell_text = col.text or ""
+                        cell_text = doc_serializer.post_process(
+                            text=col.text or "",
+                            escape_html=params.escape_html,
+                            escape_underscores=params.escape_underscores,
+                        )
                     # Newlines and pipes must be escaped in every cell so the
                     # markdown table stays valid.
                     rendered_row.append(cell_text.replace("\n", " ").replace("|", "&#124;"))
