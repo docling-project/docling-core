@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Fix
+
+* Keep provenance page numbers aligned with the pages retained by `DoclingDocument.filter()` ([#936](https://github.com/docling-project/docling-core/issues/936))
+
 ## [v2.105.0](https://github.com/docling-project/docling-core/releases/tag/v2.105.0) - 2026-10-27
 
 ### Feature
