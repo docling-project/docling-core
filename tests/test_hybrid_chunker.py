@@ -1048,6 +1048,23 @@ class _WordCountTokenizer(_TestTokenizer):
         return len(text.split())
 
 
+@pytest.mark.parametrize("level", [None, 1, 3])
+def test_rich_heading_with_body_keeps_hybrid_chunk_context(level: int | None) -> None:
+    doc = DoclingDocument(name="rich heading")
+    heading = doc.add_title(text="") if level is None else doc.add_heading(text="", level=level)
+    inline = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="Heading eq", parent=inline)
+    doc.add_text(label=DocItemLabel.FORMULA, text="y=2", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="Body under it.", parent=heading)
+
+    chunker = HybridChunker(tokenizer=_WordCountTokenizer(max_tokens=100))
+    chunks = list(chunker.chunk(doc))
+    assert len(chunks) == 1
+    assert chunks[0].text == "Body under it."
+    assert chunks[0].meta.headings == ["Heading eq $y=2$"]
+    assert chunker.contextualize(chunks[0]) == "Heading eq $y=2$\nBody under it."
+
+
 class _UnderCountingTokenizer(_TestTokenizer):
     """Word-counting tokenizer whose per-chunk counts under-estimate joined text.
 
