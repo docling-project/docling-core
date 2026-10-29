@@ -4410,6 +4410,132 @@
       "title": "TopicsMetaField",
       "type": "object"
     },
+    "TrackItem": {
+      "additionalProperties": false,
+      "description": "A time-aligned media transcript, e.g. the speech of an audio or video recording.\n\nA track maps to the DocLang ``<track>`` element. Its children are the cues: items\nwhose ``source`` is a ``TrackSource`` with the start and end time and an optional\nvoice, such as the ``TextItem`` of each transcript turn or the ``PictureItem`` of a\nsampled video frame. The ``image`` is the cover, one picture for the whole track\n(e.g. the poster frame of a video). Like other floating items, a track can carry a\nlocation (``prov``) and captions.",
+      "properties": {
+        "self_ref": {
+          "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
+          "title": "Self Ref",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RefItem"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "children": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Children",
+          "type": "array"
+        },
+        "content_layer": {
+          "$ref": "#/$defs/ContentLayer",
+          "default": "body"
+        },
+        "meta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FloatingMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "label": {
+          "const": "track",
+          "default": "track",
+          "title": "Label",
+          "type": "string"
+        },
+        "prov": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProvenanceItem"
+          },
+          "title": "Prov",
+          "type": "array"
+        },
+        "source": {
+          "default": [],
+          "description": "The provenance of this document item. Currently, it is only used for media track provenance.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "track": "#/$defs/TrackSource"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TrackSource"
+              }
+            ]
+          },
+          "title": "Source",
+          "type": "array"
+        },
+        "comments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/FineRef"
+          },
+          "title": "Comments",
+          "type": "array"
+        },
+        "captions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Captions",
+          "type": "array"
+        },
+        "references": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "References",
+          "type": "array"
+        },
+        "footnotes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RefItem"
+          },
+          "title": "Footnotes",
+          "type": "array"
+        },
+        "image": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImageRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "self_ref"
+      ],
+      "title": "TrackItem",
+      "type": "object"
+    },
     "TrackSource": {
       "description": "Source metadata for a cue extracted from a media track.\n\nA `TrackSource` instance identifies a cue in a media track (audio, video, subtitles, screen-recording captions,\netc.). A *cue* here refers to any discrete segment that was pulled out of the original asset, e.g., a subtitle\nblock, an audio clip, or a timed marker in a screen-recording.",
       "properties": {
@@ -4494,7 +4620,7 @@
       "type": "string"
     },
     "version": {
-      "default": "1.10.0",
+      "default": "1.11.0",
       "pattern": "^(?P<major>0|[1-9]\\d*)\\.(?P<minor>0|[1-9]\\d*)\\.(?P<patch>0|[1-9]\\d*)(?:-(?P<prerelease>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
       "title": "Version",
       "type": "string"
@@ -4636,6 +4762,14 @@
         "$ref": "#/$defs/FieldItem"
       },
       "title": "Field Items",
+      "type": "array"
+    },
+    "tracks": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/TrackItem"
+      },
+      "title": "Tracks",
       "type": "array"
     },
     "pages": {

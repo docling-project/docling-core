@@ -54,6 +54,7 @@ from docling_core.types.doc import (
     TableItem,
     TextItem,
     TitleItem,
+    TrackItem,
 )
 from docling_core.types.doc.document import (
     CURRENT_VERSION,
@@ -592,6 +593,11 @@ def test_docitems():
                 label=DocItemLabel.FIELD_HEADING,
                 self_ref="#",
                 level=2,
+            )
+            verify(dc, obj)
+        elif dc is TrackItem:
+            obj = dc(
+                self_ref="#",
             )
             verify(dc, obj)
         elif dc is GraphData:  # we skip this on purpose

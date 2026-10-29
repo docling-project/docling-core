@@ -284,6 +284,43 @@ class TestSchemaSnapshotRendering:
         assert set(schema["$defs"]["FieldItem"]["properties"]) == set(FieldItem.model_fields)
 
 
+class TestProjector_1_11_to_1_10:
+    """Tests for the 1.11 → 1.10 downgrade projector."""
+
+    def _apply(self, data: dict) -> dict:
+        from docling_core.compat import _project_1_11_to_1_10
+
+        return _project_1_11_to_1_10(data)
+
+    def test_version_set_to_1_10(self):
+        result = self._apply(_minimal_doc_dict("1.11.0"))
+        assert result["version"] == "1.10.0"
+        assert "tracks" not in result
+
+    def test_track_becomes_a_picture_with_its_references(self):
+        """The track keeps its cover, location and cues, as a picture after the existing ones."""
+        from docling_core.types.doc import DocItemLabel, ImageRef, Size, TrackSource
+
+        doc = DoclingDocument(name="doc")
+        doc.add_picture()
+        track = doc.add_track(
+            image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=1, height=1), uri=Path("x.png"))
+        )
+        doc.add_text(label=DocItemLabel.TEXT, text="cue", parent=track, source=TrackSource(start_time=0, end_time=1))
+
+        result = self._apply(doc.model_dump(mode="python"))
+
+        assert "tracks" not in result
+        picture = result["pictures"][1]
+        assert picture["label"] == "picture"
+        assert picture["self_ref"] == "#/pictures/1"
+        assert str(picture["image"]["uri"]) == "x.png"
+        assert [ref["cref"] for ref in picture["children"]] == ["#/texts/0"]
+        assert [ref["cref"] for ref in result["body"]["children"]] == ["#/pictures/0", "#/pictures/1"]
+        assert result["texts"][0]["parent"]["cref"] == "#/pictures/1"
+        assert DoclingDocument.model_validate(result).pictures[1].children[0].cref == "#/texts/0"
+
+
 class TestProjector_1_10_to_1_9:
     """Tests for the 1.10 → 1.9 downgrade projector."""
 

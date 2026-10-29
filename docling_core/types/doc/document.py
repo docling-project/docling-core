@@ -145,6 +145,7 @@ from docling_core.types.doc.items.table.table_data import (
     TableData,
 )
 from docling_core.types.doc.items.text import FormulaItem, ListItem, SectionHeaderItem, TextItem, TitleItem
+from docling_core.types.doc.items.track import TrackItem
 from docling_core.types.doc.labels import (
     CodeLanguageLabel,
     DocItemLabel,
@@ -202,6 +203,7 @@ class DoclingDocument(BaseModel):
     form_items: list[FormItem] = []
     field_regions: list[FieldRegionItem] = []
     field_items: list[FieldItem] = []
+    tracks: list[TrackItem] = []
 
     pages: dict[int, PageItem] = {}  # empty as default
 
@@ -210,7 +212,7 @@ class DoclingDocument(BaseModel):
         dumped = handler(self)
 
         # suppress serializing certain fields when empty:
-        for field in {"field_regions", "field_items"}:
+        for field in {"field_regions", "field_items", "tracks"}:
             if dumped.get(field) == []:
                 del dumped[field]
 
@@ -339,6 +341,7 @@ class DoclingDocument(BaseModel):
             self.form_items,
             self.field_regions,
             self.field_items,
+            self.tracks,
         )
         for item_list in item_lists:
             for item in item_list:
@@ -1057,6 +1060,17 @@ class DoclingDocument(BaseModel):
 
             self.field_items.append(item)
 
+        elif isinstance(item, TrackItem):
+            item_label = "tracks"
+            item_index = len(self.tracks)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.tracks.append(item)
+
         elif isinstance(item, ListGroup | InlineGroup):
             item_label = "groups"
             item_index = len(self.groups)
@@ -1231,6 +1245,7 @@ class DoclingDocument(BaseModel):
             self.form_items,
             self.field_regions,
             self.field_items,
+            self.tracks,
         ):
             yield from item_list
 
@@ -1914,6 +1929,45 @@ class DoclingDocument(BaseModel):
         parent.children.append(RefItem(cref=cref))
 
         return fig_item
+
+    def add_track(
+        self,
+        image: ImageRef | None = None,
+        caption: TextItem | RefItem | None = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
+    ) -> TrackItem:
+        """Add a track: a time-aligned media transcript.
+
+        Add the cues of the track as its children, e.g. with ``add_text(...,
+        parent=track, source=TrackSource(...))``.
+
+        :param image: Optional[ImageRef]: The cover of the track. (Default value = None)
+        :param caption: Optional[Union[TextItem, RefItem]]: (Default value = None)
+        :param prov: Optional[ProvenanceItem]: The location of the track. (Default value = None)
+        :param parent: Optional[NodeItem]: (Default value = None)
+        :param content_layer: Optional[ContentLayer]: (Default value = None)
+
+        :returns: TrackItem: The newly created TrackItem.
+        """
+        if not parent:
+            parent = self.body
+
+        cref = f"#/tracks/{len(self.tracks)}"
+
+        track_item = TrackItem(image=image, self_ref=cref, parent=parent.get_ref())
+        if prov:
+            track_item.prov.append(prov)
+        if content_layer:
+            track_item.content_layer = content_layer
+        if caption:
+            track_item.captions.append(caption.get_ref())
+
+        self.tracks.append(track_item)
+        parent.children.append(RefItem(cref=cref))
+
+        return track_item
 
     def add_title(
         self,
@@ -2900,6 +2954,40 @@ class DoclingDocument(BaseModel):
 
         return picture_item
 
+    def insert_track(
+        self,
+        sibling: NodeItem,
+        image: ImageRef | None = None,
+        caption: TextItem | RefItem | None = None,
+        prov: ProvenanceItem | None = None,
+        content_layer: ContentLayer | None = None,
+        after: bool = True,
+    ) -> TrackItem:
+        """Creates a new TrackItem item and inserts it into the document.
+
+        :param sibling: NodeItem:
+        :param image: Optional[ImageRef]: The cover of the track. (Default value = None)
+        :param caption: Optional[Union[TextItem, RefItem]]: (Default value = None)
+        :param prov: Optional[ProvenanceItem]: The location of the track. (Default value = None)
+        :param content_layer: Optional[ContentLayer]: (Default value = None)
+        :param after: bool: (Default value = True)
+
+        :returns: TrackItem: The newly created TrackItem.
+        """
+        stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
+
+        track_item = TrackItem(image=image, self_ref="#", parent=parent_ref)
+        if prov:
+            track_item.prov.append(prov)
+        if content_layer:
+            track_item.content_layer = content_layer
+        if caption:
+            track_item.captions.append(caption.get_ref())
+
+        self._insert_in_structure(item=track_item, stack=stack, after=after)
+
+        return track_item
+
     def insert_title(
         self,
         sibling: NodeItem,
@@ -3601,7 +3689,13 @@ class DoclingDocument(BaseModel):
             ValueError: If a referenced path is not a regular file or exceeds
                 ``settings.max_image_decoded_size``.
         """
-        items: list[FloatingItem] = [*self.pictures, *self.tables, *self.key_value_items, *self.form_items]
+        items: list[FloatingItem] = [
+            *self.pictures,
+            *self.tables,
+            *self.key_value_items,
+            *self.form_items,
+            *self.tracks,
+        ]
         image_refs = [item.image for item in items if item.image is not None]
         image_refs += [page.image for page in self.pages.values() if page.image is not None]
         for image_ref in image_refs:
@@ -3635,7 +3729,7 @@ class DoclingDocument(BaseModel):
         result: DoclingDocument = copy.deepcopy(self)
 
         for ix, (item, level) in enumerate(result.iterate_items(with_groups=True)):
-            if isinstance(item, PictureItem):
+            if isinstance(item, PictureItem | TrackItem):
                 if item.image is not None and item.image._local_path() is not None:
                     # go through pil_image so local reads honor the same settings gate
                     tmp_image = item.image.pil_image
@@ -3716,7 +3810,8 @@ class DoclingDocument(BaseModel):
 
         img_count = 0
         for item, _ in result.iterate_items(page_no=page_no, with_groups=False):
-            if isinstance(item, PictureItem):
+            # a track's image is its cover
+            if isinstance(item, PictureItem | TrackItem):
                 img = item.get_image(doc=self)
                 if img is not None:
                     hexhash = PictureItem._image_to_hexhash(img)
@@ -5610,6 +5705,7 @@ class DoclingDocument(BaseModel):
             self.form_items,
             self.field_regions,
             self.field_items,
+            self.tracks,
         ]
         for item_list in item_lists:
             for item in item_list:
@@ -5713,6 +5809,7 @@ class DoclingDocument(BaseModel):
         form_items: list[FormItem] = []
         field_regions: list[FieldRegionItem] = []
         field_items: list[FieldItem] = []
+        tracks: list[TrackItem] = []
 
         pages: dict[int, PageItem] = {}
 
@@ -5745,6 +5842,7 @@ class DoclingDocument(BaseModel):
                 "form_items",
                 "field_regions",
                 "field_items",
+                "tracks",
             ]
             start_indices = {k: len(self.get_item_list(k)) for k in post_processing_keys}
 
@@ -5879,6 +5977,7 @@ class DoclingDocument(BaseModel):
         self.form_items = doc_index.form_items
         self.field_regions = doc_index.field_regions
         self.field_items = doc_index.field_items
+        self.tracks = doc_index.tracks
         self.pages = doc_index.pages
         self.name = doc_index.get_name()
 

@@ -82,6 +82,7 @@ from docling_core.types.doc.document import (
     TextItem,
     TitleItem,
     TopicsMetaField,
+    TrackItem,
 )
 from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.utils import (
@@ -964,7 +965,8 @@ class HTMLFallbackSerializer(BaseFallbackSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Fallback serializer for items not handled by other serializers."""
-        if isinstance(item, GroupItem):
+        # a track has no content of its own: it is serialized as its cues
+        if isinstance(item, GroupItem | TrackItem):
             parts = doc_serializer.get_parts(item=item, **kwargs)
             text_res = "\n".join([p.text for p in parts if p.text])
             return create_ser_result(text=text_res, span_source=parts)
