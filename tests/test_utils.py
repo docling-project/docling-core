@@ -6,7 +6,7 @@ from io import BytesIO
 from pathlib import Path
 
 import pytest
-from pydantic import Field
+from pydantic import AnyHttpUrl, Field
 from requests import Response, Session
 
 from docling_core.types.doc import DocItemLabel, DoclingDocument, TableData
@@ -16,6 +16,7 @@ from docling_core.utils.file import (
     _MAX_REDIRECTS,
     _is_safe_url,
     _sanitize_filename,
+    resolve_remote_filename,
     resolve_source_to_path,
     resolve_source_to_stream,
 )
@@ -571,3 +572,24 @@ def test_connect_time_validation_connects_to_validated_address(monkeypatch):
         server.shutdown()
 
     assert hits == []
+
+
+@pytest.mark.parametrize(
+    ("disposition", "expected"),
+    [
+        ('attachment; filename="report; final.pdf"', "report; final.pdf"),
+        ('attachment; filename="a=b; c.pdf"; size=123', "a=b; c.pdf"),
+        ('attachment; filename="report; final.pdf"; creation-date="today"', "report; final.pdf"),
+        ('attachment; filename="../../report; final.pdf"', "report; final.pdf"),
+        ('attachment; filename=""', "download.pdf"),
+    ],
+)
+def test_resolve_remote_filename_quoted_parameters(disposition: str, expected: str) -> None:
+    """Quoted semicolons belong to the filename, not to the parameter list."""
+    assert (
+        resolve_remote_filename(
+            AnyHttpUrl("https://example.com/download.pdf"),
+            {"Content-Disposition": disposition},
+        )
+        == expected
+    )
