@@ -31,6 +31,7 @@ from docling_core.transforms.serializer._doclang_utils import (
     _ELEMENT_HEAD_TAGS,
     _FORMATTING_TAGS,
     _RAW_TEXT_TAGS,
+    _XML_WHITESPACE,
     DOCLANG_DFLT_RESOLUTION,
     DocLangAttributeKey,
     DocLangAttributeValue,
@@ -40,6 +41,7 @@ from docling_core.transforms.serializer._doclang_utils import (
     _append_textual_fragment,
     _apply_whitespace_rules,
     _code_language_label_from_doclang,
+    _is_virtual_text,
     _merge_table_data,
     _picture_classification_label_from_doclang,
     _provenance_with_charspan,
@@ -165,7 +167,7 @@ def _enforce_doclang_dom_budgets(
                 stack.append((child, depth + 1))
 
 
-# DocLang 0.8 element not supported yet (not in ``DocLangToken``, so as not to advertise it in the vocabulary)
+# Not supported yet (not in ``DocLangToken``, so as not to advertise it in the vocabulary)
 _UNSUPPORTED_TRACK = "track"
 
 
@@ -312,7 +314,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             if isinstance(node, Element) and self._is_element_head_tag(node):
                 continue
             if isinstance(node, Text):
-                if not node.data.strip():
+                if not node.data.strip(_XML_WHITESPACE):
                     continue
                 parts.append(node.data)
             elif isinstance(node, Element) and node.tagName == DocLangToken.CONTENT.value:
@@ -368,6 +370,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             DocLangToken.SUBSCRIPT.value,
             DocLangToken.SUPERSCRIPT.value,
             DocLangToken.CONTENT.value,
+            DocLangToken.HANDWRITING.value,
+            DocLangToken.RTL.value,
         }:
             self._parse_text_like(doc=doc, el=el, parent=parent)
         elif name == DocLangToken.PAGE_BREAK.value:
@@ -477,12 +481,14 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     if result is not None:
                         return None
                     result = tmp
-                elif self._get_text(el).strip():
+                elif self._get_text(el).strip(_XML_WHITESPACE):
                     # The child holds text but is itself mixed content.
                     return None
-            elif isinstance(el, Text) and el.data.strip():  # TODO should still support whitespace-only
+            elif isinstance(el, Text) and el.data.strip(_XML_WHITESPACE):  # TODO should still support whitespace-only
                 if result is None:
-                    result = el.data if element.tagName == DocLangToken.CONTENT.value else el.data.strip()
+                    result = (
+                        el.data if element.tagName == DocLangToken.CONTENT.value else el.data.strip(_XML_WHITESPACE)
+                    )
                 else:
                     return None
         return result
@@ -493,7 +499,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             if isinstance(node, Element):
                 if not self._is_element_head_tag(node):
                     return False
-            elif isinstance(node, Text) and node.data.strip():
+            elif isinstance(node, Text) and node.data.strip(_XML_WHITESPACE):
                 return False
         return True
 
@@ -568,6 +574,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 DocLangToken.SUBSCRIPT.value: DocItemLabel.TEXT,
                 DocLangToken.SUPERSCRIPT.value: DocItemLabel.TEXT,
                 DocLangToken.RTL.value: DocItemLabel.TEXT,
+                DocLangToken.HANDWRITING.value: DocItemLabel.HANDWRITTEN_TEXT,
                 DocLangToken.CONTENT.value: DocItemLabel.TEXT,
             }
         ):
@@ -665,8 +672,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         parts: list[str] = []
         for node in el.childNodes:
             if isinstance(node, Text):
-                if node.data.strip():
-                    parts.append(node.data)
+                parts.append(node.data)
             elif isinstance(node, Element):
                 nm_child = node.tagName
                 if self._is_element_head_tag(node):
@@ -688,34 +694,33 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         prov_list = self._extract_provenance(doc=doc, el=el)
         content_layer = self._extract_layer(el=el)
         text = self._get_text(el)
-        text_stripped = text.strip()
-        if text_stripped:
+        if text:
             thread_id = self._extract_thread_id(el)
             if (
                 thread_id
                 and (existing := self._get_thread_item(thread_id, host=DocLangToken.HEADING.value)) is not None
                 and isinstance(existing, TextItem)
             ):
-                self._merge_threaded_text_item(text=text_stripped, prov_list=prov_list, existing=existing)
+                self._merge_threaded_text_item(text=text, prov_list=prov_list, existing=existing)
                 self._source_recorder.bind_item(el, existing)
                 return
             # Level 1 maps to TitleItem, level > 1 maps to SectionHeaderItem with level-1
             if level == 1:
                 item = doc.add_title(
-                    text=text_stripped,
+                    text=text,
                     parent=parent,
                     prov=(prov_list[0] if prov_list else None),
                     content_layer=content_layer,
                 )
             else:
                 item = doc.add_heading(
-                    text=text_stripped,
+                    text=text,
                     level=level - 1,
                     parent=parent,
                     prov=(prov_list[0] if prov_list else None),
                     content_layer=content_layer,
                 )
-            self._apply_initial_text_provenance(item, text=text_stripped, prov_list=prov_list)
+            self._apply_initial_text_provenance(item, text=text, prov_list=prov_list)
             if thread_id:
                 self._register_thread(thread_id=thread_id, host=DocLangToken.HEADING.value, item=item)
             self._apply_custom_meta_from_element(item=item, el=el)
@@ -730,25 +735,24 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         prov_list = self._extract_provenance(doc=doc, el=el)
         content_layer = self._extract_layer(el=el)
         text = self._get_text(el)
-        text_stripped = text.strip()
-        if text_stripped:
+        if text:
             thread_id = self._extract_thread_id(el)
             if (
                 thread_id
                 and (existing := self._get_thread_item(thread_id, host=DocLangToken.FIELD_HEADING.value)) is not None
                 and isinstance(existing, TextItem)
             ):
-                self._merge_threaded_text_item(text=text_stripped, prov_list=prov_list, existing=existing)
+                self._merge_threaded_text_item(text=text, prov_list=prov_list, existing=existing)
                 self._source_recorder.bind_item(el, existing)
                 return
             item = doc.add_field_heading(
-                text=text_stripped,
+                text=text,
                 level=level,
                 parent=parent,
                 prov=(prov_list[0] if prov_list else None),
                 content_layer=content_layer,
             )
-            self._apply_initial_text_provenance(item, text=text_stripped, prov_list=prov_list)
+            self._apply_initial_text_provenance(item, text=text, prov_list=prov_list)
             if thread_id:
                 self._register_thread(thread_id=thread_id, host=DocLangToken.FIELD_HEADING.value, item=item)
             self._source_recorder.bind_item(el, item)
@@ -781,8 +785,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         for node in body_nodes:
             if isinstance(node, Element):
                 self._dispatch_element(doc=doc, el=node, parent=parent)
-            elif isinstance(node, Text) and node.data.strip():
-                doc.add_text(label=DocItemLabel.TEXT, text=node.data.strip(), parent=parent)
+            elif isinstance(node, Text) and node.data.strip(_XML_WHITESPACE):
+                doc.add_text(label=DocItemLabel.TEXT, text=node.data.strip(_XML_WHITESPACE), parent=parent)
 
     def _dispatch_field_inline_body_nodes(
         self,
@@ -807,7 +811,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 if len(remaining) == 1:
                     nxt = remaining[0]
                     if isinstance(nxt, Text):
-                        text = nxt.data.strip()
+                        text = nxt.data.strip(_XML_WHITESPACE)
                         idx += 1
                     elif isinstance(nxt, Element) and nxt.tagName == DocLangToken.CONTENT.value:
                         text = self._get_text(nxt)
@@ -817,13 +821,15 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 continue
             if isinstance(node, Element):
                 self._dispatch_element(doc=doc, el=node, parent=parent)
-            elif isinstance(node, Text) and node.data.strip():
-                doc.add_text(label=DocItemLabel.TEXT, text=node.data.strip(), parent=parent)
+            elif isinstance(node, Text) and node.data.strip(_XML_WHITESPACE):
+                doc.add_text(label=DocItemLabel.TEXT, text=node.data.strip(_XML_WHITESPACE), parent=parent)
             idx += 1
 
     def _meaningful_body_nodes(self, body_nodes: Sequence[Node]) -> list[Node]:
         return [
-            node for node in body_nodes if isinstance(node, Element) or (isinstance(node, Text) and node.data.strip())
+            node
+            for node in body_nodes
+            if isinstance(node, Element) or (isinstance(node, Text) and node.data.strip(_XML_WHITESPACE))
         ]
 
     def _is_field_inline_body(self, body_nodes: Sequence[Node]) -> bool:
@@ -888,17 +894,16 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         prov_list = self._extract_provenance(doc=doc, el=el)
         content_layer = self._extract_layer(el=el)
         text, formatting = self._extract_text_with_formatting(el)
-        text_stripped = text.strip()
-        if not text_stripped:
+        if not text:
             return
         item = doc.add_field_hint(
-            text=text_stripped,
+            text=text,
             parent=parent,
             prov=(prov_list[0] if prov_list else None),
             content_layer=content_layer,
             formatting=formatting,
         )
-        self._apply_initial_text_provenance(item, text=text_stripped, prov_list=prov_list)
+        self._apply_initial_text_provenance(item, text=text, prov_list=prov_list)
         self._source_recorder.bind_item(el, item)
 
     def _field_kv_needs_inline_container(self, body_nodes: Sequence[Node]) -> bool:
@@ -1000,8 +1005,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         for node in body_nodes:
             if isinstance(node, Element):
                 self._dispatch_element(doc=doc, el=node, parent=item)
-            elif isinstance(node, Text) and node.data.strip():
-                doc.add_text(label=DocItemLabel.TEXT, text=node.data.strip(), parent=item)
+            elif isinstance(node, Text) and node.data.strip(_XML_WHITESPACE):
+                doc.add_text(label=DocItemLabel.TEXT, text=node.data.strip(_XML_WHITESPACE), parent=item)
         self._apply_initial_text_provenance(item, text="", prov_list=prov_list)
         self._apply_custom_meta_from_element(item=item, el=el)
         self._source_recorder.bind_item(el, item)
@@ -1009,7 +1014,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
     def _first_non_whitespace_node(self, nodes: Sequence[Node]) -> Node | None:
         """Return the first node that is not whitespace-only text."""
         for node in nodes:
-            if isinstance(node, Text) and not node.data.strip():
+            if isinstance(node, Text) and not node.data.strip(_XML_WHITESPACE):
                 continue
             return node
         return None
@@ -1025,7 +1030,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         return el.tagName in _ELEMENT_HEAD_TAGS
 
     def _is_ignorable_head_whitespace(self, node: Node) -> bool:
-        return isinstance(node, Text) and not node.data.strip()
+        return isinstance(node, Text) and not node.data.strip(_XML_WHITESPACE)
 
     def _split_element_children_head_body(
         self,
@@ -1101,7 +1106,12 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         Inspect the first non-whitespace node after the delimiter:
         - element head tokens, raw text, ``<content>``, or inline formatting → virtual text
         - semantic/grouping elements (``<text>``, ``<code>``, ``<list>``, …) → not virtual text
+
+        Raw text or a text-level element anywhere makes it virtual text too, so that a leading
+        ``<code>`` stays inline, as in the whitespace rules (see ``_is_virtual_text``).
         """
+        if _is_virtual_text(nodes):
+            return True
         first = self._first_non_whitespace_node(nodes)
         if first is None:
             return False
@@ -1124,7 +1134,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         skipping_head = True
         for node in nodes:
             if skipping_head:
-                if isinstance(node, Text) and not node.data.strip():
+                if isinstance(node, Text) and not node.data.strip(_XML_WHITESPACE):
                     continue
                 if isinstance(node, Element) and self._is_element_head_tag(node):
                     continue
@@ -1145,8 +1155,10 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 rest_start = i + 1
             else:
                 break
-        leading = "".join(text_parts).strip()
-        rest = [node for node in nodes[rest_start:] if not (isinstance(node, Text) and not node.data.strip())]
+        leading = "".join(text_parts)
+        rest = [
+            node for node in nodes[rest_start:] if not (isinstance(node, Text) and not node.data.strip(_XML_WHITESPACE))
+        ]
         return leading, rest
 
     def _parse_list_item_virtual_text(
@@ -1190,7 +1202,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 prov_list=prov_list,
             )
         elif self._is_simple_virtual_text_nodes(body_nodes):
-            text = self._get_text_from_nodes(body_nodes).strip()
+            text = self._get_text_from_nodes(body_nodes)
             self._add_list_item_with_provenance(
                 doc=doc,
                 text=text,
@@ -1221,7 +1233,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     continue
                 return False
         return any(
-            (isinstance(node, Text) and node.data.strip())
+            (isinstance(node, Text) and node.data.strip(_XML_WHITESPACE))
             or (isinstance(node, Element) and node.tagName == DocLangToken.CONTENT.value)
             for node in nodes
         )
@@ -1334,7 +1346,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             marker_text = ""
             for ch in ldiv_el.childNodes:
                 if isinstance(ch, Element) and ch.tagName == DocLangToken.MARKER.value:
-                    marker_text = self._get_text(ch).strip()
+                    marker_text = self._get_text(ch)
                     break
 
             # Get ALL nodes (including Text nodes) between this ldiv and the next
@@ -1402,7 +1414,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     else:
                         # Simple text item
                         prov_list = self._extract_provenance(doc=doc, el=content_el)
-                        text = self._get_text(content_el).strip()
+                        text = self._get_text(content_el)
                         doc.add_list_item(
                             text=text,
                             parent=li_group,
@@ -1445,7 +1457,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     if len(element_children) <= 1 and self._get_children_simple_text_block(first_el) is not None:
                         # Simple text - use it as the ListItem's text
                         prov_list = self._extract_provenance(doc=doc, el=first_el)
-                        text = self._get_text(first_el).strip()
+                        text = self._get_text(first_el)
                         li = doc.add_list_item(
                             text=text,
                             parent=li_group,
@@ -1508,8 +1520,9 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         nodes: Sequence[Node],
         parent: NodeItem | None,
         formatting: Formatting | None,
+        label: DocItemLabel = DocItemLabel.TEXT,
     ) -> None:
-        """Add text runs for ``nodes``, carrying ``formatting`` through nested formatting tags."""
+        """Add text runs for ``nodes``, carrying ``formatting`` and ``label`` through nested text-level tags."""
         for node in nodes:
             if isinstance(node, Element):
                 if node.tagName == DocLangToken.CONTENT.value:
@@ -1520,7 +1533,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     text_content = self._collect_text(node)
                     if text_content:
                         doc.add_text(
-                            label=DocItemLabel.TEXT,
+                            label=label,
                             text=text_content,
                             parent=parent,
                             formatting=formatting,
@@ -1529,7 +1542,22 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     # Accumulate this tag's style and keep descending, so e.g. <bold>a
                     # <italic>b</italic></bold> gives "a" bold and "b" bold+italic.
                     merged = self._merge_formatting_tag(node.tagName, formatting)
-                    self._parse_inline_runs(doc=doc, nodes=node.childNodes, parent=parent, formatting=merged)
+                    self._parse_inline_runs(
+                        doc=doc, nodes=node.childNodes, parent=parent, formatting=merged, label=label
+                    )
+                elif node.tagName == DocLangToken.HANDWRITING.value:
+                    self._parse_inline_runs(
+                        doc=doc,
+                        nodes=node.childNodes,
+                        parent=parent,
+                        formatting=formatting,
+                        label=DocItemLabel.HANDWRITTEN_TEXT,
+                    )
+                elif node.tagName == DocLangToken.RTL.value:
+                    # The model has no text direction: its runs are read as plain ones.
+                    self._parse_inline_runs(
+                        doc=doc, nodes=node.childNodes, parent=parent, formatting=formatting, label=label
+                    )
                 else:
                     self._dispatch_element(doc=doc, el=node, parent=parent)
             elif isinstance(node, Text):
@@ -1537,7 +1565,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 text_content = node.data
                 if text_content:
                     doc.add_text(
-                        label=DocItemLabel.TEXT,
+                        label=label,
                         text=text_content,
                         parent=parent,
                         formatting=formatting,
@@ -1660,7 +1688,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             for prov in tbl_provs:
                 existing.prov.append(prov)
             inner = self._nodes_to_xml(body_nodes)
-            if inner.strip():
+            if inner.strip(_XML_WHITESPACE):
                 tbl_content = _wrap(text=inner, wrap_tag=DocLangToken.TABLE.value)
                 fragment_td = self._parse_otsl_table_content(
                     otsl_content=tbl_content,
@@ -1885,13 +1913,13 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         meta = self._ensure_item_meta(item)
 
         if tag == _DOCLANG_META_TAG_SUMMARY:
-            if text := value.strip():
+            if text := value:
                 meta.summary = SummaryMetaField(text=text)
         elif tag == _DOCLANG_META_TAG_DESCRIPTION:
-            if text := value.strip():
+            if text := value:
                 meta.description = DescriptionMetaField(text=text)
         elif tag == _DOCLANG_META_TAG_SMILES:
-            if isinstance(item, PictureItem) and (smi := value.strip()):
+            if isinstance(item, PictureItem) and (smi := value):
                 picture_meta = cast(PictureMeta, self._ensure_item_meta(item))
                 picture_meta.molecule = MoleculeMetaField(smi=smi)
         elif parsed := self._split_namespace_field_tag(tag):
@@ -1912,11 +1940,11 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 continue
             tag = node.tagName
             if tag == DocLangToken.DESCRIPTION.value:
-                if isinstance(item, FloatingItem) and (text := self._get_text(node).strip()):
+                if isinstance(item, FloatingItem) and (text := self._get_text(node)):
                     meta = cast(FloatingMeta, self._ensure_item_meta(item))
                     meta.description = DescriptionMetaField(text=text)
             elif tag == DocLangToken.SUMMARY.value:
-                if text := self._get_text(node).strip():
+                if text := self._get_text(node):
                     self._ensure_item_meta(item).summary = SummaryMetaField(text=text)
             elif tag == DocLangToken.CUSTOM.value:
                 for child in node.childNodes:
@@ -1938,7 +1966,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
 
     def _extract_caption(self, *, doc: DoclingDocument, cap_el: Element) -> TextItem | None:
         """Extract a caption from a ``<caption>`` element."""
-        text = self._get_text(cap_el).strip()
+        text = self._get_text(cap_el)
         if not text:
             return None
         if self._get_children_simple_text_block(cap_el) is None:
@@ -2003,7 +2031,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     item = self._parse_container_host(doc=doc, el=node, label=label)
                     (captions if label == DocItemLabel.CAPTION else footnotes).append(item)
                     continue
-                text = self._get_text(node).strip()
+                text = self._get_text(node)
                 if text:
                     prov_list = self._extract_provenance(doc=doc, el=node)
                     item = doc.add_text(
@@ -2144,7 +2172,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         self,
         *,
         doc: DoclingDocument | None,
-        texts: list[str | Element],
+        texts: list[Text | Element],
         start: int,
     ) -> tuple[int, BoundingBox | None]:
         """Consume a leading quartet of location elements; return next index and bbox."""
@@ -2161,21 +2189,23 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 return idx, bbox
         return start, None
 
-    def _otsl_structural_token(self, item: str | Element) -> str | None:
+    def _otsl_structural_token(self, item: Text | Element) -> str | None:
         if isinstance(item, Element) and item.tagName in self._OTSL_STRUCTURAL_TAGS:
             return f"<{item.tagName}/>"
         return None
 
-    def _consume_otsl_cell_body_parts(self, texts: list[str | Element], start: int) -> tuple[int, list[str | Element]]:
+    def _consume_otsl_cell_body_parts(
+        self, texts: list[Text | Element], start: int
+    ) -> tuple[int, list[Text | Element]]:
         """Collect OTSL cell body fragments until the next structural token."""
-        parts: list[str | Element] = []
+        parts: list[Text | Element] = []
         idx = start
         while idx < len(texts) and self._otsl_structural_token(texts[idx]) is None:
             parts.append(texts[idx])
             idx += 1
         return idx, parts
 
-    def _otsl_extract_tokens_and_text(self, s: str) -> tuple[list[str], list[str | Element]]:
+    def _otsl_extract_tokens_and_text(self, s: str) -> tuple[list[str], list[Text | Element]]:
         """Extract OTSL structural tokens and interleaved text.
 
         Strips the outer wrapper and preserves OTSL body content including per-cell
@@ -2183,7 +2213,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         ``<text><italic>...</italic></text>``) by keeping them as single units.
         """
         tokens: list[str] = []
-        parts: list[str | Element] = []
+        parts: list[Text | Element] = []
 
         otsl_el = self._parse_xml_string(s)
 
@@ -2202,9 +2232,9 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
 
         for node in otsl_el.childNodes:
             if isinstance(node, Text):
-                text = node.data.strip()
-                if text:
-                    parts.append(text)
+                # Already read per the whitespace rules; unwrapped <content> stays literal.
+                if node.data:
+                    parts.append(node)
             elif isinstance(node, Element):
                 tag_name = node.tagName
                 if tag_name in otsl_tokens:
@@ -2216,7 +2246,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
 
     def _otsl_parse_texts(
         self,
-        texts: list[str | Element],
+        texts: list[Text | Element],
         tokens: list[str],
         doc: Optional["DoclingDocument"] = None,
         parent: NodeItem | None = None,
@@ -2278,7 +2308,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 col_span = 1
                 cell_bbox: BoundingBox | None = None
                 content_idx = i + 1
-                cell_parts: list[str | Element] = []
+                cell_parts: list[Text | Element] = []
                 if t != ecel and content_idx < len(texts):
                     content_idx, cell_bbox = self._consume_leading_location_fragments(
                         doc=doc,
@@ -2286,10 +2316,12 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                         start=content_idx,
                     )
                     content_idx, cell_parts = self._consume_otsl_cell_body_parts(texts, content_idx)
-                    cell_text = "".join(part if isinstance(part, str) else part.toxml() for part in cell_parts)
+                    cell_text = "".join(
+                        part.data if isinstance(part, Text) else self._collect_text(part) for part in cell_parts
+                    )
 
                 is_continuation_origin = t in continuation_origin_tokens
-                if is_continuation_origin and not cell_text.strip() and not cell_parts:
+                if is_continuation_origin and not cell_text.strip(_XML_WHITESPACE) and not cell_parts:
                     pass
                 else:
                     next_right = self._otsl_structural_token(texts[content_idx]) if content_idx < len(texts) else None
@@ -2304,20 +2336,21 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     if next_bottom in [ucel, xcel]:
                         row_span += count_down(split_row_tokens, c_idx, r_idx + 1, [ucel, xcel])
 
-                    cell_text_stripped = cell_text.strip()
                     element_parts = [part for part in cell_parts if isinstance(part, Element)]
                     cell_added = False
                     if element_parts and doc is not None and parent is not None:
-                        cell_group = doc.add_group(parent=parent, label=GroupLabel.UNSPECIFIED)
-                        text_parts: list[str] = []
-                        for part in element_parts:
-                            with self._source_recorder.suspend():
-                                self._dispatch_element(doc=doc, el=part, parent=cell_group)
-                            text_parts.append(self._get_text(part))
-                        actual_text = "".join(text_parts).strip() or cell_text_stripped
+                        cell_group: GroupItem | InlineGroup
+                        with self._source_recorder.suspend():
+                            if _is_virtual_text(cell_parts):
+                                cell_group = doc.add_inline_group(parent=parent)
+                                self._parse_inline_runs(doc=doc, nodes=cell_parts, parent=cell_group, formatting=None)
+                            else:
+                                cell_group = doc.add_group(parent=parent, label=GroupLabel.UNSPECIFIED)
+                                for part in element_parts:
+                                    self._dispatch_element(doc=doc, el=part, parent=cell_group)
                         table_cells.append(
                             RichTableCell(
-                                text=actual_text,
+                                text=cell_text,
                                 row_span=row_span,
                                 col_span=col_span,
                                 start_row_offset_idx=r_idx + row_offset,
@@ -2333,7 +2366,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     if not cell_added:
                         table_cells.append(
                             TableCell(
-                                text=cell_text_stripped,
+                                text=cell_text,
                                 row_span=row_span,
                                 col_span=col_span,
                                 start_row_offset_idx=r_idx + row_offset,
@@ -2414,7 +2447,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 DocLangToken.RTL,
             }
 
-            if tag_name in format_tags:
+            # Text beside the child is not formatted, so that the child can't stand for the whole element.
+            if tag_name in format_tags and not any(isinstance(node, Text) and node.data for node in el.childNodes):
                 # Recursively extract text and formatting from the child
                 text, child_formatting = self._extract_text_with_formatting(child, trim=trim)
 
@@ -2463,7 +2497,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         frags = self._collect_fragments(el)
         for idx, strip in ((0, str.lstrip), (-1, str.rstrip)):
             while frags and not frags[idx][1]:
-                if trimmed := strip(frags[idx][0]):
+                if trimmed := strip(frags[idx][0], _XML_WHITESPACE):
                     frags[idx] = (trimmed, False)
                     break
                 frags.pop(idx)

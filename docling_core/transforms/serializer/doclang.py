@@ -734,7 +734,7 @@ def _pretty_print(root: Element, indent: str) -> str:
         lines.append(f"{pad}{close_tag}")
 
     write(root, 0)
-    return "\n".join(lines) + "\n"
+    return "\n".join(lines)
 
 
 def _list_item_segment_sibling(child: NodeItem) -> bool:
@@ -2401,26 +2401,6 @@ class DocLangDocSerializer(DocSerializer):
 
         if self.params.pretty_indentation is not None:
             text_res = _pretty_print(cast(Element, my_root), self.params.pretty_indentation)
-
-            # Filter out empty lines, but preserve them inside <content> tags
-            lines = text_res.split("\n")
-            filtered_lines = []
-            inside_content = False
-            for line in lines:
-                # Check if we're entering or exiting a content tag
-                if "<content>" in line or "<content " in line:
-                    inside_content = True
-                if "</content>" in line:
-                    # Add the line first, then mark as outside content
-                    filtered_lines.append(line)
-                    inside_content = False
-                    continue
-
-                # Keep all lines inside content tags, filter empty lines outside
-                if inside_content or line.strip():
-                    filtered_lines.append(line)
-
-            text_res = "\n".join(filtered_lines)
 
             if self.params.preserve_empty_non_selfclosing:
                 # Expand self-closing forms for tokens that are not allowed

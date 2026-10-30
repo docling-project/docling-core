@@ -10,6 +10,8 @@ import copy
 import json
 import re
 import warnings
+from collections.abc import Callable
+from pathlib import Path
 
 import pytest
 from pydantic import AnyUrl
@@ -567,6 +569,26 @@ DOCLANG_WHITESPACE_READINGS: list[tuple[str, str, str]] = [
         "  <content> now</content>\n</list>",
         "- run:  x  now",
     ),
+    (
+        "virtual_text_leading_code",
+        "<list><ldiv/><code>foo</code> returns a value</list>",
+        "- foo returns a value",
+    ),
+    ("inline_handwriting", "<text>Check <handwriting>out</handwriting> these</text>", "Check out these"),
+    ("inline_rtl", "<text>Check <rtl>out</rtl> these</text>", "Check out these"),
+    ("empty_content_between_spaces", "<text>a <content></content> b</text>", "a b"),
+    ("whitespace_only_inline_code", "<text>a<code> </code><content>\t</content></text>", "a \t"),
+    ("whitespace_only_formatting_run", "<text>a<italic> </italic></text>", "a"),
+    ("empty_formatting_run", "<text>a<italic></italic></text>", "a"),
+    ("tab_in_formatting_run", "<text>a<italic><content>\t</content></italic></text>", "a\t"),
+    # Whitespace means space, tab, CR and LF only: other Unicode spaces are ordinary characters.
+    ("nbsp_edges", "<text>\u00a0a\u00a0</text>", "\u00a0a\u00a0"),
+    ("nbsp_only", "<text>\u00a0</text>", "\u00a0"),
+    ("em_space_edges", "<text>\u2003a\u2003</text>", "\u2003a\u2003"),
+    ("nbsp_edges_mixed", "<text>\u00a0<bold>a</bold>\u00a0</text>", "\u00a0a\u00a0"),
+    ("nbsp_heading", "<heading>\u00a0a\u00a0</heading>", "\u00a0a\u00a0"),
+    ("nbsp_list_item", "<list><ldiv/>\u00a0a\u00a0</list>", "- \u00a0a\u00a0"),
+    ("nbsp_caption", "<picture><caption>\u00a0a\u00a0</caption></picture>", "\u00a0a\u00a0"),
 ]
 
 
@@ -577,6 +599,74 @@ def test_doclang_reads_whitespace_per_spec(name: str, body: str, expected: str) 
     """DocLang 0.9: a whitespace sequence reads as one space, none at text block edges."""
     doc = DocLangDocDeserializer().deserialize_str(f"<doclang>{body}</doclang>")
     assert doc.export_to_text() == expected, name
+
+
+def _marker(doc: DoclingDocument) -> str:
+    return doc.texts[0].marker
+
+
+def _text(doc: DoclingDocument) -> str:
+    return doc.texts[0].text
+
+
+def _cell(doc: DoclingDocument) -> str:
+    return doc.tables[0].data.table_cells[0].text
+
+
+DOCLANG_LITERAL_READINGS: list[tuple[str, str, Callable[[DoclingDocument], str], str]] = [
+    ("nbsp_marker", "<list><ldiv><marker>\u00a01.</marker></ldiv>a</list>", _marker, "\u00a01."),
+    ("nbsp_cell", "<table><fcel/>\u00a0a\u00a0<nl/></table>", _cell, "\u00a0a\u00a0"),
+    # `<content>` is literal, wherever it is.
+    ("content_marker", "<list><ldiv><marker><content> 1. </content></marker></ldiv>a</list>", _marker, " 1. "),
+    ("content_heading", "<heading><content> a </content></heading>", _text, " a "),
+    ("content_field_heading", "<field_heading><content> a </content></field_heading>", _text, " a "),
+    ("content_list_item", "<list><ldiv/><content> a </content></list>", _text, " a "),
+    ("content_list_item_text", "<list><ldiv/><text><content> a </content></text></list>", _text, " a "),
+    ("content_list_item_sublist", "<list><ldiv/><content> a </content><list><ldiv/>b</list></list>", _text, " a "),
+    ("content_caption", "<picture><caption><content> a </content></caption></picture>", _text, " a "),
+    ("content_cell", "<table><fcel/><content> a </content><nl/></table>", _cell, " a "),
+    # A table cell is a virtual <text> too, whatever it starts with.
+    ("cell_leading_bold", "<table><fcel/><bold>foo</bold> tail<nl/></table>", _cell, "foo tail"),
+    ("cell_inline_code", "<table><fcel/>see <code>x</code> tail<nl/></table>", _cell, "see x tail"),
+    ("cell_runs_separated", "<table><fcel/><bold>a</bold> <italic>b</italic><nl/></table>", _cell, "a b"),
+    ("cell_run_edge_space", "<table><fcel/><bold>a </bold><italic>b</italic><nl/></table>", _cell, "a b"),
+    ("cell_handwriting", "<table><fcel/><handwriting>a</handwriting> b<nl/></table>", _cell, "a b"),
+]
+
+
+@pytest.mark.parametrize(
+    ("name", "body", "read", "expected"), DOCLANG_LITERAL_READINGS, ids=[c[0] for c in DOCLANG_LITERAL_READINGS]
+)
+def test_doclang_literal_readings(name: str, body: str, read: Callable[[DoclingDocument], str], expected: str) -> None:
+    """What a Markdown export would normalize away, read from the item."""
+    assert read(DocLangDocDeserializer().deserialize_str(f"<doclang>{body}</doclang>")) == expected, name
+
+
+def test_doclang_cell_with_leading_inline_elements_keeps_all_text() -> None:
+    """The runs of a virtual-text cell are items too, in an inline group, and read back the same."""
+    doc = DocLangDocDeserializer().deserialize_str(
+        "<doclang><table><fcel/><bold>foo</bold> tail<nl/><fcel/>see <code>x</code> tail<nl/></table></doclang>"
+    )
+    assert [t.text for t in doc.texts] == ["foo", " tail", "see ", "x", " tail"]
+    roundtripped = DocLangDocDeserializer().deserialize_str(_doclang_compact(doc))
+    assert [t.text for t in roundtripped.texts] == [t.text for t in doc.texts]
+    assert [c.text for c in roundtripped.tables[0].data.table_cells] == ["foo tail", "see x tail"]
+
+
+@pytest.mark.parametrize(
+    ("body", "expected"),
+    [
+        ("<list><ldiv/>foo <checkbox/> bar</list>", ["foo ", "", " bar"]),
+        ("<table><fcel/>foo <checkbox/> bar<nl/></table>", ["foo ", "", " bar"]),
+        ("<list><ldiv/><checkbox/> y</list>", ["", "y"]),
+        ("<table><fcel/><checkbox/> y<nl/></table>", ["", "y"]),
+        ("<list><ldiv/><checkbox/> <code>x</code> <code>y</code></list>", ["", "x", " ", "y"]),
+    ],
+)
+def test_doclang_checkbox_is_part_of_virtual_text(body: str, expected: list[str]) -> None:
+    """Runs around a checkbox keep their spaces, but a leading one marks the text after it: no space of its own."""
+    doc = DocLangDocDeserializer().deserialize_str(f"<doclang>{body}</doclang>")
+    assert [t.text for t in doc.texts if t.label != DocItemLabel.LIST_ITEM] == expected
 
 
 def test_doclang_attributes_a_space_to_the_first_character() -> None:
@@ -641,3 +731,41 @@ def test_doclang_list_item_with_inline_code_and_formula_roundtrips() -> None:
         roundtripped = DocLangDocDeserializer().deserialize_str(xml)
         assert roundtripped.export_to_text() == doc.export_to_text()
         assert [t.text for t in roundtripped.texts] == [t.text for t in doc.texts]
+
+
+def test_doclang_inline_handwriting_keeps_its_runs_and_label() -> None:
+    """The handwritten golden reads back complete, with its spans labeled, and serializes to itself."""
+    xml = Path("tests/data/doc/handwritten_text.gt.dclg.xml").read_text()
+    doc = DocLangDocDeserializer().deserialize_str(xml)
+    assert [(t.text, t.label) for t in doc.texts if t.text][-4:] == [
+        ("Check ", DocItemLabel.TEXT),
+        ("out", DocItemLabel.HANDWRITTEN_TEXT),
+        (" these", DocItemLabel.TEXT),
+        (" hand-written spans", DocItemLabel.HANDWRITTEN_TEXT),
+    ]
+    assert DocLangDocSerializer(doc=doc, params=DocLangParams(include_version=False)).serialize().text.strip() == (
+        xml.strip()
+    )
+
+
+def test_doclang_keeps_a_separator_between_inline_code_runs() -> None:
+    """Bare, a lone space would no longer make the list item a virtual <text>, and the code would turn into blocks."""
+    doc = DoclingDocument(name="t")
+    group = doc.add_inline_group(parent=doc.add_list_item(text="", parent=doc.add_list_group()))
+    doc.add_code(text="x", parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text=" ", parent=group)
+    doc.add_code(text="y", parent=group)
+    for params in (DocLangParams(), DocLangParams(pretty_indentation=None)):
+        xml = DocLangDocSerializer(doc=doc, params=params).serialize().text
+        assert [t.text for t in DocLangDocDeserializer().deserialize_str(xml).texts if t.text] == ["x", " ", "y"]
+
+
+def test_doclang_pretty_print_keeps_content_closed_and_opened_on_one_line() -> None:
+    """A line closing one `<content>` and opening another must keep the blank lines of the latter."""
+    doc = DoclingDocument(name="t")
+    group = doc.add_inline_group()
+    for text, formatting in (("a\n\nb", None), (" ", _BOLD), ("c\n\nd", None)):
+        doc.add_text(label=DocItemLabel.TEXT, text=text, parent=group, formatting=formatting)
+    xml = DocLangDocSerializer(doc=doc, params=DocLangParams()).serialize().text
+    assert not xml.endswith("\n")
+    assert "".join(t.text for t in DocLangDocDeserializer().deserialize_str(xml).texts) == "a\n\nb c\n\nd"
