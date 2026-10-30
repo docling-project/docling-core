@@ -350,7 +350,9 @@ class HybridChunker(BaseChunker):
           (by columns) and horizontally (by rows for tall tables) so that each
           resulting sub-table is a complete, valid Markdown table with matching headers.
           When ``omit_header_on_overflow`` is ``True``, wide rows are emitted without
-          the header instead.
+          the header instead. The column split only applies to Markdown tables, i.e.
+          when the header includes a separator row; other table text (e.g. triplets)
+          is split line-by-line.
 
         - Semantic splitting: for all other chunks, ``semchunk`` splits the
           text at natural semantic boundaries up to ``available_length`` tokens.
@@ -390,7 +392,12 @@ class HybridChunker(BaseChunker):
                 self.tokenizer.count_tokens(table_prefix + line) > available_length for line in body_lines
             )
 
-            if any_row_overflows and not self.omit_header_on_overflow:
+            # The column split rebuilds Markdown sub-tables, so it needs a Markdown
+            # header to work from. Without one (e.g. a triplet-serialized table) it
+            # would wrap plain text in "| ... |" rows under a made-up separator.
+            is_markdown_table = any(MARKDOWN_SEPARATOR_ROW_RE.match(line.rstrip("\n")) for line in header_lines)
+
+            if any_row_overflows and is_markdown_table and not self.omit_header_on_overflow:
                 # omit_header_on_overflow=False: the user wants the header present
                 # in every chunk.  Since splitting a Markdown row mid-cell produces
                 # an invalid fragment, split the table vertically (by columns) so

@@ -1298,6 +1298,46 @@ def test_split_markdown_table_preserves_all_cell_values():
             assert cell in all_chunk_text, f"Cell value {cell!r} from row {body_line.strip()!r} not found in any chunk"
 
 
+@pytest.mark.parametrize("serializer_provider", [None, HTMLSerializerProvider()], ids=["triplets", "html"])
+def test_column_split_is_skipped_for_non_markdown_tables(serializer_provider):
+    """Regression: the column split rebuilds Markdown sub-tables, so it must not run
+    on table text that is not Markdown (triplets from the default serializer, or HTML).
+    Otherwise every chunk gets a made-up ``| - |`` separator and the text is wrapped
+    in ``| ... |`` rows."""
+    long_note = " ".join(["growth"] * 40)
+    rows = [["Region", "Notes"], ["North", "stable"], ["South", long_note], ["East", "flat"]]
+    doc = DoclingDocument(name="non_markdown_table")
+    cells = [
+        TableCell(
+            text=text,
+            start_row_offset_idx=r,
+            end_row_offset_idx=r + 1,
+            start_col_offset_idx=c,
+            end_col_offset_idx=c + 1,
+            column_header=(r == 0),
+        )
+        for r, row in enumerate(rows)
+        for c, text in enumerate(row)
+    ]
+    doc.add_table(data=TableData(num_rows=len(rows), num_cols=2, table_cells=cells))
+
+    kwargs = {"serializer_provider": serializer_provider} if serializer_provider else {}
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=50),
+        merge_peers=False,
+        **kwargs,
+    )
+    texts = [chunk.text for chunk in chunker.chunk(dl_doc=doc)]
+
+    assert len(texts) > 1, "Table should be split into multiple chunks"
+    for text in texts:
+        assert not any(MARKDOWN_SEPARATOR_ROW_RE.match(line) for line in text.splitlines()), text
+        assert text.strip(" |\n"), f"Chunk has no content: {text!r}"
+    # no table content is lost
+    assert sum(text.count("growth") for text in texts) == 40, texts
+    assert all(any(word in text for text in texts) for word in ["North", "stable", "South", "East", "flat"]), texts
+
+
 def test_wide_table_is_split_by_columns_when_rows_do_not_fit_with_header():
     """Regression: a table whose rows are too wide to fit with the header must be
     split by columns (not mid-cell) when ``omit_header_on_overflow=False``.
