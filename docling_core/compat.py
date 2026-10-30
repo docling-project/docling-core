@@ -201,7 +201,7 @@ def list_projectors() -> list[tuple[int, int]]:
 # possible; the goal is a document that validates rather than crashes.
 
 # --- 1.11 → 1.10 ----------------------------------------------------------
-# Schema 1.11 (docling-core v2.105.0): InlineGroup runs carry their own
+# Schema 1.11 (docling-core v2.106.0): InlineGroup runs carry their own
 # significant whitespace and serializers concatenate them faithfully.
 #
 # The 1.11 and 1.10 schemas are structurally identical -- no new fields,
