@@ -247,7 +247,12 @@ class DocLangParams(CommonParams):
         set[ContentType],
         _advanced_field(detail="Types of content to serialize (only relevant if add_content is True)."),
     ] = _DEFAULT_CONTENT_TYPES
-    layer_mode: Annotated[LayerMode, _advanced_field()] = LayerMode.AUTO
+    layer_mode: Annotated[
+        LayerMode,
+        _advanced_field(
+            detail="Docling-only layers use the closest layer supported by DocLang.",
+        ),
+    ] = LayerMode.AUTO
     # DocLang formatting
     pretty_indentation: Annotated[
         str | None,
@@ -303,9 +308,15 @@ def _create_layer_token(
     if params.layer_mode == LayerMode.ALWAYS or (
         params.layer_mode == LayerMode.AUTO and item.content_layer != ContentLayer.BODY
     ):
+        layer = item.content_layer
+        # DocLang has no notes or invisible layer values; map them to the closest ones (lossy).
+        if layer == ContentLayer.NOTES:
+            layer = ContentLayer.FURNITURE
+        elif layer == ContentLayer.INVISIBLE:
+            layer = ContentLayer.BACKGROUND
         return DocLangVocabulary._create_selfclosing_token(
             token=DocLangToken.LAYER,
-            attrs={DocLangAttributeKey.VALUE: item.content_layer.value},
+            attrs={DocLangAttributeKey.VALUE: layer.value},
         )
     return ""
 
