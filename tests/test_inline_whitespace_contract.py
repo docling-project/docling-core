@@ -79,8 +79,7 @@ CONTRACT_TABLE: list[tuple[str, list[Run], dict[str, str]]] = [
             "html": "<strong>Advanced Topics</strong> in <em>Machine Learning</em>",
             "latex": "\\textbf{Advanced Topics} in \\textit{Machine Learning}",
             "doclang": (
-                "<doclang><text><bold>Advanced Topics</bold><content> in </content>"
-                "<italic>Machine Learning</italic></text></doclang>"
+                "<doclang><text><bold>Advanced Topics</bold> in <italic>Machine Learning</italic></text></doclang>"
             ),
         },
     ),
@@ -92,7 +91,7 @@ CONTRACT_TABLE: list[tuple[str, list[Run], dict[str, str]]] = [
             "itxt": "This is italic text.",
             "html": "This is <em>italic text</em>.",
             "latex": "This is \\textit{italic text}.",
-            "doclang": "<doclang><text><content>This is </content><italic>italic text</italic>.</text></doclang>",
+            "doclang": "<doclang><text>This is <italic>italic text</italic>.</text></doclang>",
         },
     ),
     (
@@ -105,7 +104,7 @@ CONTRACT_TABLE: list[tuple[str, list[Run], dict[str, str]]] = [
             "itxt": "bold tail",
             "html": "<strong>bold</strong> tail",
             "latex": "\\textbf{bold} tail",
-            "doclang": "<doclang><text><bold><content>bold </content></bold>tail</text></doclang>",
+            "doclang": "<doclang><text><bold>bold </bold>tail</text></doclang>",
         },
     ),
     (
@@ -119,7 +118,7 @@ CONTRACT_TABLE: list[tuple[str, list[Run], dict[str, str]]] = [
             "latex": "\\href{https://example.com/x}{\\textbf{bold}} tail",
             # DocLang has no place for a hyperlink on an inline run (pre-existing gap, not
             # part of this contract): the href is dropped. The whitespace still hoists.
-            "doclang": "<doclang><text><bold><content>bold </content></bold>tail</text></doclang>",
+            "doclang": "<doclang><text><bold>bold </bold>tail</text></doclang>",
         },
     ),
     (
@@ -131,7 +130,7 @@ CONTRACT_TABLE: list[tuple[str, list[Run], dict[str, str]]] = [
             "itxt": "a b",
             "html": "a b",
             "latex": "a b",
-            "doclang": "<doclang><text>a<bold><content> </content></bold>b</text></doclang>",
+            "doclang": "<doclang><text>a<bold> </bold>b</text></doclang>",
         },
     ),
 ]
@@ -188,9 +187,9 @@ def test_contract_table(name: str, runs: list[Run], expected: dict[str, str]) ->
 
 @pytest.mark.parametrize(("name", "runs", "expected"), CONTRACT_TABLE, ids=[c[0] for c in CONTRACT_TABLE])
 def test_doclang_roundtrip_is_lossless(name: str, runs: list[Run], expected: dict[str, str]) -> None:
-    """DocLang carries the run whitespace losslessly, via `<content>`.
+    """DocLang carries the run whitespace losslessly: bare where it reads as written, else in `<content>`.
 
-    Checked both pretty-printed (the default, where bare text nodes pick up indentation) and
+    Checked both pretty-printed (the default, which must keep each text block on one line) and
     compact, since the whitespace channel must survive the pretty printer.
     """
     doc = _build(runs)
@@ -235,8 +234,7 @@ def test_host_text_stays_apart_from_its_inline_group() -> None:
     html = HTMLDocSerializer(doc=doc).serialize().text
     assert "<h2>Results</h2>\n<span class='inline-group'>We use <strong>bold</strong> words.</span>" in html
     assert _doclang_compact(doc).startswith(
-        '<doclang><heading level="2">Results <content>We use </content><bold>bold</bold>'
-        "<content> words.</content></heading>"
+        '<doclang><heading level="2">Results We use <bold>bold</bold> words.</heading>'
     )
     assert picture.caption_text(doc) == "Table 1: results"
     assert MarkdownDocSerializer(doc=doc).serialize_captions(item=picture).text == "Table **1**: results"
@@ -537,3 +535,72 @@ def test_chunk_text_follows_the_contract() -> None:
 
     chunks = list(HierarchicalChunker().chunk(doc))
     assert [c.text for c in chunks] == ["Water is H2O and the **melting point** is 0 C."]
+
+
+# DocLang 0.9 whitespace rules: (name, DocLang body, expected plain text)
+DOCLANG_WHITESPACE_READINGS: list[tuple[str, str, str]] = [
+    (
+        "spec_example",
+        "<text>\n  Water (H<subscript>2</subscript>O) is <bold>clear </bold>\n  <italic> and odorless</italic>.\n"
+        "  This keeps <content>two  spaces</content> as written.\n</text>",
+        "Water (H2O) is clear and odorless. This keeps two  spaces as written.",
+    ),
+    ("newline_next_to_tag", "<text>Hello\n  <bold>world</bold>\n</text>", "Hello world"),
+    ("tight_tags", "<text>2<superscript>nd</superscript></text>", "2nd"),
+    ("tabs_and_runs", "<text>a \t\r\n b</text>", "a b"),
+    ("comment_disregarded", "<text>a<!-- note -->b c <!-- note --> d</text>", "ab c d"),
+    ("content_is_literal", "<text><content> a\n</content> b </text>", " a\n b"),
+    ("element_head_disregarded", '<text>\n  <location value="1"/>\n  a\n  <label value="x"/>\n</text>', "a"),
+    ("virtual_text", "<list>\n  <ldiv/>\n  Four\n  <bold>Five</bold>\n</list>", "- Four Five"),
+]
+
+
+@pytest.mark.parametrize(
+    ("name", "body", "expected"), DOCLANG_WHITESPACE_READINGS, ids=[c[0] for c in DOCLANG_WHITESPACE_READINGS]
+)
+def test_doclang_reads_whitespace_per_spec(name: str, body: str, expected: str) -> None:
+    """DocLang 0.9: a whitespace sequence reads as one space, none at text block edges."""
+    doc = DocLangDocDeserializer().deserialize_str(f"<doclang>{body}</doclang>")
+    assert doc.export_to_text() == expected, name
+
+
+def test_doclang_attributes_a_space_to_the_first_character() -> None:
+    """Rule 4: a sequence spanning several elements belongs to the one holding its first character."""
+    doc = DocLangDocDeserializer().deserialize_str(
+        "<doclang><text>is <bold>clear </bold>\n<italic> and</italic></text></doclang>"
+    )
+    assert [(t.text, t.formatting) for t in doc.texts if isinstance(t.parent.resolve(doc), InlineGroup)] == [
+        ("is ", None),
+        ("clear ", _BOLD),
+        ("and", _ITALIC),
+    ]
+
+
+@pytest.mark.parametrize("text", ["two  spaces", "a\tb", "line\nbreak"])
+def test_doclang_wraps_whitespace_the_rules_would_collapse(text: str) -> None:
+    """Whitespace other than single spaces goes in `<content>`, so it reads as written."""
+    doc = DoclingDocument(name="t")
+    doc.add_text(label=DocItemLabel.TEXT, text=text)
+    for params in (DocLangParams(), DocLangParams(pretty_indentation=None)):
+        xml = DocLangDocSerializer(doc=doc, params=params).serialize().text
+        assert "<content>" in xml, params.pretty_indentation
+        assert DocLangDocDeserializer().deserialize_str(xml).texts[0].text == text
+
+
+@pytest.mark.parametrize(
+    ("runs", "expected"),
+    [
+        (["a ", "b"], "<text>a b</text>"),  # unwrapped: reads the same bare
+        ([" a", "b"], "<text><content> a</content>b</text>"),  # block start
+        (["a", "b "], "<text>a<content>b </content></text>"),  # block end
+        (["a ", " b"], "<text><content>a </content><content> b</content></text>"),  # would merge
+    ],
+)
+def test_doclang_keeps_content_only_where_needed(runs: list[str], expected: str) -> None:
+    """`<content>` is kept only where the whitespace rules would change the reading."""
+    doc = DoclingDocument(name="t")
+    group = doc.add_inline_group()
+    for text in runs:
+        doc.add_text(label=DocItemLabel.TEXT, text=text, parent=group)
+    assert _doclang_compact(doc) == f"<doclang>{expected}</doclang>"
+    assert DocLangDocDeserializer().deserialize_str(_doclang_compact(doc)).export_to_text() == "".join(runs)

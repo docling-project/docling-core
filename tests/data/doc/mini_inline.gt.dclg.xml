@@ -1,7 +1,6 @@
 <doclang>
   <list>
     <ldiv/>
-    foo
-    <bold>bar</bold>
+    foo<bold>bar</bold>
   </list>
 </doclang>

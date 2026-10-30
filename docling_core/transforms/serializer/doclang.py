@@ -14,6 +14,7 @@ from functools import cached_property
 from itertools import groupby
 from pathlib import Path, PurePath
 from typing import Annotated, Any, Optional, Union, cast
+from xml.dom.minidom import Element, Node, Text
 
 from defusedxml.ElementTree import fromstring
 from defusedxml.minidom import parseString
@@ -22,9 +23,13 @@ from pydantic.networks import AnyUrl
 from typing_extensions import override
 
 from docling_core.transforms.serializer._doclang_utils import (
+    _COLLAPSIBLE_WHITESPACE_RE,
     _DOCLANG_LABEL_UNDEFINED,
     _DOCLANG_META_TAG_SMILES,
     _DOCLANG_VERSION,
+    _ELEMENT_HEAD_TAGS,
+    _RAW_TEXT_TAGS,
+    _VIRTUAL_TEXT_INLINE_TAGS,
     DOCLANG_DFLT_RESOLUTION,
     DOCLANG_NAMESPACE,
     DocLangAttributeKey,
@@ -42,6 +47,7 @@ from docling_core.transforms.serializer._doclang_utils import (
     _picture_classification_label_to_doclang,
     _provenance_with_charspan,
     _thread_table_merge_offset,
+    _unwrap_redundant_content,
     _wrap,
     _wrap_field_kv_markup_if_needed,
     _wrap_in_field_item_if_needed,
@@ -612,15 +618,20 @@ def _replace_xml_illegal_character(match: re.Match[str]) -> str:
     return f"[U+{ord(match.group()):04X}]"
 
 
+_XML_WHITESPACE_RUN_RE = re.compile(r"[ \t\r\n]+")
+
+
 def _escape_text(text: str, params: DocLangParams, *, wrap_multiline: bool = True) -> str:
     """Escape text for DocLang while preserving XML 1.0 validity.
 
-    With ``wrap_multiline=False``, text is only put in a content wrapper if its edge whitespace needs
-    preserving, not merely because it spans several lines.
+    In ``WrapMode.AUTO``, text goes in ``<content>`` where DocLang's whitespace rules would change
+    its reading: edge whitespace, or whitespace other than single spaces. With
+    ``wrap_multiline=False``, only edge whitespace triggers the wrapper (for foreign markup).
     """
     text = _XML_10_ILLEGAL_CHARACTER_RE.sub(_replace_xml_illegal_character, text)
     do_wrap = params.content_wrapping_mode == WrapMode.ALWAYS or (
-        params.content_wrapping_mode == WrapMode.AUTO and (text != text.strip() or (wrap_multiline and "\n" in text))
+        params.content_wrapping_mode == WrapMode.AUTO
+        and (text != text.strip() or (wrap_multiline and _COLLAPSIBLE_WHITESPACE_RE.search(text) is not None))
     )
     if params.escape_mode == EscapeMode.ALWAYS or (
         params.escape_mode == EscapeMode.AUTO and any(c in text for c in ['"', "'", "&", "<", ">"])
@@ -632,6 +643,81 @@ def _escape_text(text: str, params: DocLangParams, *, wrap_multiline: bool = Tru
         # text = f'<{el_str} xml:space="preserve">{text}</{el_str}>'
         text = _wrap(text=text, wrap_tag=DocLangToken.CONTENT.value)
     return text
+
+
+def _collapse_whitespace(node: Node) -> None:
+    """Collapse whitespace runs outside ``<content>`` to one space, which reads the same."""
+    for child in node.childNodes:
+        if isinstance(child, Text):
+            child.data = _XML_WHITESPACE_RUN_RE.sub(" ", child.data)
+        elif isinstance(child, Element) and child.tagName not in {
+            DocLangToken.CONTENT.value,
+            DocLangToken.CUSTOM.value,
+        }:
+            _collapse_whitespace(child)
+
+
+def _pretty_print(root: Element, indent: str) -> str:
+    """Indent the element structure of ``root``, keeping each text block body on one line.
+
+    Unlike ``toprettyxml``, this never breaks a line inside a text block, where DocLang reads
+    a line break as a space (e.g. ``2<superscript>nd</superscript>`` must not become ``2 nd``).
+    """
+    _collapse_whitespace(root)
+    lines: list[str] = []
+
+    def inline(nodes: list[Node]) -> str:
+        # Edge whitespace of a text block is ignored, so trimming it is lossless.
+        return "".join(node.toxml() for node in nodes).strip(" ")
+
+    def write(el: Element, depth: int) -> None:
+        pad = indent * depth
+        attrs = "".join(f' {key}="{_escape_xml_attr(val)}"' for key, val in el.attributes.items())
+        if not el.childNodes:
+            lines.append(f"{pad}<{el.tagName}{attrs}/>")
+            return
+        open_tag, close_tag = f"<{el.tagName}{attrs}>", f"</{el.tagName}>"
+        nodes = list(el.childNodes)
+        if el.tagName not in _RAW_TEXT_TAGS and not any(isinstance(node, Element) for node in nodes):
+            # Text only, e.g. a custom field value: written as is.
+            lines.append(f"{pad}{open_tag}{''.join(node.toxml() for node in nodes)}{close_tag}")
+            return
+        if el.tagName in _RAW_TEXT_TAGS:
+            head: list[Element] = []
+            while nodes and (
+                (isinstance(nodes[0], Text) and not nodes[0].data.strip(" "))
+                or (isinstance(nodes[0], Element) and nodes[0].tagName in _ELEMENT_HEAD_TAGS)
+            ):
+                if isinstance(first := nodes.pop(0), Element):
+                    head.append(first)
+            if not head:
+                lines.append(f"{pad}{open_tag}{inline(nodes)}{close_tag}")
+                return
+            lines.append(f"{pad}{open_tag}")
+            for head_el in head:
+                write(head_el, depth + 1)
+            if body := inline(nodes):
+                lines.append(f"{pad}{indent}{body}")
+            lines.append(f"{pad}{close_tag}")
+            return
+        lines.append(f"{pad}{open_tag}")
+        # Unwrapped text in a container (a virtual <text>) is a text block of its own.
+        segment: list[Node] = []
+        for node in [*nodes, None]:
+            if isinstance(node, Text) or (isinstance(node, Element) and node.tagName in _VIRTUAL_TEXT_INLINE_TAGS):
+                segment.append(node)
+                continue
+            if text := inline(segment):
+                lines.append(f"{pad}{indent}{text}")
+            segment = []
+            if isinstance(node, Element):
+                write(node, depth + 1)
+            elif node is not None:
+                lines.append(f"{pad}{indent}{node.toxml()}")
+        lines.append(f"{pad}{close_tag}")
+
+    write(root, 0)
+    return "\n".join(lines) + "\n"
 
 
 def _list_item_segment_sibling(child: NodeItem) -> bool:
@@ -2282,17 +2368,22 @@ class DocLangDocSerializer(DocSerializer):
             # do XML-based post-filtering
             text_res = self._filter_out_all_content(text_res)
 
-        if self.params.pretty_indentation is not None:
+        unwrap_content = self.params.content_wrapping_mode == WrapMode.AUTO
+        if unwrap_content or self.params.pretty_indentation is not None:
             try:
                 my_root = parseString(text_res).documentElement
             except Exception as e:
-                # print(text_res)
-
                 ctx = _xml_error_context(text_res, e)
-                raise ValueError(f"XML pretty-print failed: {e}\n--- XML context ---\n{ctx}") from e
+                raise ValueError(f"XML post-processing failed: {e}\n--- XML context ---\n{ctx}") from e
             if my_root is None:
-                raise ValueError("XML pretty-print failed: documentElement is None")
-            text_res = my_root.toprettyxml(indent=self.params.pretty_indentation)
+                raise ValueError("XML post-processing failed: documentElement is None")
+            if unwrap_content:
+                _unwrap_redundant_content(cast(Element, my_root))
+            if self.params.pretty_indentation is None:
+                text_res = my_root.toxml()
+
+        if self.params.pretty_indentation is not None:
+            text_res = _pretty_print(cast(Element, my_root), self.params.pretty_indentation)
 
             # Filter out empty lines, but preserve them inside <content> tags
             lines = text_res.split("\n")

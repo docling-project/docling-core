@@ -29,6 +29,8 @@ from docling_core.transforms.serializer._doclang_utils import (
     _DOCLANG_META_TAG_SMILES,
     _DOCLANG_META_TAG_SUMMARY,
     _ELEMENT_HEAD_TAGS,
+    _FORMATTING_TAGS,
+    _RAW_TEXT_TAGS,
     DOCLANG_DFLT_RESOLUTION,
     DocLangAttributeKey,
     DocLangAttributeValue,
@@ -36,6 +38,7 @@ from docling_core.transforms.serializer._doclang_utils import (
     DocLangToken,
     DocLangVocabulary,
     _append_textual_fragment,
+    _apply_whitespace_rules,
     _code_language_label_from_doclang,
     _merge_table_data,
     _picture_classification_label_from_doclang,
@@ -107,18 +110,6 @@ _INLINE_HOST_LABELS: frozenset[DocItemLabel] = frozenset(
     {DocItemLabel.TEXT, DocItemLabel.CAPTION, DocItemLabel.FOOTNOTE, DocItemLabel.PAGE_HEADER, DocItemLabel.PAGE_FOOTER}
 )
 
-# Formatting tags that can themselves hold mixed content, e.g. <bold>a <italic>b</italic></bold>.
-_FORMATTING_TAG_VALUES: frozenset[str] = frozenset(
-    {
-        DocLangToken.BOLD.value,
-        DocLangToken.ITALIC.value,
-        DocLangToken.UNDERLINE.value,
-        DocLangToken.STRIKETHROUGH.value,
-        DocLangToken.SUBSCRIPT.value,
-        DocLangToken.SUPERSCRIPT.value,
-    }
-)
-
 
 def _utf8_byte_length(text: str) -> int:
     """Return UTF-8 byte length of ``text`` without retaining the encoded buffer."""
@@ -145,22 +136,6 @@ def _repair_unescaped_xml_text(text: str) -> str:
         part = _BARE_LT_RE.sub("&lt;", part)
         parts[i] = part.replace("]]>", "]]&gt;")
     return "".join(parts)
-
-
-# A whitespace run touching a newline is pretty-print indentation; one without is content.
-_PRETTY_INDENT = re.compile(r"\A\s*\n\s*|\s*\n\s*\Z")
-
-
-def _normalize_bare_text(data: str) -> str:
-    """Drop pretty-print indentation from a bare XML text node, keep significant whitespace.
-
-    Standard XML heuristic: whitespace containing a newline is layout noise, whitespace
-    without one is meaningful. Serialized DocLang uses ``<content>`` for whitespace-bearing
-    runs, so this only governs hand-written and VLM-emitted input.
-    """
-    if not data.strip():
-        return "" if "\n" in data else data
-    return _PRETTY_INDENT.sub("", data)
 
 
 def _enforce_doclang_dom_budgets(
@@ -271,6 +246,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             candidates = root.getElementsByTagName(DocLangToken.DOCUMENT.value)
             if candidates:
                 root = cast(Element, candidates[0])
+        _apply_whitespace_rules(root)
 
         doc = DoclingDocument(name="Document")
         self._page_no = page_no
@@ -1549,7 +1525,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                             parent=parent,
                             formatting=formatting,
                         )
-                elif node.tagName in _FORMATTING_TAG_VALUES:
+                elif node.tagName in _FORMATTING_TAGS:
                     # Accumulate this tag's style and keep descending, so e.g. <bold>a
                     # <italic>b</italic></bold> gives "a" bold and "b" bold+italic.
                     merged = self._merge_formatting_tag(node.tagName, formatting)
@@ -1557,8 +1533,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 else:
                     self._dispatch_element(doc=doc, el=node, parent=parent)
             elif isinstance(node, Text):
-                # A run owns its boundary whitespace; only pretty-print indentation is dropped.
-                text_content = _normalize_bare_text(node.data)
+                # Already read per the whitespace rules: a run owns its boundary space.
+                text_content = node.data
                 if text_content:
                     doc.add_text(
                         label=DocItemLabel.TEXT,
@@ -1595,7 +1571,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             return
         # If the mixed-content element is itself a formatting tag (e.g. <bold> with a
         # leading text run before a nested <italic>), its own style must not be dropped.
-        formatting = self._merge_formatting_tag(el.tagName, None) if el.tagName in _FORMATTING_TAG_VALUES else None
+        formatting = self._merge_formatting_tag(el.tagName, None) if el.tagName in _FORMATTING_TAGS else None
         node = self._parse_inline_group(doc=doc, el=el, parent=parent, formatting=formatting)
         if (content_layer := self._extract_layer(el=el)) is not None:
             # Runs carry no layer of their own; without this, furniture runs would leak into the body.
@@ -2016,7 +1992,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         footnotes: list[TextItem] = []
         for node in el.childNodes:
             if isinstance(node, Element) and (label := labels.get(node.tagName)) is not None:
-                inline_tags = _FORMATTING_TAG_VALUES | {DocLangToken.BR.value, DocLangToken.CONTENT.value}
+                inline_tags = _FORMATTING_TAGS | {DocLangToken.BR.value, DocLangToken.CONTENT.value}
                 nested = [
                     n
                     for n in node.childNodes
@@ -2502,7 +2478,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     # `<content>` is the lossless whitespace channel: take it verbatim.
                     out.append((node.data, True))
                 else:
-                    out.append((_normalize_bare_text(node.data), False))
+                    out.append((node.data, False))
             elif isinstance(node, Element):
                 # Element-head children (<caption>, <description>, <summary>, <custom>, ...) are
                 # metadata; they are modelled in item.meta and must not bleed into body text.

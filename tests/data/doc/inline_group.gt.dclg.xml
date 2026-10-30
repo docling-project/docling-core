@@ -4,16 +4,12 @@
     <location value="492"/>
     <location value="15"/>
     <location value="502"/>
-    One
-    <bold>Two</bold>
-    Three
+    One<bold>Two</bold>Three
   </text>
   <list>
     <ldiv/>
     Item 1
     <ldiv/>
-    Four
-    <bold>Five</bold>
-    Six
+    Four<bold>Five</bold>Six
   </list>
 </doclang>

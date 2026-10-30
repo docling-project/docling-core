@@ -6,14 +6,10 @@
     item of leading list
   </list>
   <heading>Title of the Document</heading>
-  <text>
-    <content>Author 1
-Affiliation 1</content>
-  </text>
-  <text>
-    <content>Author 2
-Affiliation 2</content>
-  </text>
+  <text><content>Author 1
+Affiliation 1</content></text>
+  <text><content>Author 2
+Affiliation 2</content></text>
   <heading level="2">1. Introduction</heading>
   <text>This paper introduces the biggest invention ever made. ...</text>
   <list>
@@ -106,36 +102,7 @@ Affiliation 2</content>
   </code>
   <text>Here a formula block:</text>
   <formula>E=mc^2</formula>
-  <text>
-    <content>Some formatting chops: </content>
-    <bold>
-      <content>bold </content>
-    </bold>
-    <italic>
-      <content>italic </content>
-    </italic>
-    <underline>
-      <content>underline </content>
-    </underline>
-    <strikethrough>
-      <content>strikethrough </content>
-    </strikethrough>
-    <subscript>
-      <content>subscript </content>
-    </subscript>
-    <superscript>
-      <content>superscript </content>
-    </superscript>
-    <content>hyperlink </content>
-    <content><![CDATA[& ]]></content>
-    <strikethrough>
-      <underline>
-        <italic>
-          <bold>everything at the same time.</bold>
-        </italic>
-      </underline>
-    </strikethrough>
-  </text>
+  <text>Some formatting chops: <bold>bold </bold><italic>italic </italic><underline>underline </underline><strikethrough>strikethrough </strikethrough><subscript>subscript </subscript><superscript>superscript </superscript>hyperlink <![CDATA[& ]]><strikethrough><underline><italic><bold>everything at the same time.</bold></italic></underline></strikethrough></text>
   <list class="ordered">
     <ldiv>
       <marker>(i)</marker>

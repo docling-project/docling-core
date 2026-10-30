@@ -6,19 +6,11 @@
   <heading level="3">Bar</heading>
   <text>Bar stuff</text>
   <text>More stuff</text>
-  <heading level="2">
-    Rich heading
-    <italic>without</italic>
-    other children besides the inline
-  </heading>
+  <heading level="2">Rich heading<italic>without</italic>other children besides the inline</heading>
   <text>Section content as sibling of the heading.</text>
   <heading level="3">Subheading</heading>
   <text>Subsection content.</text>
-  <heading level="2">
-    Rich heading
-    <italic>with</italic>
-    other children besides the inline
-  </heading>
+  <heading level="2">Rich heading<italic>with</italic>other children besides the inline</heading>
   <text>Section content as child of the heading.</text>
   <text>Section content as sibling of the heading.</text>
   <heading level="2">Heading</heading>
@@ -45,12 +37,7 @@
     <fcel/>
     cell 1,0
     <fcel/>
-    <text>
-      <italic>
-        <content>text in italic </content>
-      </italic>
-      <bold>text in bold</bold>
-    </text>
+    <text><italic>text in italic </italic><bold>text in bold</bold></text>
     <nl/>
     <fcel/>
     cell 2,0

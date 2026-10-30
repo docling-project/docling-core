@@ -1,15 +1,6 @@
 <doclang>
   <text>Simple text</text>
-  <text>
-    <content>Here a code snippet: </content>
-    <code>
-      <label value="Python"/>
-      <content>
-      help()
-    </content>
-    </code>
-    <content> (to be shown)</content>
-  </text>
+  <text>Here a code snippet: <code><label value="Python"/>help()</code> (to be shown)</text>
   <list>
     <ldiv/>
     foo
@@ -17,14 +8,10 @@
     bar
     <ldiv/>
     <content>Here a formula: </content>
-    <formula>
-      <content>E=mc^2 </content>
-    </formula>
+    <formula><content>E=mc^2 </content></formula>
     in line
     <ldiv/>
-    <content>Here a </content>
-    <bold>bold</bold>
-    <content> text</content>
+    Here a <bold>bold</bold> text
     <ldiv/>
     <text>will contain sublist</text>
     <list>
@@ -39,11 +26,7 @@
       <location value="492"/>
       <location value="15"/>
       <location value="502"/>
-      <content>Here a </content>
-      <italic>
-        <bold>both bold and italicized</bold>
-      </italic>
-      <content> text and a sublist:</content>
+      Here a <italic><bold>both bold and italicized</bold></italic> text and a sublist:
     </text>
     <list>
       <ldiv/>

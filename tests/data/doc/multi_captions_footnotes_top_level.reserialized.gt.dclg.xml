@@ -161,7 +161,8 @@
         <location value="206"/>
         Listing 1, caption 2 (below).
       </caption>
-<![CDATA[print('hello')]]>    </code>
+      <![CDATA[print('hello')]]>
+    </code>
     <footnote>
       <location value="85"/>
       <location value="209"/>

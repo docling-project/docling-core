@@ -167,12 +167,12 @@
           },
           "charspan": [
             0,
-            40
+            38
           ]
         }
       ],
-      "orig": "arXiv:2408.09869v3  [cs.CL]  30 Aug 2024",
-      "text": "arXiv:2408.09869v3  [cs.CL]  30 Aug 2024"
+      "orig": "arXiv:2408.09869v3 [cs.CL] 30 Aug 2024",
+      "text": "arXiv:2408.09869v3 [cs.CL] 30 Aug 2024"
     },
     {
       "self_ref": "#/texts/1",
@@ -754,8 +754,8 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
-      "orig": "github.com/DS4SD/docling\n. All required model assets 1 are downloaded to a local huggingface datasets cache on first use, unless you choose to pre-install the model assets in advance.",
-      "text": "github.com/DS4SD/docling\n. All required model assets 1 are downloaded to a local huggingface datasets cache on first use, unless you choose to pre-install the model assets in advance."
+      "orig": " github.com/DS4SD/docling . All required model assets 1 are downloaded to a local huggingface datasets cache on first use, unless you choose to pre-install the model assets in advance.",
+      "text": " github.com/DS4SD/docling . All required model assets 1 are downloaded to a local huggingface datasets cache on first use, unless you choose to pre-install the model assets in advance."
     },
     {
       "self_ref": "#/texts/23",
@@ -804,12 +804,12 @@
           },
           "charspan": [
             0,
-            70
+            62
           ]
         }
       ],
-      "orig": "\n    from docling.document_converter import DocumentConverter Large\n  ",
-      "text": "\n    from docling.document_converter import DocumentConverter Large\n  ",
+      "orig": "from docling.document_converter import DocumentConverter Large",
+      "text": "from docling.document_converter import DocumentConverter Large",
       "captions": [],
       "references": [],
       "footnotes": [],

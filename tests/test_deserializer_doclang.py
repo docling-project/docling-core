@@ -259,10 +259,12 @@ def test_roundtrip_code():
 <doclang>
   <code>
     <label value="Python"/>
-<![CDATA[print('hi')]]>  </code>
+    <![CDATA[print('hi')]]>
+  </code>
   <code>
     <label value="MATLAB"/>
-<![CDATA[disp("Hello world!")]]>  </code>
+    <![CDATA[disp("Hello world!")]]>
+  </code>
 </doclang>
     """
     assert dt2.strip() == exp_dt.strip()
@@ -1308,11 +1310,11 @@ def _assert_virtual_text_list_dclg(dclg: str) -> None:
     assert "<bold>bold</bold>" in dclg
     assert " text" in dclg
     assert re.search(
-        r"<ldiv/>\s*(?:<location[^>]*/>\s*)*<content>this is a </content>\s*<bold>bold</bold>\s*<content> text</content>",
+        r"<ldiv/>\s*(?:<location[^>]*/>\s*)*this is a <bold>bold</bold> text",
         dclg,
     )
     assert not re.search(
-        r"<text>\s*(?:<location[^>]*/>\s*)*<content>this is a </content>\s*<bold>bold</bold>",
+        r"<text>\s*(?:<location[^>]*/>\s*)*this is a <bold>bold</bold>",
         dclg,
     )
     assert "list item with nested list" in dclg
@@ -1752,16 +1754,10 @@ def test_wrapping():
     dt = """
 <doclang>
   <text>simple</text>
-  <text>
-    <content>  leading</content>
-  </text>
-  <text>
-    <content>trailing  </content>
-  </text>
+  <text><content>  leading</content></text>
+  <text><content>trailing  </content></text>
   <text><![CDATA[< special]]></text>
-  <text>
-    <content><![CDATA[  leading and < special]]></content>
-  </text>
+  <text><content><![CDATA[  leading and < special]]></content></text>
   <text>
     <location value="5"/>
     <location value="492"/>
@@ -1788,7 +1784,8 @@ def test_wrapping():
     <location value="492"/>
     <location value="15"/>
     <location value="502"/>
-<![CDATA[w/prov < special]]>  </text>
+    <![CDATA[w/prov < special]]>
+  </text>
   <text>
     <location value="5"/>
     <location value="492"/>
@@ -1810,9 +1807,7 @@ def test_rich_table_cells():
     <fcel/>
     <text>foo</text>
     <fcel/>
-    <text>
-      <italic>text in italic</italic>
-    </text>
+    <text><italic>text in italic</italic></text>
     <nl/>
     <fcel/>
     <table>
@@ -1824,10 +1819,7 @@ def test_rich_table_cells():
       <fcel/>
       <text>inner cell 1,0</text>
       <fcel/>
-      <text>
-        <content>inner cell 1,1 </content>
-        <bold>in bold</bold>
-      </text>
+      <text>inner cell 1,1 <bold>in bold</bold></text>
       <nl/>
     </table>
     <fcel/>
@@ -2154,15 +2146,10 @@ def test_roundtrip_with_newlines():
     """Test that newlines in <content> survive deserialization and reserialization."""
     doclang_str = """
 <doclang>
-  <text>
-    <content>foo
-bar</content>
-  </text>
-  <text>
-    <content>zoo
- </content>
-    <bold>zen</bold>
-  </text>
+  <text><content>foo
+bar</content></text>
+  <text><content>zoo
+ </content><bold>zen</bold></text>
 </doclang>"""
 
     doc = _deserialize(doclang_str)
