@@ -821,7 +821,7 @@ def test_deserialize_locationless_list_with_empty_item_and_formula():
 """
     )
 
-    assert [item.text for item in doc.texts] == ["", "", "A.", "f(x)", "is odd"]
+    assert [item.text for item in doc.texts] == ["", "", "A. ", "f(x)", " is odd"]
     assert doc.texts[3].label == DocItemLabel.FORMULA
     assert all(not item.prov for item in doc.texts)
     assert "<location" not in _serialize(doc)

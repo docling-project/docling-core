@@ -1115,6 +1115,28 @@ _VIRTUAL_TEXT_INLINE_TAGS: Final[frozenset[str]] = _FORMATTING_TAGS | {
     DocLangToken.CONTENT.value,
     DocLangToken.BR.value,
 }
+# Semantic elements that are inline within a virtual <text>, but a block on their own.
+_VIRTUAL_TEXT_SEMANTIC_TAGS: Final[frozenset[str]] = frozenset({DocLangToken.CODE.value, DocLangToken.FORMULA.value})
+
+
+def _is_virtual_text_part(node: Node) -> bool:
+    """True when ``node`` may be part of a virtual <text> (in a list item or cell)."""
+    return isinstance(node, Text) or (
+        isinstance(node, Element)
+        and (node.tagName in _VIRTUAL_TEXT_INLINE_TAGS or node.tagName in _VIRTUAL_TEXT_SEMANTIC_TAGS)
+    )
+
+
+def _is_virtual_text(nodes: Sequence[Node]) -> bool:
+    """True when ``nodes`` hold raw text or text-level elements of their own.
+
+    Only then are semantic elements among them (e.g. ``<code>``) inline; otherwise they are blocks.
+    """
+    return any(
+        (isinstance(node, Text) and node.data.strip(_XML_WHITESPACE))
+        or (isinstance(node, Element) and node.tagName in _VIRTUAL_TEXT_INLINE_TAGS)
+        for node in nodes
+    )
 
 
 # DocLang 0.9 whitespace handling (spec "Content encoding and whitespace handling").
@@ -1138,18 +1160,26 @@ def _for_each_text_block(el: Element, visit: _TextBlockVisitor) -> None:
         return
     # Not a text block itself; unwrapped text between its child elements is a virtual <text>.
     segment: list[Node] = []
+
+    def visit_segment() -> None:
+        if _is_virtual_text(segment):
+            visit(segment)
+            return
+        # No text of its own: whitespace between blocks, which are read on their own.
+        visit([node for node in segment if not isinstance(node, Element) or node.tagName in _ELEMENT_HEAD_TAGS])
+        for node in segment:
+            if isinstance(node, Element) and node.tagName in _VIRTUAL_TEXT_SEMANTIC_TAGS:
+                _for_each_text_block(node, visit)
+
     for node in el.childNodes:
-        if isinstance(node, Text) or (
-            isinstance(node, Element)
-            and (node.tagName in _VIRTUAL_TEXT_INLINE_TAGS or node.tagName in _ELEMENT_HEAD_TAGS)
-        ):
+        if _is_virtual_text_part(node) or (isinstance(node, Element) and node.tagName in _ELEMENT_HEAD_TAGS):
             segment.append(node)
             continue
-        visit(segment)
+        visit_segment()
         segment = []
         if isinstance(node, Element):
             _for_each_text_block(node, visit)
-    visit(segment)
+    visit_segment()
 
 
 def _flatten_text_block(nodes: Sequence[Node], visit: _TextBlockVisitor) -> list[_WsToken]:

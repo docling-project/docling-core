@@ -102,18 +102,11 @@ Affiliation 2]]></content></text>
       <ldiv>
         <marker><![CDATA[□]]></marker>
       </ldiv>
-      <content><![CDATA[Here a code snippet: ]]></content>
-      <code>
-        <label value="Python"/>
-        <![CDATA[print("Hello world")]]>
-      </code>
-      <content><![CDATA[ (to be displayed inline)]]></content>
+      <![CDATA[Here a code snippet: ]]><code><label value="Python"/><![CDATA[print("Hello world")]]></code><![CDATA[ (to be displayed inline)]]>
       <ldiv>
         <marker><![CDATA[□]]></marker>
       </ldiv>
-      <content><![CDATA[Here a formula: ]]></content>
-      <formula><![CDATA[E=mc^2]]></formula>
-      <content><![CDATA[ (to be displayed inline)]]></content>
+      <![CDATA[Here a formula: ]]><formula><![CDATA[E=mc^2]]></formula><![CDATA[ (to be displayed inline)]]>
     </list>
   </list>
   <text><![CDATA[Here a code block:]]></text>

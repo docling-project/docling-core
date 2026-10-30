@@ -7,9 +7,7 @@
     <ldiv/>
     bar
     <ldiv/>
-    <content>Here a formula: </content>
-    <formula><content>E=mc^2 </content></formula>
-    in line
+    Here a formula: <formula>E=mc^2 </formula>in line
     <ldiv/>
     Here a <bold>bold</bold> text
     <ldiv/>

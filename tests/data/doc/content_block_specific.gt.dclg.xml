@@ -83,17 +83,11 @@ Affiliation 2</content></text>
       <ldiv>
         <marker>□</marker>
       </ldiv>
-      <content>Here a code snippet: </content>
-      <code>
-        <label value="Python"/>
-      </code>
-      <content> (to be displayed inline)</content>
+      <content>Here a code snippet: </content><code><label value="Python"/></code><content> (to be displayed inline)</content>
       <ldiv>
         <marker>□</marker>
       </ldiv>
-      <content>Here a formula: </content>
-      <formula>E=mc^2</formula>
-      <content> (to be displayed inline)</content>
+      Here a formula: <formula>E=mc^2</formula> (to be displayed inline)
     </list>
   </list>
   <text>Here a code block:</text>

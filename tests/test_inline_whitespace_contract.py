@@ -21,6 +21,7 @@ from docling_core.transforms.serializer.latex import LaTeXDocSerializer
 from docling_core.transforms.serializer.markdown import MarkdownDocSerializer
 from docling_core.types.doc.document import (
     CURRENT_VERSION,
+    CodeLanguageLabel,
     DocItemLabel,
     DoclingDocument,
     Formatting,
@@ -552,6 +553,20 @@ DOCLANG_WHITESPACE_READINGS: list[tuple[str, str, str]] = [
     ("content_is_literal", "<text><content> a\n</content> b </text>", " a\n b"),
     ("element_head_disregarded", '<text>\n  <location value="1"/>\n  a\n  <label value="x"/>\n</text>', "a"),
     ("virtual_text", "<list>\n  <ldiv/>\n  Four\n  <bold>Five</bold>\n</list>", "- Four Five"),
+    ("newline_before_tag", "<text>Hi\n<bold>there</bold></text>", "Hi there"),
+    # In a virtual <text>, <code> and <formula> are inline: whitespace around them reads as a space.
+    (
+        "virtual_text_inline_formula",
+        "<list>\n  <ldiv/>\n  A.\n  <formula>f(x)</formula>\n  is odd\n</list>",
+        "- A. $f(x)$ is odd",
+    ),
+    (
+        # Its element head is disregarded, so the line breaks around it are one sequence.
+        "virtual_text_inline_code_with_head",
+        '<list>\n  <ldiv/>\n  <content>run: </content>\n  <code>\n    <label value="Python"/>\n    x\n  </code>\n'
+        "  <content> now</content>\n</list>",
+        "- run:  x  now",
+    ),
 ]
 
 
@@ -604,3 +619,25 @@ def test_doclang_keeps_content_only_where_needed(runs: list[str], expected: str)
         doc.add_text(label=DocItemLabel.TEXT, text=text, parent=group)
     assert _doclang_compact(doc) == f"<doclang>{expected}</doclang>"
     assert DocLangDocDeserializer().deserialize_str(_doclang_compact(doc)).export_to_text() == "".join(runs)
+
+
+def test_doclang_list_item_with_inline_code_and_formula_roundtrips() -> None:
+    """A list item with inline code or formula is a virtual <text>: written on one line, read back as is."""
+    doc = DoclingDocument(name="t")
+    group_list = doc.add_list_group()
+    for add_inline in (
+        lambda group: doc.add_code(text='print("x")', code_language=CodeLanguageLabel.PYTHON, parent=group),
+        lambda group: doc.add_formula(text="E=mc^2", parent=group),
+    ):
+        group = doc.add_inline_group(parent=doc.add_list_item(text="", parent=group_list))
+        doc.add_text(label=DocItemLabel.TEXT, text="Here ", parent=group)
+        add_inline(group)
+        doc.add_text(label=DocItemLabel.TEXT, text=" inline", parent=group)
+
+    pretty = DocLangDocSerializer(doc=doc, params=DocLangParams(include_version=False)).serialize().text
+    assert '  Here <code><label value="Python"/><![CDATA[print("x")]]></code> inline\n' in pretty
+    assert "  Here <formula>E=mc^2</formula> inline\n" in pretty
+    for xml in (pretty, _doclang_compact(doc)):
+        roundtripped = DocLangDocDeserializer().deserialize_str(xml)
+        assert roundtripped.export_to_text() == doc.export_to_text()
+        assert [t.text for t in roundtripped.texts] == [t.text for t in doc.texts]

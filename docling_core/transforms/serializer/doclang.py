@@ -29,7 +29,6 @@ from docling_core.transforms.serializer._doclang_utils import (
     _DOCLANG_VERSION,
     _ELEMENT_HEAD_TAGS,
     _RAW_TEXT_TAGS,
-    _VIRTUAL_TEXT_INLINE_TAGS,
     DOCLANG_DFLT_RESOLUTION,
     DOCLANG_NAMESPACE,
     DocLangAttributeKey,
@@ -42,6 +41,8 @@ from docling_core.transforms.serializer._doclang_utils import (
     _create_location_tokens_for_bbox,
     _create_location_tokens_for_item,
     _escape_xml_attr,
+    _is_virtual_text,
+    _is_virtual_text_part,
     _merge_table_data,
     _picture_classification_label_from_doclang,
     _picture_classification_label_to_doclang,
@@ -702,13 +703,18 @@ def _pretty_print(root: Element, indent: str) -> str:
             return
         lines.append(f"{pad}{open_tag}")
         # Unwrapped text in a container (a virtual <text>) is a text block of its own.
+        # Inline <code> and <formula> belong to it too, written flat (see _is_virtual_text).
         segment: list[Node] = []
         for node in [*nodes, None]:
-            if isinstance(node, Text) or (isinstance(node, Element) and node.tagName in _VIRTUAL_TEXT_INLINE_TAGS):
+            if node is not None and _is_virtual_text_part(node):
                 segment.append(node)
                 continue
-            if text := inline(segment):
-                lines.append(f"{pad}{indent}{text}")
+            if _is_virtual_text(segment):
+                lines.append(f"{pad}{indent}{inline(segment)}")
+            else:
+                for block in segment:
+                    if isinstance(block, Element):
+                        write(block, depth + 1)
             segment = []
             if isinstance(node, Element):
                 write(node, depth + 1)
