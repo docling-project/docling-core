@@ -1311,10 +1311,13 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 wrap_open_token = f'<{tok.value} class="{item.kind}">'
             elif isinstance(item, FieldHeadingItem):
                 wrap_open_token = DocLangVocabulary._create_field_heading_token(level=item.level)
-        elif isinstance(item, TextItem) and item.label == DocItemLabel.EMPTY_VALUE:
-            # CVAT empty_value / fillable_field. A parent field_value already
-            # carries the tag; otherwise emit the fillable value itself.
-            parent_item = item.parent.resolve(doc) if item.parent else None
+        elif isinstance(item, TextItem) and item.label == DocItemLabel.EMPTY_VALUE and (
+            isinstance(parent_item := (item.parent.resolve(doc) if item.parent else None), FieldValueItem | FieldItem)
+        ):
+            # CVAT empty_value / fillable_field inside a field item. A parent field_value
+            # already carries the tag; directly under the field item, emit the fillable
+            # value itself. Elsewhere (e.g. a legacy <form> group) a <value> would sit
+            # outside <field_item>, which DocLang forbids: such items stay plain text.
             if isinstance(parent_item, FieldValueItem):
                 wrap_open_token = None
             else:
@@ -1323,6 +1326,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
         elif isinstance(item, TextItem) and (
             item.label
             in [  # FIXME: Catch all ...
+                DocItemLabel.EMPTY_VALUE,  # outside a field item (e.g. legacy <form>): plain text, as upstream
                 DocItemLabel.HANDWRITTEN_TEXT,
                 DocItemLabel.PARAGRAPH,
                 DocItemLabel.REFERENCE,
