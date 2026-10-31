@@ -1411,9 +1411,15 @@ def compact_doclang(dl: str) -> str:
     <content>), any cell-level CDATA (e.g. "Côte d'Ivoire"), and whitespace INSIDE a value
     (multi-line labels like 'Strongly\\nDisagree'). Removes ONLY formatting whitespace that
     abuts a tag.
+
+    DocLang 0.9: whitespace outside ``<content>`` reads as one space wherever it is not at a
+    text-block edge, so a space between two tags on one line (e.g. between nested ``<text>``
+    fragments, or ``<bold>a</bold> <italic>b</italic>``) is text and is kept. Only runs that
+    contain a line break (pretty-print layout) are removed, and ``<content>`` stays literal.
     """
     _protect = re.compile(
-        rf"<{_DOCLANG_META_TAG_SUMMARY}>.*?</{_DOCLANG_META_TAG_SUMMARY}>|<!\[CDATA\[.*?\]\]>",
+        rf"<{_DOCLANG_META_TAG_SUMMARY}>.*?</{_DOCLANG_META_TAG_SUMMARY}>|<!\[CDATA\[.*?\]\]>"
+        rf"|<{DocLangToken.CONTENT.value}>.*?</{DocLangToken.CONTENT.value}>",
         re.S,
     )
     blocks: list[str] = []
@@ -1425,7 +1431,5 @@ def compact_doclang(dl: str) -> str:
     s = _protect.sub(_stash, dl)
     s = re.sub(r"(?<=>)\s*\n\s*", "", s)  # newline+indent right after a tag
     s = re.sub(r"\s*\n\s*(?=<)", "", s)  # newline+indent right before a tag
-    s = re.sub(r"(?<=>)[ \t]+(?=<)", "", s)  # spaces between two adjacent tags
-    s = re.sub(r"[ \t]{2,}(?=<)", "", s)  # residual indent run before a tag
     s = re.sub(r"\x00(\d+)\x00", lambda m: blocks[int(m.group(1))], s)
     return s
