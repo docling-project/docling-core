@@ -5,14 +5,20 @@ import logging
 import re
 import socket
 import tempfile
+from collections.abc import Mapping
+from contextlib import ExitStack
+from email.message import Message
+from email.utils import collapse_rfc2231_value
+from html.parser import HTMLParser
 from io import BytesIO
 from pathlib import Path
-from typing import Optional, Union
-from urllib.parse import urlparse
+from typing import NamedTuple, Optional, Union
+from urllib.parse import parse_qs, urlparse
 
 import requests
 from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
 from requests.adapters import HTTPAdapter
+from requests.structures import CaseInsensitiveDict
 from requests.utils import select_proxy
 from typing_extensions import deprecated
 
@@ -38,6 +44,14 @@ class FileSizeLimitExceededError(ValueError):
         self.size = size
         self.limit = limit
         super().__init__(f"Remote file exceeds the maximum allowed size ({size} > {limit} bytes).")
+
+
+class RemoteAccessDeniedError(ValueError):
+    """Raised when a remote source asks for a sign-in instead of returning the file."""
+
+    def __init__(self, url: str, message: str):
+        self.url = url
+        super().__init__(message)
 
 
 def _ip_in_allowlist(ip: ipaddress.IPv4Address | ipaddress.IPv6Address, allowlist: list[str]) -> bool:
@@ -138,27 +152,41 @@ def _sanitize_filename(filename: str) -> str | None:
     return basename
 
 
+def _content_disposition_filename(headers: Mapping[str, str]) -> str | None:
+    """Return the file name that a Content-Disposition header gives, if any.
+
+    The header name is matched in any case. The extended ``filename*`` parameter
+    is preferred over ``filename``, as RFC 6266 asks, because it keeps the
+    characters that the plain parameter cannot carry.
+    """
+    value = CaseInsensitiveDict(headers).get("Content-Disposition")
+    if not value:
+        return None
+    message = Message()
+    message["Content-Disposition"] = value
+    for name, param in message.get_params(failobj=[], header="Content-Disposition"):
+        # RFC 2231 parameters are the only ones that the email package returns as tuples.
+        if name.lower() == "filename" and isinstance(param, tuple):
+            return collapse_rfc2231_value(param).strip() or None
+    return message.get_filename()
+
+
 def resolve_remote_filename(
     http_url: AnyHttpUrl,
-    response_headers: dict[str, str],
+    response_headers: Mapping[str, str],
     fallback_filename="file",
 ) -> str:
     """Resolves the filename from a remote url and its response headers.
 
     Args:
         source AnyHttpUrl: The source http url.
-        response_headers Dict: Headers received while fetching the remote file.
+        response_headers Mapping: Headers received while fetching the remote file.
         fallback_filename str: Filename to use in case none can be determined.
 
     Returns:
         str: The actual filename of the remote url.
     """
-    raw_fname = None
-    if cont_disp := response_headers.get("Content-Disposition"):
-        for par in cont_disp.strip().split(";"):
-            if (split := par.split("=")) and split[0].strip() == "filename":
-                raw_fname = "=".join(split[1:]).strip().strip("'\"") or None
-                break
+    raw_fname = _content_disposition_filename(response_headers)
 
     if raw_fname is None:
         raw_fname = Path(http_url.path or "").name or fallback_filename
@@ -238,12 +266,182 @@ class _SafeConnectionAdapter(HTTPAdapter):
         )
 
 
+_GOOGLE_DRIVE_API = "https://www.googleapis.com/drive/v3/files"
+
+# Google Docs editor -> (export format, media type of that format).
+_GOOGLE_EXPORT_FORMATS = {
+    "document": ("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+    "spreadsheets": ("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+    "presentation": ("pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"),
+}
+
+_GOOGLE_DOCS_PATH = re.compile(r"/(document|spreadsheets|presentation|file)/(?:u/\d+/)?d/([\w-]+)")
+_GOOGLE_DRIVE_FILE_PATH = re.compile(r"/file/(?:u/\d+/)?d/([\w-]+)")
+_GOOGLE_DRIVE_FOLDER_PATH = re.compile(r"/drive/(?:u/\d+/)?folders/")
+_GOOGLE_FILE_ID = re.compile(r"[\w-]+")
+
+# The Drive virus scan warning page is a few kilobytes; read no more than this of it.
+_GOOGLE_PAGE_LIMIT = 64 * 1024
+
+
+class _GoogleSource(NamedTuple):
+    """A Google document or Drive file that a link names.
+
+    ``kind`` is ``"document"``, ``"spreadsheets"`` or ``"presentation"`` for the
+    Google Docs editors, and ``"file"`` for any other file stored in Drive.
+    """
+
+    kind: str
+    file_id: str
+
+    def fetch_url(self, authorized: bool) -> str:
+        """Return the URL that serves the content, through the Drive API when the request is authorized."""
+        if self.kind == "file":
+            if authorized:
+                return f"{_GOOGLE_DRIVE_API}/{self.file_id}?alt=media&supportsAllDrives=true"
+            return f"https://drive.google.com/uc?export=download&id={self.file_id}"
+        extension, media_type = _GOOGLE_EXPORT_FORMATS[self.kind]
+        if authorized:
+            return f"{_GOOGLE_DRIVE_API}/{self.file_id}/export?mimeType={media_type}"
+        return f"https://docs.google.com/{self.kind}/d/{self.file_id}/export?format={extension}"
+
+    @property
+    def filename(self) -> str:
+        """Return the name to use when the response does not give one."""
+        if self.kind == "file":
+            return self.file_id
+        return f"{self.file_id}.{_GOOGLE_EXPORT_FORMATS[self.kind][0]}"
+
+
+def _parse_google_source(url: str) -> _GoogleSource | None:
+    """Recognize a link to a Google Docs, Sheets or Slides document, or to a Drive file.
+
+    Pages published to the web (``/d/e/<id>/pub``) are plain web pages, so they
+    are not recognized and are fetched as they are.
+
+    Raises:
+        ValueError: If the link names a Google Drive folder.
+    """
+    parsed = urlparse(url)
+    if parsed.hostname == "docs.google.com":
+        match = _GOOGLE_DOCS_PATH.match(parsed.path)
+        if match and match.group(2) != "e":
+            return _GoogleSource(kind=match.group(1), file_id=match.group(2))
+        return None
+    if parsed.hostname == "drive.google.com":
+        if _GOOGLE_DRIVE_FOLDER_PATH.match(parsed.path):
+            raise ValueError(
+                f"Google Drive folders cannot be converted from a link, convert their files instead: {url}"
+            )
+        if match := _GOOGLE_DRIVE_FILE_PATH.match(parsed.path):
+            return _GoogleSource(kind="file", file_id=match.group(1))
+        if parsed.path in ("/open", "/uc"):
+            file_id = parse_qs(parsed.query).get("id", [""])[0]
+            if _GOOGLE_FILE_ID.fullmatch(file_id):
+                return _GoogleSource(kind="file", file_id=file_id)
+    return None
+
+
+class _DriveDownloadForm(HTMLParser):
+    """Read the action and the hidden fields of the form on the Drive virus scan warning page."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.action: str | None = None
+        self.fields: dict[str, str] = {}
+        self._inside = False
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attributes = dict(attrs)
+        if tag == "form" and attributes.get("id") == "download-form":
+            self._inside = True
+            self.action = attributes.get("action")
+        elif self._inside and tag == "input" and attributes.get("type") == "hidden":
+            if name := attributes.get("name"):
+                self.fields[name] = attributes.get("value") or ""
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "form":
+            self._inside = False
+
+
+def _is_web_page(response: requests.Response) -> bool:
+    """Return whether a Google response is an HTML page instead of a file download."""
+    content_type = response.headers.get("Content-Type", "")
+    return content_type.startswith("text/html") and "Content-Disposition" not in response.headers
+
+
+def _drive_download_confirmation(response: requests.Response) -> tuple[str, dict[str, str]] | None:
+    """Return the URL and query that the Drive virus scan warning page submits, if it is that page."""
+    page = bytearray()
+    for chunk in response.iter_content(chunk_size=_GOOGLE_PAGE_LIMIT):
+        page += chunk
+        if len(page) >= _GOOGLE_PAGE_LIMIT:
+            break
+    form = _DriveDownloadForm()
+    form.feed(bytes(page[:_GOOGLE_PAGE_LIMIT]).decode(response.encoding or "utf-8", errors="replace"))
+    if form.action is None:
+        return None
+    action = urlparse(form.action)
+    if action.scheme != "https" or not (action.hostname or "").endswith(".google.com"):
+        return None
+    return form.action, form.fields
+
+
+def _raise_for_google_sign_in(response: requests.Response, source: str) -> None:
+    """Raise when Google redirected the request to its sign-in page."""
+    if urlparse(response.url).hostname == "accounts.google.com":
+        raise RemoteAccessDeniedError(
+            url=source,
+            message=(
+                f"Google asks to sign in before it returns {source}. Share it with anyone who has the "
+                "link, or send an OAuth access token of a user who can read it in the Authorization header."
+            ),
+        )
+
+
+def _google_file_response(
+    response: requests.Response,
+    session: requests.Session,
+    responses: ExitStack,
+    headers: dict[str, str],
+    source: str,
+) -> requests.Response:
+    """Return the response that carries the Google document or Drive file.
+
+    Google answers with a sign-in page when the document is not shared with
+    anyone who has the link. For a file too large for its virus scan, Drive
+    answers with a warning page; its form is submitted once, as a browser user
+    does with "Download anyway".
+    """
+    _raise_for_google_sign_in(response, source)
+    if not _is_web_page(response):
+        return response
+    if (confirmation := _drive_download_confirmation(response)) is not None:
+        action, query = confirmation
+        response = responses.enter_context(
+            session.get(action, params=query, stream=True, headers=headers, allow_redirects=True)
+        )
+        response.raise_for_status()
+        _raise_for_google_sign_in(response, source)
+        if not _is_web_page(response):
+            return response
+    raise ValueError(f"Google returned a web page instead of the document: {source}")
+
+
 def resolve_source_to_stream(
     source: Path | AnyHttpUrl | str,
     headers: dict[str, str] | None = None,
     max_file_size: int | None = None,
 ) -> DocumentStream:
     """Resolves the source (URL, path) of a file to a binary stream.
+
+    A link to a Google Docs, Sheets or Slides document is fetched as a DOCX,
+    XLSX or PPTX export, and a link to a Google Drive file as a download.
+    Without an ``Authorization`` header, the document must be shared with
+    anyone who has the link. With one, it is fetched through the Google Drive
+    API, so the header must carry an OAuth access token of a user who can read
+    it.
 
     Args:
         source: The file input source. Can be a path or URL.
@@ -256,6 +454,7 @@ def resolve_source_to_stream(
     Raises:
         ValueError: If source is of unexpected type.
         FileSizeLimitExceededError: If a remote download exceeds ``max_file_size``.
+        RemoteAccessDeniedError: If Google asks for a sign-in instead of returning the document.
 
     Returns:
         DocumentStream: The resolved file loaded as a stream.
@@ -278,25 +477,11 @@ def resolve_source_to_stream(
                 agent_name = "docling-core"
             req_headers["user-agent"] = agent_name
 
-        google_doc_id = re.search(
-            r"google\.com\/(file|document|spreadsheets|presentation)\/d\/([\w-]+)",
-            url_str,
-        )
-        if google_doc_id:
-            doc_type = google_doc_id.group(1)
-            doc_id = google_doc_id.group(2)
-
-            if doc_type == "file":
-                url_str = f"https://drive.google.com/uc?export=download&id={doc_id}"
-            elif doc_type == "document":
-                url_str = f"https://docs.google.com/document/d/{doc_id}/export?format=docx"
-            elif doc_type == "spreadsheets":
-                url_str = f"https://docs.google.com/spreadsheets/d/{doc_id}/export?format=xlsx"
-            elif doc_type == "presentation":
-                url_str = f"https://docs.google.com/presentation/d/{doc_id}/export?format=pptx"
-            else:
-                raise ValueError(f"Unexpected Google doc type: {doc_type}")
-
+        source_url = url_str
+        authorized = "authorization" in req_headers
+        google_source = _parse_google_source(url_str)
+        if google_source is not None:
+            url_str = google_source.fetch_url(authorized)
             http_url = TypeAdapter(AnyHttpUrl).validate_python(url_str)
 
         def _check_redirect_safety(response, *args, **kwargs):
@@ -318,16 +503,23 @@ def resolve_source_to_stream(
             session.mount("https://", _SafeConnectionAdapter())
             session.mount("http://", _SafeConnectionAdapter())
 
-            with session.get(
-                url_str,
-                stream=True,
-                headers=req_headers,
-                allow_redirects=True,
-            ) as res:
+            with ExitStack() as responses:
+                res = responses.enter_context(
+                    session.get(
+                        url_str,
+                        stream=True,
+                        headers=req_headers,
+                        allow_redirects=True,
+                    )
+                )
                 res.raise_for_status()
+                if google_source is not None and not authorized:
+                    res = _google_file_response(res, session, responses, req_headers, source_url)
 
-                response_headers = dict(res.headers)
-                fname = resolve_remote_filename(http_url=http_url, response_headers=response_headers)
+                if google_source is not None and _content_disposition_filename(res.headers) is None:
+                    fname = google_source.filename
+                else:
+                    fname = resolve_remote_filename(http_url=http_url, response_headers=res.headers)
 
                 if max_file_size is not None:
                     content_length = res.headers.get("Content-Length")
