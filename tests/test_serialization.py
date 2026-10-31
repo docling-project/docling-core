@@ -795,6 +795,17 @@ def test_md_table_cell_keeps_html_when_escaping_disabled():
     assert "<b>x</b>" in actual
 
 
+def test_md_table_cell_keeps_underscores():
+    """Cell text is not underscore-escaped, so in-cell values round-trip unchanged."""
+    doc = _table_with_rows([["Metric_0", "a_b"]], num_header_rows=0)
+
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+
+    assert "Metric_0" in actual
+    assert "a_b" in actual
+    assert "\\_" not in actual
+
+
 def test_md_heading_in_rich_table_cell_renders_as_plain_text():
     """Test headings inside RichTableCell must not emit `#` markers.
 

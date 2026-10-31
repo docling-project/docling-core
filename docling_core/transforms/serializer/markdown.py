@@ -846,10 +846,14 @@ class MarkdownTableSerializer(BaseTableSerializer):
                             ).text
                         cell_text = rich_texts[key]
                     else:
+                        # Only HTML can break the surrounding Markdown table, so
+                        # cell text gets the same HTML escaping as paragraph text
+                        # and nothing else: underscore escaping would rewrite
+                        # cell values such as "Metric_0" to "Metric\_0".
                         cell_text = doc_serializer.post_process(
                             text=col.text or "",
                             escape_html=params.escape_html,
-                            escape_underscores=params.escape_underscores,
+                            escape_underscores=False,
                         )
                     # Newlines and pipes must be escaped in every cell so the
                     # markdown table stays valid.
