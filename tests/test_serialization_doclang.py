@@ -1502,7 +1502,7 @@ def test_suppress_content_filtered_text_shells():
         classification=PictureClassificationMetaField(
             predictions=[
                 PictureClassificationPrediction(
-                    label=PictureClassificationLabel.LOGO,
+                    class_name=PictureClassificationLabel.LOGO.value,
                     confidence=0.9,
                 )
             ]
@@ -1601,7 +1601,7 @@ def test_suppress_content_filtered_picture_shell():
         classification=PictureClassificationMetaField(
             predictions=[
                 PictureClassificationPrediction(
-                    label=PictureClassificationLabel.LOGO,
+                    class_name=PictureClassificationLabel.LOGO.value,
                     confidence=0.9,
                 )
             ]
@@ -1654,7 +1654,7 @@ def test_picture_box_on_layout_only_without_label():
         classification=PictureClassificationMetaField(
             predictions=[
                 PictureClassificationPrediction(
-                    label=PictureClassificationLabel.LOGO,
+                    class_name=PictureClassificationLabel.LOGO.value,
                     confidence=0.9,
                 )
             ]
@@ -1694,7 +1694,7 @@ def test_picture_layout_boxes_without_classification():
         classification=PictureClassificationMetaField(
             predictions=[
                 PictureClassificationPrediction(
-                    label=PictureClassificationLabel.LOGO,
+                    class_name=PictureClassificationLabel.LOGO.value,
                     confidence=0.9,
                 )
             ]
@@ -1731,7 +1731,7 @@ def test_picture_layer_can_be_disabled():
         classification=PictureClassificationMetaField(
             predictions=[
                 PictureClassificationPrediction(
-                    label=PictureClassificationLabel.LOGO,
+                    class_name=PictureClassificationLabel.LOGO.value,
                     confidence=0.9,
                 )
             ]
