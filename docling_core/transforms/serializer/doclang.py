@@ -49,6 +49,7 @@ from docling_core.transforms.serializer._doclang_utils import (
     _provenance_with_charspan,
     _thread_table_merge_offset,
     _unwrap_redundant_content,
+    _XML_WHITESPACE,
     _wrap,
     _wrap_field_kv_markup_if_needed,
     _wrap_in_field_item_if_needed,
@@ -1094,6 +1095,16 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
             SerializationResult containing the serialized text and span mappings.
         """
         if len(item.prov) > 1 and not isinstance(item, ListItem):
+            nested = self._serialize_nested_fragments(
+                item=item,
+                doc_serializer=doc_serializer,
+                doc=doc,
+                visited=visited,
+                is_inline_scope=is_inline_scope,
+                **kwargs,
+            )
+            if nested is not None:
+                return nested
             # Split multi-provenance items into per-provenance fragments linked by
             # a shared thread_id; insert page breaks when page_no changes.
             # List items are not split here; cross-page lists are handled at list-group level.
@@ -1226,6 +1237,92 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 return f"<{tok.value}>", tok
         else:
             return None, None
+
+    def _serialize_nested_fragments(
+        self,
+        *,
+        item: "TextItem",
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        visited: set[str] | None,
+        is_inline_scope: bool,
+        **kwargs: Any,
+    ) -> SerializationResult | None:
+        """Serialize a multi-provenance text item as nested ``<text>`` fragments.
+
+        The provenances on one page become one ``<text>`` holding a ``<text>`` per provenance;
+        the whitespace between the fragments carries the space at the cut (DocLang 0.9 reads
+        it as one space), so the fragments need no ``<content>``. A ``<thread>`` links only
+        the parts on different pages. Returns ``None`` for items this does not cover (rich
+        runs, non-body layers, labels other than ``<text>``, unusable charspans); callers then
+        fall back to one threaded fragment per provenance.
+        """
+        orig = item.orig or ""
+        provs = item.prov
+        if (
+            item.content_layer != ContentLayer.BODY
+            or _rich_thread_fragments(item, doc) is not None
+            or any(p.charspan is None or p.charspan[1] > len(orig) for p in provs)
+        ):
+            return None
+        groups: list[list[int]] = []
+        for idp, prov_ in enumerate(provs):
+            if groups and provs[groups[-1][-1]].page_no == prov_.page_no:
+                groups[-1].append(idp)
+            else:
+                groups.append([idp])
+        if all(len(g) == 1 for g in groups):
+            return None  # one fragment per page: nothing to nest, the threads stay
+        multi_page = len(groups) > 1
+        thread_id = _allocate_thread_id(doc_serializer, item) if multi_page else None
+
+        pieces: list[str] = []
+        seps: list[str] = []
+        res: list[SerializationResult] = []
+        for idp, prov_ in enumerate(provs):
+            start, end = prov_.charspan
+            raw = orig[start:end]
+            text = raw.strip(_XML_WHITESPACE)
+            if not text:
+                return None
+            if idp > 0:
+                prev_start, prev_end = provs[idp - 1].charspan
+                cut = orig[prev_start:prev_end][-1:] + orig[prev_end:start] + raw[:1]
+                seps.append(" " if any(c in _XML_WHITESPACE for c in cut) else "")
+            item_ = copy.deepcopy(item)
+            item_.prov = [copy.deepcopy(prov_)]
+            item_.text = item_.orig = text
+            item_.prov[0].charspan = (0, len(text))
+            alone = next(len(g) == 1 for g in groups if idp in g)
+            tres = self._serialize_single_item(
+                item=item_,
+                doc_serializer=doc_serializer,
+                doc=doc,
+                visited=visited,
+                is_inline_scope=is_inline_scope,
+                thread_id=thread_id if alone else None,
+                include_caption_head=idp == 0,
+                **kwargs,
+            )
+            if not alone and not tres.text.startswith(f"<{DocLangToken.TEXT.value}>"):
+                return None
+            pieces.append(tres.text)
+            res.append(tres)
+
+        out_parts: list[str] = []
+        for gi, group in enumerate(groups):
+            if gi > 0:
+                prev_page, next_page = provs[groups[gi - 1][-1]].page_no, provs[group[0]].page_no
+                pb = _PageBreakNode(self_ref=f"#/pb/{group[0]}", prev_page=prev_page, next_page=next_page)
+                _suppress_document_page_break(doc_serializer, prev_page=prev_page, next_page=next_page)
+                out_parts.append(_create_page_break_markup(pb))
+            if len(group) == 1:
+                out_parts.append(pieces[group[0]])
+                continue
+            body = pieces[group[0]] + "".join(seps[idp - 1] + pieces[idp] for idp in group[1:])
+            head = DocLangVocabulary._create_threading_token(thread_id=thread_id) if thread_id else ""
+            out_parts.append(_wrap(text=head + body, wrap_tag=DocLangToken.TEXT.value))
+        return create_ser_result(text="".join(out_parts), span_source=res)
 
     def _serialize_single_item(  # noqa: C901
         self,

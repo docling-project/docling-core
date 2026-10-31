@@ -502,8 +502,94 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 return False
         return True
 
+    def _nested_text_fragments(self, el: Element) -> list[tuple[str, Element, str]] | None:
+        """``(separator, fragment, text)`` for a ``<text>`` made only of located plain ``<text>`` fragments.
+
+        This is how a text item spanning several regions of one page is written: the
+        whitespace between the fragments is the text between them (one space, or nothing).
+        Returns ``None`` for any other shape.
+        """
+        if el.tagName != DocLangToken.TEXT.value:
+            return None
+        fragments: list[tuple[str, Element, str]] = []
+        sep = ""
+        for node in el.childNodes:
+            if isinstance(node, Text):
+                if node.data.strip(_XML_WHITESPACE):
+                    return None
+                sep = " " if node.data and fragments else sep
+            elif isinstance(node, Element) and self._is_element_head_tag(node):
+                if node.tagName != DocLangToken.THREAD.value:
+                    return None  # the outer element carries no location / layer of its own
+            elif (
+                isinstance(node, Element)
+                and node.tagName == DocLangToken.TEXT.value
+                and self._extract_thread_id(node) is None
+                and (text := self._get_children_simple_text_block(node)) is not None
+                and any(isinstance(c, Element) and c.tagName == DocLangToken.LOCATION.value for c in node.childNodes)
+                and all(
+                    not isinstance(c, Element) or c.tagName in (DocLangToken.LOCATION.value, DocLangToken.LAYER.value)
+                    for c in node.childNodes
+                )
+            ):
+                fragments.append((sep, node, text))
+                sep = ""
+            else:
+                return None
+        return fragments if len(fragments) > 1 else None
+
+    def _parse_nested_text_fragments(
+        self,
+        *,
+        doc: DoclingDocument,
+        el: Element,
+        parent: NodeItem | None,
+        fragments: list[tuple[str, Element, str]],
+    ) -> None:
+        """One text item from nested ``<text>`` fragments: one provenance per fragment."""
+        text = ""
+        provs: list[ProvenanceItem] = []
+        for sep, frag, frag_text in fragments:
+            text += sep
+            frag_provs = self._extract_provenance(doc=doc, el=frag)
+            provs.extend(_provenance_with_charspan(frag_provs, (len(text), len(text) + len(frag_text))))
+            text += frag_text
+        thread_id = self._extract_thread_id(el)
+        if (
+            thread_id
+            and (existing := self._get_thread_item(thread_id, host=el.tagName)) is not None
+            and isinstance(existing, TextItem)
+        ):
+            offset = len(existing.orig)
+            existing.text += text
+            existing.orig += text
+            for prov in provs:
+                existing.prov.append(
+                    ProvenanceItem(
+                        page_no=prov.page_no,
+                        bbox=prov.bbox,
+                        charspan=(prov.charspan[0] + offset, prov.charspan[1] + offset),
+                    )
+                )
+            self._source_recorder.bind_item(el, existing)
+            return
+        item = doc.add_text(
+            label=DocItemLabel.TEXT,
+            text=text,
+            parent=parent,
+            prov=provs[0] if provs else None,
+            content_layer=self._extract_layer(el=fragments[0][1]),
+        )
+        item.prov = provs
+        if thread_id:
+            self._register_thread(thread_id=thread_id, host=el.tagName, item=item)
+        self._source_recorder.bind_item(el, item)
+
     def _parse_text_like(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         """Parse text-like tokens (text, caption, footnotes, code, formula)."""
+        if (fragments := self._nested_text_fragments(el)) is not None:
+            self._parse_nested_text_fragments(doc=doc, el=el, parent=parent, fragments=fragments)
+            return
         element_children = [
             node for node in el.childNodes if isinstance(node, Element) and not self._is_element_head_tag(node)
         ]

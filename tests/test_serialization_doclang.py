@@ -2635,8 +2635,8 @@ def _doc_multi_prov_text() -> DoclingDocument:
 
 
 @doclang_validator
-def test_multi_prov_text_emits_thread():
-    """Multi-prov text fragments share a ``thread_id`` in each element head.
+def test_multi_prov_text_emits_nested_fragments():
+    """A multi-prov text item on one page is one ``<text>`` holding a ``<text>`` per provenance (no thread).
 
     Materializes ``input.json`` and ``serialized.dclg.xml`` under
     ``tests/data/doc/multi_prov_thread/``.
@@ -2648,7 +2648,8 @@ def test_multi_prov_text_emits_thread():
     ser_txt = serialize_doclang(doc)
     verify_doclang(exp_file=data_dir / "serialized.dclg.xml", actual=ser_txt)
     if not GEN_TEST_DATA:
-        assert ser_txt.count("<thread thread_id=") == 2
+        assert "<thread" not in ser_txt
+        assert ser_txt.count("<text>") == 3
         assert "<page_break" not in ser_txt
 
 
