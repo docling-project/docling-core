@@ -206,6 +206,26 @@ def test_doclang_roundtrip_is_lossless(name: str, runs: list[Run], expected: dic
         assert roundtripped.export_to_text() == doc.export_to_text(), (name, params.pretty_indentation)
 
 
+@pytest.mark.parametrize(
+    ("whitespace", "formatting"),
+    [("  ", Formatting(underline=True)), ("\t", _ITALIC), ("\n\n", Formatting(underline=True)), (" ", _BOLD)],
+)
+@pytest.mark.parametrize("at_start", [False, True])
+def test_doclang_roundtrip_preserves_formatted_whitespace_at_inline_edges(
+    whitespace: str, formatting: Formatting, at_start: bool
+) -> None:
+    """Literal whitespace remains a formatted run beside plain text."""
+    runs: list[Run] = [("a", None, None), (whitespace, formatting, None)]
+    if at_start:
+        runs.reverse()
+    doc = _build(runs)
+    expected = [(t.text, t.label, t.formatting) for t in doc.texts]
+    for params in (DocLangParams(), DocLangParams(pretty_indentation=None)):
+        xml = DocLangDocSerializer(doc=doc, params=params).serialize().text
+        roundtripped = DocLangDocDeserializer().deserialize_str(xml)
+        assert [(t.text, t.label, t.formatting) for t in roundtripped.texts] == expected
+
+
 def test_no_separator_is_invented_between_runs() -> None:
     """The serializers add nothing of their own: joined run text == the plain text export."""
     for name, runs, _ in CONTRACT_TABLE:
@@ -658,13 +678,14 @@ def test_doclang_cell_with_leading_inline_elements_keeps_all_text() -> None:
     [
         ("<list><ldiv/>foo <checkbox/> bar</list>", ["foo ", "", " bar"]),
         ("<table><fcel/>foo <checkbox/> bar<nl/></table>", ["foo ", "", " bar"]),
-        ("<list><ldiv/><checkbox/> y</list>", ["", "y"]),
-        ("<table><fcel/><checkbox/> y<nl/></table>", ["", "y"]),
-        ("<list><ldiv/><checkbox/> <code>x</code> <code>y</code></list>", ["", "x", " ", "y"]),
+        ("<list><ldiv/><checkbox/> y</list>", ["", " y"]),
+        ("<table><fcel/><checkbox/> y<nl/></table>", ["", " y"]),
+        ("<list><ldiv/><checkbox/> <code>x</code> <code>y</code></list>", ["", " ", "x", " ", "y"]),
+        ('<text><checkbox class="selected"/> Accept <bold>terms</bold></text>', ["", " Accept ", "terms"]),
     ],
 )
 def test_doclang_checkbox_is_part_of_virtual_text(body: str, expected: list[str]) -> None:
-    """Runs around a checkbox keep their spaces, but a leading one marks the text after it: no space of its own."""
+    """A checkbox is visible content, so the whitespace after it is within the text block."""
     doc = DocLangDocDeserializer().deserialize_str(f"<doclang>{body}</doclang>")
     assert [t.text for t in doc.texts if t.label != DocItemLabel.LIST_ITEM] == expected
 

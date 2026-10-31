@@ -1146,9 +1146,9 @@ _XML_WHITESPACE: Final = " \t\r\n"
 # Left as written: <custom> holds foreign markup, and <track> is not supported yet.
 _WHITESPACE_OPAQUE_TAGS: Final[frozenset[str]] = frozenset({DocLangToken.CUSTOM.value, "track"})
 
-# A flattened text block: unprotected text nodes, <content> elements, "checkbox" for a <checkbox/>
-# and "content" for any other visible item (e.g. <br/>, an inline <picture>).
-_WsToken = Text | Element | Literal["content", "checkbox"]
+# A flattened text block: unprotected text nodes, <content> elements, and "content" for any
+# other visible item (e.g. <br/>, an inline <picture>).
+_WsToken = Text | Element | Literal["content"]
 _TextBlockVisitor = Callable[[Sequence[Node]], None]
 
 
@@ -1199,8 +1199,6 @@ def _flatten_text_block(nodes: Sequence[Node], visit: _TextBlockVisitor) -> list
             continue  # a page boundary within the text, transparent to its reading
         elif node.tagName in _RAW_TEXT_TAGS:
             out.extend(_flatten_text_block(node.childNodes, visit))
-        elif node.tagName == DocLangToken.CHECKBOX.value:
-            out.append("checkbox")
         else:
             out.append("content")
             if node.tagName != DocLangToken.BR.value:
@@ -1215,9 +1213,7 @@ def _content_text(el: Element) -> str:
 def _read_text_block(tokens: Sequence[_WsToken]) -> list[str]:
     """Return the reading of each token: rules 2-4 for text nodes, literal for <content>.
 
-    "content" and "checkbox" tokens read as ``"\0"``, a placeholder for something visible that is
-    not a space. A leading checkbox marks the text after it, like a list marker: the space between
-    them is no run of that text, so the text block starts after it.
+    "content" tokens read as ``"\0"``, a placeholder for something visible that is not a space.
     """
     reading: list[list[str]] = [[] for _ in tokens]
     seen_content = False
@@ -1244,9 +1240,6 @@ def _read_text_block(tokens: Sequence[_WsToken]) -> list[str]:
                 in_sequence = False
                 seen_content = True
                 reading[idx].append(char)
-            continue
-        if tok == "checkbox" and not seen_content:
-            reading[idx].append("\0")
             continue
         literal = _content_text(tok) if isinstance(tok, Element) else "\0"
         if literal:

@@ -481,7 +481,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     if result is not None:
                         return None
                     result = tmp
-                elif self._get_text(el).strip(_XML_WHITESPACE):
+                elif self._get_text(el):
                     # The child holds text but is itself mixed content.
                     return None
             elif isinstance(el, Text) and el.data.strip(_XML_WHITESPACE):  # TODO should still support whitespace-only
