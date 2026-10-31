@@ -206,6 +206,39 @@ def test_inline_group_no_duplication():
     assert "\\item \\textbf{Term} : definition" in body
 
 
+def test_latex_inline_code_escapes_hash_with_a_single_backslash():
+    r"""Regression test: a `#` in inline code must become `\#`, not `\\#`.
+
+    `#` is a macro parameter character, so it has to be escaped inside
+    ``\texttt{}``. The escape has to be a single backslash: ``\\`` is a line
+    break, which leaves the `#` unescaped and drops the rest of the line out of
+    the code span. Paragraph text already goes through `_escape_latex` and has
+    always produced `\#`.
+    """
+    doc = DoclingDocument(name="t")
+    para = doc.add_text(label=DocItemLabel.TEXT, text="")
+    ig = doc.add_inline_group(parent=para)
+    doc.add_code(text="C# and F#", parent=ig)
+
+    body = LaTeXDocSerializer(doc=doc).serialize().text.split("\\begin{document}")[1]
+
+    assert "\\texttt{C\\# and F\\#}" in body
+    # A line break followed by an unescaped macro parameter character
+    assert "\\\\#" not in body
+
+
+def test_latex_inline_code_without_hash_is_unchanged():
+    r"""Inline code without `#` keeps its text, including underscores."""
+    doc = DoclingDocument(name="t")
+    para = doc.add_text(label=DocItemLabel.TEXT, text="")
+    ig = doc.add_inline_group(parent=para)
+    doc.add_code(text="git checkout -b feature", parent=ig)
+
+    body = LaTeXDocSerializer(doc=doc).serialize().text.split("\\begin{document}")[1]
+
+    assert "\\texttt{git checkout -b feature}" in body
+
+
 def test_latex_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_table_doc):
     actual = LaTeXDocSerializer(doc=col_span_rich_table_doc).serialize().text
     assert " & Partner & Partner \\\\ \\hline\nStatus & Done & Open \\\\ \\hline" in actual
