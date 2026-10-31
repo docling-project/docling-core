@@ -33,7 +33,7 @@
     <location value="87"/>
     <location value="479"/>
     <location value="94"/>
-    This option sets the number of times to execute the select. Use  --delay  to set the time between loops.
+    <content>This option sets the number of times to execute the select. Use  --delay  to set the time between loops.</content>
   </text>
   <list>
     <ldiv/>
@@ -69,7 +69,8 @@
     <location value="161"/>
     <location value="478"/>
     <location value="176"/>
-<![CDATA[Set connect string for connecting to ndb_mgmd. Syntax: "[nodeid=id;][host=]hostname[:port]". Overrides entries in NDB_CONNECTSTRING and my.cnf.]]>  </text>
+    <![CDATA[Set connect string for connecting to ndb_mgmd. Syntax: "[nodeid=id;][host=]hostname[:port]". Overrides entries in NDB_CONNECTSTRING and my.cnf.]]>
+  </text>
   <list>
     <ldiv/>
     <location value="86"/>
@@ -104,7 +105,7 @@
     <location value="244"/>
     <location value="227"/>
     <location value="251"/>
-    Same as  --ndb-connectstring .
+    <content>Same as  --ndb-connectstring .</content>
   </text>
   <list>
     <ldiv/>
@@ -166,7 +167,7 @@
     <location value="372"/>
     <location value="461"/>
     <location value="386"/>
-    Enable optimizations for selection of nodes for transactions. Enabled by default; use  --skip-ndb- optimized-node-selection  to disable.
+    <content>Enable optimizations for selection of nodes for transactions. Enabled by default; use  --skip-ndb- optimized-node-selection  to disable.</content>
   </text>
   <list>
     <ldiv/>

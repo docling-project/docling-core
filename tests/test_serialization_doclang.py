@@ -2813,7 +2813,7 @@ def test_inline_group_nested_when_parent_text_item_has_text():
     root = ET.fromstring(txt)
     assert [child.tag for child in root] == ["heading"]
     heading_el = root[0]
-    assert [child.tag for child in heading_el] == ["bold", "content", "italic"]
+    assert [child.tag for child in heading_el] == ["bold", "italic"]
     assert "".join(heading_el.itertext()).replace("\n", " ").split() == [
         "Heading",
         "text",
@@ -2870,7 +2870,7 @@ def test_inline_group_nested_word_boundary_when_minimized():
 
     root = ET.fromstring(txt)
     heading_el = root[0]
-    assert "".join(heading_el.itertext()).split() == ["Heading", "text", "bold"]
+    assert "".join(heading_el.itertext()) == "Heading text bold"
 
 
 def _prov(l: float, t: float, r: float, b: float) -> ProvenanceItem:

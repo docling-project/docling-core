@@ -123,13 +123,13 @@ texts:
   content_layer: body
   footnotes: []
   label: code
-  orig: "\n      help()\n    "
+  orig: help()
   parent:
     $ref: '#/groups/0'
   prov: []
   references: []
   self_ref: '#/texts/2'
-  text: "\n      help()\n    "
+  text: help()
 - children: []
   content_layer: body
   label: text
@@ -378,4 +378,4 @@ texts:
   prov: []
   self_ref: '#/texts/24'
   text: final element
-version: 1.10.0
+version: 1.11.0

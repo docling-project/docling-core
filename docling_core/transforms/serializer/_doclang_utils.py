@@ -3,8 +3,10 @@
 import re
 import warnings
 import xml.etree.ElementTree as ET
+from collections.abc import Callable, Sequence
 from enum import Enum
-from typing import Any, ClassVar, Final, Optional
+from typing import Any, ClassVar, Final, Literal, Optional, cast
+from xml.dom.minidom import Element, Node, Text
 
 from pydantic import BaseModel
 
@@ -21,7 +23,7 @@ from docling_core.types.doc.document import FieldItem, FieldRegionItem
 from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
 
 DOCLANG_NAMESPACE: Final = "https://www.doclang.ai/ns/v0"
-_DOCLANG_VERSION: Final = "0.8"
+_DOCLANG_VERSION: Final = "0.9"
 DOCLANG_DFLT_RESOLUTION: int = 512
 
 ET.register_namespace("", DOCLANG_NAMESPACE)  # prevent prefix from ET.tostring()
@@ -1067,3 +1069,237 @@ _ELEMENT_HEAD_TAGS: Final[frozenset[str]] = frozenset(
         DocLangToken.CENTISECOND.value,
     }
 )
+
+# Formatting tags, which can themselves hold mixed content, e.g. <bold>a <italic>b</italic></bold>.
+_FORMATTING_TAGS: Final[frozenset[str]] = frozenset(
+    {
+        DocLangToken.BOLD.value,
+        DocLangToken.ITALIC.value,
+        DocLangToken.UNDERLINE.value,
+        DocLangToken.STRIKETHROUGH.value,
+        DocLangToken.SUBSCRIPT.value,
+        DocLangToken.SUPERSCRIPT.value,
+    }
+)
+
+# Elements whose body allows raw text; a text block spans nested ones (e.g. <bold> in <text>).
+_RAW_TEXT_TAGS: Final[frozenset[str]] = frozenset(
+    {
+        DocLangToken.TEXT.value,
+        DocLangToken.HEADING.value,
+        DocLangToken.CAPTION.value,
+        DocLangToken.DESCRIPTION.value,
+        DocLangToken.SUMMARY.value,
+        DocLangToken.FOOTNOTE.value,
+        DocLangToken.PAGE_HEADER.value,
+        DocLangToken.PAGE_FOOTER.value,
+        DocLangToken.FORMULA.value,
+        DocLangToken.CODE.value,
+        DocLangToken.FIELD_KEY.value,
+        DocLangToken.FIELD_VALUE.value,
+        DocLangToken.FIELD_HEADING.value,
+        DocLangToken.FIELD_HINT.value,
+        DocLangToken.MARKER.value,
+        DocLangToken.HANDWRITING.value,
+        DocLangToken.RTL.value,
+        DocLangToken.CONTENT.value,
+        "chapter",  # <track> elements, not in the vocabulary yet
+        "voice",
+    }
+    | _FORMATTING_TAGS
+)
+# Tags that may continue a virtual <text> (a list item or cell given as unwrapped text).
+_VIRTUAL_TEXT_INLINE_TAGS: Final[frozenset[str]] = _FORMATTING_TAGS | {
+    DocLangToken.HANDWRITING.value,
+    DocLangToken.RTL.value,
+    DocLangToken.CONTENT.value,
+    DocLangToken.BR.value,
+    DocLangToken.CHECKBOX.value,
+}
+# Semantic elements that are inline within a virtual <text>, but a block on their own.
+_VIRTUAL_TEXT_SEMANTIC_TAGS: Final[frozenset[str]] = frozenset({DocLangToken.CODE.value, DocLangToken.FORMULA.value})
+
+
+def _is_virtual_text_part(node: Node) -> bool:
+    """True when ``node`` may be part of a virtual <text> (in a list item or cell)."""
+    return isinstance(node, Text) or (
+        isinstance(node, Element)
+        and (node.tagName in _VIRTUAL_TEXT_INLINE_TAGS or node.tagName in _VIRTUAL_TEXT_SEMANTIC_TAGS)
+    )
+
+
+def _is_virtual_text(nodes: Sequence[Node]) -> bool:
+    """True when ``nodes`` hold raw text or text-level elements of their own.
+
+    Only then are semantic elements among them (e.g. ``<code>``) inline; otherwise they are blocks.
+    """
+    return any(
+        (isinstance(node, Text) and node.data.strip(_XML_WHITESPACE))
+        or (isinstance(node, Element) and node.tagName in _VIRTUAL_TEXT_INLINE_TAGS)
+        for node in nodes
+    )
+
+
+# DocLang 0.9 whitespace handling (spec "Content encoding and whitespace handling").
+_XML_WHITESPACE: Final = " \t\r\n"
+
+# Left as written: <custom> holds foreign markup, and <track> is not supported yet.
+_WHITESPACE_OPAQUE_TAGS: Final[frozenset[str]] = frozenset({DocLangToken.CUSTOM.value, "track"})
+
+# A flattened text block: unprotected text nodes, <content> elements, and "content" for any
+# other visible item (e.g. <br/>, an inline <picture>).
+_WsToken = Text | Element | Literal["content"]
+_TextBlockVisitor = Callable[[Sequence[Node]], None]
+
+
+def _for_each_text_block(el: Element, visit: _TextBlockVisitor) -> None:
+    """Call ``visit`` with the nodes of each text block under ``el``, innermost blocks first."""
+    if el.tagName in _WHITESPACE_OPAQUE_TAGS:
+        return
+    if el.tagName in _RAW_TEXT_TAGS:
+        visit(el.childNodes)
+        return
+    # Not a text block itself; unwrapped text between its child elements is a virtual <text>.
+    segment: list[Node] = []
+
+    def visit_segment() -> None:
+        if _is_virtual_text(segment):
+            visit(segment)
+            return
+        # No text of its own: whitespace between blocks, which are read on their own.
+        visit([node for node in segment if not isinstance(node, Element) or node.tagName in _ELEMENT_HEAD_TAGS])
+        for node in segment:
+            if isinstance(node, Element) and node.tagName in _VIRTUAL_TEXT_SEMANTIC_TAGS:
+                _for_each_text_block(node, visit)
+
+    for node in el.childNodes:
+        if _is_virtual_text_part(node) or (isinstance(node, Element) and node.tagName in _ELEMENT_HEAD_TAGS):
+            segment.append(node)
+            continue
+        visit_segment()
+        segment = []
+        if isinstance(node, Element):
+            _for_each_text_block(node, visit)
+    visit_segment()
+
+
+def _flatten_text_block(nodes: Sequence[Node], visit: _TextBlockVisitor) -> list[_WsToken]:
+    """Flatten a text block, visiting the text blocks nested in it (element heads etc.)."""
+    out: list[_WsToken] = []
+    for node in nodes:
+        if isinstance(node, Text):
+            out.append(node)
+        elif not isinstance(node, Element):
+            continue  # comments and processing instructions are disregarded
+        elif node.tagName in _ELEMENT_HEAD_TAGS:
+            _for_each_text_block(node, visit)  # an element head is read separately, as if removed
+        elif node.tagName == DocLangToken.CONTENT.value:
+            out.append(node)  # literal; its whitespace never joins a sequence outside it
+        elif node.tagName == DocLangToken.PAGE_BREAK.value:
+            continue  # a page boundary within the text, transparent to its reading
+        elif node.tagName in _RAW_TEXT_TAGS:
+            out.extend(_flatten_text_block(node.childNodes, visit))
+        else:
+            out.append("content")
+            if node.tagName != DocLangToken.BR.value:
+                _for_each_text_block(node, visit)
+    return out
+
+
+def _content_text(el: Element) -> str:
+    return "".join(node.data for node in el.childNodes if isinstance(node, Text))
+
+
+def _read_text_block(tokens: Sequence[_WsToken]) -> list[str]:
+    """Return the reading of each token: rules 2-4 for text nodes, literal for <content>.
+
+    "content" tokens read as ``"\0"``, a placeholder for something visible that is not a space.
+    """
+    reading: list[list[str]] = [[] for _ in tokens]
+    seen_content = False
+    in_sequence = False
+    # Indexes of the text nodes holding the first character of each sequence since the last content.
+    pending: list[int] = []
+
+    def resolve_pending() -> None:
+        # Content follows: sequences that also have content before them read as a space.
+        if seen_content:
+            for idx in pending:
+                reading[idx].append(" ")
+        pending.clear()
+
+    for idx, tok in enumerate(tokens):
+        if isinstance(tok, Text):
+            for char in tok.data:
+                if char in _XML_WHITESPACE:
+                    if not in_sequence:
+                        pending.append(idx)
+                        in_sequence = True
+                    continue
+                resolve_pending()
+                in_sequence = False
+                seen_content = True
+                reading[idx].append(char)
+            continue
+        literal = _content_text(tok) if isinstance(tok, Element) else "\0"
+        if literal:
+            resolve_pending()
+            seen_content = True
+            reading[idx].append(literal)
+            in_sequence = False
+    # Sequences still pending sit at the end of the block: dropped (rule 2).
+    return ["".join(chars) for chars in reading]
+
+
+def _apply_whitespace_rules(root: Element) -> None:
+    """Rewrite the text nodes under ``root`` in place, as DocLang 0.9 reads them.
+
+    Whitespace outside text blocks and at their edges is dropped; any other whitespace
+    sequence becomes one space, kept in the text node holding its first character.
+    ``<content>`` is literal. Afterwards, a text node holds exactly its own reading.
+    """
+
+    def visit(nodes: Sequence[Node]) -> None:
+        tokens = _flatten_text_block(nodes, visit)
+        for tok, text in zip(tokens, _read_text_block(tokens)):
+            if isinstance(tok, Text):
+                tok.data = text
+
+    _for_each_text_block(root, visit)
+
+
+# Whitespace that DocLang does not read as written: anything but a single space.
+_COLLAPSIBLE_WHITESPACE_RE: Final = re.compile(r"[\t\r\n]|  ")
+
+
+def _unwrap_redundant_content(root: Element) -> None:
+    """Unwrap each ``<content>`` under ``root`` whose text reads the same without it.
+
+    The spec asks producers to use ``<content>`` only where the whitespace rules would change
+    the reading. Whether they do depends on the neighbours, which a run serializer cannot see:
+    a run's trailing space needs no wrapper before ``<bold>x``, but does at the end of a block.
+    """
+
+    def visit(nodes: Sequence[Node]) -> None:
+        tokens = _flatten_text_block(nodes, visit)
+        reading = _read_text_block(tokens)
+        for idx, tok in enumerate(tokens):
+            if not isinstance(tok, Element) or not (text := reading[idx]) or _COLLAPSIBLE_WHITESPACE_RE.search(text):
+                continue
+            if not text.strip(" ") and cast(Element, tok.parentNode).tagName not in _RAW_TEXT_TAGS:
+                continue  # bare, it would no longer make its list item or cell a virtual <text>
+            before = next((r[-1] for r in reversed(reading[:idx]) if r), None)
+            after = next((r[0] for r in reading[idx + 1 :] if r), None)
+            # Bare, an edge space would be dropped at the block edge, or merge with a neighbouring one.
+            # Next to a non-text item ("\0", e.g. a <checkbox/>) it is kept too: readers map such
+            # items to items of their own, which leaves the space at an item edge.
+            if text[0] == " " and before in (None, " ", "\0"):
+                continue
+            if text[-1] == " " and after in (None, " ", "\0"):
+                continue
+            parent = cast(Node, tok.parentNode)
+            for child in list(tok.childNodes):
+                parent.insertBefore(child, tok)
+            parent.removeChild(tok)
+
+    _for_each_text_block(root, visit)
