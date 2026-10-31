@@ -776,6 +776,36 @@ def test_md_pipe_in_table():
     assert ser == "| Fruits &#124; Veggies   |\n|-------------------------|"
 
 
+def test_md_table_cell_text_escapes_html():
+    """Cell text is escaped like text items, so raw HTML does not leak into Markdown."""
+    doc = _table_with_rows([["<b>x</b> & y"]], num_header_rows=0)
+
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+
+    assert "&lt;b&gt;x&lt;/b&gt; &amp; y" in actual
+    assert "<b>x</b>" not in actual
+
+
+def test_md_table_cell_keeps_html_when_escaping_disabled():
+    """escape_html=False still allows intentional inline HTML in cells."""
+    doc = _table_with_rows([["<b>x</b>"]], num_header_rows=0)
+
+    actual = MarkdownDocSerializer(doc=doc, params=MarkdownParams(escape_html=False)).serialize().text
+
+    assert "<b>x</b>" in actual
+
+
+def test_md_table_cell_keeps_underscores():
+    """Cell text is not underscore-escaped, so in-cell values round-trip unchanged."""
+    doc = _table_with_rows([["Metric_0", "a_b"]], num_header_rows=0)
+
+    actual = MarkdownDocSerializer(doc=doc).serialize().text
+
+    assert "Metric_0" in actual
+    assert "a_b" in actual
+    assert "\\_" not in actual
+
+
 def test_md_heading_in_rich_table_cell_renders_as_plain_text():
     """Test headings inside RichTableCell must not emit `#` markers.
 
