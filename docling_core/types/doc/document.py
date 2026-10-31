@@ -5821,9 +5821,15 @@ class DoclingDocument(BaseModel):
                             raise RuntimeError(f"Unsupported ref format: {new_parent_cref}")
                         parent_item.children.append(RefItem(cref=new_cref))
 
-            # rewrite FloatingItem explicit refs starting from start_indices to avoid corrupting items from prior calls
+            # Rewrite explicit refs only on new items to avoid corrupting items from prior calls.
             for key in post_processing_keys:
                 for idx_item in self.get_item_list(key)[start_indices[key] :]:
+                    if isinstance(idx_item, DocItem):
+                        idx_item.comments = [
+                            ref.model_copy(update={"cref": orig_ref_to_new_ref[ref.cref]})
+                            for ref in idx_item.comments
+                            if ref.cref in orig_ref_to_new_ref
+                        ]
                     if isinstance(idx_item, FloatingItem):
                         idx_item.captions = [
                             RefItem(cref=orig_ref_to_new_ref[cap.cref])
