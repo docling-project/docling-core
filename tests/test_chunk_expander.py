@@ -8,7 +8,7 @@ from docling_core.transforms.chunker.hierarchical_chunker import ChunkingDocSeri
 from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
 from docling_core.transforms.serializer.markdown import MarkdownTableSerializer
-from docling_core.types.doc import DocItemLabel, DoclingDocument, Size
+from docling_core.types.doc import DocItemLabel, DoclingDocument, GroupLabel, Size
 from docling_core.types.doc.document import TableData
 
 EMBED_MODEL_ID = "sentence-transformers/all-MiniLM-L6-v2"
@@ -288,6 +288,25 @@ class TestTreeChunkExpander:
                 f"Expanded chunk should contain original chunk text. original: {chunk.text} expanded: {expanded.text}"
             )
             assert expanded.meta.origin == chunk.meta.origin, "Origin should be preserved"
+
+    def test_expand_content_under_top_level_group(self, tree_expander):
+        """Test expansion when the chunk's items live under a generic top-level group.
+
+        The spreadsheet and slide backends place all content under sheet/chapter groups,
+        so the top-level item containing a chunk is a plain GroupItem.
+        """
+        doc = DoclingDocument(name="workbook")
+        sheet = doc.add_group(label=GroupLabel.SHEET, name="Sheet1")
+        first = doc.add_text(text="Quarterly revenue summary", label=DocItemLabel.PARAGRAPH, parent=sheet)
+        doc.add_text(text="Q1 totals were 1450.", label=DocItemLabel.PARAGRAPH, parent=sheet)
+        serializer = ChunkingSerializerProvider().get_serializer(doc=doc)
+        chunk = DocChunk(text="Quarterly revenue summary", meta=DocMeta(doc_items=[first]))
+
+        expanded = tree_expander.expand(chunk=chunk, dl_doc=doc, serializer=serializer)
+
+        assert "Quarterly revenue summary" in expanded.text
+        assert "Q1 totals were 1450." in expanded.text, "Expansion should cover the whole sheet group"
+        assert {item.self_ref for item in expanded.meta.doc_items} == {"#/texts/0", "#/texts/1"}
 
     def test_expand_error_handling(self, sample_doc, tree_expander):
         """Test error handling in expand when serialization fails."""
