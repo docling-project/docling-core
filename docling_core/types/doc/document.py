@@ -3523,13 +3523,23 @@ class DoclingDocument(BaseModel):
         page_nrs: set[int] | None = None,
         included_content_layers: set[ContentLayer] | None = None,
         _stack: list[int] | None = None,
+        _inherited_page_nrs: set[int] | None = None,
     ) -> typing.Iterable[tuple[NodeItem, list[int]]]:  # tuple of node and level
-        """Iterate elements with stack."""
+        """Iterate elements with stack.
+
+        ``_inherited_page_nrs`` contains the nearest located ancestor's pages,
+        passed down by the recursive traversal. Unlocated inline descendants
+        inherit those pages for filtering; their own provenance takes precedence.
+        """
         my_layers = included_content_layers if included_content_layers is not None else DEFAULT_CONTENT_LAYERS
         my_stack: list[int] = _stack if _stack is not None else []
 
         if not root:
             root = self.body
+
+        item_page_nrs = (
+            {prov.page_no for prov in root.prov} if isinstance(root, DocItem) and root.prov else _inherited_page_nrs
+        )
 
         # Yield non-group items or group items when with_groups=True
 
@@ -3537,8 +3547,7 @@ class DoclingDocument(BaseModel):
         should_yield = (
             (not isinstance(root, GroupItem) or with_groups)
             and (
-                not isinstance(root, DocItem)
-                or (page_nrs is None or any(prov.page_no in page_nrs for prov in root.prov))
+                not isinstance(root, DocItem) or (page_nrs is None or bool(item_page_nrs and item_page_nrs & page_nrs))
             )
             and root.content_layer in my_layers
         )
@@ -3571,6 +3580,7 @@ class DoclingDocument(BaseModel):
                     traverse_pictures=traverse_pictures,
                     page_nrs=page_nrs,
                     _stack=my_stack,
+                    _inherited_page_nrs=item_page_nrs,
                     included_content_layers=my_layers,
                 )
 

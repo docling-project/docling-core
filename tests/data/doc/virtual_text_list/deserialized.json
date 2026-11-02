@@ -150,7 +150,22 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [],
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 113.0,
+            "t": 20.0,
+            "r": 210.0,
+            "b": 46.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            10
+          ]
+        }
+      ],
       "orig": "this is a ",
       "text": "this is a "
     },
@@ -162,7 +177,22 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [],
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 113.0,
+            "t": 20.0,
+            "r": 210.0,
+            "b": 46.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            4
+          ]
+        }
+      ],
       "orig": "bold",
       "text": "bold",
       "formatting": {
@@ -181,7 +211,22 @@
       "children": [],
       "content_layer": "body",
       "label": "text",
-      "prov": [],
+      "prov": [
+        {
+          "page_no": 1,
+          "bbox": {
+            "l": 113.0,
+            "t": 20.0,
+            "r": 210.0,
+            "b": 46.0,
+            "coord_origin": "TOPLEFT"
+          },
+          "charspan": [
+            0,
+            5
+          ]
+        }
+      ],
       "orig": " text",
       "text": " text"
     },
