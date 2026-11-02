@@ -22,6 +22,7 @@ from typing import (
     Final,
     Literal,
     Optional,
+    TypeVar,
     Union,
 )
 from urllib.parse import unquote
@@ -171,6 +172,8 @@ from docling_core.utils.settings import settings
 
 
 _logger = logging.getLogger(__name__)
+
+_RefT = TypeVar("_RefT", bound=RefItem)
 
 
 class DoclingDocument(BaseModel):
@@ -3401,26 +3404,83 @@ class DoclingDocument(BaseModel):
 
         :returns: list[RefItem]: A list of references to the newly added items in this document
         """
+        ref_map: dict[str, str] = {}
+        new_refs = self._append_item_copies_recursive(
+            node_items=node_items, parent_ref=parent_ref, doc=doc, ref_map=ref_map
+        )
+        self._update_refs_of_item_copies(ref_map=ref_map, doc=doc)
+
+        return new_refs
+
+    def _append_item_copies_recursive(
+        self,
+        node_items: list[NodeItem],
+        parent_ref: RefItem,
+        doc: "DoclingDocument",
+        ref_map: dict[str, str],
+    ) -> list[RefItem]:
+        """Append node item copies (with their children) and record the map from source to copy references.
+
+        :param node_items: list[NodeItem]: The NodeItems to be appended
+        :param parent_ref: RefItem: The reference of the parent of the new items in this document
+        :param doc: DoclingDocument: The document from which the NodeItems are taken
+        :param ref_map: dict[str, str]: Map from the source `self_ref` to the `self_ref` of the copy, filled in place
+
+        :returns: list[RefItem]: A list of references to the newly added items in this document
+        """
         new_refs: list[RefItem] = []
 
         for item in node_items:
             item_copy = item.model_copy(deep=True)
 
             self._append_item(item=item_copy, parent_ref=parent_ref)
+            ref_map[item.self_ref] = item_copy.self_ref
 
             if item_copy.children:
                 children_node_items = [ref.resolve(doc) for ref in item_copy.children]
 
-                item_copy.children = self._append_item_copies(
+                item_copy.children = self._append_item_copies_recursive(
                     node_items=children_node_items,
                     parent_ref=item_copy.get_ref(),
                     doc=doc,
+                    ref_map=ref_map,
                 )
 
             new_ref = item_copy.get_ref()
             new_refs.append(new_ref)
 
         return new_refs
+
+    def _update_refs_of_item_copies(self, ref_map: dict[str, str], doc: "DoclingDocument") -> None:
+        """Update the captions, references, footnotes, and comments of item copies to point to the copied targets.
+
+        A reference to an item that was copied is changed to point to the copy. A reference to an item that was not
+        copied is kept if the source document is this document, because the target is still valid. Otherwise, it is
+        removed, because the target does not exist in this document.
+
+        :param ref_map: dict[str, str]: Map from the source `self_ref` to the `self_ref` of the copy
+        :param doc: DoclingDocument: The document from which the NodeItems are taken
+
+        :returns: None
+        """
+
+        def _remap(refs: list[_RefT]) -> list[_RefT]:
+            new_refs: list[_RefT] = []
+            for ref in refs:
+                if ref.cref in ref_map:
+                    new_refs.append(ref.model_copy(update={"cref": ref_map[ref.cref]}))
+                elif doc is self:
+                    new_refs.append(ref)
+            return new_refs
+
+        for copy_cref in ref_map.values():
+            item_copy = RefItem(cref=copy_cref).resolve(self)
+            if isinstance(item_copy, DocItem):
+                item_copy.comments = _remap(item_copy.comments)
+            if isinstance(item_copy, FloatingItem):
+                item_copy.captions = _remap(item_copy.captions)
+                item_copy.references = _remap(item_copy.references)
+                item_copy.footnotes = _remap(item_copy.footnotes)
 
     def num_pages(self):
         """num_pages."""

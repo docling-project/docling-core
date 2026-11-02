@@ -3582,3 +3582,44 @@ def test_validate_rejects_total_table_cells_over_limit(monkeypatch, body, furnit
     DoclingDocument.model_validate(_tables_doc_dict(body=2))
     with pytest.raises(ValidationError, match="exceeding the limit of 8"):
         DoclingDocument.model_validate(_tables_doc_dict(body=body, furniture=furniture, orphans=orphans))
+
+
+def test_add_node_items_updates_refs_of_copied_items():
+    src_doc = DoclingDocument(name="source")
+    src_doc.add_text(label=DocItemLabel.TEXT, text="Leading paragraph.")
+    table = src_doc.add_table(data=TableData(num_rows=1, num_cols=1))
+    caption = src_doc.add_text(label=DocItemLabel.CAPTION, text="Table 1: Results.", parent=table)
+    footnote = src_doc.add_text(label=DocItemLabel.FOOTNOTE, text="* Footnote.", parent=table)
+    src_doc.add_comment(text="A comment.", parent=table, targets=[(table, (0, 3))])
+    outside = src_doc.add_text(label=DocItemLabel.TEXT, text="Not copied.")
+    table.captions.append(caption.get_ref())
+    table.footnotes.append(footnote.get_ref())
+    table.references.append(outside.get_ref())
+
+    new_doc = DoclingDocument(name="Table0")
+    new_doc.add_node_items(node_items=[src_doc.tables[0]], doc=src_doc, parent=new_doc.body)
+
+    new_table = new_doc.tables[0]
+    assert [ref.cref for ref in new_table.captions] == ["#/texts/0"]
+    assert new_table.captions[0].resolve(new_doc).text == "Table 1: Results."
+    assert new_table.footnotes[0].resolve(new_doc).text == "* Footnote."
+    assert new_table.comments[0].resolve(new_doc).text == "A comment."
+    assert new_table.comments[0].range == (0, 3)
+    # the target of this reference was not copied, so it does not exist in the new document
+    assert new_table.references == []
+    assert new_doc.validate_tree(new_doc.body)
+
+    # the source document is not changed
+    assert src_doc.tables[0].captions[0].cref == caption.self_ref
+
+
+def test_add_node_items_keeps_refs_to_items_not_copied_in_same_doc():
+    doc = DoclingDocument(name="source")
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text="Table 1: Results.")
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=1), caption=caption)
+    group = doc.add_group(label=GroupLabel.SECTION, name="target")
+
+    doc.add_node_items(node_items=[table], doc=doc, parent=group)
+
+    new_table = doc.tables[1]
+    assert [ref.cref for ref in new_table.captions] == [caption.self_ref]
