@@ -17,6 +17,7 @@ import pytest
 from pydantic import AnyUrl
 
 from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
+from docling_core.transforms.serializer._doclang_utils import _deserializer_keeps_space_beside
 from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 from docling_core.transforms.serializer.html import HTMLDocSerializer
 from docling_core.transforms.serializer.latex import LaTeXDocSerializer
@@ -676,18 +677,75 @@ def test_doclang_cell_with_leading_inline_elements_keeps_all_text() -> None:
 @pytest.mark.parametrize(
     ("body", "expected"),
     [
-        ("<list><ldiv/>foo <checkbox/> bar</list>", ["foo ", "", " bar"]),
-        ("<table><fcel/>foo <checkbox/> bar<nl/></table>", ["foo ", "", " bar"]),
-        ("<list><ldiv/><checkbox/> y</list>", ["", " y"]),
-        ("<table><fcel/><checkbox/> y<nl/></table>", ["", " y"]),
-        ("<list><ldiv/><checkbox/> <code>x</code> <code>y</code></list>", ["", " ", "x", " ", "y"]),
-        ('<text><checkbox class="selected"/> Accept <bold>terms</bold></text>', ["", " Accept ", "terms"]),
+        ("<list><ldiv/>foo <checkbox/> bar</list>", ["foo ", " bar"]),
+        ("<table><fcel/>foo <checkbox/> bar<nl/></table>", ["foo ", " bar"]),
+        ("<list><ldiv/><checkbox/> y</list>", [" y"]),
+        ("<table><fcel/><checkbox/> y<nl/></table>", [" y"]),
+        ("<list><ldiv/><checkbox/> <code>x</code> <code>y</code></list>", [" ", "x", " ", "y"]),
+        ('<text><checkbox class="selected"/> Accept <bold>terms</bold></text>', [" Accept ", "terms"]),
     ],
 )
 def test_doclang_checkbox_is_part_of_virtual_text(body: str, expected: list[str]) -> None:
     """A checkbox is visible content, so the whitespace after it is within the text block."""
     doc = DocLangDocDeserializer().deserialize_str(f"<doclang>{body}</doclang>")
     assert [t.text for t in doc.texts if t.label != DocItemLabel.LIST_ITEM] == expected
+
+
+_UNSELECTED = DocItemLabel.CHECKBOX_UNSELECTED
+_SELECTED = DocItemLabel.CHECKBOX_SELECTED
+
+
+@pytest.mark.parametrize(
+    ("body", "expected"),
+    [
+        # Plain <text>: one checkbox item, its text verbatim; a missing class means unselected.
+        ("<text><checkbox/> y</text>", [(" y", _UNSELECTED)]),
+        ("<text><checkbox/>y</text>", [("y", _UNSELECTED)]),
+        ('<text><checkbox class="selected"/> y</text>', [(" y", _SELECTED)]),
+        ("<text><checkbox/><content> y</content></text>", [(" y", _UNSELECTED)]),
+        ("<text><checkbox/></text>", [("", _UNSELECTED)]),
+        # Only what follows the symbol is its text.
+        ("<text>y <checkbox/></text>", [("y ", DocItemLabel.TEXT), ("", _UNSELECTED)]),
+        ("<text>a <checkbox/> b</text>", [("a ", DocItemLabel.TEXT), (" b", _UNSELECTED)]),
+        ("<text><checkbox/><bold>y</bold></text>", [("", _UNSELECTED), ("y", DocItemLabel.TEXT)]),
+        # Field keys and values.
+        (
+            "<field_item><value><checkbox/> y</value></field_item>",
+            [("", DocItemLabel.FIELD_VALUE), (" y", _UNSELECTED)],
+        ),
+        ("<field_item><key><checkbox/> y</key></field_item>", [("", DocItemLabel.FIELD_KEY), (" y", _UNSELECTED)]),
+        (
+            "<field_item><value>a <checkbox/> b</value></field_item>",
+            [("", DocItemLabel.FIELD_VALUE), ("a ", DocItemLabel.TEXT), (" b", _UNSELECTED)],
+        ),
+        # Captions.
+        ("<picture><caption><checkbox/> y</caption></picture>", [("", DocItemLabel.CAPTION), (" y", _UNSELECTED)]),
+    ],
+)
+def test_doclang_checkbox_text_is_the_run_after_it(body: str, expected: list[tuple[str, DocItemLabel]]) -> None:
+    """Hosts agree: a checkbox item's text is the plain run after the symbol, including a leading space."""
+    doc = DocLangDocDeserializer().deserialize_str(f"<doclang>{body}</doclang>")
+    assert [(t.text, t.label) for t in doc.texts] == expected
+    # The XML may differ in form, but what it holds has to read back the same.
+    roundtripped = DocLangDocDeserializer().deserialize_str(_doclang_compact(doc))
+    assert [(t.text, t.label) for t in roundtripped.texts] == expected
+
+
+def test_doclang_checkbox_item_keeps_its_location() -> None:
+    xml = (
+        '<doclang><text><location value="1"/><location value="2"/><location value="3"/><location value="4"/>'
+        "<checkbox/> y</text></doclang>"
+    )
+    item = DocLangDocDeserializer().deserialize_str(xml).texts[0]
+    assert (item.text, item.label, len(item.prov)) == (" y", _UNSELECTED, 1)
+
+
+@pytest.mark.parametrize(("text", "expected"), [("y", "- [x] y"), (" y", "- [x] y")])
+def test_markdown_checkbox_does_not_double_a_space(text: str, expected: str) -> None:
+    """Markdown needs a space after the box, unless the text brings its own."""
+    doc = DoclingDocument(name="t")
+    doc.add_text(label=_SELECTED, text=text)
+    assert doc.export_to_markdown() == expected
 
 
 def test_doclang_attributes_a_space_to_the_first_character() -> None:
@@ -730,6 +788,86 @@ def test_doclang_keeps_content_only_where_needed(runs: list[str], expected: str)
         doc.add_text(label=DocItemLabel.TEXT, text=text, parent=group)
     assert _doclang_compact(doc) == f"<doclang>{expected}</doclang>"
     assert DocLangDocDeserializer().deserialize_str(_doclang_compact(doc)).export_to_text() == "".join(runs)
+
+
+_SPACE_HOSTS = {
+    "text": "<text>%s</text>",
+    "list": "<list><ldiv/>%s</list>",
+    "table": "<table><fcel/>%s<nl/></table>",
+    "key": "<field_item><key>%s</key></field_item>",
+    "value": "<field_item><value>%s</value></field_item>",
+    "caption": "<picture><caption>%s</caption></picture>",
+    "footnote": "<footnote>%s</footnote>",
+    "page_header": "<page_header>%s</page_header>",
+    "page_footer": "<page_footer>%s</page_footer>",
+    "heading": "<heading>%s</heading>",
+}
+_SPACE_ITEMS = {
+    "checkbox": '<checkbox class="selected"/>',
+    "picture": "<picture/>",
+}
+
+
+def _read_body(body: str) -> tuple[str, list[str]]:
+    doc = DocLangDocDeserializer().deserialize_str(f"<doclang>{body}</doclang>")
+    return doc.export_to_text(), [c.text for t in doc.tables for c in t.data.table_cells]
+
+
+@pytest.mark.parametrize("host", _SPACE_HOSTS)
+@pytest.mark.parametrize("item", _SPACE_ITEMS)
+def test_doclang_unwraps_a_space_beside_an_item_only_where_it_reads_the_same(host: str, item: str) -> None:
+    """The serializer's table of safe places has to match what the deserializer actually does."""
+    tag, template = _SPACE_ITEMS[item], _SPACE_HOSTS[host]
+    if not _deserializer_keeps_space_beside(item, host):
+        pytest.skip("kept in <content>")
+    for wrapped, bare in (
+        (f"{tag}<content> y</content>", f"{tag} y"),
+        (f"<content>y </content>{tag}", f"y {tag}"),
+        (f"<content>a </content>{tag}<content> b</content>", f"a {tag} b"),
+    ):
+        assert _read_body(template % bare) == _read_body(template % wrapped), (host, item, bare)
+
+
+@pytest.mark.parametrize(
+    ("runs", "expected"),
+    [
+        (["a", " ", "b"], "<list><ldiv/>a <bold>b</bold></list>"),  # other runs keep it a virtual <text>
+    ],
+)
+def test_doclang_unwraps_a_lone_space_run_when_the_item_is_virtual_text_anyway(runs: list[str], expected: str) -> None:
+    doc = DoclingDocument(name="t")
+    group = doc.add_inline_group(parent=doc.add_list_item(text="", parent=doc.add_list_group()))
+    doc.add_text(label=DocItemLabel.TEXT, text=runs[0], parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text=runs[1], parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text=runs[2], parent=group, formatting=_BOLD)
+    assert _doclang_compact(doc) == f"<doclang>{expected}</doclang>"
+    assert DocLangDocDeserializer().deserialize_str(_doclang_compact(doc)).export_to_text() == doc.export_to_text()
+
+
+def test_doclang_keeps_content_beside_an_item_where_the_deserializer_would_trim() -> None:
+    doc = DocLangDocDeserializer().deserialize_str(
+        "<doclang><field_item><value><picture/><content> y</content></value></field_item></doclang>"
+    )
+    assert "<content> y</content>" in _doclang_compact(doc)
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "<field_item><value><code>x</code><content> y</content></value></field_item>",
+        "<field_item><key><content>y </content><formula>x</formula></key></field_item>",
+    ],
+)
+def test_doclang_keeps_content_in_a_block_nested_in_a_field(body: str) -> None:
+    """Such a run becomes a <text> of its own, whose edges the deserializer trims."""
+    doc = DocLangDocDeserializer().deserialize_str(f"<doclang>{body}</doclang>")
+    roundtripped = DocLangDocDeserializer().deserialize_str(_doclang_compact(doc))
+    assert [t.text for t in roundtripped.texts] == [t.text for t in doc.texts]
+
+
+def test_doclang_writes_bare_spaces_beside_a_checkbox_and_inline_code() -> None:
+    xml = '<doclang><text>a <checkbox class="selected"/> b</text><list><ldiv/>see <code>x</code> tail</list></doclang>'
+    assert _doclang_compact(DocLangDocDeserializer().deserialize_str(xml)) == xml
 
 
 def test_doclang_list_item_with_inline_code_and_formula_roundtrips() -> None:

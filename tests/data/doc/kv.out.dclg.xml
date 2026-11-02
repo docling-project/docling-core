@@ -18,7 +18,7 @@
     <field_item>
       <key><content>I am in the country as a: </content></key>
       <value class="fillable"><checkbox class="unselected"/>Visitor</value>
-      <value class="fillable"><checkbox class="unselected"/><content> Student</content></value>
+      <value class="fillable"><checkbox class="unselected"/> Student</value>
       <value class="fillable"><checkbox class="unselected"/>Other (Specify)</value>
       <value class="fillable"></value>
     </field_item>

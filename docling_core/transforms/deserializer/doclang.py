@@ -473,7 +473,6 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     DocLangToken.SUPERSCRIPT.value,
                     DocLangToken.RTL.value,
                     DocLangToken.HANDWRITING.value,
-                    DocLangToken.CHECKBOX.value,
                     DocLangToken.CONTENT.value,
                 }:
                     return None
@@ -513,15 +512,24 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         simple_text = self._get_children_simple_text_block(el)
         # an element without any content is an empty item, not a (childless) inline group
         is_empty = simple_text is None and thread_id is None and self._is_empty_text_block(el)
-        if not is_empty and (len(element_children) > 1 or (simple_text is None and thread_id is None)):
+        checkbox_block = self._checkbox_text_block(el) if el.tagName == DocLangToken.TEXT.value else None
+        if (
+            checkbox_block is None
+            and not is_empty
+            and (len(element_children) > 1 or (simple_text is None and thread_id is None))
+        ):
             self._parse_mixed_text_like(doc=doc, el=el, parent=parent)
             return
 
         prov_list = self._extract_provenance(doc=doc, el=el)
         content_layer = self._extract_layer(el=el)
         # A run inside an inline group owns its edge whitespace; a block host does not.
-        text, formatting = self._extract_text_with_formatting(el, trim=not isinstance(parent, InlineGroup))
-        if not text and not is_empty:
+        text, formatting = (
+            (checkbox_block[1], None)
+            if checkbox_block is not None
+            else self._extract_text_with_formatting(el, trim=not isinstance(parent, InlineGroup))
+        )
+        if not text and not is_empty and checkbox_block is None:
             if (
                 thread_id
                 and (existing := self._get_thread_item(thread_id, host=el.tagName)) is not None
@@ -604,17 +612,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 c.tagName == DocLangToken.HANDWRITING.value for c in element_children
             ):
                 label = DocItemLabel.HANDWRITTEN_TEXT
-            elif nm == DocLangToken.TEXT.value:
-                # Check for checkbox elements with class attribute
-                for c in element_children:
-                    if c.tagName == DocLangToken.CHECKBOX.value:
-                        checkbox_class = c.getAttribute(DocLangAttributeKey.CLASS.value)
-                        if checkbox_class == DocLangAttributeValue.SELECTED.value:
-                            label = DocItemLabel.CHECKBOX_SELECTED
-                            break
-                        elif checkbox_class == DocLangAttributeValue.UNSELECTED.value:
-                            label = DocItemLabel.CHECKBOX_UNSELECTED
-                            break
+            elif checkbox_block is not None:
+                label = self._checkbox_label(checkbox_block[0])
             if (
                 thread_id
                 and (existing := self._get_thread_item(thread_id, host=nm)) is not None
@@ -788,43 +787,6 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             elif isinstance(node, Text) and node.data.strip(_XML_WHITESPACE):
                 doc.add_text(label=DocItemLabel.TEXT, text=node.data.strip(_XML_WHITESPACE), parent=parent)
 
-    def _dispatch_field_inline_body_nodes(
-        self,
-        *,
-        doc: DoclingDocument,
-        body_nodes: Sequence[Node],
-        parent: NodeItem,
-    ) -> None:
-        """Dispatch inline key/value body nodes, merging checkbox labels with following text."""
-        meaningful = self._meaningful_body_nodes(body_nodes)
-        idx = 0
-        while idx < len(meaningful):
-            node = meaningful[idx]
-            if isinstance(node, Element) and node.tagName == DocLangToken.CHECKBOX.value:
-                checkbox_class = node.getAttribute(DocLangAttributeKey.CLASS.value)
-                if checkbox_class == DocLangAttributeValue.SELECTED.value:
-                    label = DocItemLabel.CHECKBOX_SELECTED
-                else:
-                    label = DocItemLabel.CHECKBOX_UNSELECTED
-                text = ""
-                remaining = meaningful[idx + 1 :]
-                if len(remaining) == 1:
-                    nxt = remaining[0]
-                    if isinstance(nxt, Text):
-                        text = nxt.data.strip(_XML_WHITESPACE)
-                        idx += 1
-                    elif isinstance(nxt, Element) and nxt.tagName == DocLangToken.CONTENT.value:
-                        text = self._get_text(nxt)
-                        idx += 1
-                doc.add_text(label=label, text=text, parent=parent)
-                idx += 1
-                continue
-            if isinstance(node, Element):
-                self._dispatch_element(doc=doc, el=node, parent=parent)
-            elif isinstance(node, Text) and node.data.strip(_XML_WHITESPACE):
-                doc.add_text(label=DocItemLabel.TEXT, text=node.data.strip(_XML_WHITESPACE), parent=parent)
-            idx += 1
-
     def _meaningful_body_nodes(self, body_nodes: Sequence[Node]) -> list[Node]:
         return [
             node
@@ -881,14 +843,48 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
     def _parse_field_value(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         self._parse_field_kv(doc=doc, el=el, parent=parent, is_value=True)
 
-    def _parse_checkbox(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
-        checkbox_class = el.getAttribute(DocLangAttributeKey.CLASS.value)
-        if checkbox_class == DocLangAttributeValue.SELECTED.value:
-            label = DocItemLabel.CHECKBOX_SELECTED
-        else:
-            label = DocItemLabel.CHECKBOX_UNSELECTED
-        item = doc.add_text(label=label, text="", parent=parent)
+    @staticmethod
+    def _checkbox_label(el: Element) -> DocItemLabel:
+        if el.getAttribute(DocLangAttributeKey.CLASS.value) == DocLangAttributeValue.SELECTED.value:
+            return DocItemLabel.CHECKBOX_SELECTED
+        return DocItemLabel.CHECKBOX_UNSELECTED
+
+    def _parse_checkbox(
+        self,
+        *,
+        doc: DoclingDocument,
+        el: Element,
+        parent: NodeItem | None,
+        text: str = "",
+        formatting: Formatting | None = None,
+    ) -> None:
+        """Add a checkbox item.
+
+        A checkbox item's text is the plain run right after the symbol, verbatim: as a space there is
+        part of the reading, ``<checkbox/> y`` gives ``" y"`` and ``<checkbox/>y`` gives ``"y"``.
+        """
+        item = doc.add_text(label=self._checkbox_label(el), text=text, parent=parent, formatting=formatting)
         self._source_recorder.bind_item(el, item)
+
+    def _plain_run_text(self, node: Node) -> str | None:
+        """Return the text of a plain run, i.e. a text node or ``<content>``, or None for anything else."""
+        if isinstance(node, Text):
+            return node.data
+        if isinstance(node, Element) and node.tagName == DocLangToken.CONTENT.value:
+            return self._collect_text(node)
+        return None
+
+    def _checkbox_text_block(self, el: Element) -> tuple[Element, str] | None:
+        """Return the checkbox and its text when the body of ``el`` holds nothing else."""
+        _, body_nodes = self._split_element_children_head_body(el)
+        nodes = [n for n in body_nodes if isinstance(n, Element) or (isinstance(n, Text) and n.data)]
+        if not nodes or not isinstance(nodes[0], Element) or nodes[0].tagName != DocLangToken.CHECKBOX.value:
+            return None
+        if len(nodes) == 1:
+            return nodes[0], ""
+        if len(nodes) == 2 and (text := self._plain_run_text(nodes[1])) is not None:
+            return nodes[0], text
+        return None
 
     def _parse_field_hint(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         prov_list = self._extract_provenance(doc=doc, el=el)
@@ -977,11 +973,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     content_layer=content_layer,
                 )
             inline_group = doc.add_inline_group(parent=item)
-            self._dispatch_field_inline_body_nodes(
-                doc=doc,
-                body_nodes=body_nodes,
-                parent=inline_group,
-            )
+            self._parse_inline_runs(doc=doc, nodes=body_nodes, parent=inline_group, formatting=None)
             self._apply_initial_text_provenance(item, text="", prov_list=prov_list)
             self._apply_custom_meta_from_element(item=item, el=el)
             self._source_recorder.bind_item(el, item)
@@ -1523,9 +1515,19 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         label: DocItemLabel = DocItemLabel.TEXT,
     ) -> None:
         """Add text runs for ``nodes``, carrying ``formatting`` and ``label`` through nested text-level tags."""
-        for node in nodes:
+        # Comments and text nodes left empty by the whitespace rules separate nothing.
+        runs = [n for n in nodes if isinstance(n, Element) or (isinstance(n, Text) and n.data)]
+        skip_next = False
+        for idx, node in enumerate(runs):
+            if skip_next:
+                skip_next = False
+                continue
             if isinstance(node, Element):
-                if node.tagName == DocLangToken.CONTENT.value:
+                if node.tagName == DocLangToken.CHECKBOX.value:
+                    next_text = self._plain_run_text(runs[idx + 1]) if idx + 1 < len(runs) else None
+                    skip_next = next_text is not None
+                    self._parse_checkbox(doc=doc, el=node, parent=parent, text=next_text or "", formatting=formatting)
+                elif node.tagName == DocLangToken.CONTENT.value:
                     # <content> is the explicit whitespace-preserving text wrapper: it is a run,
                     # not a nested item, so it inherits the formatting accumulated on the way in.
                     # Dispatching it would drop that formatting (<bold><content>x </content></bold>
