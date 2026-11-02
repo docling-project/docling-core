@@ -50,38 +50,38 @@
 **Common migration testing methods**
 
 - **Extraction in food simulants**
-    - *What it is* : Samples of the packaging material are immersed in a liquid that mimics the chemical properties of a specific food type (e.g., aqueous, acidic, fatty).
-    - *Typical simulants* :
+    - *What it is*: Samples of the packaging material are immersed in a liquid that mimics the chemical properties of a specific food type (e.g., aqueous, acidic, fatty).
+    - *Typical simulants*:
         - 3% acetic acid (for acidic foods)
         - 50% ethanol (for alcohol‑based foods)
         - 95% ethanol (for high‑fat foods)
         - Distilled water (for aqueous foods)
-    - *Procedure* :
+    - *Procedure*:
         - Prepare a defined volume of simulant in a sealed vessel.
         - Immerse the material for a set time at a controlled temperature (often 50 °C–70 °C).
         - Remove, filter, and concentrate the extract for analysis.
-    - *Analysis* : GC‑MS, LC‑MS, or HPLC depending on the analyte class.
-    - *Advantages* : Direct assessment of potential migration into a realistic medium; scalable for routine testing.
-    - *Limitations* : Does not account for headspace gas migration; may underestimate migration of highly volatile substances.
+    - *Analysis*: GC‑MS, LC‑MS, or HPLC depending on the analyte class.
+    - *Advantages*: Direct assessment of potential migration into a realistic medium; scalable for routine testing.
+    - *Limitations*: Does not account for headspace gas migration; may underestimate migration of highly volatile substances.
 - **Headspace analysis**
-    - *What it is* : Measurement of volatile substances that migrate from the material into the surrounding gas phase.
-    - *Procedure* :
+    - *What it is*: Measurement of volatile substances that migrate from the material into the surrounding gas phase.
+    - *Procedure*:
         - Seal the material in a headspace vial or chamber.
         - Equilibrate at a defined temperature (commonly 25 °C–60 °C).
         - Sample the gas phase with a gas sampling needle or syringe.
         - Analyze via GC‑FID, GC‑MS, or PTR‑MS.
-    - *Applications* : Assessment of aromas, flavor compounds, or volatile contaminants.
-    - *Advantages* : Sensitive to low‑concentration volatiles; minimal sample preparation.
-    - *Limitations* : Does not capture non‑volatile migration; results depend on equilibrium time and temperature.
+    - *Applications*: Assessment of aromas, flavor compounds, or volatile contaminants.
+    - *Advantages*: Sensitive to low‑concentration volatiles; minimal sample preparation.
+    - *Limitations*: Does not capture non‑volatile migration; results depend on equilibrium time and temperature.
 - **Direct contact tests**
-    - *What it is* : The packaging material is placed in direct contact with the food or food simulant, often using a defined food‑packaging configuration.
-    - *Procedure* :
+    - *What it is*: The packaging material is placed in direct contact with the food or food simulant, often using a defined food‑packaging configuration.
+    - *Procedure*:
         - Assemble the material and food (or simulant) in a mold or container that simulates real usage (e.g., sealed pouch, jar).
         - Incubate for the intended storage time at the relevant temperature.
         - Extract or sample the food directly (e.g., through the material or by taking a portion of the food).
         - Analyze for migrated substances.
-    - *Advantages* : Mimics real consumer exposure; captures both liquid and vapor migration pathways.
-    - *Limitations* : More labor‑intensive; requires careful control of contact area, thickness, and sealing integrity.
+    - *Advantages*: Mimics real consumer exposure; captures both liquid and vapor migration pathways.
+    - *Limitations*: More labor‑intensive; requires careful control of contact area, thickness, and sealing integrity.
 
 These three approaches—extraction in food simulants, headspace analysis, and direct contact tests—complement each other to provide a comprehensive assessment of potential migration from packaging into food.
 
