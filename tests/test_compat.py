@@ -44,7 +44,7 @@ from docling_core.types.doc.common.constants import (
     FIRST_SUPPORTED_MINOR,
     SCHEMA_VERSION_HISTORY,
 )
-from docling_core.types.doc.document import DoclingDocument
+from docling_core.types.doc.document import DocItemLabel, DoclingDocument, Formatting
 
 # Root of the repository, used to locate docs/schemas/.
 _REPO_ROOT = Path(__file__).parent.parent
@@ -282,6 +282,120 @@ class TestSchemaSnapshotRendering:
 
         schema = json.loads(self._render())
         assert set(schema["$defs"]["FieldItem"]["properties"]) == set(FieldItem.model_fields)
+
+
+class TestProjector_1_11_to_1_10:
+    """Tests for the 1.11 → 1.10 downgrade projector."""
+
+    def _apply(self, data: dict) -> dict:
+        from docling_core.compat import _project_1_11_to_1_10
+
+        return _project_1_11_to_1_10(data)
+
+    def test_version_set_to_1_10(self):
+        result = self._apply(_minimal_doc_dict("1.11.0"))
+        assert result["version"] == "1.10.0"
+
+    def test_plain_text_keeps_its_whitespace(self):
+        """Only inline-group runs are stripped; other text items stay as they are."""
+        data = _minimal_doc_dict("1.11.0")
+        data["texts"] = [
+            {
+                "self_ref": "#/texts/0",
+                "parent": None,
+                "children": [],
+                "content_layer": "body",
+                "label": "text",
+                "orig": "bold ",
+                "text": "bold ",
+                "prov": [],
+            }
+        ]
+        result = self._apply(data)
+        assert result["texts"][0]["text"] == "bold "
+
+    def test_inline_runs_are_stripped_to_the_old_shape(self):
+        """A 1.10 client joins runs with " ", so runs must not carry boundary whitespace."""
+        doc = DoclingDocument(name="runs")
+        caption = doc.add_text(label=DocItemLabel.CAPTION, text=" Caption ")
+        heading = doc.add_heading(text="Heading ")
+        group = doc.add_inline_group()
+        doc.add_text(label=DocItemLabel.TEXT, text="Some ", parent=group)
+        doc.add_text(label=DocItemLabel.TEXT, text="bold ", parent=group, formatting=Formatting(bold=True))
+        doc.add_text(label=DocItemLabel.TEXT, text="text with a ", parent=group)
+        doc.add_text(label=DocItemLabel.TEXT, text="link ", parent=group, hyperlink="https://example.com")
+        doc.add_text(label=DocItemLabel.TEXT, text=" ", parent=group)
+        doc.add_text(label=DocItemLabel.TEXT, text="core", parent=group, formatting=Formatting(bold=True))
+        data = json.loads(doc.model_dump_json())
+
+        result = self._apply(data)
+
+        assert len(result["texts"]) == len(data["texts"])
+        assert [t["text"] for t in result["texts"]] == [
+            " Caption ",
+            "Heading ",
+            "Some",
+            "bold",
+            "text with a",
+            "link",
+            "",
+            "core",
+        ]
+        assert [t["orig"] for t in result["texts"]] == [t["orig"] for t in data["texts"]]
+        assert data["texts"][2]["text"] == "Some "
+        assert caption.text == " Caption " and heading.text == "Heading "
+
+    def test_does_not_mutate_caller_input(self):
+        data = _minimal_doc_dict("1.11.0")
+        self._apply(data)
+        assert data["version"] == "1.11.0"
+
+    @pytest.mark.parametrize(
+        "runs",
+        [
+            [("code", "a"), ("code", "b")],
+            [("formula", "x"), ("formula", "y")],
+            [("code", "a"), ("formula", "x"), ("code", "b")],
+            [("text", "Install with "), ("code", "pip"), ("text", ", then")],
+            [("text", "a"), ("text", " "), ("text", "b")],
+        ],
+    )
+    def test_repeated_projection_and_migration_do_not_drift(self, runs):
+        """Down-projecting and reloading again must not add runs or change the output."""
+        doc = DoclingDocument(name="drift")
+        group = doc.add_inline_group()
+        for kind, text in runs:
+            if kind == "code":
+                doc.add_code(text=text, parent=group)
+            elif kind == "formula":
+                doc.add_formula(text=text, parent=group)
+            else:
+                doc.add_text(label=DocItemLabel.TEXT, text=text, parent=group)
+
+        def round_trip(d: DoclingDocument) -> DoclingDocument:
+            return DoclingDocument.model_validate(json.loads(project_to(d, "1.10.0").model_dump_json()))
+
+        first = round_trip(doc)
+        again = first
+        for _ in range(3):
+            again = round_trip(again)
+        assert again.export_to_dict() == first.export_to_dict()
+
+    def test_project_to_does_not_run_the_legacy_migration(self):
+        """project_to keeps the old-shape runs; reloading them on this core restores the spacing."""
+        doc = DoclingDocument(name="projected")
+        group = doc.add_inline_group()
+        doc.add_text(label=DocItemLabel.TEXT, text="Normal ", parent=group)
+        doc.add_text(label=DocItemLabel.TEXT, text="bold", parent=group, formatting=Formatting(bold=True))
+        doc.add_text(label=DocItemLabel.TEXT, text=" tail", parent=group)
+
+        result = project_to(doc, target_version="1.10.0")
+        dumped = json.loads(result.model_dump_json())
+
+        assert dumped["version"] == "1.10.0"
+        assert [t["text"] for t in dumped["texts"]] == ["Normal", "bold", "tail"]
+        reloaded = DoclingDocument.model_validate(dumped)
+        assert reloaded.export_to_markdown() == "Normal **bold** tail"
 
 
 class TestProjector_1_10_to_1_9:

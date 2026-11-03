@@ -40,7 +40,7 @@ def test_rich_heading_chunk_metadata(kind: str, body: str, prefix: str) -> None:
     heading = doc.add_title(text="") if kind == "title" else doc.add_heading(text="", level=1)
     parent = doc.add_inline_group(parent=heading) if prefix else heading
     if prefix:
-        doc.add_text(label=DocItemLabel.TEXT, text=prefix.strip(), parent=parent)
+        doc.add_text(label=DocItemLabel.TEXT, text=prefix, parent=parent)
     doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=parent)
     if body:
         doc.add_text(label=DocItemLabel.TEXT, text=body)
@@ -54,7 +54,7 @@ def test_rich_heading_is_emitted_before_a_sibling_heading() -> None:
     doc = DoclingDocument(name="rich-heading")
     heading = doc.add_heading(text="", level=1)
     inline = doc.add_inline_group(parent=heading)
-    doc.add_text(label=DocItemLabel.TEXT, text="Energy", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="Energy ", parent=inline)
     doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=inline)
     doc.add_heading(text="Next", level=1)
     doc.add_text(label=DocItemLabel.TEXT, text="Body.")
@@ -69,8 +69,8 @@ def test_rich_heading_is_emitted_before_a_sibling_heading() -> None:
     ("caption", "expected"),
     [
         ("Table 1: results", "Table 1: results"),
-        ("Table <bold>1</bold>: results", "Table **1** : results"),
-        ("Table <formula>x</formula>: results", "Table $x$ : results"),
+        ("Table <bold>1</bold>: results", "Table **1**: results"),
+        ("Table <formula>x</formula>: results", "Table $x$: results"),
     ],
 )
 def test_chunk_caption_stays_with_owner(kind: str, caption: str, expected: str, tmp_path: Path) -> None:
@@ -106,7 +106,7 @@ def test_chunk_satellite_check_keeps_unrelated_inline_text() -> None:
         "<text>After</text></doclang>"
     )
     chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker().chunk(doc)]
-    assert [chunk.text for chunk in chunks] == ["Before **body**", "Table **1** : results\n\nA", "After"]
+    assert [chunk.text for chunk in chunks] == ["Before **body**", "Table **1**: results\n\nA", "After"]
     assert doc.tables[0].self_ref in {item.self_ref for item in chunks[1].meta.doc_items}
 
 

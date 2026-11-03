@@ -9,7 +9,8 @@
     <ldiv/>
     <code>
       <label value="Python"/>
-<![CDATA[print('hello')]]>    </code>
+      <![CDATA[print('hello')]]>
+    </code>
     <ldiv/>
     <location value="51"/>
     <location value="333"/>
