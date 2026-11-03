@@ -41,6 +41,7 @@ from docling_core.types.doc import (
     BaseMeta,
     CaptionPlacement,
     CodeItem,
+    CodeMetaField,
     ContentLayer,
     CoordOrigin,
     DescriptionAnnotation,
@@ -48,6 +49,7 @@ from docling_core.types.doc import (
     DocItem,
     DocItemLabel,
     DoclingDocument,
+    EntitiesMetaField,
     FieldItem,
     FieldRegionItem,
     FloatingItem,
@@ -60,6 +62,7 @@ from docling_core.types.doc import (
     InlineGroup,
     KeyValueItem,
     KeywordsMetaField,
+    LanguageMetaField,
     ListGroup,
     ListItem,
     MoleculeMetaField,
@@ -230,10 +233,13 @@ def _code_span(text: str) -> str:
     return f"{ticks}{pad}{text}{pad}{ticks}"
 
 
-def _code_block(text: str) -> str:
-    """Wrap text in a fenced code block whose fence is longer than any backtick run inside."""
+def _code_block(text: str, lang: str = "") -> str:
+    """Wrap text in a fenced code block whose fence is longer than any backtick run inside.
+
+    ``lang`` becomes the info string of the opening fence.
+    """
     fence = "`" * max(3, _longest_backtick_run(text) + 1)
-    return f"{fence}\n{text}\n{fence}"
+    return f"{fence}{lang}\n{text}\n{fence}"
 
 
 class OrigListItemMarkerMode(str, Enum):
@@ -549,6 +555,7 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
                                 key,
                                 params.mark_meta,
                                 include_picture_classification=params.include_picture_classification,
+                                format_code_blocks=params.format_code_blocks,
                             )
                         )
                     )
@@ -567,21 +574,40 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
         mark_meta: bool,
         *,
         include_picture_classification: bool = True,
+        format_code_blocks: bool = True,
         **kwargs: Any,
     ) -> str | None:
         if (field_val := getattr(meta, name)) is not None:
+            fenced = False
             if isinstance(field_val, SummaryMetaField):
                 txt = field_val.text
             elif isinstance(field_val, KeywordsMetaField | TopicsMetaField):
                 txt = ", ".join(field_val.values)
             elif isinstance(field_val, DescriptionMetaField):
                 txt = field_val.text
+            elif isinstance(field_val, LanguageMetaField):
+                # A language code describes the text; it is not content. Only a marked
+                # export lists it.
+                if not mark_meta:
+                    return None
+                txt = field_val.code.value
+            elif isinstance(field_val, EntitiesMetaField):
+                if not mark_meta:
+                    return None
+                txt = ", ".join(mention.text for mention in field_val.mentions)
             elif isinstance(field_val, PictureClassificationMetaField):
                 if not include_picture_classification:
                     return None
                 txt = self._humanize_text(field_val.get_main_prediction().class_name)
             elif isinstance(field_val, MoleculeMetaField):
                 txt = field_val.smi
+            elif isinstance(field_val, CodeMetaField):
+                if format_code_blocks:
+                    lang = field_val.language.value.lower() if field_val.language else ""
+                    txt = _code_block(field_val.text, lang=lang)
+                    fenced = True
+                else:
+                    txt = field_val.text
             elif isinstance(field_val, TabularChartMetaField):
                 temp_doc = DoclingDocument(name="temp")
                 temp_table = temp_doc.add_table(data=field_val.chart_data)
@@ -590,11 +616,19 @@ class MarkdownMetaSerializer(BaseModel, BaseMetaSerializer):
                     txt = table_content
                 else:
                     return None
+            elif isinstance(field_val, BaseModel):
+                # A structured field with no renderer above: skip it rather than print its
+                # pydantic repr as a paragraph.
+                return None
             elif tmp := str(field_val or ""):
                 txt = tmp
             else:
                 return None
-            return f"[{self._humanize_text(name, title=True)}] {txt}" if mark_meta else txt
+            if not mark_meta:
+                return txt
+            label = f"[{self._humanize_text(name, title=True)}]"
+            # A code fence must start its own line, so the label goes on the line above it.
+            return f"{label}\n{txt}" if fenced else f"{label} {txt}"
         else:
             return None
 
