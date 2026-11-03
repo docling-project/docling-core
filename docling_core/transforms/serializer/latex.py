@@ -592,10 +592,13 @@ class LaTeXPictureSerializer(BasePictureSerializer):
             ):
                 return create_ser_result(text=image_placeholder, span_source=item)
             else:
-                return create_ser_result(
-                    text=f"\\includegraphics[width=\\linewidth]{{{item.image.uri!s}}}",
-                    span_source=item,
-                )
+                path = str(item.image.uri)
+                line = f"\\includegraphics[width=\\linewidth]{{{path}}}"
+                if "%" in path or "#" in path:
+                    # graphicx can't take "\%" or "\#" in a file name, so make
+                    # them ordinary characters inside a group instead.
+                    line = f"\\begingroup\\catcode`\\%=12 \\catcode`\\#=12 {line}\\endgroup"
+                return create_ser_result(text=line, span_source=item)
         else:  # EMBEDDED not supported natively
             return create_ser_result(
                 text="% embedded image not supported in LaTeX serializer",
