@@ -143,6 +143,7 @@ Optional repository variables: `BOB_TEAM_ID` (for `general` keys),
 | `.github/scripts/ai_pr_review.py` | First review: data collection, validation, posting |
 | `.github/scripts/groundtruth_diff.py` | Reference data summary |
 | `.github/scripts/pr_topic_labels.py` | Topic label rules |
+| `.github/scripts/safe_markdown.py` | Text rendering for bot comments |
 | `.github/ai-triage/*.md` | Prompts |
 | `.github/ai-triage/custom_modes.yaml` | Read-only Bob Shell modes |
 | `.github/actions/run-bobshell/action.yml` | Pinned Bob Shell install and run |
