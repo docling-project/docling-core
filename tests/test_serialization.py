@@ -19,6 +19,7 @@ from docling_core.transforms.serializer.html import (
     HTMLOutputStyle,
     HTMLParams,
     HTMLTableSerializer,
+    HTMLTextSerializer,
 )
 from docling_core.transforms.serializer.latex import LaTeXDocSerializer
 from docling_core.transforms.serializer.markdown import (
@@ -1473,6 +1474,33 @@ def test_html_mixed_list_items_do_not_invent_markers():
     assert "<li style=\"list-style-type: '1. ';\">Purpose</li>" in html
     assert '<li style="list-style-type: none;">1.1 Scope</li>' in html
     assert "<li style=\"list-style-type: '2. ';\">Operation</li>" in html
+
+
+def test_html_text_serializer_computes_strict_list_markers():
+    doc = DoclingDocument(name="direct-list-item")
+    list_group = doc.add_list_group(name="items")
+    item = doc.add_list_item(
+        text="Purpose",
+        orig="1. Purpose",
+        enumerated=True,
+        marker="1.",
+        parent=list_group,
+    )
+    doc_serializer = MagicMock()
+    doc_serializer.get_parts.return_value = []
+    doc_serializer.post_process.side_effect = lambda *, text, **_: text
+
+    html = (
+        HTMLTextSerializer()
+        .serialize(
+            item=item,
+            doc_serializer=doc_serializer,
+            doc=doc,
+        )
+        .text
+    )
+
+    assert html == "<li style=\"list-style-type: '1. ';\">Purpose</li>"
 
 
 def test_html_ordered_list_with_later_marker_disables_invented_numbers(monkeypatch):
