@@ -1509,9 +1509,40 @@ def _table_fragment_bounds(item: TableItem, prov_index: int) -> tuple[int, int, 
         c0 = prov_index * ncols // nprov
         c1 = (prov_index + 1) * ncols // nprov
         return 0, nrows, c0, c1
+    row_starts = _table_page_row_starts(item)
+    if row_starts is not None:
+        return row_starts[prov_index], row_starts[prov_index + 1], 0, ncols
     r0 = prov_index * nrows // nprov
     r1 = (prov_index + 1) * nrows // nprov
     return r0, r1, 0, ncols
+
+
+def _table_page_row_starts(item: TableItem) -> list[int] | None:
+    """Return the first row of each page fragment of a cross-page table, plus ``num_rows``.
+
+    Each cell keeps its bounding box in the coordinates of its own page, and rows run down
+    the page, so a new page fragment begins at a row that starts higher on the page than the
+    row before it. Returns ``None`` (even split) unless every row has a cell bounding box and
+    the rows that start higher match the page changes in ``item.prov`` one to one.
+    """
+    if not item.data or any(a.page_no == b.page_no for a, b in zip(item.prov, item.prov[1:])):
+        return None
+    nrows = item.data.num_rows
+    row_tops: list[float | None] = [None] * nrows
+    for cell in item.data.table_cells:
+        if cell.bbox is None or not 0 <= cell.start_row_offset_idx < nrows:
+            continue
+        # Distance from the top of the page grows downwards in both coordinate origins.
+        top = cell.bbox.t if cell.bbox.coord_origin == CoordOrigin.TOPLEFT else -cell.bbox.t
+        current = row_tops[cell.start_row_offset_idx]
+        row_tops[cell.start_row_offset_idx] = top if current is None else min(current, top)
+    tops = [t for t in row_tops if t is not None]
+    if len(tops) != nrows:
+        return None
+    starts = [r for r in range(1, nrows) if tops[r] < tops[r - 1]]
+    if len(starts) != len(item.prov) - 1:
+        return None
+    return [0, *starts, nrows]
 
 
 class DocLangTableSerializer(BaseTableSerializer):
