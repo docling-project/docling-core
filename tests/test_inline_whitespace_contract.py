@@ -22,6 +22,7 @@ from docling_core.transforms.serializer.doclang import DocLangDocSerializer, Doc
 from docling_core.transforms.serializer.html import HTMLDocSerializer
 from docling_core.transforms.serializer.latex import LaTeXDocSerializer
 from docling_core.transforms.serializer.markdown import MarkdownDocSerializer
+from docling_core.types.doc.base import BoundingBox, CoordOrigin, Size
 from docling_core.types.doc.document import (
     CURRENT_VERSION,
     CodeLanguageLabel,
@@ -29,6 +30,7 @@ from docling_core.types.doc.document import (
     DoclingDocument,
     Formatting,
     InlineGroup,
+    ProvenanceItem,
 )
 
 # (name, runs) where a run is (text, formatting, hyperlink)
@@ -928,3 +930,85 @@ def test_doclang_pretty_print_keeps_content_closed_and_opened_on_one_line() -> N
     xml = DocLangDocSerializer(doc=doc, params=DocLangParams()).serialize().text
     assert not xml.endswith("\n")
     assert "".join(t.text for t in DocLangDocDeserializer().deserialize_str(xml).texts) == "a\n\nb c\n\nd"
+
+
+def _located_runs(doc: DoclingDocument, group: InlineGroup, regions: list[tuple[str, float]]) -> None:
+    doc.add_page(page_no=1, size=Size(width=600, height=800))
+    for text, left in regions:
+        bbox = BoundingBox(l=left, t=700, r=left + 200, b=600, coord_origin=CoordOrigin.BOTTOMLEFT)
+        prov = ProvenanceItem(page_no=1, bbox=bbox, charspan=(0, len(text)))
+        doc.add_text(label=DocItemLabel.TEXT, text=text, parent=doc.add_inline_group(parent=group), prov=prov)
+
+
+def _plain_children(doc: DoclingDocument, group: InlineGroup, runs: list[str]) -> None:
+    host = doc.add_text(label=DocItemLabel.TEXT, text="", parent=group)
+    for text in runs:
+        doc.add_text(label=DocItemLabel.TEXT, text=text, parent=host)
+
+
+def _text_group(doc: DoclingDocument) -> InlineGroup:
+    return doc.add_inline_group(parent=doc.add_text(label=DocItemLabel.TEXT, text=""))
+
+
+def _heading_group(doc: DoclingDocument) -> InlineGroup:
+    return doc.add_inline_group(parent=doc.add_heading(text=""))
+
+
+def _list_item_group(doc: DoclingDocument) -> InlineGroup:
+    return doc.add_inline_group(parent=doc.add_list_item(text="", parent=doc.add_list_group()))
+
+
+def _in_groups(doc: DoclingDocument, group: InlineGroup, runs: list[str]) -> None:
+    for text in runs:
+        _nested(doc, group, [text])
+
+
+def _in_hosts(doc: DoclingDocument, group: InlineGroup, runs: list[str]) -> None:
+    for text in runs:
+        _host(doc, group, DocItemLabel.TEXT, [text])
+
+
+@pytest.mark.parametrize("params", [DocLangParams(), DocLangParams(pretty_indentation=None)], ids=["pretty", "compact"])
+@pytest.mark.parametrize(
+    ("make_group", "add_runs", "expected"),
+    [
+        pytest.param(_text_group, _in_groups, "example", id="text-groups"),
+        pytest.param(_text_group, _in_hosts, "example", id="text-hosts"),
+        pytest.param(_text_group, _plain_children, "example", id="text-plain-children"),
+        pytest.param(_heading_group, _in_groups, "## example", id="heading-groups"),
+        pytest.param(_list_item_group, _in_groups, "- example", id="list-item-groups"),
+        pytest.param(_list_item_group, _in_hosts, "- example", id="list-item-hosts"),
+    ],
+)
+def test_doclang_adds_no_separators_to_nested_inline_content(
+    make_group: Callable[[DoclingDocument], InlineGroup],
+    add_runs: Callable[[DoclingDocument, InlineGroup, list[str]], None],
+    expected: str,
+    params: DocLangParams,
+) -> None:
+    doc = DoclingDocument(name="t")
+    add_runs(doc, make_group(doc), ["exam", "ple"])
+    xml = DocLangDocSerializer(doc=doc, params=params).serialize().text
+    assert DocLangDocDeserializer().deserialize_str(xml).export_to_markdown() == expected
+
+
+@pytest.mark.parametrize("params", [DocLangParams(), DocLangParams(pretty_indentation=None)], ids=["pretty", "compact"])
+def test_doclang_keeps_a_space_in_nested_inline_content_single(params: DocLangParams) -> None:
+    """A space a nested run brings is read once, not doubled by a delimiter."""
+    doc = DoclingDocument(name="t")
+    _in_groups(doc, _text_group(doc), ["a ", "b"])
+    xml = DocLangDocSerializer(doc=doc, params=params).serialize().text
+    assert DocLangDocDeserializer().deserialize_str(xml).export_to_markdown() == "a b"
+
+
+@pytest.mark.parametrize("params", [DocLangParams(), DocLangParams(pretty_indentation=None)], ids=["pretty", "compact"])
+def test_doclang_located_nested_groups_keep_their_text_and_locations(params: DocLangParams) -> None:
+    """A located nested group keeps its `<text>`, and its head adds nothing to the reading."""
+    doc = DoclingDocument(name="t")
+    _located_runs(doc, _text_group(doc), [("exam", 50.0), ("ple", 300.0)])
+    xml = DocLangDocSerializer(doc=doc, params=params).serialize().text
+    loaded = DocLangDocDeserializer().deserialize_str(xml)
+    assert loaded.export_to_markdown() == "example"
+    located = [t for t in loaded.texts if t.text and t.prov]
+    assert [t.text for t in located] == ["exam", "ple"]
+    assert located[0].prov[0].bbox.l < located[1].prov[0].bbox.l
