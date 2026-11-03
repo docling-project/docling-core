@@ -12,9 +12,13 @@ from docling_core.types.doc.page import (
     PdfDestination,
     PdfDestinationKind,
     PdfHyperlink,
+    PdfPageBoundaryType,
+    PdfPageGeometry,
     PdfTableOfContents,
     PdfTextCell,
     PdfWidget,
+    SegmentedPdfPage,
+    TextCellUnit,
 )
 
 SQRT_2 = math.sqrt(2)
@@ -426,6 +430,25 @@ class TestPdfDestinationValidation:
         assert dest.coord_origin == CoordOrigin.BOTTOMLEFT
 
 
+def _segmented_pdf_page(page_height: float, **cells) -> SegmentedPdfPage:
+    page_box = BoundingBox(l=0.0, b=0.0, r=612.0, t=page_height, coord_origin=CoordOrigin.BOTTOMLEFT)
+    return SegmentedPdfPage(
+        dimension=PdfPageGeometry(
+            angle=0.0,
+            rect=BoundingRectangle.from_bounding_box(page_box),
+            boundary_type=PdfPageBoundaryType.CROP_BOX,
+            art_bbox=page_box,
+            bleed_bbox=page_box,
+            crop_bbox=page_box,
+            media_bbox=page_box,
+            trim_bbox=page_box,
+        ),
+        char_cells=cells.get("char_cells", []),
+        word_cells=cells.get("word_cells", []),
+        textline_cells=cells.get("textline_cells", []),
+    )
+
+
 def _pdf_text_cell(**kwargs) -> PdfTextCell:
     return PdfTextCell(
         rect=BoundingRectangle(
@@ -490,3 +513,31 @@ class TestPdfTextCellClipBbox:
         cell = _pdf_text_cell()
         cell.to_top_left_origin(page_height=792.0)
         assert cell.clip_bbox is None
+
+    @pytest.mark.parametrize("query_origin", [CoordOrigin.TOPLEFT, CoordOrigin.BOTTOMLEFT])
+    def test_get_cells_in_bbox_moves_the_clip_with_the_rect(self, query_origin: CoordOrigin):
+        """A cell returned in the query's origin carries its clip in that origin too."""
+        page_height = 792.0
+        clip = BoundingBox(l=122.0, b=676.0, r=252.0, t=698.0, coord_origin=CoordOrigin.BOTTOMLEFT)
+        cell = _pdf_text_cell(clip_bbox=clip)
+        if query_origin == CoordOrigin.BOTTOMLEFT:
+            # Store the page's cells in the other origin, so the query flips them back.
+            cell.to_top_left_origin(page_height=page_height)
+        page = _segmented_pdf_page(page_height=page_height, word_cells=[cell])
+
+        # A query box, in the requested origin, that covers the whole cell.
+        query = BoundingBox(l=100.0, b=670.0, r=320.0, t=700.0, coord_origin=CoordOrigin.BOTTOMLEFT)
+        if query_origin == CoordOrigin.TOPLEFT:
+            query = query.to_top_left_origin(page_height=page_height)
+
+        (found,) = page.get_cells_in_bbox(TextCellUnit.WORD, query)
+        assert isinstance(found, PdfTextCell)
+        assert found.rect.coord_origin == query_origin
+        assert found.clip_bbox is not None
+        assert found.clip_bbox.coord_origin == query_origin
+        expected = clip if query_origin == CoordOrigin.BOTTOMLEFT else clip.to_top_left_origin(page_height=page_height)
+        assert found.clip_bbox == expected
+        # The rect and the clip still agree on where the visible text is.
+        assert found.clip_bbox.intersection_over_self(found.to_bounding_box()) > 0.0
+        # The page's own cell is untouched.
+        assert page.word_cells[0] == cell

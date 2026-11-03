@@ -820,12 +820,13 @@ class SegmentedPdfPage(SegmentedPage):
         cells = []
         for page_cell in self.iterate_cells(cell_unit):
             pc = copy.deepcopy(page_cell)
-            # Bring cell_bbox coord origin to the same as input bbox.coord_origin:
+            # Bring the cell's boxes (rect, and clip_bbox when the cell is a
+            # PdfTextCell) to the same coord origin as the input bbox:
             if page_cell.rect.coord_origin != bbox.coord_origin:
                 if bbox.coord_origin == CoordOrigin.TOPLEFT:
-                    pc.rect = pc.rect.to_top_left_origin(self.dimension.height)
+                    pc.to_top_left_origin(self.dimension.height)
                 elif bbox.coord_origin == CoordOrigin.BOTTOMLEFT:
-                    pc.rect = pc.rect.to_bottom_left_origin(self.dimension.height)
+                    pc.to_bottom_left_origin(self.dimension.height)
             cell_bbox = pc.to_bounding_box()
             if cell_bbox.intersection_over_self(bbox) > ios:
                 cells.append(pc)
