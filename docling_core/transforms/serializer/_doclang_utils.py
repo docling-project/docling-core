@@ -5,7 +5,7 @@ import warnings
 import xml.etree.ElementTree as ET
 from collections.abc import Callable, Sequence
 from enum import Enum
-from typing import Any, ClassVar, Final, Literal, Optional, cast
+from typing import Any, ClassVar, Final, NamedTuple, Optional, cast
 from xml.dom.minidom import Element, Node, Text
 
 from pydantic import BaseModel
@@ -1146,9 +1146,15 @@ _XML_WHITESPACE: Final = " \t\r\n"
 # Left as written: <custom> holds foreign markup, and <track> is not supported yet.
 _WHITESPACE_OPAQUE_TAGS: Final[frozenset[str]] = frozenset({DocLangToken.CUSTOM.value, "track"})
 
-# A flattened text block: unprotected text nodes, <content> elements, and "content" for any
-# other visible item (e.g. <br/>, an inline <picture>).
-_WsToken = Text | Element | Literal["content"]
+
+class _VisibleItem(NamedTuple):
+    """Anything else visible in a flattened text block (e.g. <br/>, an inline <picture>), by tag."""
+
+    tag: str
+
+
+# A flattened text block: unprotected text nodes, <content> elements, and any other visible items.
+_WsToken = Text | Element | _VisibleItem
 _TextBlockVisitor = Callable[[Sequence[Node]], None]
 
 
@@ -1200,7 +1206,7 @@ def _flatten_text_block(nodes: Sequence[Node], visit: _TextBlockVisitor) -> list
         elif node.tagName in _RAW_TEXT_TAGS:
             out.extend(_flatten_text_block(node.childNodes, visit))
         else:
-            out.append("content")
+            out.append(_VisibleItem(node.tagName))
             if node.tagName != DocLangToken.BR.value:
                 _for_each_text_block(node, visit)
     return out
@@ -1213,7 +1219,7 @@ def _content_text(el: Element) -> str:
 def _read_text_block(tokens: Sequence[_WsToken]) -> list[str]:
     """Return the reading of each token: rules 2-4 for text nodes, literal for <content>.
 
-    "content" tokens read as ``"\0"``, a placeholder for something visible that is not a space.
+    Other visible items read as ``"\0"``, a placeholder for something that is not a space.
     """
     reading: list[list[str]] = [[] for _ in tokens]
     seen_content = False
@@ -1271,6 +1277,31 @@ def _apply_whitespace_rules(root: Element) -> None:
 # Whitespace that DocLang does not read as written: anything but a single space.
 _COLLAPSIBLE_WHITESPACE_RE: Final = re.compile(r"[\t\r\n]|  ")
 
+_INLINE_ITEM_HOSTS: Final[frozenset[str]] = frozenset(
+    {
+        DocLangToken.TEXT.value,
+        DocLangToken.CAPTION.value,
+        DocLangToken.FOOTNOTE.value,
+        DocLangToken.PAGE_HEADER.value,
+        DocLangToken.PAGE_FOOTER.value,
+    }
+)
+_VIRTUAL_TEXT_HOSTS: Final[frozenset[str]] = frozenset({DocLangToken.LIST.value, DocLangToken.TABLE.value})
+_FIELD_HOSTS: Final[frozenset[str]] = frozenset({DocLangToken.FIELD_KEY.value, DocLangToken.FIELD_VALUE.value})
+
+
+def _deserializer_keeps_space_beside(item_tag: str, host_tag: str) -> bool:
+    """True when our deserializer keeps a bare space beside a non-text item in the given text block.
+
+    All such spaces count per the spec, but some deserializer paths still trim them: there, the
+    serializer keeps writing ``<content>``, which they don't touch.
+    """
+    if item_tag == DocLangToken.CHECKBOX.value:
+        return host_tag in _INLINE_ITEM_HOSTS or host_tag in _VIRTUAL_TEXT_HOSTS or host_tag in _FIELD_HOSTS
+    if item_tag == DocLangToken.PICTURE.value:
+        return host_tag in _INLINE_ITEM_HOSTS
+    return False
+
 
 def _unwrap_redundant_content(root: Element) -> None:
     """Unwrap each ``<content>`` under ``root`` whose text reads the same without it.
@@ -1283,21 +1314,44 @@ def _unwrap_redundant_content(root: Element) -> None:
     def visit(nodes: Sequence[Node]) -> None:
         tokens = _flatten_text_block(nodes, visit)
         reading = _read_text_block(tokens)
+        host = cast(Element, nodes[0].parentNode) if nodes else None
+        host_tag = host.tagName if host is not None else ""
+
+        def in_nested_block(el: Element) -> bool:
+            """Whether ``el`` sits in an element the deserializer reads as a block, e.g. ``<value><text>``."""
+            ancestor = cast(Element, el.parentNode)
+            while ancestor is not host:
+                if ancestor.tagName not in _VIRTUAL_TEXT_INLINE_TAGS | _VIRTUAL_TEXT_SEMANTIC_TAGS:
+                    return True
+                ancestor = cast(Element, ancestor.parentNode)
+            return False
+
+        def needs_wrapper(neighbours: Sequence[int], touching_char: int) -> bool:
+            """Whether an edge space would be lost beside the first of ``neighbours`` that reads as something."""
+            neighbour = next((i for i in neighbours if reading[i]), None)
+            if neighbour is None:
+                return True  # dropped at the block edge
+            tok = tokens[neighbour]
+            if isinstance(tok, _VisibleItem):
+                return not _deserializer_keeps_space_beside(tok.tag, host_tag)
+            return reading[neighbour][touching_char] == " "  # would merge with a neighbouring space
+
         for idx, tok in enumerate(tokens):
             if not isinstance(tok, Element) or not (text := reading[idx]) or _COLLAPSIBLE_WHITESPACE_RE.search(text):
                 continue
-            if not text.strip(" ") and cast(Element, tok.parentNode).tagName not in _RAW_TEXT_TAGS:
+            if in_nested_block(tok) and (text[0] == " " or text[-1] == " "):
+                continue  # the deserializer trims the edges of that block
+            parent = cast(Element, tok.parentNode)
+            if (
+                not text.strip(" ")
+                and parent.tagName not in _RAW_TEXT_TAGS
+                and not _is_virtual_text([n for n in nodes if n is not tok and n.parentNode is parent])
+            ):
                 continue  # bare, it would no longer make its list item or cell a virtual <text>
-            before = next((r[-1] for r in reversed(reading[:idx]) if r), None)
-            after = next((r[0] for r in reading[idx + 1 :] if r), None)
-            # Bare, an edge space would be dropped at the block edge, or merge with a neighbouring one.
-            # Next to a non-text item ("\0", e.g. a <checkbox/>) it is kept too: readers map such
-            # items to items of their own, which leaves the space at an item edge.
-            if text[0] == " " and before in (None, " ", "\0"):
+            if text[0] == " " and needs_wrapper(range(idx - 1, -1, -1), -1):
                 continue
-            if text[-1] == " " and after in (None, " ", "\0"):
+            if text[-1] == " " and needs_wrapper(range(idx + 1, len(tokens)), 0):
                 continue
-            parent = cast(Node, tok.parentNode)
             for child in list(tok.childNodes):
                 parent.insertBefore(child, tok)
             parent.removeChild(tok)

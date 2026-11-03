@@ -373,10 +373,10 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             text = item.text
             processing_pending = True
 
-        if item.label == DocItemLabel.CHECKBOX_SELECTED:
-            text = f"- [x] {text}"
-        if item.label == DocItemLabel.CHECKBOX_UNSELECTED:
-            text = f"- [ ] {text}"
+        if item.label in (DocItemLabel.CHECKBOX_SELECTED, DocItemLabel.CHECKBOX_UNSELECTED):
+            box = "[x]" if item.label == DocItemLabel.CHECKBOX_SELECTED else "[ ]"
+            # The syntax needs a space after the box, unless the text brings its own.
+            text = f"- {box}{text}" if text[:1].isspace() else f"- {box} {text}"
         if isinstance(item, ListItem | TitleItem | SectionHeaderItem):
             if not has_inline_repr:
                 # case where processing/formatting should be applied first (in inner scope)
