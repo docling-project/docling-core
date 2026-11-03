@@ -1858,14 +1858,17 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
     def _custom_field_value(self, el: Element) -> Any:
         """Read a custom field element: its text, or a dict of attribute name / child tag -> value.
 
-        An attribute maps to its value under its name. A tag that occurs once in the element maps to
-        its value, a repeated tag to a list of values. An element with neither attributes nor child
-        elements maps to its text.
+        An element without child elements maps to its text when the text is not empty, so a
+        text-valued field keeps its value even when it carries attributes, which are then not read.
+        Otherwise an attribute maps to its value under its name, a tag that occurs once in the
+        element maps to its value, and a repeated tag to a list of values. An element with no child
+        elements, no attributes, and no text maps to its (empty) text.
         """
         attributes: dict[str, Any] = dict(el.attributes.items()) if el.attributes is not None else {}
         children = [c for c in el.childNodes if isinstance(c, Element) and c.tagName != DocLangToken.CONTENT.value]
-        if not children and not attributes:
-            return self._get_text(el)
+        if not children:
+            text = self._get_text(el)
+            return text if text or not attributes else attributes
         grouped: dict[str, list[Any]] = {}
         for child in children:
             grouped.setdefault(child.tagName, []).append(self._custom_field_value(child))

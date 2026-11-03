@@ -2887,6 +2887,28 @@ def test_custom_field_attributes_roundtrip() -> None:
     assert doc2.texts[0].meta.get_custom_part() == expected
 
 
+@pytest.mark.parametrize(
+    "field",
+    [
+        '<acme__note lang="en">Hello</acme__note>',
+        '<acme__note lang="en"><content>Hello</content></acme__note>',
+    ],
+)
+def test_custom_field_with_attributes_and_text_keeps_its_text(field: str) -> None:
+    # a text-valued field keeps its text when it also carries attributes, as before attributes were read
+    xml = f'<doclang version="0.7"><text><custom>{field}</custom>Prose.</text></doclang>'
+
+    doc = DocLangDocDeserializer().deserialize_str(xml)
+
+    (item,) = doc.texts
+    assert item.meta is not None
+    assert item.meta.get_custom_part() == {"acme__note": "Hello"}
+
+    doc2 = DocLangDocDeserializer().deserialize_str(DocLangDocSerializer(doc=doc).serialize().text)
+    assert doc2.texts[0].meta is not None
+    assert doc2.texts[0].meta.get_custom_part() == {"acme__note": "Hello"}
+
+
 def test_table_head_meta_is_restored() -> None:
     # the element head of a <table> carries its meta like any other element
     xml = (
