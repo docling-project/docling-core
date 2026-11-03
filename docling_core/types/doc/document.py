@@ -3229,6 +3229,9 @@ class DoclingDocument(BaseModel):
     ) -> "DoclingDocument":
         """Extracts NodeItems and children in the range from the start NodeItem to the end as a new DoclingDocument.
 
+        A caption, reference, footnote, or comment of an extracted item is kept only if its target is also extracted.
+        For example, a table whose caption is outside the range has no caption in the new document.
+
         :param start: NodeItem:  The starting NodeItem of the range (must be a direct child of the document body)
         :param end: NodeItem:  The ending NodeItem of the range  (must be a direct child of the document body)
         :param start_inclusive: bool:  (Default value = True):  If True, the start NodeItem will also be extracted
@@ -3316,6 +3319,10 @@ class DoclingDocument(BaseModel):
     ) -> None:
         """Adds multiple NodeItems and their children under a parent in this document.
 
+        The captions, references, footnotes, and comments of the copies point to the copied items. If `doc` is
+        another document, a reference to an item that is not copied is removed, because its target does not exist in
+        this document.
+
         :param node_items: list[NodeItem]: The NodeItems to be added
         :param doc: DoclingDocument: The document to which the NodeItems and their children belong
         :param parent: Optional[NodeItem]: The parent NodeItem under which new items are added (Default value = None)
@@ -3349,6 +3356,10 @@ class DoclingDocument(BaseModel):
         after: bool = True,
     ) -> None:
         """Insert multiple NodeItems and their children at a specific position in the document.
+
+        The captions, references, footnotes, and comments of the copies point to the copied items. If `doc` is
+        another document, a reference to an item that is not copied is removed, because its target does not exist in
+        this document.
 
         :param sibling: NodeItem: The NodeItem after/before which the new items will be inserted
         :param node_items: list[NodeItem]: The NodeItems to be inserted
