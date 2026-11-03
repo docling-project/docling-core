@@ -139,6 +139,8 @@ def _resolves_hostname_locally(url: str, session: requests.Session) -> bool:
     A proxied request connects to the proxy, which resolves the target itself. When the
     ``trust_proxy_for_dns`` setting is on, such a URL skips the local lookup, which would
     leak the hostname to the local resolver and fail where only the proxy can resolve it.
+    The address the proxy resolves is then not checked here, so the proxy must enforce
+    its own egress rules, and ``allowed_private_ips`` does not apply to such a hostname.
     """
     if not settings.trust_proxy_for_dns:
         return True
