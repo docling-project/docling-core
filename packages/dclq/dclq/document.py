@@ -129,6 +129,73 @@ class LoadedDocument:
     source_pages: dict[str, int] = field(default_factory=dict)
 
     @property
+    def head_metadata(self) -> dict[str, dict[str, str]]:
+        """Custom document-head fields, including their attributes and optional text.
+
+        Keys are custom element names. Each value preserves its attributes;
+        textual content is included under the ``text`` key when present.
+        """
+        result: dict[str, dict[str, str]] = {}
+        for head in self.raw_root:
+            if _local_name(head) != "head":
+                continue
+            for custom in head:
+                if _local_name(custom) != "custom":
+                    continue
+                for field in custom:
+                    if not _is_element(field):
+                        continue
+                    name = _local_name(field)
+                    if name is None:
+                        continue
+                    values = dict(field.attrib)
+                    if field.text and field.text.strip():
+                        values["text"] = field.text.strip()
+                    result[name] = values
+        return result
+
+    @property
+    def picture_uris(self) -> dict[str, str]:
+        """Original picture source URIs keyed by canonical source XPath.
+
+        PictureItem.image can be absent for coordinate-free XML; this reads
+        the source ``<src uri="..."/>`` without needing to load an image.
+        """
+        result: dict[str, str] = {}
+        for xpath, element in self.raw_elements.items():
+            if _local_name(element) != "picture":
+                continue
+            for child in element:
+                if _local_name(child) == "src" and (uri := child.get("uri")):
+                    result[xpath] = uri
+                    break
+        return result
+
+    def slide_number_for_xpath(self, xpath: str) -> int | None:
+        """Find the nearest enclosing slide group's index for a source XPath.
+
+        Slide groups identify themselves with a
+        ``<custom><docling_machine__group_name value="slide-N"/></custom>``
+        head. Ordinary groups and elements outside slide groups return None.
+        """
+        element = self.raw_elements.get(xpath)
+        if element is None:
+            raise DclqError(f"unknown source XPath: {xpath}")
+        while element is not None:
+            if _local_name(element) == "group":
+                for custom in element:
+                    if _local_name(custom) != "custom":
+                        continue
+                    for field in custom:
+                        if _local_name(field) != "docling_machine__group_name":
+                            continue
+                        name = (field.get("value") or field.text or "").strip()
+                        if match := re.fullmatch(r"slide-(\d+)", name):
+                            return int(match.group(1))
+            element = element.getparent()
+        return None
+
+    @property
     def sha256(self) -> str:
         return hashlib.sha256(self.raw).hexdigest()
 
