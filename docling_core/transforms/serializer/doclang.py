@@ -1287,7 +1287,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                     if isinstance(item, ListItem) and _list_item_segment_sibling(child_item):
                         continue
                     sub_parts.append(doc_serializer.serialize(item=child_item, visited=my_visited, **kwargs).text)
-                text_part = _get_delim(params=params).join(sub_parts)
+                text_part = ("" if is_inline_scope else _get_delim(params=params)).join(sub_parts)
             else:
                 text_part = _escape_text(item.text, params)
                 text_part = doc_serializer.post_process(
@@ -1969,6 +1969,9 @@ class DocLangInlineSerializer(BaseInlineSerializer):
                     )
                     parts.append(create_ser_result(text=loc_str))
         head_parts = list(parts)
+        # Runs nested in a group read as part of its flow: only a head needs an element of its own.
+        if isinstance(parent_item, InlineGroup):
+            should_wrap = bool(head_parts)
         inline_parts = doc_serializer.get_parts(
             item=item,
             list_level=list_level,
@@ -1977,16 +1980,13 @@ class DocLangInlineSerializer(BaseInlineSerializer):
             **{**kwargs, **params.model_dump()},
         )
         parts.extend(inline_parts)
-        delim = _get_delim(params=params)
         # Inline runs carry their own significant whitespace; concatenate them faithfully.
-        # The delimiter separates the element head from the body, it is not a whitespace
-        # channel — `<content>` is (see `_escape_text`).
+        # No delimiter here: a line break reads as a space, `_pretty_print` lays out the element,
+        # and `<content>` is the whitespace channel (see `_escape_text`).
         segments = [p.text for p in head_parts if p.text]
         if inline_text := "".join([p.text for p in inline_parts if p.text]):
             segments.append(inline_text)
-        text_res = delim.join(segments)
-        if text_res:
-            text_res = f"{text_res}{delim}"
+        text_res = "".join(segments)
 
         if should_wrap:
             # if "unwrapped", wrap in <text>...</text>
