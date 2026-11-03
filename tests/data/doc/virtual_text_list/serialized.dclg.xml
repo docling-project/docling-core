@@ -11,9 +11,7 @@
     <location value="20"/>
     <location value="210"/>
     <location value="46"/>
-    <content>this is a </content>
-    <bold>bold</bold>
-    <content> text</content>
+    this is a <bold>bold</bold> text
     <ldiv/>
     <text>
       <location value="215"/>

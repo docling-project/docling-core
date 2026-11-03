@@ -6,7 +6,7 @@ import re
 import textwrap
 from enum import Enum
 from pathlib import Path, PurePath
-from typing import Annotated, Any, Final, Optional, Union
+from typing import Annotated, Any, ClassVar, Final, Optional, Union
 from urllib.parse import quote, urlsplit, urlunsplit
 
 from pydantic import AnyUrl, BaseModel, Field, PositiveInt
@@ -173,8 +173,9 @@ def _mark_subtree_visited(
 def _collect_subtree_text(item: NodeItem, doc: DoclingDocument, excluded_refs: set[str]) -> str:
     """Collect all text from *item*'s subtree, flattening nested tables.
 
-    Returns a space-joined string of every piece of text found so that the
-    content of a nested table is preserved in a flat, readable form.
+    Returns every piece of text found, joined with spaces (the runs of an inline
+    group are concatenated as they are), so that the content of a nested table is
+    preserved in a flat, readable form.
 
     For TableItems the text is pulled from ``data.grid`` cells directly;
     RichTableCells are resolved through their references, without visiting the
@@ -213,7 +214,8 @@ def _collect_subtree_text(item: NodeItem, doc: DoclingDocument, excluded_refs: s
             if child_text:
                 parts.append(child_text)
 
-    return " ".join(parts)
+    # Inline runs carry their own boundary whitespace; everything else is joined as blocks.
+    return ("" if isinstance(item, InlineGroup) else " ").join(parts)
 
 
 def _longest_backtick_run(text: str) -> int:
@@ -1092,7 +1094,11 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 and p.spans[0].item.parent
                 and isinstance(p.spans[0].item.parent.resolve(doc), InlineGroup)
             ):
-                my_parts[-1].text = f"{my_parts[-1].text}{p.text}"  # append to last
+                # append to last; a group that is the child of a text item keeps the host separator
+                group = p.spans[0].item.parent.resolve(doc)
+                host = group.parent.resolve(doc) if group.parent else None
+                sep_host = " " if isinstance(host, TextItem) and host.text else ""
+                my_parts[-1].text = f"{my_parts[-1].text}{sep_host}{p.text}"
                 my_parts[-1].spans.extend(p.spans)
             else:
                 my_parts.append(p)
@@ -1140,7 +1146,8 @@ class MarkdownInlineSerializer(BaseInlineSerializer):
             visited=my_visited,
             **kwargs,
         )
-        text_res = " ".join([p.text for p in parts if p.text])
+        # Inline runs carry their own significant whitespace; concatenate faithfully.
+        text_res = "".join([p.text for p in parts if p.text])
         return create_ser_result(text=text_res, span_source=parts)
 
 
@@ -1187,6 +1194,9 @@ class MarkdownDocSerializer(DocSerializer):
     annotation_serializer: BaseAnnotationSerializer = MarkdownAnnotationSerializer()
 
     params: MarkdownParams = MarkdownParams()
+
+    # `**bold ** tail` renders as literal asterisks in CommonMark.
+    hoist_decoration_whitespace: ClassVar[bool] = True
 
     @override
     def serialize_bold(self, text: str, **kwargs: Any):

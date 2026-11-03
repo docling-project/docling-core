@@ -180,9 +180,10 @@ def test_inline_group_no_duplication():
     # Formatted section heading via InlineGroup
     heading = doc.add_heading(text="", level=1)
     ig = doc.add_inline_group(parent=heading)
+    # Runs carry their own boundary whitespace; the serializer does not invent a separator.
     doc.add_text(
         label="text",
-        text="Partially formatted",
+        text="Partially formatted ",
         formatting=Formatting(italic=True),
         parent=ig,
     )
@@ -199,11 +200,11 @@ def test_inline_group_no_duplication():
 
     # Each piece of content must appear exactly once in the body
     assert body.count("\\textit{Partially formatted} heading") == 1
-    assert body.count("\\textbf{Term} : definition") == 1
+    assert body.count("\\textbf{Term}: definition") == 1
 
     # The content must be inside the LaTeX command, not on a standalone line
     assert "\\section{\\textit{Partially formatted} heading}" in body
-    assert "\\item \\textbf{Term} : definition" in body
+    assert "\\item \\textbf{Term}: definition" in body
 
 
 def test_latex_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_table_doc):
@@ -435,7 +436,7 @@ def test_latex_inline_group_child_meta_is_suppressed():
     """Meta on items inside an InlineGroup must not produce comment blocks mid-sentence."""
     doc = DoclingDocument(name="test")
     ig = doc.add_inline_group()
-    first = doc.add_text(label=DocItemLabel.TEXT, text="Alpha", parent=ig)
+    first = doc.add_text(label=DocItemLabel.TEXT, text="Alpha ", parent=ig)
     first.meta = BaseMeta(summary=SummaryMetaField(text="A summary"))
     doc.add_text(label=DocItemLabel.TEXT, text="Beta", parent=ig)
 

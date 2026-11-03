@@ -179,7 +179,9 @@ def project_to(doc: DoclingDocument, target_version: str) -> DoclingDocument:
     # The current SDK's version validator normalises the version field to
     # CURRENT_VERSION on success.  We restore the target version afterwards so
     # callers and downstream serialisation correctly reflect the projected schema.
-    result = DoclingDocument.model_validate(data)
+    # Validate under the source stamp: the projected stamp would trigger load-time upgrades
+    # (the inline separator migration) on data that is already current.
+    result = DoclingDocument.model_validate({**data, "version": doc.version})
     object.__setattr__(result, "version", data["version"])
     return result
 
@@ -192,11 +194,54 @@ def list_projectors() -> list[tuple[int, int]]:
 # ---------------------------------------------------------------------------
 # Projectors — one per schema minor bump within docling-core v2.x
 # ---------------------------------------------------------------------------
-# These cover every schema version step from the current schema (1.10) down
+# These cover every schema version step from the current schema (1.11) down
 # to the oldest v2.x schema (1.5).  Each projector represents the *minimal*
 # structural downgrade that allows an old client's Pydantic model to parse
 # the serialised dict without error.  Full semantic fidelity is not always
 # possible; the goal is a document that validates rather than crashes.
+
+# --- 1.11 → 1.10 ----------------------------------------------------------
+# Schema 1.11 (docling-core v2.106.0): InlineGroup runs carry their own
+# significant whitespace and serializers concatenate them faithfully.
+#
+# The 1.11 and 1.10 schemas are structurally identical -- no new fields,
+# labels, or lists.  The only difference is *semantic*: a 1.11 run's text
+# contains its boundary whitespace, whereas a 1.10 client re-inserts a
+# single " " between runs at serialization time.  Left as-is, a 1.10 client
+# renders every boundary twice and keeps the space inside the markup
+# (``**bold **``, which CommonMark does not render as bold).  The projector
+# therefore strips inline runs to the shape old producers emitted; the old
+# join puts one space back.  1.10 cannot represent a tight run boundary, so
+# ``H2O`` comes back as the old ``H 2 O``.
+# ---------------------------------------------------------------------------
+
+
+@register_projector(from_minor=11, to_minor=10)
+def _project_1_11_to_1_10(data: dict) -> dict:
+    """Downgrade a schema 1.11 document dict to schema 1.10.
+
+    1.11 and 1.10 share an identical structure; the difference is only in how
+    inline-run whitespace is represented. A 1.10 client joins runs with ``" "``,
+    so the text of each inline-group child is stripped. A whitespace-only run
+    becomes ``""``, which old serializers skip, so no refs need renumbering.
+    ``orig`` is left alone.
+    """
+    data = dict(data)
+    data["version"] = "1.10.0"
+    inline_runs = {
+        child.get("$ref", child.get("cref"))
+        for group in data.get("groups", [])
+        if group.get("label") == "inline"
+        for child in group.get("children", [])
+    }
+    data["texts"] = [
+        {**item, "text": item["text"].strip()}
+        if item.get("self_ref") in inline_runs and isinstance(item.get("text"), str)
+        else item
+        for item in data.get("texts", [])
+    ]
+    return data
+
 
 # --- 1.10 → 1.9 -----------------------------------------------------------
 # Schema 1.10 (docling-core v2.69.0, PR #519):
