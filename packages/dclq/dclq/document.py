@@ -142,15 +142,15 @@ class LoadedDocument:
             for custom in head:
                 if _local_name(custom) != "custom":
                     continue
-                for field in custom:
-                    if not _is_element(field):
+                for custom_field in custom:
+                    if not _is_element(custom_field):
                         continue
-                    name = _local_name(field)
+                    name = _local_name(custom_field)
                     if name is None:
                         continue
-                    values = dict(field.attrib)
-                    if field.text and field.text.strip():
-                        values["text"] = field.text.strip()
+                    values = dict(custom_field.attrib)
+                    if custom_field.text and custom_field.text.strip():
+                        values["text"] = custom_field.text.strip()
                     result[name] = values
         return result
 
@@ -186,10 +186,10 @@ class LoadedDocument:
                 for custom in element:
                     if _local_name(custom) != "custom":
                         continue
-                    for field in custom:
-                        if _local_name(field) != "docling_machine__group_name":
+                    for custom_field in custom:
+                        if _local_name(custom_field) != "docling_machine__group_name":
                             continue
-                        name = (field.get("value") or field.text or "").strip()
+                        name = (custom_field.get("value") or custom_field.text or "").strip()
                         if match := re.fullmatch(r"slide-(\d+)", name):
                             return int(match.group(1))
             element = element.getparent()
