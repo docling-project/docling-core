@@ -3,7 +3,6 @@
 from dataclasses import replace
 
 import pytest
-
 from dclq.document import DclqError, LoadedDocument
 
 DOCUMENT = b"""<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.7">
