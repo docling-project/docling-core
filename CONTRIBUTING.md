@@ -68,6 +68,8 @@ make test          # run the test suites
 
 Pull requests also run a fast lint and typing check on the changed files. This check does not need a maintainer approval to run.
 
+An AI triage also runs on each pull request. It posts one comment, adds advisory `ai:*` and topic labels, and writes a first review with inline comments. It never approves or blocks a pull request, and a maintainer still reviews every change. See [AI PR triage and first review](.github/AI_TRIAGE.md).
+
 ### Documentation
 
 We use [JSON Schema for Humans](https://github.com/coveooss/json-schema-for-humans) to generate Markdown pages documenting the JSON schema of the Docling objects.
@@ -142,7 +144,7 @@ Suppose you are bumping `CURRENT_VERSION` from `1.N.0` to `1.(N+1).0`:
    this check runs.  Add the generated snapshot file to your commit.
 
 6. **Write a test class** named exactly `TestProjector_1_{N+1}_to_1_{N}`
-   in `test/test_compat.py`.  Add at least one non-trivial test that
+   in `tests/test_compat.py`.  Add at least one non-trivial test that
    exercises the specific field(s) the projector handles.
 7. Run `python scripts/check_compat_projectors.py` locally to confirm
    the coverage check passes.
