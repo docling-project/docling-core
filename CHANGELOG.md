@@ -1,3 +1,15 @@
+## [v2.106.0](https://github.com/docling-project/docling-core/releases/tag/v2.106.0) - 2026-11-04
+
+### Feature
+
+* Make inline serializers concatenate runs faithfully ([#693](https://github.com/docling-project/docling-core/issues/693)) ([`738abee`](https://github.com/docling-project/docling-core/commit/738abeee008dc4607352c09c89bb0589ae4a1fc1))
+
+### Fix
+
+* **doclang:** Stop adding separators to nested inline content ([#963](https://github.com/docling-project/docling-core/issues/963)) ([`1517ab7`](https://github.com/docling-project/docling-core/commit/1517ab72757163d751750b42c87c4049290bd166))
+* **doclang:** Read a checkbox's text as the run after it, verbatim ([#955](https://github.com/docling-project/docling-core/issues/955)) ([`98218df`](https://github.com/docling-project/docling-core/commit/98218dffa1c6cc63390c34dd6972e0a19997e6c9))
+* **doclang:** Map notes and invisible layers to DocLang values ([#800](https://github.com/docling-project/docling-core/issues/800)) ([`2dc4c9f`](https://github.com/docling-project/docling-core/commit/2dc4c9f511269eb39be5aad84b838f7bb179142e))
+
 ## [v2.105.0](https://github.com/docling-project/docling-core/releases/tag/v2.105.0) - 2026-10-27
 
 ### Feature
