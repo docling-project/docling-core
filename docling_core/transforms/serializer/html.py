@@ -1348,12 +1348,21 @@ class HTMLDocSerializer(DocSerializer):
         if DocItemLabel.FOOTNOTE in params.labels:
             for ftn in item.footnotes:
                 if isinstance(it := ftn.resolve(self.doc), TextItem) and it.self_ref not in excluded_refs:
-                    text_ftn = it.text
-                    text_dir = get_text_direction(text_ftn)
+                    if it.children:
+                        text_ftn = self.text_serializer.serialize(
+                            item=it,
+                            doc_serializer=self,
+                            doc=self.doc,
+                            is_inline_scope=True,
+                            **kwargs,
+                        ).text
+                    else:
+                        text_ftn = html.escape(it.text)
+                    text_dir = get_text_direction(it._get_plain_text(self.doc))
                     dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""
                     results.append(
                         create_ser_result(
-                            text=(f'<div class="footnote"{dir_str}>{html.escape(text_ftn)}</div>'),
+                            text=(f'<div class="footnote"{dir_str}>{text_ftn}</div>'),
                             span_source=it,
                         )
                     )
