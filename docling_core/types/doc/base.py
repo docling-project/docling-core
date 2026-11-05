@@ -344,7 +344,7 @@ class BoundingBox(BaseModel):
             return (self.b + eps) > other.t
 
         elif self.coord_origin == CoordOrigin.TOPLEFT and other.coord_origin == CoordOrigin.TOPLEFT:
-            return (self.b + eps) < other.t
+            return (self.b - eps) < other.t
 
         else:
             raise ValueError("BoundingBoxes have different CoordOrigin")

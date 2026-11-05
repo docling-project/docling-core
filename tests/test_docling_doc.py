@@ -380,6 +380,24 @@ def test_orientation():
     assert bbox1_.is_strictly_above(bbox4_) is True
 
 
+@pytest.mark.parametrize(
+    ("gap", "expected"),
+    [(-5.0, False), (-0.0005, True), (0.0, True), (0.0005, True), (0.5, True)],
+)
+def test_is_strictly_above_agrees_across_origins(gap: float, expected: bool):
+    page_height = 300
+    upper = BoundingBox(l=0, t=0, r=10, b=10, coord_origin=CoordOrigin.TOPLEFT)
+    lower = BoundingBox(l=0, t=10 + gap, r=10, b=20 + gap, coord_origin=CoordOrigin.TOPLEFT)
+
+    assert upper.is_strictly_above(lower) is expected
+    assert (
+        upper.to_bottom_left_origin(page_height=page_height).is_strictly_above(
+            lower.to_bottom_left_origin(page_height=page_height)
+        )
+        is expected
+    )
+
+
 def test_docitems():
     # Iterative function to find all subclasses
     def find_all_subclasses_iterative(base_class):
