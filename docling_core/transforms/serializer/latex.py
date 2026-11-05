@@ -909,19 +909,32 @@ class LaTeXDocSerializer(DocSerializer):
         - Removes all \title{...} occurrences from the body.
         - Returns (title_cmd, new_body_text, needs_maketitle).
 
-        Note: Regex assumes no nested braces inside \title{...}.
+        Nested groups and escaped braces are preserved in the title content.
         """
-        # Match \title{...} allowing whitespace, but not nested braces
-        pattern = re.compile(r"\\title\s*\{([^{}]*)\}", re.DOTALL)
-        first = pattern.search(body_text)
-        if not first:
-            # Nothing to do
+        title_cmd: str | None = None
+        body_parts: list[str] = []
+        cursor = 0
+        for match in re.finditer(r"\\title\s*\{", body_text):
+            if match.start() < cursor:
+                continue
+            depth = 1
+            for token in re.finditer(r"\\.|[{}]", body_text[match.end() :], re.DOTALL):
+                if token.group() == "{":
+                    depth += 1
+                elif token.group() == "}":
+                    depth -= 1
+                if depth == 0:
+                    end = match.end() + token.end()
+                    if title_cmd is None:
+                        title_cmd = "\\title{" + body_text[match.end() : end]
+                    body_parts.append(body_text[cursor : match.start()])
+                    cursor = end
+                    break
+        if title_cmd is None:
             return None, body_text, False
 
-        title_content = first.group(1)
-        title_cmd = f"\\title{{{title_content}}}"
-        # Remove all \title occurrences from the body
-        new_body = pattern.sub("", body_text)
+        body_parts.append(body_text[cursor:])
+        new_body = "".join(body_parts)
         # Trim excess empty lines that might remain
         new_body = re.sub(r"\n{3,}", "\n\n", new_body).strip()
         return title_cmd, new_body, True
