@@ -51,7 +51,11 @@ class TableCell(BaseModel):
             if not len(text):
                 text_cells = data.pop("text_cell_bboxes", None)
                 if text_cells:
-                    text = " ".join(el["token"] for el in text_cells)
+                    # docling-ibm-models provides one entry per text line that was
+                    # matched into the cell; keep the line structure instead of
+                    # flattening the stacked lines into a single space-separated
+                    # string.
+                    text = "\n".join(el["token"] for el in text_cells)
 
             data["text"] = text
 
