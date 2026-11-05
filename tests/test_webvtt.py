@@ -280,6 +280,36 @@ def test_webvtt_parse_cr_separator() -> None:
     assert component.text == "Hello world"
 
 
+def test_webvtt_parse_whitespace_only_line() -> None:
+    """A line holding only whitespace is cue text unless the next cue starts right after it."""
+    # YouTube auto-generated captions start each cue payload with a line holding a single space.
+    content = (
+        "WEBVTT\n\n"
+        "00:00:00.160 --> 00:00:02.869 align:start position:0%\n"
+        " \n"
+        "hello<00:00:00.640><c> everyone</c>\n\n"
+        "00:00:02.879 --> 00:00:05.110 align:start position:0%\n"
+        "hello everyone\n"
+        "welcome back\n"
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+    assert len(vtt) == 2
+    assert str(vtt[0]) == "00:00:00.160 --> 00:00:02.869\nhello<c> everyone</c>\n"
+    assert str(vtt[1]) == "00:00:02.879 --> 00:00:05.110\nhello everyone\nwelcome back\n"
+
+    # A whitespace-only line between two cues still separates them, with or without an identifier.
+    content = "WEBVTT\n\n1\n00:01.000 --> 00:02.000\none\n \n2\n00:02.000 --> 00:03.000\ntwo\n \n00:03.000 --> 00:04.000\nthree\n"
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+    assert len(vtt) == 3
+    assert [block.identifier for block in vtt] == ["1", "2", None]
+    assert str(vtt[0]) == "1\n00:01.000 --> 00:02.000\none\n"
+    assert str(vtt[2]) == "00:03.000 --> 00:04.000\nthree\n"
+
+
 def test_webvtt_file() -> None:
     """Test WebVTT files."""
     with open("./tests/data/webvtt/webvtt_example_01.vtt", encoding="utf-8") as f:
