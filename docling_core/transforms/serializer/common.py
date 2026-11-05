@@ -687,8 +687,8 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
     @cached_property
     def _satellites_of_some_item(self) -> set[str]:
-        """The captions emitted by their floating item."""
-        return self._captions_of_some_item
+        """The captions and footnotes emitted by their floating item."""
+        return self._captions_of_some_item | self._footnotes_of_some_item
 
     @cached_property
     def _satellite_descendants(self) -> set[str]:
@@ -873,15 +873,26 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         params = self.params.merge_with_patch(patch=kwargs)
         results: list[SerializationResult] = []
         if DocItemLabel.FOOTNOTE in params.labels:
-            results = [
-                create_ser_result(text=it.text, span_source=it)
-                for ftn in item.footnotes
-                if isinstance(it := ftn.resolve(self.doc), TextItem)
-                and it.self_ref not in self.get_excluded_refs(**kwargs)
-            ]
+            for ftn in item.footnotes:
+                if isinstance(it := ftn.resolve(self.doc), TextItem) and it.self_ref not in self.get_excluded_refs(
+                    **kwargs
+                ):
+                    parts = [
+                        create_ser_result(
+                            text=self.post_process(text=it.text, **kwargs),
+                            span_source=it,
+                        )
+                    ]
+                    parts.extend(self.get_parts(item=it, is_inline_scope=True, **kwargs))
+                    results.append(
+                        create_ser_result(
+                            text=" ".join(p.text for p in parts if p.text),
+                            span_source=parts,
+                        )
+                    )
+
             # FIXME: using the caption_delimiter for now ...
-            text_res = params.caption_delim.join([r.text for r in results])
-            text_res = self.post_process(text=text_res)
+            text_res = self.post_process(text=params.caption_delim.join(r.text for r in results))
         else:
             text_res = ""
         return create_ser_result(text=text_res, span_source=results)

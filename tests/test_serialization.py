@@ -2648,3 +2648,37 @@ def test_code_footnotes_serialized_to_markdown_and_html():
         '<figure><pre><code>print(1)</code></pre><div class="footnote">Code note.</div></figure>'
         in doc.export_to_html()
     )
+
+
+def test_table_footnote_with_inline_content_serialized_to_markdown_and_html():
+    """Table footnotes with nested inline content must preserve their structure."""
+    doc = DoclingDocument(name="t")
+
+    td = TableData(num_rows=0, num_cols=1)
+    td.add_row(["Header"])
+    table = doc.add_table(data=td)
+
+    footnote = doc.add_text(label=DocItemLabel.FOOTNOTE, text="")
+    inline = doc.add_inline_group(parent=footnote)
+
+    doc.add_text(label=DocItemLabel.TEXT, text="This is ", parent=inline)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="important",
+        parent=inline,
+        formatting=Formatting(bold=True),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text=" content.", parent=inline)
+
+    table.footnotes.append(footnote.get_ref())
+
+    md_out = doc.export_to_markdown()
+    html_out = doc.export_to_html()
+
+    assert "This is **important** content." in md_out
+    assert md_out.count("This is") == 1
+
+    assert '<div class="footnote">' in html_out
+    assert "This is <strong>important</strong> content." in html_out
+    assert html_out.count("This is") == 1
+    assert html_out.index('<div class="footnote">') < html_out.index("This is")
