@@ -2678,10 +2678,47 @@ def test_table_footnote_with_inline_content_serialized_to_markdown_and_html():
     html_out = doc.export_to_html()
 
     assert "Note: This is **important** content." in md_out
-    assert md_out.count("This is") == 1
+    assert md_out.count("Note:") == 1
 
     assert '<div class="footnote">' in html_out
     assert "Note:" in html_out
-    assert "<span class='inline-group'>This is <strong>important</strong> content.</span>" in html_out
+    assert "This is <strong>important</strong> content." in html_out
+    assert html_out.count("Note:") == 1
     assert html_out.count("This is") == 1
-    assert html_out.index('<div class="footnote">') < html_out.index("This is")
+    assert html_out.index('<div class="footnote">') < html_out.index("Note:")
+
+
+def test_table_footnote_with_rtl_inline_content():
+    """RTL direction must be preserved for footnotes with inline content."""
+    doc = DoclingDocument(name="t")
+
+    td = TableData(num_rows=0, num_cols=1)
+    td.add_row(["Header"])
+    table = doc.add_table(data=td)
+
+    footnote = doc.add_text(
+        label=DocItemLabel.FOOTNOTE,
+        text="ملاحظة:",
+    )
+    inline = doc.add_inline_group(parent=footnote)
+
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="هذا ",
+        parent=inline,
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="مهم",
+        parent=inline,
+        formatting=Formatting(bold=True),
+    )
+
+    table.footnotes.append(footnote.get_ref())
+
+    html_out = doc.export_to_html()
+
+    assert '<div class="footnote" dir="rtl">' in html_out
+    assert "ملاحظة:" in html_out
+    assert "هذا " in html_out
+    assert "<strong>مهم</strong>" in html_out

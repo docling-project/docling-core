@@ -1358,7 +1358,7 @@ class HTMLDocSerializer(DocSerializer):
                         ).text
                     else:
                         text_ftn = html.escape(it.text)
-                    text_dir = get_text_direction(text_ftn)
+                    text_dir = get_text_direction(it._get_plain_text(self.doc))
                     dir_str = f' dir="{text_dir}"' if text_dir == "rtl" else ""
                     results.append(
                         create_ser_result(
