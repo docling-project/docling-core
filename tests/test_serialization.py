@@ -2596,6 +2596,8 @@ def test_table_footnotes_serialized_to_markdown_and_html():
     # one paragraph per footnote after the table
     md_out = doc.export_to_markdown()
     assert "|\n\nFirst footnote.\n\nSecond footnote.\n" in md_out
+    assert "a &lt; b &amp; c &gt; d" in md_out
+    assert "a &amp;lt;" not in md_out
 
     # footnotes are HTML-escaped divs after the table, with nothing between them
     html_out = doc.export_to_html()
@@ -2658,7 +2660,7 @@ def test_table_footnote_with_inline_content_serialized_to_markdown_and_html():
     td.add_row(["Header"])
     table = doc.add_table(data=td)
 
-    footnote = doc.add_text(label=DocItemLabel.FOOTNOTE, text="")
+    footnote = doc.add_text(label=DocItemLabel.FOOTNOTE, text="Note:")
     inline = doc.add_inline_group(parent=footnote)
 
     doc.add_text(label=DocItemLabel.TEXT, text="This is ", parent=inline)
@@ -2675,10 +2677,11 @@ def test_table_footnote_with_inline_content_serialized_to_markdown_and_html():
     md_out = doc.export_to_markdown()
     html_out = doc.export_to_html()
 
-    assert "This is **important** content." in md_out
+    assert "Note: This is **important** content." in md_out
     assert md_out.count("This is") == 1
 
     assert '<div class="footnote">' in html_out
-    assert "This is <strong>important</strong> content." in html_out
+    assert "Note:" in html_out
+    assert "<span class='inline-group'>This is <strong>important</strong> content.</span>" in html_out
     assert html_out.count("This is") == 1
     assert html_out.index('<div class="footnote">') < html_out.index("This is")
