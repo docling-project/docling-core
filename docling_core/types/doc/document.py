@@ -5997,19 +5997,25 @@ class DoclingDocument(BaseModel):
                             parent_index = int(parent_index_str)
                             parent_item = self.get_item_list(parent_key)[parent_index]
 
-                            # update rich table cells references:
-                            if isinstance(parent_item, TableItem):
-                                for table_cell in parent_item.data.table_cells:
-                                    if isinstance(table_cell, RichTableCell) and table_cell.ref.cref == item.self_ref:
-                                        table_cell.ref.cref = new_cref
-                                        break
-
                         elif num_components == 2 and path_components[1] == "body":
                             parent_item = self._body
                         else:
                             raise RuntimeError(f"Unsupported ref format: {new_parent_cref}")
                         parent_item.children.append(RefItem(cref=new_cref))
 
+            # Remap rich table cell references of tables added in this call.
+            # This must run after traversal, using the old->new ref map: rewriting
+            # a cell ref in place while iterating would alias a new ref onto a
+            # not-yet-remapped old ref whenever the index already holds items.
+            # E.g. concatenating a doc whose first rich group is assigned the
+            # new ref #/groups/1 while a later group of the same doc still
+            # holds the old ref #/groups/1 would swap the two cells' contents.
+            for table_item in self.tables[start_indices["tables"] :]:
+                for table_cell in table_item.data.table_cells:
+                    if isinstance(table_cell, RichTableCell):
+                        new_cell_cref = orig_ref_to_new_ref.get(table_cell.ref.cref)
+                        if new_cell_cref is not None:
+                            table_cell.ref.cref = new_cell_cref
             # rewrite FloatingItem explicit refs starting from start_indices to avoid corrupting items from prior calls
             for key in post_processing_keys:
                 for idx_item in self.get_item_list(key)[start_indices[key] :]:
