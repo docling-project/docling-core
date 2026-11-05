@@ -373,9 +373,9 @@ def test_chunk_table_keeps_footnotes():
 
     chunks = list(HierarchicalChunker().chunk(dl_doc=doc))
     assert [c.text for c in chunks] == [
-        "Country = Italy\n\nCountry footnote",
-        "Picture footnote",
-        "```\nx = 1\n```\n\nCode footnote",
+        "Country = Italy\n\n[^Country]\n\n[^Country]: footnote",
+        "[^Picture]\n\n[^Picture]: footnote",
+        "```\nx = 1\n```\n\n[^Code]\n\n[^Code]: footnote",
     ]
 
 
