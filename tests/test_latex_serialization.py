@@ -207,6 +207,22 @@ def test_inline_group_no_duplication():
     assert "\\item \\textbf{Term}: definition" in body
 
 
+def test_latex_deep_section_headers():
+    """Headings deeper than level 3 map to paragraph and subparagraph instead of raising."""
+    doc = DoclingDocument(name="t")
+    for level in (1, 2, 3, 4, 5, 9):
+        doc.add_heading(text=f"Level {level}", level=level)
+
+    body = LaTeXDocSerializer(doc=doc).serialize().text.split("\\begin{document}")[1]
+
+    assert "\\section{Level 1}" in body
+    assert "\\subsection{Level 2}" in body
+    assert "\\subsubsection{Level 3}" in body
+    assert "\\paragraph{Level 4}" in body
+    assert "\\subparagraph{Level 5}" in body
+    assert "\\subparagraph{Level 9}" in body
+
+
 def test_latex_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_table_doc):
     actual = LaTeXDocSerializer(doc=col_span_rich_table_doc).serialize().text
     assert " & Partner & Partner \\\\ \\hline\nStatus & Done & Open \\\\ \\hline" in actual

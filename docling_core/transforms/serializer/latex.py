@@ -227,18 +227,20 @@ class LaTeXTextSerializer(BaseModel, BaseTextSerializer):
                 text_part = f"\\title{{{text}}}"
                 post_process = False
             else:
-                # Section headers: level 1->section, 2->subsection, 3->subsubsection
-                # Raise error for unsupported levels
+                # Section headers: level 1->section, 2->subsection, 3->subsubsection,
+                # 4->paragraph; deeper levels use subparagraph, LaTeX's lowest unit
                 if post_process:
                     text = doc_serializer.post_process(
                         text=text,
                         formatting=item.formatting,
                         hyperlink=item.hyperlink,
                     )
-                lvl = item.level
-                if lvl <= 0 or lvl >= 4:
-                    raise ValueError("LaTeX serializer: SectionHeaderItem.level must be in [1, 3]")
-                cmd = {1: "section", 2: "subsection", 3: "subsubsection"}[lvl]
+                cmd = {
+                    1: "section",
+                    2: "subsection",
+                    3: "subsubsection",
+                    4: "paragraph",
+                }.get(item.level, "subparagraph")
                 text_part = f"\\{cmd}{{{text}}}"
                 post_process = False
 
