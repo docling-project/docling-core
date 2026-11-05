@@ -446,3 +446,37 @@ def test_webvtt_file_unknown_tags() -> None:
     assert str(vtt[1]).rstrip("\n").endswith("\nWhere are you going?")
     assert str(vtt[2]).rstrip("\n").endswith("\n<v Anna>Home, I think.</v>")
     assert str(vtt[3]).rstrip("\n").endswith("\nLast cue")
+
+
+def test_webvtt_file_whitespace_only_line_is_cue_text() -> None:
+    """A line holding only whitespace does not end a cue block (YouTube captions)."""
+    content = (
+        "WEBVTT\n\n"
+        "00:00:00.160 --> 00:00:02.869 align:start position:0%\n"
+        " \n"
+        "hello<00:00:00.640><c> everyone</c>\n\n"
+        "00:00:02.879 --> 00:00:05.110 align:start position:0%\n"
+        "hello everyone\n"
+        "welcome back\n"
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+
+    assert len(vtt) == 2
+    assert str(vtt[0]).rstrip("\n").endswith("\nhello<c> everyone</c>")
+    assert str(vtt[1]).rstrip("\n").endswith("\nhello everyone\nwelcome back")
+
+
+def test_webvtt_file_empty_line_still_separates_cues() -> None:
+    """Only a truly empty line separates cue blocks, including runs of empty lines."""
+    content = (
+        "WEBVTT\n\n\n"
+        "00:00:01.000 --> 00:00:02.000\nFirst\n\n\n"
+        "00:00:03.000 --> 00:00:04.000\nSecond\n\n"
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+
+    assert len(vtt) == 2

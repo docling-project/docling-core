@@ -723,8 +723,9 @@ class WebVTTFile(BaseModel):
         # Remove NOTE/STYLE/REGION blocks
         body = re.sub(cls._pattern, "", body)
 
-        # Split into cue blocks
-        raw_blocks = re.split(r"\n\s*\n", body.strip())
+        # Split into cue blocks. A block ends only at an empty line; a line that
+        # holds just whitespace (as in YouTube captions) is part of the cue payload.
+        raw_blocks = re.split(r"\n\n+", body.strip("\n"))
         cues: list[WebVTTCueBlock] = []
         for block in raw_blocks:
             if not block.strip():
