@@ -246,8 +246,10 @@ class LaTeXTextSerializer(BaseModel, BaseTextSerializer):
             # Inline vs block code
             if is_inline_scope:
                 # Escape only macro parameter char in inline code to avoid TeX errors
-                # Keep other characters (e.g., underscores) as-is to preserve expected output
-                safe_text = text.replace("#", r"\\#")
+                # Keep other characters (e.g., underscores) as-is to preserve expected output.
+                # The escape is a single backslash: `\\` would be a line break and would
+                # leave the `#` a macro parameter character, which TeX rejects.
+                safe_text = text.replace("#", r"\#")
                 text_part = f"\\texttt{{{safe_text}}}"
             else:
                 text_part = f"\\begin{{verbatim}}\n{text}\n\\end{{verbatim}}"
