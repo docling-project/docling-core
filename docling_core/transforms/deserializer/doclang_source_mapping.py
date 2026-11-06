@@ -17,10 +17,10 @@ class DocLangSourceTarget:
     """Semantic target created from one DocLang source element."""
 
     kind: Literal["item", "table_cell", "page"]
-    item_ref: Optional[str] = None
-    row: Optional[int] = None
-    col: Optional[int] = None
-    page_no: Optional[int] = None
+    item_ref: str | None = None
+    row: int | None = None
+    col: int | None = None
+    page_no: int | None = None
 
 
 @dataclass
@@ -60,13 +60,13 @@ _TABLE_CELL_MARKER_TAGS = frozenset(
 class _DocLangSourceRecorder:
     """Optional sidecar that records source bindings without affecting parsing."""
 
-    source_map: Optional[DocLangSourceMap] = None
+    source_map: DocLangSourceMap | None = None
     _suspended: bool = False
 
     @staticmethod
     def _xpath(el: Element) -> str:
         parts: list[str] = []
-        current: Optional[Node] = el
+        current: Node | None = el
         while isinstance(current, Element):
             name = current.localName or current.tagName.rsplit(":", maxsplit=1)[-1]
             parent = current.parentNode

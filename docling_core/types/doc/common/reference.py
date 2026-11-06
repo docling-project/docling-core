@@ -15,7 +15,7 @@ from typing_extensions import Self
 from docling_core.types.base import _JSON_POINTER_REGEX
 from docling_core.types.doc.base import BoundingBox, Size
 from docling_core.types.doc.common.scalars import CharSpan
-from docling_core.types.doc.utils import _ensure_within_size_limit
+from docling_core.types.doc.utils import _ensure_within_size_limit, _normalize_image_for_png
 from docling_core.utils.settings import settings
 
 try:
@@ -77,7 +77,7 @@ class RefItem(BaseModel):
 class FineRef(RefItem):
     """Fine-granular reference item that can capture span range info."""
 
-    range: Optional[tuple[int, int]] = None  # start_inclusive, end_exclusive
+    range: tuple[int, int] | None = None  # start_inclusive, end_exclusive
 
 
 class ImageRef(BaseModel):
@@ -86,44 +86,66 @@ class ImageRef(BaseModel):
     mimetype: str
     dpi: int
     size: Size
-    uri: Union[AnyUrl, Path] = Field(union_mode="left_to_right")
-    _pil: Optional[PILImage.Image] = None
+    uri: AnyUrl | Path = Field(union_mode="left_to_right")
+    _pil: PILImage.Image | None = None
+
+    def _local_path(self) -> Path | None:
+        """Return the local filesystem path of a file:// or plain path URI, else None."""
+        if isinstance(self.uri, Path):
+            return self.uri
+        if isinstance(self.uri, AnyUrl) and self.uri.scheme == "file":
+            return Path(unquote(str(self.uri.path)))
+        return None
+
+    def _load_local_image(self, base_dir: Path | None = None) -> None:
+        """Read a local image into memory, without the settings check.
+
+        Only for explicit opt-ins, see ``DoclingDocument.load_local_images``.
+        """
+        if self._pil is not None or (local_path := self._local_path()) is None:
+            return
+        if base_dir is not None:
+            local_path = base_dir / local_path
+        if not local_path.is_file():
+            raise ValueError(f"Image file not found or not a regular file: {local_path}")
+        _ensure_within_size_limit(
+            local_path,
+            max_size=settings.max_image_decoded_size,
+            label="Image file",
+        )
+        with PILImage.open(local_path) as pil:
+            self._pil = pil.copy()
 
     @property
-    def pil_image(self) -> Optional[PILImage.Image]:
+    def pil_image(self) -> PILImage.Image | None:
         """Return the PIL Image."""
         if self._pil is not None:
             return self._pil
 
-        if isinstance(self.uri, AnyUrl):
-            if self.uri.scheme == "file":
-                if not settings.allow_image_file_uri:
-                    raise ValueError("file:// URI scheme is not enabled.")
-                file_path = Path(unquote(str(self.uri.path)))
-                _ensure_within_size_limit(
-                    file_path,
-                    max_size=settings.max_image_decoded_size,
-                    label="Image file",
+        if (local_path := self._local_path()) is not None:
+            if not settings.allow_image_file_uri:
+                raise ValueError(
+                    "Reading local image files (file:// URIs and filesystem paths) is not enabled; "
+                    "set DOCLINGCORE_ALLOW_IMAGE_FILE_URI=true, or call DoclingDocument.load_local_images() "
+                    "for trusted documents."
                 )
-                self._pil = PILImage.open(file_path)
-            elif self.uri.scheme == "data":
-                encoded_img = str(self.uri).split(",")[1]
-                decoded_img = base64.b64decode(encoded_img)
-
-                if len(decoded_img) > settings.max_image_decoded_size:
-                    raise ValueError(f"Decoded image exceeds size limit of {settings.max_image_decoded_size} bytes.")
-
-                self._pil = PILImage.open(BytesIO(decoded_img))
-            # else: HTTP(S) and other remote schemes are intentionally not fetched.
-            # If remote fetch is enabled, it must use host allowlists and block
-            # private, link-local, and cloud-metadata addresses (SSRF controls).
-        elif isinstance(self.uri, Path):
             _ensure_within_size_limit(
-                self.uri,
+                local_path,
                 max_size=settings.max_image_decoded_size,
                 label="Image file",
             )
-            self._pil = PILImage.open(self.uri)
+            self._pil = PILImage.open(local_path)
+        elif isinstance(self.uri, AnyUrl) and self.uri.scheme == "data":
+            encoded_img = str(self.uri).split(",")[1]
+            decoded_img = base64.b64decode(encoded_img)
+
+            if len(decoded_img) > settings.max_image_decoded_size:
+                raise ValueError(f"Decoded image exceeds size limit of {settings.max_image_decoded_size} bytes.")
+
+            self._pil = PILImage.open(BytesIO(decoded_img))
+        # else: HTTP(S) and other remote schemes are intentionally not fetched.
+        # If remote fetch is enabled, it must use host allowlists and block
+        # private, link-local, and cloud-metadata addresses (SSRF controls).
 
         return self._pil
 
@@ -149,7 +171,8 @@ class ImageRef(BaseModel):
         else:
             return ImageRef._to_img_str_pil(image)
 
-        ok, buffered = cv2.imencode(".png", encoded)
+        # OpenCV defaults to compression level 1; 6 matches PIL and keeps files comparable.
+        ok, buffered = cv2.imencode(".png", encoded, [cv2.IMWRITE_PNG_COMPRESSION, 6])
         if not ok:
             return ImageRef._to_img_str_pil(image)
 
@@ -158,7 +181,7 @@ class ImageRef(BaseModel):
     @staticmethod
     def _to_img_str_pil(image: PILImage.Image) -> str:
         buffered = BytesIO()
-        image.save(buffered, format="PNG")
+        _normalize_image_for_png(image).save(buffered, format="PNG")
         img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
         return img_str
 
@@ -198,5 +221,5 @@ class PageItem(BaseModel):
     # A page carries separate root items for furniture and body,
     # only referencing items on the page
     size: Size
-    image: Optional[ImageRef] = None
+    image: ImageRef | None = None
     page_no: int

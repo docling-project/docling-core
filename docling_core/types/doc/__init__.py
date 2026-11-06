@@ -2,6 +2,7 @@
 
 from docling_core.types.doc.base import (
     BoundingBox,
+    CaptionPlacement,
     CoordOrigin,
     ImageRefMode,
     PydanticSerCtxKey,
@@ -157,6 +158,8 @@ from docling_core.types.doc.page import (
     PageNumber,
     ParsedPdfDocument,
     PdfCellRenderingMode,
+    PdfDestination,
+    PdfDestinationKind,
     PdfHyperlink,
     PdfLine,
     PdfMetaData,

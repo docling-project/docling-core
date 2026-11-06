@@ -51,7 +51,7 @@ class TableVisualizer(BaseVisualizer):
         col_header_color: tuple[int, int, int, int] = (0, 0, 255, 32)
         col_header_outline: tuple[int, int, int, int] = (0, 0, 255, 128)
 
-    base_visualizer: Optional[BaseVisualizer] = None
+    base_visualizer: BaseVisualizer | None = None
     params: Params = Params()
 
     def _draw_table_cells(
@@ -183,11 +183,11 @@ class TableVisualizer(BaseVisualizer):
     def _draw_doc_tables(
         self,
         doc: DoclingDocument,
-        images: Optional[dict[Optional[int], Image]] = None,
-        included_content_layers: Optional[set[ContentLayer]] = None,
+        images: dict[int | None, Image] | None = None,
+        included_content_layers: set[ContentLayer] | None = None,
     ):
         """Draw the document tables."""
-        my_images: dict[Optional[int], Image] = {}
+        my_images: dict[int | None, Image] = {}
 
         if images is not None:
             my_images = images
@@ -258,7 +258,7 @@ class TableVisualizer(BaseVisualizer):
         *,
         doc: DoclingDocument,
         **kwargs,
-    ) -> dict[Optional[int], Image]:
+    ) -> dict[int | None, Image]:
         """Get visualization of the document as images by page."""
         base_images = self.base_visualizer.get_visualization(doc=doc, **kwargs) if self.base_visualizer else None
         return self._draw_doc_tables(

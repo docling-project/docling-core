@@ -32,6 +32,7 @@ from docling_core.types.doc.document import (
     CodeItem,
     DocItem,
     DoclingDocument,
+    FormulaItem,
     InlineGroup,
     LevelNumber,
     ListGroup,
@@ -141,6 +142,10 @@ class TripletTableSerializer(BaseTableSerializer):
                     shared_visited.update(local_kwargs["visited"])
                 parts.append(create_ser_result(text=table_text, span_source=item))
 
+            ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+            if ftn_res.text:
+                parts.append(ftn_res)
+
         text_res = "\n\n".join([r.text for r in parts])
 
         return create_ser_result(text=text_res, span_source=parts)
@@ -183,7 +188,7 @@ class HierarchicalChunker(BaseChunker):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     serializer_provider: BaseSerializerProvider = ChunkingSerializerProvider()
-    code_chunking_strategy: Optional[BaseCodeChunkingStrategy] = Field(default=None)
+    code_chunking_strategy: BaseCodeChunkingStrategy | None = Field(default=None)
     always_emit_headings: bool = False
 
     # deprecated:
@@ -203,17 +208,23 @@ class HierarchicalChunker(BaseChunker):
             Iterator[Chunk]: iterator over extracted chunks
         """
         my_doc_ser = self.serializer_provider.get_serializer(doc=dl_doc)
-        heading_by_level: dict[LevelNumber, Union[TitleItem, SectionHeaderItem]] = {}
+        heading_by_level: dict[LevelNumber, TitleItem | SectionHeaderItem] = {}
+        heading_text_by_level: dict[LevelNumber, str] = {}
         heading_emitted: set[str] = set()
         visited: set[str] = set()
         ser_res = create_ser_result()
         excluded_refs = my_doc_ser.get_excluded_refs(**kwargs)
         traverse_pictures = my_doc_ser.params.traverse_pictures if isinstance(my_doc_ser, DocSerializer) else False
+        included_content_layers = my_doc_ser.params.layers if isinstance(my_doc_ser, DocSerializer) else None
+
         for item, level in dl_doc.iterate_items(
             with_groups=True,
             traverse_pictures=traverse_pictures,
+            included_content_layers=included_content_layers,
         ):
             if item.self_ref in excluded_refs:
+                continue
+            if isinstance(my_doc_ser, DocSerializer) and my_doc_ser._skip_in_walk(node=item, root=None):
                 continue
             if isinstance(item, TitleItem | SectionHeaderItem):
                 level = item.level if isinstance(item, SectionHeaderItem) else 0
@@ -232,7 +243,7 @@ class HierarchicalChunker(BaseChunker):
                         text="",
                         meta=DocMeta(
                             doc_items=[heading_by_level[k] for k in sorted_keys],
-                            headings=[heading_by_level[k].text for k in sorted_keys],
+                            headings=[heading_text_by_level[k] for k in sorted_keys],
                         ),
                     )
                     heading_emitted.add(leaf_ref)
@@ -240,9 +251,18 @@ class HierarchicalChunker(BaseChunker):
                 # actually remove shadowed headings
                 for k in keys_to_del:
                     heading_by_level.pop(k, None)
+                    heading_text_by_level.pop(k, None)
 
                 # capture current heading
                 heading_by_level[level] = item
+                heading_text = item.text
+                if not heading_text and len(item.children) == 1:
+                    child = item.children[0].resolve(dl_doc)
+                    if isinstance(child, InlineGroup | FormulaItem | CodeItem):
+                        # Rich headings keep their text in inline children. Consume
+                        # those children here so they do not become body chunks.
+                        heading_text = my_doc_ser.serialize(item=child, visited=visited, is_inline_scope=True).text
+                heading_text_by_level[level] = heading_text
 
                 continue
             elif isinstance(item, ListGroup | InlineGroup | DocItem) and item.self_ref not in visited:
@@ -264,7 +284,7 @@ class HierarchicalChunker(BaseChunker):
                 continue
             if doc_items := [u.item for u in ser_res.spans]:
                 sorted_keys = sorted(heading_by_level)
-                headings = [heading_by_level[k].text for k in sorted_keys] or None
+                headings = [heading_text_by_level[k] for k in sorted_keys] or None
                 c = DocChunk(
                     text=ser_res.text,
                     meta=DocMeta(
@@ -288,7 +308,7 @@ class HierarchicalChunker(BaseChunker):
                 text="",
                 meta=DocMeta(
                     doc_items=[heading_by_level[k] for k in sorted_keys],
-                    headings=[heading_by_level[k].text for k in sorted_keys],
+                    headings=[heading_text_by_level[k] for k in sorted_keys],
                 ),
             )
             heading_emitted.add(leaf_ref)

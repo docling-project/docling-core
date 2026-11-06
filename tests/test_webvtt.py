@@ -1,0 +1,448 @@
+"""Test the data model for WebVTT files.
+
+Examples extracted from https://www.w3.org/TR/webvtt1/
+Copyright © 2019 World Wide Web Consortium.
+"""
+
+import warnings
+
+import pytest
+from pydantic import ValidationError
+
+from docling_core.types.doc.webvtt import (
+    _ENTITY_CHARS,
+    WebVTTCueBlock,
+    WebVTTCueComponentWithTerminator,
+    WebVTTCueInternalText,
+    WebVTTCueItalicSpan,
+    WebVTTCueLanguageSpan,
+    WebVTTCueLanguageSpanStartTag,
+    WebVTTCueSpanStartTagAnnotated,
+    WebVTTCueTextSpan,
+    WebVTTCueTimings,
+    WebVTTCueVoiceSpan,
+    WebVTTFile,
+    WebVTTTimestamp,
+)
+
+from .test_data_gen_flag import GEN_TEST_DATA
+
+GENERATE = GEN_TEST_DATA
+
+
+def test_vtt_cue_commponents() -> None:
+    """Test WebVTT components."""
+    valid_timestamps = [
+        "00:01:02.345",
+        "12:34:56.789",
+        "02:34.567",
+        "00:00:00.000",
+    ]
+    valid_total_seconds = [
+        1 * 60 + 2.345,
+        12 * 3600 + 34 * 60 + 56.789,
+        2 * 60 + 34.567,
+        0.0,
+    ]
+    for idx, ts in enumerate(valid_timestamps):
+        model = WebVTTTimestamp(raw=ts)
+        assert model.seconds == valid_total_seconds[idx]
+
+    """Test invalid WebVTT timestamps."""
+    invalid_timestamps = [
+        "00:60:02.345",  # minutes > 59
+        "00:01:60.345",  # seconds > 59
+        "00:01:02.1000",  # milliseconds > 999
+        "01:02:03",  # missing milliseconds
+        "01:02",  # missing milliseconds
+        ":01:02.345",  # extra : for missing hours
+        "abc:01:02.345",  # invalid format
+    ]
+    for ts in invalid_timestamps:
+        with pytest.raises(ValidationError):
+            WebVTTTimestamp(raw=ts)
+
+    """Test the timestamp __str__ method."""
+    model = WebVTTTimestamp(raw="00:01:02.345")
+    assert str(model) == "00:01:02.345"
+
+    """Test valid cue timings."""
+    start = WebVTTTimestamp(raw="00:10.005")
+    end = WebVTTTimestamp(raw="00:14.007")
+    cue_timings = WebVTTCueTimings(start=start, end=end)
+    assert cue_timings.start == start
+    assert cue_timings.end == end
+    assert str(cue_timings) == "00:10.005 --> 00:14.007"
+
+    """Test invalid cue timings with end timestamp before start."""
+    start = WebVTTTimestamp(raw="00:10.700")
+    end = WebVTTTimestamp(raw="00:10.500")
+    with pytest.raises(ValidationError) as excinfo:
+        WebVTTCueTimings(start=start, end=end)
+    assert "End timestamp must be greater than start timestamp" in str(excinfo.value)
+
+    """Test invalid cue timings with missing end."""
+    start = WebVTTTimestamp(raw="00:10.500")
+    with pytest.raises(ValidationError) as excinfo:
+        WebVTTCueTimings(start=start)  # type: ignore[call-arg]
+    assert "Field required" in str(excinfo.value)
+
+    """Test invalid cue timings with missing start."""
+    end = WebVTTTimestamp(raw="00:10.500")
+    with pytest.raises(ValidationError) as excinfo:
+        WebVTTCueTimings(end=end)  # type: ignore[call-arg]
+    assert "Field required" in str(excinfo.value)
+
+    """Test with valid text."""
+    valid_text = "This is a valid cue text span."
+    span = WebVTTCueTextSpan(text=valid_text)
+    assert span.text == valid_text
+    assert str(span) == valid_text
+
+    """Test with text containing newline characters."""
+    invalid_text = "This cue text span\ncontains a newline."
+    with pytest.raises(ValidationError):
+        WebVTTCueTextSpan(text=invalid_text)
+
+    """Test with text containing ampersand."""
+    invalid_text = "This cue text span contains &."
+    with pytest.raises(ValidationError):
+        WebVTTCueTextSpan(text=invalid_text)
+    invalid_text = "An invalid &foo; entity"
+    with pytest.raises(ValidationError):
+        WebVTTCueTextSpan(text=invalid_text)
+    valid_text = "My favorite book is Pride &amp; Prejudice"
+    span = WebVTTCueTextSpan(text=valid_text)
+    # An escape denotes the character, so the span holds the character and
+    # writes the escape back out.
+    assert span.text == "My favorite book is Pride & Prejudice"
+    assert str(span) == valid_text
+    for name, char in _ENTITY_CHARS.items():
+        assert WebVTTCueTextSpan(text=f"a&{name};b").text == f"a{char}b"
+    # Only the two that cannot be written literally come back escaped.
+    assert str(WebVTTCueTextSpan(text="a&gt;b")) == "a>b"
+
+    """Test with text containing less-than sign."""
+    invalid_text = "This cue text span contains <."
+    with pytest.raises(ValidationError):
+        WebVTTCueTextSpan(text=invalid_text)
+
+    """Test with empty text."""
+    with pytest.raises(ValidationError):
+        WebVTTCueTextSpan(text="")
+
+    """Test that annotation validation works correctly."""
+    valid_annotation = "valid-annotation"
+    invalid_annotation = "invalid\nannotation"
+    with pytest.raises(ValidationError):
+        WebVTTCueSpanStartTagAnnotated(name="v", annotation=invalid_annotation)
+    assert WebVTTCueSpanStartTagAnnotated(name="v", annotation=valid_annotation)
+
+    """Test that classes validation works correctly."""
+    annotation = "speaker name"
+    valid_classes = ["class1", "class2"]
+    invalid_classes = ["class\nwith\nnewlines", ""]
+    with pytest.raises(ValidationError):
+        WebVTTCueSpanStartTagAnnotated(name="v", annotation=annotation, classes=invalid_classes)
+    assert WebVTTCueSpanStartTagAnnotated(name="v", annotation=annotation, classes=valid_classes)
+
+    """Test that components validation works correctly."""
+    annotation = "speaker name"
+    valid_components = [WebVTTCueComponentWithTerminator(component=WebVTTCueTextSpan(text="random text"))]
+    invalid_components = [123, "not a component"]
+    with pytest.raises(ValidationError):
+        WebVTTCueInternalText(components=invalid_components)
+    assert WebVTTCueInternalText(components=valid_components)
+
+    """Test valid cue voice spans."""
+    cue_span = WebVTTCueVoiceSpan(
+        start_tag=WebVTTCueSpanStartTagAnnotated(name="v", annotation="speaker", classes=["loud", "clear"]),
+        internal_text=WebVTTCueInternalText(
+            components=[WebVTTCueComponentWithTerminator(component=WebVTTCueTextSpan(text="random text"))]
+        ),
+    )
+    expected_str = "<v.loud.clear speaker>random text</v>"
+    assert str(cue_span) == expected_str
+
+    cue_span = WebVTTCueVoiceSpan(
+        start_tag=WebVTTCueSpanStartTagAnnotated(name="v", annotation="speaker"),
+        internal_text=WebVTTCueInternalText(
+            components=[WebVTTCueComponentWithTerminator(component=WebVTTCueTextSpan(text="random text"))]
+        ),
+    )
+    expected_str = "<v speaker>random text</v>"
+    assert str(cue_span) == expected_str
+
+
+def test_timestamp_from_seconds_rounding() -> None:
+    """Test that from_seconds carries fractional rounding across all boundaries.
+
+    A fraction in [0.9995, 1) rounds up to a full second; the second must carry
+    into minutes and hours correctly instead of emitting an invalid '1000' ms value.
+    """
+    cases = [
+        # (input_seconds, expected_raw)
+        (3.9994, "00:00:03.999"),  # just below boundary — stays at 999 ms
+        (3.9996, "00:00:04.000"),  # rounds up: ms carry into seconds
+        (59.9996, "00:01:00.000"),  # ms carry propagates seconds → minutes
+        (3599.9996, "01:00:00.000"),  # ms carry propagates all the way to hours
+        (7139.9996, "01:59:00.000"),  # 1h 58m 59.9996s → 1h 59m 0s
+        (0.0, "00:00:00.000"),
+        (3723.456, "01:02:03.456"),
+    ]
+    for secs, expected in cases:
+        ts = WebVTTTimestamp.from_seconds(secs)
+        assert ts.raw == expected, f"from_seconds({secs!r}) → {ts.raw!r}, want {expected!r}"
+
+
+def test_webvttcueblock_parse() -> None:
+    """Test the method parse of _WebVTTCueBlock class."""
+    raw: str = "04:02.500 --> 04:05.000\nJ’ai commencé le basket à l'âge de 13, 14 ans\n"  # noqa: RUF001
+    block: WebVTTCueBlock = WebVTTCueBlock.parse(raw)
+    assert str(block.timings) == "04:02.500 --> 04:05.000"
+    assert len(block.payload) == 1
+    assert isinstance(block.payload[0], WebVTTCueComponentWithTerminator)
+    assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
+    assert (
+        block.payload[0].component.text == "J’ai commencé le basket à l'âge de 13, 14 ans"  # noqa: RUF001
+    )
+    assert raw == str(block)
+
+    raw = "04:05.001 --> 04:07.800\nSur les <i.foreignphrase><lang en>playground</lang></i>, ici à Montpellier\n"
+    block = WebVTTCueBlock.parse(raw)
+    assert str(block.timings) == "04:05.001 --> 04:07.800"
+    assert len(block.payload) == 3
+    assert isinstance(block.payload[0], WebVTTCueComponentWithTerminator)
+    assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
+    assert block.payload[0].component.text == "Sur les "
+    assert isinstance(block.payload[1], WebVTTCueComponentWithTerminator)
+    assert isinstance(block.payload[1].component, WebVTTCueItalicSpan)
+    assert len(block.payload[1].component.internal_text.components) == 1
+    lang_span = block.payload[1].component.internal_text.components[0].component
+    assert isinstance(lang_span, WebVTTCueLanguageSpan)
+    assert isinstance(lang_span.internal_text.components[0].component, WebVTTCueTextSpan)
+    assert lang_span.internal_text.components[0].component.text == "playground"
+    assert isinstance(block.payload[2], WebVTTCueComponentWithTerminator)
+    assert isinstance(block.payload[2].component, WebVTTCueTextSpan)
+    assert block.payload[2].component.text == ", ici à Montpellier"
+    assert raw == str(block)
+
+    # Cue timestamps must be stripped so that the surrounding text is preserved.
+    raw = "00:00:00.030 --> 00:00:02.669\nthe<00:00:00.389> quick<00:00:00.750> brown\n"
+    block = WebVTTCueBlock.parse(raw)
+    assert len(block.payload) == 1
+    assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
+    assert block.payload[0].component.text == "the quick brown"
+
+
+def test_webvtt_verify_signature() -> None:
+    """Test WebVTTFile.verify_signature conforms to the W3C WebVTT specification.
+
+    Per https://www.w3.org/TR/webvtt1/ the magic string is "WEBVTT" optionally
+    followed by a space (U+0020), a tab (U+0009), or any line terminator
+    (CR U+000D, LF U+000A, or CRLF).
+    """
+    # Exact 6-character "WEBVTT" with nothing after it
+    assert WebVTTFile.verify_signature("WEBVTT") is True
+
+    # Valid: space or tab after "WEBVTT"
+    assert WebVTTFile.verify_signature("WEBVTT some title") is True
+    assert WebVTTFile.verify_signature("WEBVTT\t") is True
+
+    # Valid: LF line terminator (already worked before this fix)
+    assert WebVTTFile.verify_signature("WEBVTT\ncue block") is True
+
+    # Valid: CR line terminator (CR-only files — fixed by this patch)
+    assert WebVTTFile.verify_signature("WEBVTT\rcue block") is True
+
+    # Valid: CRLF — the \r at position 6 is now accepted; the \n at 7 is fine too
+    assert WebVTTFile.verify_signature("WEBVTT\r\ncue block") is True
+
+    # Invalid: empty string
+    assert WebVTTFile.verify_signature("") is False
+
+    # Invalid: wrong magic bytes
+    assert WebVTTFile.verify_signature("WEBVT") is False
+    assert WebVTTFile.verify_signature("webvtt") is False
+
+    # Invalid: character other than space/tab/CR/LF after "WEBVTT"
+    assert WebVTTFile.verify_signature("WEBVTT!") is False
+
+
+def test_webvtt_parse_cr_separator() -> None:
+    """WebVTTFile.parse must handle files that use bare CR as line separator."""
+    # Bare CR (U+000D) as line terminator — per the W3C WebVTT spec this is valid.
+    cr_vtt = "WEBVTT\r\r00:00:00.000 --> 00:00:01.000\rHello world\r"
+    vtt = WebVTTFile.parse(cr_vtt)
+    assert len(vtt) == 1
+    component = vtt[0].payload[0].component
+    assert isinstance(component, WebVTTCueTextSpan)
+    assert component.text == "Hello world"
+
+
+def test_webvtt_file() -> None:
+    """Test WebVTT files."""
+    with open("./tests/data/webvtt/webvtt_example_01.vtt", encoding="utf-8") as f:
+        content = f.read()
+        vtt = WebVTTFile.parse(content)
+    assert len(vtt) == 13
+    block = vtt.cue_blocks[11]
+    assert str(block.timings) == "00:32.500 --> 00:33.500"
+    assert len(block.payload) == 1
+    cue_span = block.payload[0]
+    assert isinstance(cue_span.component, WebVTTCueVoiceSpan)
+    assert cue_span.component.start_tag.annotation == "Neil deGrasse Tyson"
+    assert not cue_span.component.start_tag.classes
+    assert len(cue_span.component.internal_text.components) == 1
+    comp = cue_span.component.internal_text.components[0]
+    assert isinstance(comp.component, WebVTTCueItalicSpan)
+    assert len(comp.component.internal_text.components) == 1
+    comp2 = comp.component.internal_text.components[0]
+    assert isinstance(comp2.component, WebVTTCueTextSpan)
+    assert comp2.component.text == "Laughs"
+
+    with open("./tests/data/webvtt/webvtt_example_02.vtt", encoding="utf-8") as f:
+        content = f.read()
+        vtt = WebVTTFile.parse(content)
+    assert len(vtt) == 4
+    reverse = "WEBVTT\n\nNOTE Copyright © 2019 World Wide Web Consortium. https://www.w3.org/TR/webvtt1/\n\n"
+    reverse += "\n".join([block.format(omit_hours_if_zero=True, omit_voice_end=True) for block in vtt.cue_blocks])
+    assert content == reverse.rstrip()
+
+    with open("./tests/data/webvtt/webvtt_example_03.vtt", encoding="utf-8") as f:
+        content = f.read()
+        vtt = WebVTTFile.parse(content)
+    assert len(vtt) == 13
+    for block in vtt:
+        assert block.identifier
+    block = vtt.cue_blocks[0]
+    assert block.identifier == "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/15-0"
+    assert str(block.timings) == "00:00:04.963 --> 00:00:08.571"
+    assert len(block.payload) == 1
+    assert isinstance(block.payload[0].component, WebVTTCueVoiceSpan)
+    block = vtt.cue_blocks[2]
+    assert block.identifier == "62357a1d-d250-41d5-a1cf-6cc0eeceffcc/16-0"
+    assert str(block.timings) == "00:00:10.683 --> 00:00:11.563"
+    assert len(block.payload) == 1
+    assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
+    assert block.payload[0].component.text == "Good."
+    assert not vtt.title
+
+    with open("./tests/data/webvtt/webvtt_example_04.vtt", encoding="utf-8") as f:
+        content = f.read()
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            vtt = WebVTTFile.parse(content)
+    assert len(vtt) == 3
+    block = vtt.cue_blocks[1]
+    assert len(block.payload) == 5
+    assert str(block) == (
+        "00:05.000 --> 00:09.000\n"
+        "— It will perforate your stomach.\n"
+        "— You could <b.loud>die</b>.\n"
+        "<v John>This is true.</v>\n"
+    )
+    block = vtt.cue_blocks[2]
+    assert len(block.payload) == 1
+    assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
+    assert block.payload[0].component.text == "the quick brown fox"
+    assert vtt.title == "Danger of Nitrogen"
+
+
+def test_webvtt_cue_escapes_in_annotation() -> None:
+    """Test that an escape in a cue span annotation keeps the cue parseable."""
+    # The start tag pattern used to exclude "&" from the annotation, so a cue
+    # whose speaker name contained an escape matched no tag at all, fell through
+    # to the text span, and was rejected there for containing "<" — the whole
+    # cue was dropped with only a warning.
+    content = "WEBVTT\n\n00:00.000 --> 00:02.000\n<v Ben &amp; Jerry>We charge 5 &lt; 10 &amp; win</v>"
+    vtt = WebVTTFile.parse(content)
+
+    assert len(vtt) == 1
+    component = vtt.cue_blocks[0].payload[0].component
+    assert isinstance(component, WebVTTCueVoiceSpan)
+    assert component.start_tag.annotation == "Ben & Jerry"
+    text_span = component.internal_text.components[0].component
+    assert isinstance(text_span, WebVTTCueTextSpan)
+    assert text_span.text == "We charge 5 < 10 & win"
+
+    # The escapes are written back, so the file still round-trips.
+    assert str(vtt.cue_blocks[0]).rstrip("\n").endswith("<v Ben &amp; Jerry>We charge 5 &lt; 10 &amp; win</v>")
+
+
+def test_webvtt_cue_language_span_start_tag():
+    WebVTTCueLanguageSpanStartTag.model_validate_json('{"annotation": "en"}')
+    WebVTTCueLanguageSpanStartTag.model_validate_json('{"annotation": "en-US"}')
+    WebVTTCueLanguageSpanStartTag.model_validate_json('{"annotation": "zh-Hant"}')
+    with pytest.raises(ValidationError, match="BCP 47"):
+        WebVTTCueLanguageSpanStartTag.model_validate_json('{"annotation": "en_US"}')
+    with pytest.raises(ValidationError, match="BCP 47"):
+        WebVTTCueLanguageSpanStartTag.model_validate_json('{"annotation": "123-de"}')
+
+
+def test_webvtt_unclosed_and_stray_end_tags() -> None:
+    """Test that unclosed spans keep their text and that a stray end tag is ignored."""
+    # A span still open at the end of the cue keeps its text.
+    block = WebVTTCueBlock.parse("00:01.000 --> 00:02.000\nHe said <i>stop\n")
+    assert len(block.payload) == 2
+    assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
+    assert block.payload[0].component.text == "He said "
+    span = block.payload[1].component
+    assert isinstance(span, WebVTTCueItalicSpan)
+    assert isinstance(span.internal_text.components[0].component, WebVTTCueTextSpan)
+    assert span.internal_text.components[0].component.text == "stop"
+
+    # Italics that run across two cues: the first cue leaves <i> open and the
+    # second cue starts with its end tag. Every cue of the file is kept.
+    content = (
+        "WEBVTT\n\n"
+        "00:01.000 --> 00:03.000\n<i>I'm thinking about\n\n"
+        "00:03.000 --> 00:05.000\nwhat she said</i>\n\n"
+        "00:05.000 --> 00:07.000\nLast cue\n"
+    )
+    vtt = WebVTTFile.parse(content)
+    assert len(vtt) == 3
+    assert str(vtt[0]).rstrip("\n").endswith("<i>I'm thinking about</i>")
+    assert str(vtt[1]).rstrip("\n").endswith("\nwhat she said")
+    assert str(vtt[2]).rstrip("\n").endswith("\nLast cue")
+
+    # Misnested end tags are still rejected.
+    with pytest.raises(ValueError, match="Incorrect end tag"):
+        WebVTTCueBlock.parse("00:01.000 --> 00:02.000\n<b><i>both</b></i>\n")
+
+
+def test_webvtt_unknown_tags() -> None:
+    """Test that tags which are not WebVTT cue spans are ignored and their text is kept."""
+    block = WebVTTCueBlock.parse('00:01.000 --> 00:02.000\n<font color="#ffff00">Hello</font> world\n')
+    assert len(block.payload) == 1
+    assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
+    assert block.payload[0].component.text == "Hello world"
+
+    # Tag names are case-sensitive, so <B> is not a bold span. The voice span around it is kept.
+    block = WebVTTCueBlock.parse("00:01.000 --> 00:02.000\n<v Bob><B>Run</B>!</v>\n")
+    assert len(block.payload) == 1
+    span = block.payload[0].component
+    assert isinstance(span, WebVTTCueVoiceSpan)
+    assert span.start_tag.annotation == "Bob"
+    assert isinstance(span.internal_text.components[0].component, WebVTTCueTextSpan)
+    assert span.internal_text.components[0].component.text == "Run!"
+
+
+def test_webvtt_file_unknown_tags() -> None:
+    """Test that a file with tags that are not WebVTT cue spans keeps all of its cues."""
+    content = (
+        "WEBVTT\n\n"
+        "00:00:01.000 --> 00:00:03.000\nFirst cue\n\n"
+        '00:00:03.000 --> 00:00:05.000\n<font color="#ffff00">Where are you going?</font>\n\n'
+        "00:00:05.000 --> 00:00:07.000\n<v Anna><B>Home</B>, I think.</v>\n\n"
+        "00:00:07.000 --> 00:00:09.000\nLast cue\n"
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+
+    assert len(vtt) == 4
+    assert str(vtt[0]).rstrip("\n").endswith("\nFirst cue")
+    assert str(vtt[1]).rstrip("\n").endswith("\nWhere are you going?")
+    assert str(vtt[2]).rstrip("\n").endswith("\n<v Anna>Home, I think.</v>")
+    assert str(vtt[3]).rstrip("\n").endswith("\nLast cue")

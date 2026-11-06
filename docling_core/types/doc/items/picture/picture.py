@@ -38,6 +38,7 @@ from docling_core.types.doc.items.picture.meta import (
 )
 from docling_core.types.doc.items.picture.molecule import PictureMoleculeData
 from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc.utils import _normalize_image_for_png
 
 if TYPE_CHECKING:
     from docling_core.types.doc.document import DoclingDocument
@@ -46,18 +47,16 @@ _logger = logging.getLogger(__name__)
 
 
 PictureDataType = Annotated[
-    Union[
-        DescriptionAnnotation,
-        MiscAnnotation,
-        PictureClassificationData,
-        PictureMoleculeData,
-        PictureTabularChartData,
-        PictureLineChartData,
-        PictureBarChartData,
-        PictureStackedBarChartData,
-        PicturePieChartData,
-        PictureScatterChartData,
-    ],
+    DescriptionAnnotation
+    | MiscAnnotation
+    | PictureClassificationData
+    | PictureMoleculeData
+    | PictureTabularChartData
+    | PictureLineChartData
+    | PictureBarChartData
+    | PictureStackedBarChartData
+    | PicturePieChartData
+    | PictureScatterChartData,
     Field(discriminator="kind"),
 ]
 
@@ -67,7 +66,7 @@ class PictureItem(FloatingItem):
 
     label: typing.Literal[DocItemLabel.PICTURE, DocItemLabel.CHART] = DocItemLabel.PICTURE
 
-    meta: Optional[PictureMeta] = None
+    meta: PictureMeta | None = None
     annotations: Annotated[
         list[PictureDataType],
         deprecated("Field `annotations` is deprecated; use `meta` instead."),
@@ -147,13 +146,15 @@ class PictureItem(FloatingItem):
     def _image_to_base64(self, pil_image, format="PNG"):
         """Base64 representation of the image."""
         buffered = BytesIO()
+        if format == "PNG":
+            pil_image = _normalize_image_for_png(pil_image)
         pil_image.save(buffered, format=format)  # Save the image to the byte stream
         img_bytes = buffered.getvalue()  # Get the byte data
         img_base64 = base64.b64encode(img_bytes).decode("utf-8")  # Encode to Base64 and decode to string
         return img_base64
 
     @staticmethod
-    def _image_to_hexhash(img: Optional[PILImage.Image]) -> Optional[str]:
+    def _image_to_hexhash(img: PILImage.Image | None) -> str | None:
         """Hexash from the image."""
         if img is not None:
             # Convert the image to raw bytes

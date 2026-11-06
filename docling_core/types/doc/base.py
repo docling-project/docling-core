@@ -14,6 +14,13 @@ class ImageRefMode(str, Enum):
     REFERENCED = "referenced"  # reference the image via uri
 
 
+class CaptionPlacement(str, Enum):
+    """Placement of captions relative to the item they caption."""
+
+    STANDARD = "standard"  # per item type: before tables and pictures, after code and formulas
+    LAYOUT = "layout"  # by bbox: after the item if the caption is centered lower on the page, else before
+
+
 class CoordOrigin(str, Enum):
     """CoordOrigin."""
 

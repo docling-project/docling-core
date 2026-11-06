@@ -23,10 +23,10 @@ class GraphCell(BaseModel):
     text: str  # sanitized text
     orig: str  # text as seen on document
 
-    prov: Optional[ProvenanceItem] = None
+    prov: ProvenanceItem | None = None
 
     # in case you have a text, table or picture item
-    item_ref: Optional[RefItem] = None
+    item_ref: RefItem | None = None
 
 
 class GraphLink(BaseModel):
