@@ -110,6 +110,11 @@ class Unit:
     def xpath(self) -> str:
         return self.xpaths[0]
 
+    @property
+    def context_xpaths(self) -> tuple[str, ...]:
+        """The same source addresses in DocLang's unprefixed context form."""
+        return tuple(_context_xpath(xpath) for xpath in self.xpaths)
+
 
 @dataclass
 class LoadedDocument:
@@ -220,6 +225,16 @@ class LoadedDocument:
             return self.query_root.xpath(_normalize_xpath(xpath), namespaces=NS)
         except etree.XPathError as exc:
             raise DclqError(f"invalid XPath: {exc}") from exc
+
+    def context_xpath(self, mapped: str) -> str:
+        """Convert a known source-map XPath to DocLang's context form.
+
+        The original namespaced keys in ``source_pages`` and ``raw_elements``
+        remain unchanged for existing consumers.
+        """
+        if mapped not in self.raw_elements:
+            raise DclqError(f"unknown source XPath: {mapped}")
+        return _context_xpath(mapped)
 
     def selected_paths(self, xpath: str) -> set[str]:
         result = self.evaluate_xpath(xpath)
@@ -492,6 +507,14 @@ def _read_source(source: str, *, stdin_bytes: bytes | None) -> tuple[bytes, str,
         return path.read_bytes(), path.suffix.lower().lstrip("."), ()
     except OSError as exc:
         raise DclqError(f"could not read {source}: {exc}") from exc
+
+
+def _context_xpath(xpath: str) -> str:
+    """Convert a canonical dclq source XPath to an indexed-root DocLang XPath."""
+    root = "/d:doclang"
+    if xpath != root and not xpath.startswith(f"{root}/"):
+        raise DclqError(f"unsupported source XPath: {xpath}")
+    return "/doclang[1]" + xpath[len(root) :].replace("/d:", "/")
 
 
 def _canonical_xpath(element: etree._Element) -> str:
