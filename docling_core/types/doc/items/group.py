@@ -3,9 +3,10 @@
 import typing
 from typing import TYPE_CHECKING
 
-from pydantic import field_validator
+from pydantic import AnyUrl, field_validator
 from typing_extensions import deprecated
 
+from docling_core.types.doc.common.reference import RefItem
 from docling_core.types.doc.items.node import NodeItem
 from docling_core.types.doc.items.text import ListItem
 from docling_core.types.doc.labels import GroupLabel
@@ -56,6 +57,30 @@ class InlineGroup(GroupItem):
     """InlineGroup."""
 
     label: typing.Literal[GroupLabel.INLINE] = GroupLabel.INLINE
+
+
+class BlockQuoteGroup(GroupItem):
+    """A block quotation: block-level content quoted from another source.
+
+    The children are the quoted blocks: paragraphs, lists, tables, code and nested
+    quotes. An attribution, if any, is a ``caption`` text item that is both a child
+    of the group and listed in ``captions``, as for ``FloatingItem``.
+    """
+
+    label: typing.Literal[GroupLabel.BLOCK_QUOTE] = GroupLabel.BLOCK_QUOTE
+
+    cite: AnyUrl | None = None
+    """URL of the source of the quotation, as the HTML ``blockquote`` ``cite`` attribute."""
+
+    captions: list[RefItem] = []
+    """References to the attribution items (``caption`` label), usually one."""
+
+    def caption_text(self, doc: "DoclingDocument") -> str:
+        """Computes the attribution as a single text."""
+        text = ""
+        for cap in self.captions:
+            text += cap.resolve(doc).text
+        return text
 
 
 UnorderedList = ListGroup

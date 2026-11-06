@@ -67,6 +67,7 @@ from docling_core.types.doc.items.form import (
     FieldValueItem,
 )
 from docling_core.types.doc.items.group import (
+    BlockQuoteGroup,
     GroupItem,
     InlineGroup,
     ListGroup,
