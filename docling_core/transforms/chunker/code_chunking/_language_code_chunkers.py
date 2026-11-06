@@ -344,9 +344,9 @@ class _ChunkSizeProcessor:
             last_chunk_tokens = self.tokenizer.count_tokens(last_chunk)
             if last_chunk_tokens < self.min_chunk_size:
                 chunks[-1] = (
-                    chunks[-1].rstrip(self._get_chunk_suffix())
+                    chunks[-1].removesuffix(self._get_chunk_suffix())
                     + "\n"
-                    + last_chunk.lstrip(signature_line + f"{self._get_chunk_prefix()}")
+                    + last_chunk.removeprefix(signature_line + f"{self._get_chunk_prefix()}")
                 )
             else:
                 chunks.append(last_chunk)
