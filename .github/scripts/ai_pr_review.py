@@ -65,7 +65,7 @@ MAX_INCREMENTAL_DIFF_CHARS = 80_000
 MAX_DISCUSSION_CHARS = 30_000
 MAX_DISCUSSION_ITEM_CHARS = 800
 MAX_AUTOMATIC_REVIEWS = 2
-MAX_FINDINGS = 8
+MAX_FINDINGS = 5
 MAX_EARLIER_FINDINGS = 20
 MAX_FINDING_CHARS = 2_000
 MAX_QUOTE_CHARS = 300
@@ -283,6 +283,7 @@ def build_review(
     anchors: dict[str, list[int]],
     head_sha: str,
     incremental_base: str | None,
+    history_changed: bool = False,
 ) -> dict[str, Any]:
     comments: list[dict[str, Any]] = []
     unanchored: list[Finding] = []
@@ -309,6 +310,13 @@ def build_review(
         f"This review covers {scope} at `{head_sha[:10]}`. It read the code and did not run it.",
         "",
     ]
+    if history_changed:
+        lines += [
+            "> [!NOTE]",
+            "> The history changed after the earlier AI review (a rebase or force-push), so the changes since then"
+            " could not be compared. This review covers the full diff and checks the earlier findings again.",
+            "",
+        ]
     if result.summary:
         lines += [markdown_inline(result.summary), ""]
     if result.earlier_findings:
@@ -440,12 +448,18 @@ def prepare(repo: str, context_dir: Path, git_dir: Path, force: bool) -> bool:
     )
 
     incremental_base: str | None = None
+    history_changed = False
     if reviewed is not None:
         compare = gh_api(f"repos/{repo}/compare/{reviewed}...{pr.head_sha}")
         if compare.get("status") == "ahead":
             incremental_base = reviewed
             diff, _ = build_diff(compare.get("files") or [], MAX_INCREMENTAL_DIFF_CHARS)
             (review_dir / "incremental.diff").write_text(diff, encoding="utf-8")
+        else:
+            # After a rebase or force-push the new commits cannot be isolated.
+            # The review covers the full diff, but the discussion still holds
+            # the earlier AI findings, so the model must not repeat them.
+            history_changed = True
 
     stored: dict[str, str] = {}
     if fetch_pr_commits(git_dir, pr.number, pr.merge_base_sha):
@@ -461,7 +475,12 @@ def prepare(repo: str, context_dir: Path, git_dir: Path, force: bool) -> bool:
             target.write_bytes(content)
             stored[item["filename"]] = f".ai-triage/review/files/{name}"
 
-    meta = {"incremental_base": incremental_base, "head_files": stored}
+    meta = {
+        "incremental_base": incremental_base,
+        "earlier_ai_review": bool(reviewed_shas),
+        "history_changed": history_changed,
+        "head_files": stored,
+    }
     (review_dir / "meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     return True
 
@@ -522,7 +541,13 @@ def publish(repo: str, pr_number: int, context_dir: Path, result_path: Path) -> 
     }
     result = parse_review_result(answer, set(anchors))
 
-    review = build_review(result, anchors, context.pr.head_sha, meta["incremental_base"])
+    review = build_review(
+        result,
+        anchors,
+        context.pr.head_sha,
+        meta["incremental_base"],
+        bool(meta.get("history_changed", False)),
+    )
     gh_write("POST", f"repos/{repo}/pulls/{pr_number}/reviews", review)
 
     label = review_label(result)
