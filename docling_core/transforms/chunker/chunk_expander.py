@@ -8,7 +8,7 @@ from docling_core.transforms.chunker.base import BaseChunk, BaseChunkExpander, B
 from docling_core.transforms.chunker.doc_chunk import DocChunk, DocMeta
 from docling_core.transforms.serializer.base import BaseDocSerializer
 from docling_core.transforms.serializer.common import DocSerializer
-from docling_core.types.doc.document import DocItem, DoclingDocument, InlineGroup, ListGroup, RefItem
+from docling_core.types.doc.document import DocItem, DoclingDocument, GroupItem, RefItem
 
 _logger = logging.getLogger(__name__)
 
@@ -83,7 +83,7 @@ class TreeChunkExpander(BaseChunkExpander):
         all_doc_items = []
 
         for top_item in top_items:
-            if isinstance(top_item, ListGroup | InlineGroup | DocItem):
+            if isinstance(top_item, GroupItem | DocItem):
                 try:
                     ser_res = serializer.serialize(item=top_item)
                     content += ser_res.text + "\n"
