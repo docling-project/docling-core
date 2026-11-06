@@ -86,6 +86,16 @@ class PlainTextDocSerializer(MarkdownDocSerializer):
         return text
 
     @override
+    def serialize_subscript(self, text: str, **kwargs: Any) -> str:
+        """Apply plain-text-specific subscript serialization."""
+        return text
+
+    @override
+    def serialize_superscript(self, text: str, **kwargs: Any) -> str:
+        """Apply plain-text-specific superscript serialization."""
+        return text
+
+    @override
     def serialize_hyperlink(
         self,
         text: str,
