@@ -288,12 +288,52 @@ class TableData(BaseModel):  # TBD
         :param rows: list[list[str]]: A list of lists, where each inner list represents the content of a new row.
         :param after: bool: If True, insert the rows after the specified index, otherwise before it. (Default is False)
 
+        :raises ValueError: If a row has the wrong width or insertion would cut through a spanning cell.
+            Insert at the spanning cell's boundary instead; expanding or splitting it could discard new values.
+        :raises IndexError: If the insertion position is outside the table.
         :returns: None
         """
-        effective_rows = rows[::-1]
+        if not rows:
+            return
 
-        for row in effective_rows:
-            self.insert_row(row_index, row, after)
+        for row in rows:
+            if len(row) != self.num_cols:
+                raise ValueError(f"Row length {len(row)} does not match the number of columns {self.num_cols}.")
+
+        effective_index = row_index + (1 if after else 0)
+
+        if effective_index < 0 or effective_index > self.num_rows:
+            raise IndexError(f"Row index {row_index} is out of bounds for the current number of rows {self.num_rows}.")
+
+        if any(cell.start_row_offset_idx < effective_index < cell.end_row_offset_idx for cell in self.table_cells):
+            raise ValueError("Cannot insert rows through a spanning cell; insert at its start or end row boundary.")
+
+        new_row_cells = [
+            TableCell(
+                text=text,
+                start_row_offset_idx=effective_index + offset,
+                end_row_offset_idx=effective_index + offset + 1,
+                start_col_offset_idx=j,
+                end_col_offset_idx=j + 1,
+            )
+            for offset, row in enumerate(rows)
+            for j, text in enumerate(row)
+        ]
+
+        # Cells are origins, not a dense grid: spans and missing cells make
+        # list positions unrelated to row offsets. Keep existing cell objects,
+        # spans and column offsets, shifting only rows at or below the insertion.
+        insertion_index = next(
+            (index for index, cell in enumerate(self.table_cells) if cell.start_row_offset_idx >= effective_index),
+            len(self.table_cells),
+        )
+        for cell in self.table_cells:
+            if cell.start_row_offset_idx >= effective_index:
+                cell.start_row_offset_idx += len(rows)
+                cell.end_row_offset_idx += len(rows)
+
+        self.table_cells = self.table_cells[:insertion_index] + new_row_cells + self.table_cells[insertion_index:]
+        self.num_rows += len(rows)
 
     def insert_row(self, row_index: int, row: list[str], after: bool = False) -> None:
         """Insert a new row from a list of strings before/after a specific index in the table.
@@ -302,40 +342,11 @@ class TableData(BaseModel):  # TBD
         :param row: list[str]: A list of strings representing the content of the new row.
         :param after: bool: If True, insert the row after the specified index, otherwise before it. (Default is False)
 
+        :raises ValueError: If the row has the wrong width or insertion would cut through a spanning cell.
+        :raises IndexError: If the insertion position is outside the table.
         :returns: None
         """
-        if len(row) != self.num_cols:
-            raise ValueError(f"Row length {len(row)} does not match the number of columns {self.num_cols}.")
-
-        effective_index = row_index + (1 if after else 0)
-
-        if effective_index < 0 or effective_index > self.num_rows:
-            raise IndexError(f"Row index {row_index} is out of bounds for the current number of rows {self.num_rows}.")
-
-        new_row_cells = [
-            TableCell(
-                text=text,
-                start_row_offset_idx=effective_index,
-                end_row_offset_idx=effective_index + 1,
-                start_col_offset_idx=j,
-                end_col_offset_idx=j + 1,
-            )
-            for j, text in enumerate(row)
-        ]
-
-        self.table_cells = (
-            self.table_cells[: effective_index * self.num_cols]
-            + new_row_cells
-            + self.table_cells[effective_index * self.num_cols :]
-        )
-
-        # Reassign row offset indices for existing cells
-        for index, cell in enumerate(self.table_cells):
-            new_index = index // self.num_cols
-            cell.start_row_offset_idx = new_index
-            cell.end_row_offset_idx = new_index + 1
-
-        self.num_rows += 1
+        self.insert_rows(row_index, [row], after=after)
 
     def add_rows(self, rows: list[list[str]]) -> None:
         """Add multiple new rows to the table from a list of lists of strings.

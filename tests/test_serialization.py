@@ -2411,9 +2411,8 @@ def _make_captioned_doc(
 
     caption = doc.add_text(label=DocItemLabel.CAPTION, text="THE CAPTION", prov=prov(cap_bbox))
     if kind == "table":
-        table_data = TableData(num_rows=1, num_cols=1)
+        table_data = TableData(num_rows=0, num_cols=1)
         table_data.add_row(["cell"])
-        table_data.num_rows = 1
         doc.add_table(data=table_data, caption=caption, prov=prov(obj_bbox))
     else:
         doc.add_picture(caption=caption, prov=prov(obj_bbox))
