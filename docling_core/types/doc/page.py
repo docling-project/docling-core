@@ -370,6 +370,22 @@ class PdfTextCell(TextCell):
     font_key: str
     font_name: str
 
+    clip_bbox: Annotated[
+        BoundingBox | None,
+        Field(
+            description=(
+                "Bounding box of the clip region that was in force when the "
+                "text was painted (ISO 32000-1, 8.5.4), in the same coordinate "
+                "origin as `rect`; None when nothing clipped it. `rect` is the "
+                "full glyph box: the part of it outside this box is not "
+                "visible on the page. A producer that fits long text into a "
+                "table cell by clipping it to the cell leaves only this box to "
+                "say which cell the text belongs to. A word or line carries "
+                "the box when all of its glyphs share it."
+            )
+        ),
+    ] = None
+
     from_ocr: Literal[False] = False
 
     @model_validator(mode="before")
@@ -381,6 +397,26 @@ class PdfTextCell(TextCell):
         # if "ordering" in data:
         #    data["index"] = data["ordering"]
         return data
+
+    def to_bottom_left_origin(self, page_height: float):
+        """Convert the cell's coordinates to use bottom-left origin.
+
+        Args:
+            page_height: The height of the page
+        """
+        super().to_bottom_left_origin(page_height=page_height)
+        if self.clip_bbox is not None:
+            self.clip_bbox = self.clip_bbox.to_bottom_left_origin(page_height=page_height)
+
+    def to_top_left_origin(self, page_height: float):
+        """Convert the cell's coordinates to use top-left origin.
+
+        Args:
+            page_height: The height of the page
+        """
+        super().to_top_left_origin(page_height=page_height)
+        if self.clip_bbox is not None:
+            self.clip_bbox = self.clip_bbox.to_top_left_origin(page_height=page_height)
 
 
 class PdfWidget(OrderedElement):
@@ -784,12 +820,13 @@ class SegmentedPdfPage(SegmentedPage):
         cells = []
         for page_cell in self.iterate_cells(cell_unit):
             pc = copy.deepcopy(page_cell)
-            # Bring cell_bbox coord origin to the same as input bbox.coord_origin:
+            # Bring the cell's boxes (rect, and clip_bbox when the cell is a
+            # PdfTextCell) to the same coord origin as the input bbox:
             if page_cell.rect.coord_origin != bbox.coord_origin:
                 if bbox.coord_origin == CoordOrigin.TOPLEFT:
-                    pc.rect = pc.rect.to_top_left_origin(self.dimension.height)
+                    pc.to_top_left_origin(self.dimension.height)
                 elif bbox.coord_origin == CoordOrigin.BOTTOMLEFT:
-                    pc.rect = pc.rect.to_bottom_left_origin(self.dimension.height)
+                    pc.to_bottom_left_origin(self.dimension.height)
             cell_bbox = pc.to_bounding_box()
             if cell_bbox.intersection_over_self(bbox) > ios:
                 cells.append(pc)
