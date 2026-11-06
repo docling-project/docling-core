@@ -20,6 +20,45 @@ def test_multiline_cell_text_preserves_line_structure():
     assert cell.text == "Expedited\nOvernight"
 
 
+def test_word_level_entries_on_one_line_stay_space_separated():
+    """Native PDF text arrives as word entries; one visual line joins with spaces."""
+    data = {
+        "start_row_offset_idx": 0,
+        "end_row_offset_idx": 1,
+        "start_col_offset_idx": 0,
+        "end_col_offset_idx": 1,
+        "bbox": {"l": 1.0, "t": 2.0, "r": 8.0, "b": 5.0},
+        # Flat docling-ibm-models entry format: b/l/r/t/token keys.
+        "text_cell_bboxes": [
+            {"token": "Tertiary", "b": 5.0, "l": 4.0, "r": 8.0, "t": 2.0},
+            {"token": "Contingent", "b": 5.0, "l": 1.0, "r": 3.5, "t": 2.0},
+        ],
+    }
+    cell = TableCell.model_validate(data)
+    assert cell.text == "Contingent Tertiary"
+
+
+def test_word_level_entries_rebuild_stacked_lines():
+    """Stacked word entries form separate lines, top row first."""
+    data = {
+        "start_row_offset_idx": 0,
+        "end_row_offset_idx": 1,
+        "start_col_offset_idx": 0,
+        "end_col_offset_idx": 1,
+        "bbox": {"l": 1.0, "t": 2.0, "r": 8.0, "b": 12.0},
+        "text_cell_bboxes": [
+            # Second PDF row, tokens out of horizontal order on purpose.
+            {"token": "281", "b": 12.0, "l": 1.0, "r": 2.5, "t": 9.0},
+            {"token": "K123", "b": 12.0, "l": 3.0, "r": 6.0, "t": 9.0},
+            # First PDF row.
+            {"token": "63", "b": 5.0, "l": 4.5, "r": 6.0, "t": 2.0},
+            {"token": "A9", "b": 5.0, "l": 1.0, "r": 2.5, "t": 2.0},
+        ],
+    }
+    cell = TableCell.model_validate(data)
+    assert cell.text == "A9 63\n281 K123"
+
+
 def test_single_line_cell_text_has_no_separator():
     """A one-line cell keeps its plain text without any line separator."""
     data = {
