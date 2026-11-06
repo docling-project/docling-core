@@ -105,12 +105,9 @@ def test_vtt_cue_commponents() -> None:
         WebVTTCueTextSpan(text=invalid_text)
 
     """Test with text containing ampersand."""
-    invalid_text = "This cue text span contains &."
-    with pytest.raises(ValidationError):
-        WebVTTCueTextSpan(text=invalid_text)
-    invalid_text = "An invalid &foo; entity"
-    with pytest.raises(ValidationError):
-        WebVTTCueTextSpan(text=invalid_text)
+    # A reference that does not resolve stays literal text instead of failing the cue.
+    assert WebVTTCueTextSpan(text="This cue text span contains &.").text == "This cue text span contains &."
+    assert WebVTTCueTextSpan(text="An unknown &foo; entity").text == "An unknown &foo; entity"
     valid_text = "My favorite book is Pride &amp; Prejudice"
     span = WebVTTCueTextSpan(text=valid_text)
     # An escape denotes the character, so the span holds the character and
@@ -368,6 +365,39 @@ def test_webvtt_cue_escapes_in_annotation() -> None:
 
     # The escapes are written back, so the file still round-trips.
     assert str(vtt.cue_blocks[0]).rstrip("\n").endswith("<v Ben &amp; Jerry>We charge 5 &lt; 10 &amp; win</v>")
+
+
+def test_webvtt_cue_html_character_references() -> None:
+    """Test that any HTML character reference in cue text or an annotation is resolved."""
+    # WebVTT 6.4 hands the data and annotation states to the full HTML character
+    # reference algorithm, so the six names of the syntax table are no whitelist.
+    content = (
+        "WEBVTT\n\n"
+        "00:01.000 --> 00:03.000\nIt&#39;s raining.\n\n"
+        "00:03.000 --> 00:05.000\nCaf&eacute; or caf&#xE9;?\n\n"
+        "00:05.000 --> 00:07.000\n<v Ren&eacute;>Tom &amp; Jerry</v>\n\n"
+        "00:07.000 --> 00:09.000\nR&foo;d &"
+    )
+    vtt = WebVTTFile.parse(content)
+
+    assert len(vtt) == 4
+    texts = []
+    for block in vtt.cue_blocks:
+        component = block.payload[0].component
+        if isinstance(component, WebVTTCueVoiceSpan):
+            assert component.start_tag.annotation == "Ren\u00e9"
+            component = component.internal_text.components[0].component
+        assert isinstance(component, WebVTTCueTextSpan)
+        texts.append(component.text)
+    assert texts == ["It's raining.", "Caf\u00e9 or caf\u00e9?", "Tom & Jerry", "R&foo;d &"]
+
+    # A reference to a line terminator would corrupt the cue on the way out.
+    with pytest.raises(ValidationError):
+        WebVTTCueTextSpan(text="a&#10;b")
+
+    # Only the escapes that cannot be written literally are written back.
+    assert str(vtt.cue_blocks[0]).rstrip("\n").endswith("It's raining.")
+    assert str(vtt.cue_blocks[3]).rstrip("\n").endswith("R&amp;foo;d &amp;")
 
 
 def test_webvtt_cue_language_span_start_tag():
