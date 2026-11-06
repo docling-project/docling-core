@@ -37,10 +37,17 @@ def _spaces(text: str | None) -> str:
 
 def _inner(el: ET.Element) -> str:
     """Render the body of an element: inline markup kept, whitespace as DocLang reads it."""
-    parts = [_spaces(el.text)]
-    for child in el:
+    children = list(el)
+    # whitespace next to an element head is not text
+    parts = [
+        _spaces(el.text)
+        if el.text and (el.text.strip() or not children or _tag(children[0]) not in _ELEMENT_HEAD)
+        else ""
+    ]
+    for child in children:
         parts.append(_markup(child))
-        parts.append(_spaces(child.tail))
+        tail = child.tail or ""
+        parts.append("" if _tag(child) in _ELEMENT_HEAD and not tail.strip() else _spaces(tail))
     return "".join(parts)
 
 
@@ -211,7 +218,7 @@ FIXTURE_NAMES = sorted(path.stem for path in FIXTURES.glob("*.dclg"))
 
 # Known gaps, most important first.
 _FRAME_ONLY_END = "the end time of a block that holds only a frame has no meaning in DocLang 0.9"
-_FRAME_HEAD = "the head and text of a frame are dropped"
+_BODY_TEXT = "not specific to tracks: raw text in the body of a picture is dropped too"
 _COVER = "a cover without a restored image, and the head of a cover, are dropped"
 _LABEL = "the label of a track is dropped"
 _CHAPTER = "chapter has no counterpart in DoclingDocument"
@@ -287,9 +294,15 @@ CASES: dict[str, tuple[str, str | None]] = {
     "frame_and_turn": (_track(f"<bdiv/>{_sec(1)}<frame/>Hello"), None),
     "frame_only_with_end": (_track(f"<bdiv/>{_sec(1)}{_sec(9)}<frame/>"), _FRAME_ONLY_END),
     "frame_in_interval": (_track(f"<bdiv/>{_sec(1)}{_sec(9)}<frame/>Hello"), None),
-    "frame_with_location": (_track(f"<bdiv/>{_sec(1)}<frame>{_LOC}</frame>"), _FRAME_HEAD),
-    "frame_with_caption": (_track(f"<bdiv/>{_sec(1)}<frame><caption>Slide</caption></frame>"), _FRAME_HEAD),
-    "frame_with_text": (_track(f"<bdiv/>{_sec(1)}<frame>On screen</frame>"), _FRAME_HEAD),
+    "frame_with_location": (_track(f"<bdiv/>{_sec(1)}<frame>{_LOC}</frame>"), None),
+    "frame_with_head": (
+        _track(
+            f'<bdiv/>{_sec(1)}<frame><layer value="furniture"/>{_LOC}<caption>Slide</caption><description>A chart</description></frame>Hello'
+        ),
+        None,
+    ),
+    "frame_with_caption": (_track(f"<bdiv/>{_sec(1)}<frame><caption>Slide</caption></frame>"), None),
+    "frame_with_text": (_track(f"<bdiv/>{_sec(1)}<frame>On screen</frame>"), _BODY_TEXT),
     "empty_cover": (_track(f"<cover/><bdiv/>{_sec(1)}Hello"), _COVER),
     "cover_with_caption": (_track(f"<cover><caption>Art</caption></cover><bdiv/>{_sec(1)}Hello"), _COVER),
     # 5. Track element head

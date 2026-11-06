@@ -1911,13 +1911,21 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         for node in content:
             name = node.tagName if isinstance(node, Element) else None
             if name == DocLangToken.FRAME.value:
+                frame_el = cast(Element, node)
+                captions = self._extract_captions(doc=doc, el=frame_el)
+                prov_list = self._extract_provenance(doc=doc, el=frame_el)
                 frame = doc.add_picture(
                     parent=track,
-                    image=self._track_media_image(cast(Element, node)),
+                    image=self._track_media_image(frame_el),
+                    prov=(prov_list[0] if prov_list else None),
+                    content_layer=self._extract_layer(el=frame_el),
                     # a frame is the still at the start of its block
                     source=TrackSource(start_time=start / 1000, end_time=start / 1000),
                 )
-                self._source_recorder.bind_item(cast(Element, node), frame)
+                frame.prov.extend(prov_list[1:])
+                self._attach_satellites(item=frame, captions=captions, footnotes=[])
+                self._apply_custom_meta_from_element(item=frame, el=frame_el)
+                self._source_recorder.bind_item(frame_el, frame)
                 has_items = True
             elif name in {DocLangToken.CHAPTER.value, DocLangToken.AUDIO.value}:
                 warnings.warn(f"<{name}> in <track> is not supported yet; skipped", stacklevel=2)

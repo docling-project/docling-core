@@ -2122,10 +2122,13 @@ def _serialize_track(
         if block.end > block.start:
             body.append(_create_timestamp_tokens(msecs=block.end))
         if block.frame is not None:
-            frame_uri = _image_src_uri(item=block.frame, doc=doc, params=params)
-            body.append(
-                _wrap(text=_create_src_token(uri=frame_uri) if frame_uri else "", wrap_tag=DocLangToken.FRAME.value)
+            frame_caption = _serialize_floating_caption_head(
+                item=block.frame, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
             )
+            frame_parts = [_element_head_prefix(item=block.frame, doc=doc, params=params, caption_text=frame_caption)]
+            if frame_uri := _image_src_uri(item=block.frame, doc=doc, params=params):
+                frame_parts.append(_create_src_token(uri=frame_uri))
+            body.append(_wrap(text="".join(frame_parts), wrap_tag=DocLangToken.FRAME.value))
         for index, turn in enumerate(block.turns):
             voice = source.voice if (source := _track_source(turn)) else None
             if voice:
