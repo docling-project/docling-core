@@ -183,7 +183,6 @@ _LOC = '<location value="1"/><location value="2"/><location value="30"/><locatio
 FIXTURE_NAMES = sorted(path.stem for path in FIXTURES.glob("*.dclg"))
 
 # Known gaps, most important first.
-_POINT = "an instant is stored as a 1 ms interval, so a real 1 ms interval reads as an instant"
 _BLOCKS = "blocks with the same times merge: DoclingDocument has no cue block"
 _EMPTY = "a cue block with no turn or frame is dropped"
 _FRAME_HEAD = "the head and text of a frame are dropped"
@@ -223,7 +222,7 @@ CASES: dict[str, tuple[str, str | None]] = {
     ),
     "over_a_day": (_track(f'<bdiv/><hours value="100"/>{_sec(0)}Hello'), None),
     "end_equals_start": (_track(f"<bdiv/>{_sec(5)}{_sec(5)}Hello"), None),
-    "one_msec_interval": (_track(f"<bdiv/>{_sec(5)}{_sec(5, 1)}Hello"), _POINT),
+    "one_msec_interval": (_track(f"<bdiv/>{_sec(5)}{_sec(5, 1)}Hello"), None),
     "two_msec_interval": (_track(f"<bdiv/>{_sec(5)}{_sec(5, 2)}Hello"), None),
     "several_blocks": (_track(f"<bdiv/>{_sec(1)}{_sec(2)}A<bdiv/>{_sec(3)}B<bdiv/>{_sec(4)}{_sec(5)}C"), None),
     "overlapping_blocks": (_track(f"<bdiv/>{_sec(1)}{_sec(5)}A<bdiv/>{_sec(2)}{_sec(3)}B"), None),

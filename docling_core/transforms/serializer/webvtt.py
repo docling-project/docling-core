@@ -458,11 +458,13 @@ class WebVTTDocSerializer(DocSerializer):
                 doc_item = doc_item.children[0].resolve(doc=self.doc)
             if isinstance(doc_item, TextItem) and doc_item.source and doc_item.source[0].kind == "track":
                 prov: TrackSource = doc_item.source[0]
+                # WebVTT needs a cue to end after it starts: an instant lasts 1 ms
+                end_time = prov.end_time if prov.end_time > prov.start_time else prov.start_time + 0.001
                 if (
                     prov.identifier == id
                     and timings
                     and timings.start.seconds == prov.start_time
-                    and timings.end.seconds == prov.end_time
+                    and timings.end.seconds == end_time
                 ):
                     # When combining items with same timing, add newline and merge consecutive tags
                     combined = text.rstrip() + WebVTTLineTerminator.LF.value + part.text
@@ -478,7 +480,7 @@ class WebVTTDocSerializer(DocSerializer):
                         cue_blocks.append(WebVTTCueBlock.parse(text))
                     timings = WebVTTCueTimings(
                         start=WebVTTTimestamp.from_seconds(prov.start_time),
-                        end=WebVTTTimestamp.from_seconds(prov.end_time),
+                        end=WebVTTTimestamp.from_seconds(end_time),
                     )
                     id = prov.identifier
                     text = (

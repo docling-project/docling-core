@@ -1066,13 +1066,6 @@ def _code_language_label_from_doclang(label_val: str) -> CodeLanguageLabel:
     return _LINGUIST_TO_CODE_LANGUAGE.get(label_val, CodeLanguageLabel.UNKNOWN)
 
 
-_TRACK_POINT_MSECS: Final = 1
-"""A track cue that lasts at most this long (in ms) is a point in time, written without end time.
-
-A ``TrackSource`` must end after it starts, so a point cue read from DocLang ends one
-millisecond after its start, as the sampled frames of a video do.
-"""
-
 # DocLang custom-vocabulary tags for standard Docling meta fields (``namespace__field``).
 _DOCLANG_META_NAMESPACE: Final = "docling"
 _DOCLANG_META_TAG_SUMMARY: Final = f"{_DOCLANG_META_NAMESPACE}__summary"

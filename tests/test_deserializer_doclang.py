@@ -2834,7 +2834,7 @@ def test_track_is_read_and_its_chapter_skipped_with_a_warning() -> None:
     cues = [ref.resolve(doc) for ref in track.children]
     assert [(c.text, c.source[0].start_time, c.source[0].end_time) for c in cues] == [
         ("Hello world", 0.0, 4.0),
-        ("Second cue", 4.0, 4.001),
+        ("Second cue", 4.0, 4.0),
     ]
 
 

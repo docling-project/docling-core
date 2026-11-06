@@ -4557,7 +4557,7 @@
           "type": "number"
         },
         "end_time": {
-          "description": "End time offset of the track cue in seconds",
+          "description": "End time offset of the track cue in seconds, equal to the start time for an instant",
           "examples": [
             12.0,
             8.2,

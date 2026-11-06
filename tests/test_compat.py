@@ -297,6 +297,25 @@ class TestProjector_1_12_to_1_11:
         assert result["version"] == "1.11.0"
         assert "tracks" not in result
 
+    def test_instants_get_a_duration(self):
+        """A 1.11 client requires the end time to be after the start time."""
+        from docling_core.types.doc import TrackSource
+
+        doc = DoclingDocument(name="doc")
+        track = doc.add_track()
+        doc.add_text(label=DocItemLabel.TEXT, text="a", parent=track, source=TrackSource(start_time=2, end_time=2))
+        doc.add_text(label=DocItemLabel.TEXT, text="b", source=TrackSource(start_time=3, end_time=5))
+
+        result = self._apply(doc.model_dump(mode="python"))
+
+        assert [(s["start_time"], s["end_time"]) for t in result["texts"] for s in t["source"]] == pytest.approx(
+            [
+                (2, 2.001),
+                (3, 5),
+            ]
+        )
+        DoclingDocument.model_validate(result)
+
     def test_track_becomes_a_picture_with_its_references(self):
         """The track keeps its cover, location and cues, as a picture after the existing ones."""
         from docling_core.types.doc import ImageRef, Size, TrackSource

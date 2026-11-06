@@ -36,7 +36,7 @@ class TrackSource(BaseSource):
         float,
         Field(
             examples=[12.0, 8.2, 5370.1],
-            description="End time offset of the track cue in seconds",
+            description="End time offset of the track cue in seconds, equal to the start time for an instant",
         ),
     ]
     identifier: Annotated[
@@ -49,9 +49,9 @@ class TrackSource(BaseSource):
 
     @model_validator(mode="after")
     def check_order(self) -> Self:
-        """Ensure start time is less than the end time."""
-        if self.end_time <= self.start_time:
-            raise ValueError("End time must be greater than start time")
+        """Ensure the end time is not earlier than the start time: equal times are an instant."""
+        if self.end_time < self.start_time:
+            raise ValueError("End time must not be earlier than start time")
         return self
 
 

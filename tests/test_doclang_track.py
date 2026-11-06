@@ -46,7 +46,7 @@ def _slide_with_video() -> DoclingDocument:
         image=_image("poster"),
         prov=ProvenanceItem(page_no=1, bbox=BoundingBox(l=50, t=100, r=370, b=280), charspan=(0, 0)),
     )
-    doc.add_picture(parent=track, image=_image("frame_0"), source=TrackSource(start_time=0.0, end_time=0.001))
+    doc.add_picture(parent=track, image=_image("frame_0"), source=TrackSource(start_time=0.0, end_time=0.0))
     doc.add_text(
         label=DocItemLabel.TEXT,
         text="Welcome to the quarterly review.",
@@ -93,9 +93,9 @@ def _cues(doc: DoclingDocument, track: TrackItem) -> list[tuple[str, str, float,
 def test_track_serialization():
     """A track is a ``<track>`` with its location, cover and one cue block per time.
 
-    Cues with the same times share a block, the frame comes first, a voice is written
-    before its turn, an empty voice ends the previous unattributed turn, and a point
-    cue (1 ms) is written without end time.
+    Turns with the same times share a block, a frame joins the block that starts at its
+    time and comes first in it, a voice is written before its turn, an empty voice ends
+    the previous unattributed turn, and an instant is written without end time.
     """
     doc = _slide_with_video()
     actual = doc.export_to_doclang(image_mode=ImageRefMode.REFERENCED)
@@ -119,7 +119,7 @@ def test_track_round_trip(pretty_indentation: str | None):
 
 
 def test_track_reads_doclang_cue_blocks():
-    """Timestamp runs, point cues, voices and an empty voice, as in the DocLang spec examples."""
+    """Timestamp runs, instants, voices and an empty voice, as in the DocLang spec examples."""
     xml = (
         "<doclang>"
         "<track>"
@@ -135,7 +135,7 @@ def test_track_reads_doclang_cue_blocks():
     doc = DocLangDocDeserializer().deserialize_str(xml)
 
     assert _cues(doc, doc.tracks[0]) == [
-        ("TextItem", "Hello, and welcome.", 2.0, 2.001, None),
+        ("TextItem", "Hello, and welcome.", 2.0, 2.0, None),
         ("TextItem", "Hi Mary!", 2.5, 7.0, "John"),
         ("TextItem", "Hello John!", 2.5, 7.0, "Mary"),
         ("TextItem", "The results.", 3598.45, 3601.21, "Narrator"),
@@ -160,7 +160,7 @@ def test_track_skips_chapter_and_audio_with_a_warning():
         "<chapter> in <track> is not supported yet; skipped",
     ]
     assert _cues(doc, doc.tracks[0]) == [
-        ("PictureItem", "", 0.0, 5.0, None),
+        ("PictureItem", "", 0.0, 0.0, None),
         ("TextItem", "Welcome.", 0.0, 5.0, None),
     ]
 
@@ -230,3 +230,18 @@ def test_picture_children_of_a_track_are_frames():
     xml = DocLangDocSerializer(doc=doc, params=params).serialize().text
     assert '<frame><src uri="https://example.com/frame_0.png"/></frame>' in xml
     assert '<cover><src uri="https://example.com/poster.png"/></cover>' in xml
+
+
+def test_frame_joins_the_block_that_starts_at_its_time():
+    """A frame is the still at its start time: its own end time does not split the block."""
+    doc = DoclingDocument(name="doc")
+    track = doc.add_track()
+    doc.add_text(label=DocItemLabel.TEXT, text="Hello", parent=track, source=TrackSource(start_time=1, end_time=4))
+    doc.add_picture(parent=track, source=TrackSource(start_time=1, end_time=1.001))  # e.g. a sampled video frame
+    doc.add_picture(parent=track, source=TrackSource(start_time=2, end_time=2))
+
+    xml = DocLangDocSerializer(doc=doc, params=DocLangParams(pretty_indentation=None)).serialize().text
+
+    assert (
+        '<track><bdiv/><seconds value="1"/><seconds value="4"/><frame/>Hello<bdiv/><seconds value="2"/><frame/></track>'
+    ) in xml

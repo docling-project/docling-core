@@ -16,13 +16,11 @@
     </cover>
     <bdiv/>
     <seconds value="0"/>
+    <seconds value="2"/>
+    <msecs value="120"/>
     <frame>
       <src uri="https://example.com/frame_0.png"/>
     </frame>
-    <bdiv/>
-    <seconds value="0"/>
-    <seconds value="2"/>
-    <msecs value="120"/>
     <voice>Alice</voice>
     Welcome to the quarterly review.
     <voice>Bob</voice>

@@ -25,7 +25,11 @@ SCHEMA_VERSION_HISTORY: Final[list[dict]] = [
         "library_version": "v2.106.0",
         "note": "InlineGroup runs carry their own significant whitespace",
     },
-    {"schema": "1.12.0", "library_version": "v2.107.0", "note": "TrackItem, tracks list, DocItemLabel.TRACK"},
+    {
+        "schema": "1.12.0",
+        "library_version": "v2.107.0",
+        "note": "TrackItem, tracks list, DocItemLabel.TRACK, TrackSource instants",
+    },
 ]
 """Ordered history of DoclingDocument schema versions in docling-core v2.x.
 

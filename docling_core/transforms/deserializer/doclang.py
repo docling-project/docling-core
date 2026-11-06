@@ -32,7 +32,6 @@ from docling_core.transforms.serializer._doclang_utils import (
     _ELEMENT_HEAD_TAGS,
     _FORMATTING_TAGS,
     _RAW_TEXT_TAGS,
-    _TRACK_POINT_MSECS,
     _XML_WHITESPACE,
     DOCLANG_DFLT_RESOLUTION,
     DocLangAttributeKey,
@@ -1885,7 +1884,10 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             warnings.warn("<track> cue block without a start time; skipped", stacklevel=2)
             return
         start = runs[0]
-        end = runs[1] if len(runs) > 1 and runs[1] - runs[0] > _TRACK_POINT_MSECS else start + _TRACK_POINT_MSECS
+        end = runs[1] if len(runs) > 1 else start  # without an end time, the block is an instant
+        if end < start:
+            warnings.warn("<track> cue block ends before it starts; read as an instant", stacklevel=2)
+            end = start
 
         voice: str | None = None
         turn: list[Node] = []
@@ -1907,7 +1909,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 frame = doc.add_picture(
                     parent=track,
                     image=self._track_media_image(cast(Element, node)),
-                    source=TrackSource(start_time=start / 1000, end_time=end / 1000),
+                    # a frame is the still at the start of its block
+                    source=TrackSource(start_time=start / 1000, end_time=start / 1000),
                 )
                 self._source_recorder.bind_item(cast(Element, node), frame)
             elif name in {DocLangToken.CHAPTER.value, DocLangToken.AUDIO.value}:

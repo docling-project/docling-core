@@ -33,7 +33,6 @@ from docling_core.transforms.serializer._doclang_utils import (
     _DOCLANG_VERSION,
     _ELEMENT_HEAD_TAGS,
     _RAW_TEXT_TAGS,
-    _TRACK_POINT_MSECS,
     DOCLANG_DFLT_RESOLUTION,
     DOCLANG_NAMESPACE,
     DocLangAttributeKey,
@@ -2043,21 +2042,27 @@ class _TrackCueBlock:
 
 
 def _track_cue_blocks(cues: list[tuple[int, int, TextItem | PictureItem]]) -> list[_TrackCueBlock]:
-    """Group cues by time, in order of start time: one block per time, with at most one frame."""
+    """Group cues into blocks, in order of start time.
+
+    Consecutive turns with the same start and end time share a block. A frame is the
+    still at its start time: it goes in the first block that starts then and has no frame
+    yet, else in a block of its own.
+    """
+    ordered = sorted(cues, key=lambda cue: cue[0])
     blocks: list[_TrackCueBlock] = []
-    for start, end, cue in sorted(cues, key=lambda cue: cue[0]):
-        block = blocks[-1] if blocks and (blocks[-1].start, blocks[-1].end) == (start, end) else None
+    for start, end, cue in ordered:
+        if isinstance(cue, TextItem):
+            if not blocks or (blocks[-1].start, blocks[-1].end) != (start, end):
+                blocks.append(_TrackCueBlock(start=start, end=end))
+            blocks[-1].turns.append(cue)
+    for start, _, cue in ordered:
         if isinstance(cue, PictureItem):
-            if block is None or block.frame is not None:
-                block = _TrackCueBlock(start=start, end=end)
+            block = next((b for b in blocks if b.start == start and b.frame is None), None)
+            if block is None:
+                block = _TrackCueBlock(start=start, end=start)
                 blocks.append(block)
             block.frame = cue
-        else:
-            if block is None:
-                block = _TrackCueBlock(start=start, end=end)
-                blocks.append(block)
-            block.turns.append(cue)
-    return blocks
+    return sorted(blocks, key=lambda block: block.start)
 
 
 def _serialize_track(
@@ -2114,7 +2119,7 @@ def _serialize_track(
     for block in _track_cue_blocks(cues):
         body.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.BDIV))
         body.append(_create_timestamp_tokens(msecs=block.start))
-        if block.end - block.start > _TRACK_POINT_MSECS:
+        if block.end > block.start:
             body.append(_create_timestamp_tokens(msecs=block.end))
         if block.frame is not None:
             frame_uri = _image_src_uri(item=block.frame, doc=doc, params=params)

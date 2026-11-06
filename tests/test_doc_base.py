@@ -89,10 +89,12 @@ def test_track_source():
             voice=["Mary"],
         )
 
-    with pytest.raises(ValidationError, match="must be greater than start"):
+    assert TrackSource(start_time=11.0, end_time=11.0).end_time == 11.0  # an instant
+
+    with pytest.raises(ValidationError, match="must not be earlier than start"):
         TrackSource(
             start_time=11.0,
-            end_time=11.0,
+            end_time=10.0,
         )
 
     doc = DoclingDocument(name="Unknown")

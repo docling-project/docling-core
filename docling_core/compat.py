@@ -205,6 +205,7 @@ def list_projectors() -> list[tuple[int, int]]:
 #   • Added TrackItem (a time-aligned media transcript, DocLang ``<track>``)
 #     with the new DocItemLabel value TRACK.
 #   • Added tracks as a new top-level list.
+#   • TrackSource allows instants: end_time equal to start_time.
 #
 # Downgrade strategy:
 #   • Turn each track into a PictureItem (the nearest existing type: a
@@ -212,6 +213,7 @@ def list_projectors() -> list[tuple[int, int]]:
 #     cues as its children), appended to "pictures".
 #   • Rewrite every "#/tracks/N" reference to the new picture reference.
 #   • Drop the top-level "tracks" key.
+#   • Give each instant a duration of 1 ms.
 # ---------------------------------------------------------------------------
 
 
@@ -231,6 +233,17 @@ def _rewrite_refs(node: Any, mapping: dict[str, str]) -> Any:
     return node
 
 
+def _pad_track_instants(node: Any) -> Any:
+    """Return *node* with every instant ``TrackSource`` made 1 ms long, at any depth."""
+    if isinstance(node, dict):
+        if node.get("kind") == "track" and node.get("end_time", 1) <= node.get("start_time", 0):
+            return {**node, "end_time": node["start_time"] + 0.001}
+        return {key: _pad_track_instants(value) for key, value in node.items()}
+    if isinstance(node, list):
+        return [_pad_track_instants(value) for value in node]
+    return node
+
+
 @register_projector(from_minor=12, to_minor=11)
 def _project_1_12_to_1_11(data: dict) -> dict:
     """Downgrade a schema 1.12 document dict to schema 1.11.
@@ -240,8 +253,10 @@ def _project_1_12_to_1_11(data: dict) -> dict:
       ``pictures``, keeping its image (the cover), location, captions and children
       (the cues), and rewrites all references to it.
     - Removes the top-level ``tracks`` list (unknown to 1.11 clients).
+    - Gives each instant ``TrackSource`` a duration of 1 ms, since 1.11 requires the end
+      time to be after the start time.
     """
-    data = dict(data)
+    data = _pad_track_instants(dict(data))
     tracks = data.pop("tracks", None) or []
     if not tracks:
         data["version"] = "1.11.0"
