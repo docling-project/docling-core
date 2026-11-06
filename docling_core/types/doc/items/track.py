@@ -14,7 +14,8 @@ class TrackItem(FloatingItem):
     voice, such as the ``TextItem`` of each transcript turn or the ``PictureItem`` of a
     sampled video frame. The ``image`` is the cover, one picture for the whole track
     (e.g. the poster frame of a video). Like other floating items, a track can carry a
-    location (``prov``) and captions.
+    location (``prov``) and captions. A formatted turn is a ``TextItem`` with empty text
+    and an ``InlineGroup`` child.
     """
 
     label: typing.Literal[DocItemLabel.TRACK] = DocItemLabel.TRACK

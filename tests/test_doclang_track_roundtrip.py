@@ -6,6 +6,7 @@ reference repository. Each case is compared by what it means, not byte by byte: 
 closing a gap has to remove its marker.
 """
 
+import itertools
 import re
 import warnings
 import xml.etree.ElementTree as ET
@@ -64,7 +65,8 @@ def _track_lines(track: ET.Element) -> list[str]:
     run: dict[str, int] = {}
     in_block = False
     has_times = False
-    block_has_turn = False
+    voice: str | None = None
+    voice_used = True
 
     def end_run() -> None:
         nonlocal run
@@ -84,11 +86,17 @@ def _track_lines(track: ET.Element) -> list[str]:
         runs = []
 
     def end_turn() -> None:
-        nonlocal turn, block_has_turn
+        nonlocal turn, voice_used
         if text := _text_block(turn):
-            lines.append(f"turn {text}")
-            block_has_turn = True
+            lines.append(f"turn [{voice or ''}] {text}")
+            voice_used = True
         turn = []
+
+    def end_voice() -> None:
+        nonlocal voice, voice_used
+        if voice and not voice_used:
+            lines.append(f"voice {voice}")  # a voice without a turn
+        voice, voice_used = None, True
 
     def add_tail(el: ET.Element) -> None:
         if in_block and _spaces(el.tail).strip():
@@ -102,7 +110,8 @@ def _track_lines(track: ET.Element) -> list[str]:
             if in_block:
                 end_times()
                 end_turn()
-            in_block, has_times, block_has_turn = True, False, False
+                end_voice()
+            in_block, has_times = True, False
         elif name in _TIME_UNITS:
             if "seconds" in run and name != "msecs":
                 end_run()
@@ -111,9 +120,8 @@ def _track_lines(track: ET.Element) -> list[str]:
             end_times()
             if name == "voice":
                 end_turn()
-                voice = _text_block([_inner(el)])
-                if voice or block_has_turn:
-                    lines.append(f"voice {voice}")
+                end_voice()
+                voice, voice_used = _text_block([_inner(el)]) or None, False
             elif name in {"chapter", "frame", "audio"}:
                 end_turn()
                 lines.append(f"{name} {_text_block([_inner(el)])}")
@@ -125,14 +133,33 @@ def _track_lines(track: ET.Element) -> list[str]:
     if in_block:
         end_times()
         end_turn()
-    return lines
+        end_voice()
+    return _merge_same_time_blocks(lines)
+
+
+def _merge_same_time_blocks(lines: list[str]) -> list[str]:
+    """Merge a block into the previous one when both have the same times and it holds only turns.
+
+    ``DoclingDocument`` has no cue block, so this is the canonical form a round trip gives.
+    """
+    merged: list[str] = []
+    header: str | None = None
+    for i, line in enumerate(lines):
+        if line.startswith("block "):
+            body = list(itertools.takewhile(lambda next_line: not next_line.startswith("block "), lines[i + 1 :]))
+            if line == header and all(next_line.startswith(("turn ", "voice ")) for next_line in body):
+                continue
+            header = line
+        merged.append(line)
+    return merged
 
 
 def _canonical(xml: str) -> list[str]:
     """Describe a DocLang document by its meaning.
 
     Comments, CDATA, zero time units, an end time equal to the start time and indentation
-    all read the same in DocLang, so they do not count as differences.
+    all read the same in DocLang, so they do not count as differences. Nor does splitting
+    turns with the same times over several blocks.
     """
 
     def walk(el: ET.Element) -> list[str]:
@@ -183,7 +210,7 @@ _LOC = '<location value="1"/><location value="2"/><location value="30"/><locatio
 FIXTURE_NAMES = sorted(path.stem for path in FIXTURES.glob("*.dclg"))
 
 # Known gaps, most important first.
-_BLOCKS = "blocks with the same times merge: DoclingDocument has no cue block"
+_FRAME_ONLY_END = "the end time of a block that holds only a frame has no meaning in DocLang 0.9"
 _EMPTY = "a cue block with no turn or frame is dropped"
 _FRAME_HEAD = "the head and text of a frame are dropped"
 _COVER = "a cover without a restored image, and the head of a cover, are dropped"
@@ -235,8 +262,8 @@ CASES: dict[str, tuple[str, str | None]] = {
     ),
     "comment_in_turn": (_track(f"<bdiv/>{_sec(1)}Hel<!-- c -->lo"), None),
     # 2. Cue blocks with little or nothing in them
-    "same_time_blocks": (_track(f"<bdiv/>{_sec(2)}A<bdiv/>{_sec(2)}B"), _BLOCKS),
-    "same_interval_blocks": (_track(f"<bdiv/>{_sec(2)}{_sec(3)}A<bdiv/>{_sec(2)}{_sec(3)}B"), _BLOCKS),
+    "same_time_blocks": (_track(f"<bdiv/>{_sec(2)}A<bdiv/>{_sec(2)}B"), None),
+    "same_interval_blocks": (_track(f"<bdiv/>{_sec(2)}{_sec(3)}A<bdiv/>{_sec(2)}{_sec(3)}B"), None),
     "empty_block": (_track(f"<bdiv/>{_sec(2)}<bdiv/>{_sec(4)}B"), _EMPTY),
     "only_empty_block": (_track(f"<bdiv/>{_sec(2)}"), _EMPTY),
     "voice_only_block": (_track(f"<bdiv/>{_sec(2)}<voice>Host</voice>"), _EMPTY),
@@ -259,6 +286,7 @@ CASES: dict[str, tuple[str, str | None]] = {
     # 4. Frames and cover, without image sources
     "frame_only": (_track(f"<bdiv/>{_sec(1)}<frame/>"), None),
     "frame_and_turn": (_track(f"<bdiv/>{_sec(1)}<frame/>Hello"), None),
+    "frame_only_with_end": (_track(f"<bdiv/>{_sec(1)}{_sec(9)}<frame/>"), _FRAME_ONLY_END),
     "frame_in_interval": (_track(f"<bdiv/>{_sec(1)}{_sec(9)}<frame/>Hello"), None),
     "frame_with_location": (_track(f"<bdiv/>{_sec(1)}<frame>{_LOC}</frame>"), _FRAME_HEAD),
     "frame_with_caption": (_track(f"<bdiv/>{_sec(1)}<frame><caption>Slide</caption></frame>"), _FRAME_HEAD),

@@ -4412,7 +4412,7 @@
     },
     "TrackItem": {
       "additionalProperties": false,
-      "description": "A time-aligned media transcript, e.g. the speech of an audio or video recording.\n\nA track maps to the DocLang ``<track>`` element. Its children are the cues: items\nwhose ``source`` is a ``TrackSource`` with the start and end time and an optional\nvoice, such as the ``TextItem`` of each transcript turn or the ``PictureItem`` of a\nsampled video frame. The ``image`` is the cover, one picture for the whole track\n(e.g. the poster frame of a video). Like other floating items, a track can carry a\nlocation (``prov``) and captions.",
+      "description": "A time-aligned media transcript, e.g. the speech of an audio or video recording.\n\nA track maps to the DocLang ``<track>`` element. Its children are the cues: items\nwhose ``source`` is a ``TrackSource`` with the start and end time and an optional\nvoice, such as the ``TextItem`` of each transcript turn or the ``PictureItem`` of a\nsampled video frame. The ``image`` is the cover, one picture for the whole track\n(e.g. the poster frame of a video). Like other floating items, a track can carry a\nlocation (``prov``) and captions. A formatted turn is a ``TextItem`` with empty text\nand an ``InlineGroup`` child.",
       "properties": {
         "self_ref": {
           "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
