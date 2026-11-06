@@ -19,25 +19,47 @@ _logger = logging.getLogger(__name__)
 
 
 class TableCell(BaseModel):
-    """TableCell."""
+    """A cell of a table, positioned in the table grid by row and column offsets.
 
-    bbox: BoundingBox | None = None
-    row_span: int = 1
-    col_span: int = 1
-    start_row_offset_idx: int
-    end_row_offset_idx: int
-    start_col_offset_idx: int
-    end_col_offset_idx: int
-    text: str
-    column_header: bool = False
-    row_header: bool = False
-    row_section: bool = False
-    fillable: bool = False
+    The offset ranges are half-open: a cell covers the rows from ``start_row_offset_idx``
+    up to, but not including, ``end_row_offset_idx``, and likewise for columns.
+    """
+
+    bbox: Annotated[BoundingBox | None, Field(description="Bounding box of the cell on the page.")] = None
+    row_span: Annotated[int, Field(description="Number of rows spanned by the cell.")] = 1
+    col_span: Annotated[int, Field(description="Number of columns spanned by the cell.")] = 1
+    start_row_offset_idx: Annotated[
+        int, Field(ge=0, description="Index of the first row covered by the cell (inclusive, 0-based).")
+    ]
+    end_row_offset_idx: Annotated[
+        int, Field(ge=0, description="Index of the last row covered by the cell (exclusive, 0-based).")
+    ]
+    start_col_offset_idx: Annotated[
+        int, Field(ge=0, description="Index of the first column covered by the cell (inclusive, 0-based).")
+    ]
+    end_col_offset_idx: Annotated[
+        int, Field(ge=0, description="Index of the last column covered by the cell (exclusive, 0-based).")
+    ]
+    text: Annotated[str, Field(description="Text content of the cell.")]
+    column_header: Annotated[bool, Field(description="Whether the cell is part of a column header.")] = False
+    row_header: Annotated[bool, Field(description="Whether the cell is part of a row header.")] = False
+    row_section: Annotated[bool, Field(description="Whether the cell is a row section title.")] = False
+    fillable: Annotated[bool, Field(description="Whether the cell is meant to be filled in, as in a form.")] = False
 
     @model_validator(mode="before")
     @classmethod
     def from_dict_format(cls, data: Any) -> Any:
-        """from_dict_format."""
+        """Derive the cell text from the bounding box token when no ``text`` is given.
+
+        Supports cells produced by docling-ibm-models, where the text is carried by the
+        ``bbox`` token or by the ``text_cell_bboxes`` tokens.
+
+        Args:
+            data: The raw input data of the cell.
+
+        Returns:
+            The input data, with the ``text`` key set when it was derived.
+        """
         if isinstance(data, dict):
             # Check if this is a native BoundingBox or a bbox from docling-ibm-models
             if (
@@ -57,14 +79,40 @@ class TableCell(BaseModel):
 
         return data
 
+    @model_validator(mode="after")
+    def check_offset_ranges(self) -> Self:
+        """Check that the row and column offset ranges are not inverted.
+
+        Returns:
+            The validated cell.
+
+        Raises:
+            ValueError: If an end offset is smaller than its start offset.
+        """
+        if self.end_row_offset_idx < self.start_row_offset_idx:
+            raise ValueError(
+                f"end_row_offset_idx ({self.end_row_offset_idx}) must be greater than or equal to "
+                f"start_row_offset_idx ({self.start_row_offset_idx})"
+            )
+        if self.end_col_offset_idx < self.start_col_offset_idx:
+            raise ValueError(
+                f"end_col_offset_idx ({self.end_col_offset_idx}) must be greater than or equal to "
+                f"start_col_offset_idx ({self.start_col_offset_idx})"
+            )
+        return self
+
     def _get_text(self, doc: Optional["DoclingDocument"] = None, **kwargs: Any) -> str:
         return self.text
 
 
 class RichTableCell(TableCell):
-    """RichTableCell."""
+    """A table cell whose content is a document item, such as a group or nested table.
 
-    ref: "RefItem"
+    The ``text`` field holds a plain-text rendition of the content, while ``ref`` points to
+    the item that carries the actual structure.
+    """
+
+    ref: Annotated["RefItem", Field(description="Reference to the document item holding the content of the cell.")]
 
     @override
     def _get_text(self, doc: Optional["DoclingDocument"] = None, **kwargs: Any) -> str:
