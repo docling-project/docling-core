@@ -17,6 +17,8 @@ from docling_core.types.doc.webvtt import (
     WebVTTCueItalicSpan,
     WebVTTCueLanguageSpan,
     WebVTTCueLanguageSpanStartTag,
+    WebVTTCueRubySpan,
+    WebVTTCueRubyTextSpan,
     WebVTTCueSpanStartTagAnnotated,
     WebVTTCueTextSpan,
     WebVTTCueTimings,
@@ -446,3 +448,63 @@ def test_webvtt_file_unknown_tags() -> None:
     assert str(vtt[1]).rstrip("\n").endswith("\nWhere are you going?")
     assert str(vtt[2]).rstrip("\n").endswith("\n<v Anna>Home, I think.</v>")
     assert str(vtt[3]).rstrip("\n").endswith("\nLast cue")
+
+
+def test_webvtt_ruby_spans() -> None:
+    """Test that ruby spans are parsed, keep their text and round-trip."""
+    block = WebVTTCueBlock.parse("00:01.000 --> 00:02.000\n<ruby>漢字<rt>かんじ</rt></ruby> is kanji\n")
+    assert len(block.payload) == 2
+    ruby = block.payload[0].component
+    assert isinstance(ruby, WebVTTCueRubySpan)
+    base = ruby.internal_text.components
+    assert len(base) == 2
+    assert isinstance(base[0].component, WebVTTCueTextSpan)
+    assert base[0].component.text == "漢字"
+    rt = base[1].component
+    assert isinstance(rt, WebVTTCueRubyTextSpan)
+    assert isinstance(rt.internal_text.components[0].component, WebVTTCueTextSpan)
+    assert rt.internal_text.components[0].component.text == "かんじ"
+    assert isinstance(block.payload[1].component, WebVTTCueTextSpan)
+    assert block.payload[1].component.text == " is kanji"
+    assert str(block).rstrip("\n").endswith("\n<ruby>漢字<rt>かんじ</rt></ruby> is kanji")
+
+    # The end tag of the last ruby text span may be omitted; the serialized form
+    # writes it out.
+    block = WebVTTCueBlock.parse("00:01.000 --> 00:02.000\n<ruby>漢字<rt>かんじ</ruby> is kanji\n")
+    ruby = block.payload[0].component
+    assert isinstance(ruby, WebVTTCueRubySpan)
+    rt = ruby.internal_text.components[1].component
+    assert isinstance(rt, WebVTTCueRubyTextSpan)
+    assert rt.internal_text.components[0].component.text == "かんじ"
+    assert str(block).rstrip("\n").endswith("\n<ruby>漢字<rt>かんじ</rt></ruby> is kanji")
+
+    # Several base and annotation pairs in one ruby span.
+    block = WebVTTCueBlock.parse("00:01.000 --> 00:02.000\n<ruby>日<rt>に</rt>本<rt>ほん</ruby>\n")
+    ruby = block.payload[0].component
+    assert isinstance(ruby, WebVTTCueRubySpan)
+    kinds = [type(c.component).__name__ for c in ruby.internal_text.components]
+    assert kinds == [
+        "WebVTTCueTextSpan",
+        "WebVTTCueRubyTextSpan",
+        "WebVTTCueTextSpan",
+        "WebVTTCueRubyTextSpan",
+    ]
+    assert str(block).rstrip("\n").endswith("\n<ruby>日<rt>に</rt>本<rt>ほん</rt></ruby>")
+
+
+def test_webvtt_file_ruby_spans() -> None:
+    """Test that a file keeps the cues holding ruby annotations."""
+    content = (
+        "WEBVTT\n\n"
+        "00:00:01.000 --> 00:00:03.000\nFirst cue\n\n"
+        "00:00:03.000 --> 00:00:05.000\n<ruby>漢字<rt>かんじ</rt></ruby> is kanji\n\n"
+        "00:00:05.000 --> 00:00:07.000\nLast cue\n"
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+
+    assert len(vtt) == 3
+    assert str(vtt[0]).rstrip("\n").endswith("\nFirst cue")
+    assert str(vtt[1]).rstrip("\n").endswith("\n<ruby>漢字<rt>かんじ</rt></ruby> is kanji")
+    assert str(vtt[2]).rstrip("\n").endswith("\nLast cue")
