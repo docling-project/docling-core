@@ -1513,6 +1513,192 @@ def test_empty_table_preserved_by_default():
     assert "<group" not in result
 
 
+@pytest.mark.parametrize("num_rows,num_cols", [(1, 1), (2, 3), (3, 2)])
+@pytest.mark.parametrize("explicit_cells", [False, True])
+@pytest.mark.parametrize("suppress_empty_elements", [False, True])
+@pytest.mark.parametrize("pretty_indentation", [None, "  "])
+def test_empty_table_grid_roundtrip(
+    num_rows: int,
+    num_cols: int,
+    explicit_cells: bool,
+    suppress_empty_elements: bool,
+    pretty_indentation: str | None,
+) -> None:
+    """Implicit and explicit empty cells preserve the declared table dimensions."""
+    cells = (
+        [
+            TableCell(
+                text="",
+                start_row_offset_idx=row,
+                end_row_offset_idx=row + 1,
+                start_col_offset_idx=col,
+                end_col_offset_idx=col + 1,
+            )
+            for row in range(num_rows)
+            for col in range(num_cols)
+        ]
+        if explicit_cells
+        else []
+    )
+    data = TableData(num_rows=num_rows, num_cols=num_cols, table_cells=cells)
+    doc = DoclingDocument(name="empty_table_grid")
+    doc.add_table(data=data)
+    params = DocLangParams(
+        add_location=False,
+        suppress_empty_elements=suppress_empty_elements,
+        pretty_indentation=pretty_indentation,
+    )
+
+    text = DocLangDocSerializer(doc=doc, params=params).serialize().text
+    (table_xml,) = ET.fromstring(text).findall("table")
+    assert [child.tag for child in table_xml] == (["ecel"] * num_cols + ["nl"]) * num_rows
+
+    (table,) = DocLangDocDeserializer().deserialize_str(text).tables
+    assert (table.data.num_rows, table.data.num_cols) == (num_rows, num_cols)
+    assert [[cell.text for cell in row] for row in table.data.grid] == [[""] * num_cols for _ in range(num_rows)]
+    assert len(data.table_cells) == (num_rows * num_cols if explicit_cells else 0)
+
+
+@pytest.mark.parametrize("num_rows,num_cols", [(0, 0), (0, 3), (3, 0)])
+@pytest.mark.parametrize("suppress_empty_elements", [False, True])
+def test_zero_sized_table_grid(num_rows: int, num_cols: int, suppress_empty_elements: bool) -> None:
+    """A table without a positive-size grid retains the existing empty-table behavior."""
+    doc = DoclingDocument(name="zero_sized_table_grid")
+    doc.add_table(data=TableData(num_rows=num_rows, num_cols=num_cols))
+    text = (
+        DocLangDocSerializer(
+            doc=doc,
+            params=DocLangParams(add_location=False, suppress_empty_elements=suppress_empty_elements),
+        )
+        .serialize()
+        .text
+    )
+
+    tables_xml = ET.fromstring(text).findall("table")
+    restored = DocLangDocDeserializer().deserialize_str(text)
+    if suppress_empty_elements:
+        assert tables_xml == []
+        assert restored.tables == []
+    else:
+        (table_xml,) = tables_xml
+        assert len(table_xml) == 0
+        (table,) = restored.tables
+        assert (table.data.num_rows, table.data.num_cols) == (0, 0)
+
+
+@pytest.mark.parametrize("num_rows,num_cols", [(0, 3), (3, 0)])
+@pytest.mark.parametrize("suppress_empty_elements", [False, True])
+def test_zero_sized_table_grid_explicit_cells(num_rows: int, num_cols: int, suppress_empty_elements: bool) -> None:
+    """Explicit cells with degenerate dimensions retain their legacy output."""
+    doc = DoclingDocument(name="zero_sized_table_grid_explicit_cells")
+    doc.add_table(
+        data=TableData(
+            num_rows=num_rows,
+            num_cols=num_cols,
+            table_cells=[
+                TableCell(
+                    text="",
+                    start_row_offset_idx=0,
+                    end_row_offset_idx=1,
+                    start_col_offset_idx=0,
+                    end_col_offset_idx=1,
+                )
+            ],
+        )
+    )
+    text = (
+        DocLangDocSerializer(
+            doc=doc,
+            params=DocLangParams(add_location=False, suppress_empty_elements=suppress_empty_elements),
+        )
+        .serialize()
+        .text
+    )
+    tables_xml = ET.fromstring(text).findall("table")
+    if num_rows or not suppress_empty_elements:
+        (table_xml,) = tables_xml
+        assert [child.tag for child in table_xml] == ["nl"] * num_rows
+    else:
+        assert tables_xml == []
+
+
+@pytest.mark.parametrize("content_types", [{ContentType.TABLE}, {ContentType.TABLE_CELL}, set()])
+@pytest.mark.parametrize("suppress_empty_elements", [False, True])
+def test_empty_table_grid_content_filter(content_types: set[ContentType], suppress_empty_elements: bool) -> None:
+    """Table structure follows the TABLE filter independently of cell content."""
+    doc = DoclingDocument(name="empty_table_grid_content_filter")
+    doc.add_table(data=TableData(num_rows=2, num_cols=3))
+    text = (
+        DocLangDocSerializer(
+            doc=doc,
+            params=DocLangParams(
+                add_location=False,
+                content_types=content_types,
+                suppress_empty_elements=suppress_empty_elements,
+            ),
+        )
+        .serialize()
+        .text
+    )
+
+    tables_xml = ET.fromstring(text).findall("table")
+    restored = DocLangDocDeserializer().deserialize_str(text)
+    if ContentType.TABLE in content_types:
+        (table_xml,) = tables_xml
+        assert [child.tag for child in table_xml] == (["ecel"] * 3 + ["nl"]) * 2
+        (table,) = restored.tables
+        assert (table.data.num_rows, table.data.num_cols) == (2, 3)
+    elif suppress_empty_elements:
+        assert tables_xml == []
+        assert restored.tables == []
+    else:
+        (table_xml,) = tables_xml
+        assert len(table_xml) == 0
+
+
+@pytest.mark.parametrize("across_pages", [False, True])
+@pytest.mark.parametrize("suppress_empty_elements", [False, True])
+def test_empty_table_grid_fragments(across_pages: bool, suppress_empty_elements: bool) -> None:
+    """Implicit empty grids match explicit cells across row and column fragments."""
+    num_rows, num_cols = (2, 3) if across_pages else (3, 2)
+    texts = []
+    for explicit_cells in (False, True):
+        doc = DoclingDocument(name="empty_table_grid_fragments")
+        for page_no in (1, 2) if across_pages else (1,):
+            doc.add_page(page_no=page_no, size=Size(width=512, height=512))
+        data = TableData(num_rows=num_rows, num_cols=num_cols)
+        if explicit_cells:
+            data.table_cells = [cell for row in data.grid for cell in row]
+        table = doc.add_table(data=data)
+        for page_no, bbox in (
+            (1, (10, 10, 200, 200)),
+            (2 if across_pages else 1, (10, 10, 200, 200) if across_pages else (220, 10, 400, 200)),
+        ):
+            table.prov.append(
+                ProvenanceItem(
+                    page_no=page_no,
+                    bbox=BoundingBox.from_tuple(bbox, origin=CoordOrigin.TOPLEFT),
+                    charspan=(0, 0),
+                )
+            )
+        text = (
+            DocLangDocSerializer(
+                doc=doc,
+                params=DocLangParams(suppress_empty_elements=suppress_empty_elements),
+            )
+            .serialize()
+            .text
+        )
+        root = ET.fromstring(text)
+        assert len(root.findall("table")) == 2
+        assert len(root.findall("page_break")) == int(across_pages)
+        (restored,) = DocLangDocDeserializer().deserialize_str(text).tables
+        assert (restored.data.num_rows, restored.data.num_cols) == (num_rows, num_cols)
+        assert [[cell.text for cell in row] for row in restored.data.grid] == [[""] * num_cols for _ in range(num_rows)]
+        texts.append(text)
+    assert texts[0] == texts[1]
+
+
 def test_document_index_serialization():
     """Test that DOCUMENT_INDEX tables are serialized as <index>."""
     doc = DoclingDocument(name="test")
