@@ -229,25 +229,35 @@ class TableData(BaseModel):  # TBD
                     f"Row index {row_index} is out of bounds for the current number of rows {self.num_rows}."
                 )
 
-            start_idx = row_index * self.num_cols
-            end_idx = start_idx + self.num_cols
-            removed_cells = self.table_cells[start_idx:end_idx]
+            # Select the cells by their row offsets, not by their position in the
+            # list: a table can hold spanning cells, so `table_cells` is neither
+            # dense nor sorted by row.
+            removed_cells: list[TableCell] = []
+            kept_cells: list[TableCell] = []
+            for cell in self.table_cells:
+                if cell.start_row_offset_idx <= row_index < cell.end_row_offset_idx:
+                    if cell.start_row_offset_idx == row_index and cell.end_row_offset_idx == row_index + 1:
+                        # The cell lives in the removed row only.
+                        removed_cells.append(cell)
+                    else:
+                        # The cell also covers other rows: keep it, shrink its row span.
+                        cell.end_row_offset_idx -= 1
+                        kept_cells.append(cell)
+                else:
+                    if cell.start_row_offset_idx > row_index:
+                        cell.start_row_offset_idx -= 1
+                        cell.end_row_offset_idx -= 1
+                    kept_cells.append(cell)
 
             for cell in removed_cells:
                 if isinstance(cell, RichTableCell):
                     refs_to_remove.append(cell.ref)
 
             # Remove the cells from the table
-            self.table_cells = self.table_cells[:start_idx] + self.table_cells[end_idx:]
+            self.table_cells = kept_cells
 
             # Update the number of rows
             self.num_rows -= 1
-
-            # Reassign row offset indices for existing cells
-            for index, cell in enumerate(self.table_cells):
-                new_index = index // self.num_cols
-                cell.start_row_offset_idx = new_index
-                cell.end_row_offset_idx = new_index + 1
 
             all_removed_cells.append(removed_cells)
 

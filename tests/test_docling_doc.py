@@ -1929,6 +1929,65 @@ def test_table_remove_rows_ignores_duplicate_indices() -> None:
     assert [c.text for row in data.grid for c in row] == ["r0c0", "r0c1", "r2c0", "r2c1", "r3c0", "r3c1"]
 
 
+def test_table_remove_rows_keeps_spanning_cells() -> None:
+    """Row removal must follow the cell row offsets, not the position in the list."""
+
+    def _cell(text: str, start_row: int, end_row: int, start_col: int, end_col: int) -> TableCell:
+        return TableCell(
+            text=text,
+            start_row_offset_idx=start_row,
+            end_row_offset_idx=end_row,
+            start_col_offset_idx=start_col,
+            end_col_offset_idx=end_col,
+        )
+
+    # A header cell spanning both columns leaves the cell list sparse and shorter
+    # than num_rows * num_cols.
+    data = TableData(
+        num_rows=3,
+        num_cols=2,
+        table_cells=[
+            _cell("header", 0, 1, 0, 2),
+            _cell("r1c0", 1, 2, 0, 1),
+            _cell("r1c1", 1, 2, 1, 2),
+            _cell("r2c0", 2, 3, 0, 1),
+            _cell("r2c1", 2, 3, 1, 2),
+        ],
+    )
+
+    removed = data.remove_rows([0])
+
+    assert [[c.text for c in row] for row in removed] == [["header"]]
+    assert data.num_rows == 2
+    assert [[c.text for c in row] for row in data.grid] == [["r1c0", "r1c1"], ["r2c0", "r2c1"]]
+    assert [
+        (c.text, c.start_row_offset_idx, c.end_row_offset_idx, c.start_col_offset_idx, c.end_col_offset_idx)
+        for c in data.table_cells
+    ] == [
+        ("r1c0", 0, 1, 0, 1),
+        ("r1c1", 0, 1, 1, 2),
+        ("r2c0", 1, 2, 0, 1),
+        ("r2c1", 1, 2, 1, 2),
+    ]
+
+    # A cell spanning the removed row also covers other rows: it keeps its content
+    # and its row span shrinks by one.
+    data = TableData(
+        num_rows=3,
+        num_cols=1,
+        table_cells=[_cell("span", 0, 2, 0, 1), _cell("r2", 2, 3, 0, 1)],
+    )
+
+    data.remove_rows([1])
+
+    assert data.num_rows == 2
+    assert [[c.text for c in row] for row in data.grid] == [["span"], ["r2"]]
+    assert [(c.text, c.start_row_offset_idx, c.end_row_offset_idx) for c in data.table_cells] == [
+        ("span", 0, 1),
+        ("r2", 1, 2),
+    ]
+
+
 def test_misplaced_list_items():
     filename = Path("tests/data/doc/misplaced_list_items.yaml")
     doc = DoclingDocument.load_from_yaml(filename)
