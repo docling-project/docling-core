@@ -412,8 +412,6 @@ def serialize_block_quote_attribution(
     The document traversal skips them, like the captions of floating items, so a
     serializer that keeps the quote transparent emits them through this function.
     """
-    if not isinstance(doc_serializer, DocSerializer):
-        return []
     excluded_refs = doc_serializer.get_excluded_refs(**kwargs)
     results: list[SerializationResult] = []
     for cap in item.captions:

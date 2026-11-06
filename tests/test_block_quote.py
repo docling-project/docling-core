@@ -11,13 +11,19 @@ from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 from docling_core.transforms.serializer.latex import LaTeXDocSerializer
 from docling_core.types.doc import (
     BlockQuoteGroup,
+    BoundingBox,
+    ContentLayer,
+    CoordOrigin,
     DocItemLabel,
     DoclingDocument,
     GroupLabel,
+    ProvenanceItem,
     RichTableCell,
+    Size,
     TableCell,
     TableData,
 )
+from docling_core.types.doc.document import CURRENT_VERSION
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -72,6 +78,49 @@ def test_add_group_and_insert_group_route_to_block_quote_group():
     assert isinstance(with_cite, BlockQuoteGroup)
     assert str(with_cite.cite) == CITE
     assert doc.body.children[2].resolve(doc) is with_cite
+
+
+def test_block_quote_factories_honor_name_and_content_layer():
+    """A quote in the furniture layer (a pull quote in a margin) keeps its name and layer."""
+    doc = DoclingDocument(name="t")
+    added = doc.add_block_quote_group(name="pull quote", content_layer=ContentLayer.FURNITURE)
+    assert added.name == "pull quote"
+    assert added.content_layer == ContentLayer.FURNITURE
+
+    inserted = doc.insert_block_quote_group(sibling=added, name="margin", content_layer=ContentLayer.FURNITURE)
+    assert inserted.name == "margin"
+    assert inserted.content_layer == ContentLayer.FURNITURE
+    assert doc.body.children[1].resolve(doc) is inserted
+
+
+def test_repair_referenced_orphans_reattaches_attribution():
+    """An attribution the quote references but does not list as a child is repaired like a caption."""
+    doc_dict = {
+        "schema_name": "DoclingDocument",
+        "version": CURRENT_VERSION,
+        "name": "orphan_attribution",
+        "body": {"self_ref": "#/body", "children": [{"$ref": "#/groups/0"}], "name": "_root_", "label": "unspecified"},
+        "groups": [
+            {
+                "self_ref": "#/groups/0",
+                "parent": {"$ref": "#/body"},
+                "children": [{"$ref": "#/texts/0"}],
+                "label": "block_quote",
+                "captions": [{"$ref": "#/texts/1"}],
+            }
+        ],
+        "texts": [
+            {"self_ref": "#/texts/0", "parent": {"$ref": "#/groups/0"}, "label": "text", "orig": "q", "text": "q"},
+            {"self_ref": "#/texts/1", "parent": {"$ref": "#/groups/0"}, "label": "caption", "orig": "a", "text": "a"},
+        ],
+    }
+    doc = DoclingDocument.model_validate(doc_dict)
+    assert isinstance(doc.groups[0], BlockQuoteGroup)
+
+    assert doc._repair_referenced_orphans() == 1
+    assert [ref.cref for ref in doc.groups[0].children] == ["#/texts/0", "#/texts/1"]
+    assert doc._repair_referenced_orphans() == 0
+    doc._validate_rules()
 
 
 def test_json_round_trip_keeps_subtype_cite_and_attribution():
@@ -155,6 +204,29 @@ def test_latex_export():
     _verify(GT_DIR / "block_quote.gt.tex", LaTeXDocSerializer(doc=_build_doc()).serialize().text)
 
 
+def test_attribution_only_quote_keeps_a_figure_around_the_figcaption():
+    """A quote with an attribution but no quoted blocks still nests the figcaption in a figure."""
+    doc = DoclingDocument(name="t")
+    quote = doc.add_block_quote_group(cite=AnyUrl(CITE))
+    attribution = doc.add_text(label=DocItemLabel.CAPTION, text=ATTRIBUTION, parent=quote)
+    quote.captions.append(attribution.get_ref())
+
+    html = doc.export_to_html(html_head="")
+    assert f'<figure><blockquote cite="{CITE}"></blockquote><figcaption>' in html
+    assert ATTRIBUTION in html
+    assert doc.export_to_markdown() == f"> \u2014 [{ATTRIBUTION}]({CITE})"
+
+
+def test_empty_quote_renders_nothing():
+    doc = DoclingDocument(name="t")
+    doc.add_text(label=DocItemLabel.TEXT, text="Before.")
+    doc.add_block_quote_group(cite=AnyUrl(CITE))
+    doc.add_text(label=DocItemLabel.TEXT, text="After.")
+
+    assert doc.export_to_markdown() == "Before.\n\nAfter."
+    assert "blockquote" not in doc.export_to_html(html_head="")
+
+
 def test_doctags_export_is_transparent():
     _verify(GT_DIR / "block_quote.gt.dt", _build_doc().export_to_doctags())
 
@@ -170,6 +242,31 @@ def test_doclang_named_groups_round_trip():
     child_texts = [child.resolve(loaded).text for child in quote.children if child.cref.startswith("#/texts/")]
     assert child_texts[0] == "A person commits an offence if the person:"
     assert child_texts[-1] == ATTRIBUTION
+
+
+def test_doclang_default_export_keeps_page_break_inside_quote():
+    """With the default (transparent) DocLang params, a quote that crosses a page keeps its page break."""
+    doc = DoclingDocument(name="t")
+    for page_no in (1, 2):
+        doc.add_page(page_no=page_no, size=Size(width=100, height=100), image=None)
+
+    def prov(page_no: int) -> ProvenanceItem:
+        return ProvenanceItem(
+            page_no=page_no,
+            bbox=BoundingBox.from_tuple((1, 2, 3, 4), origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, 1),
+        )
+
+    quote = doc.add_block_quote_group(cite=AnyUrl(CITE))
+    doc.add_text(label=DocItemLabel.TEXT, text="First page.", parent=quote, prov=prov(1))
+    doc.add_text(label=DocItemLabel.TEXT, text="Second page.", parent=quote, prov=prov(2))
+    attribution = doc.add_text(label=DocItemLabel.CAPTION, text=ATTRIBUTION, parent=quote, prov=prov(2))
+    quote.captions.append(attribution.get_ref())
+
+    text = doc.export_to_doclang()
+    assert "<block_quote" not in text
+    assert text.index("First page.") < text.index("<page_break") < text.index("Second page.") < text.index(ATTRIBUTION)
+    assert text.count("<page_break") == 1
 
 
 def test_hierarchical_chunker_keeps_quote_and_attribution_together():

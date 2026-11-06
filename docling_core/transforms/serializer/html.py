@@ -949,13 +949,17 @@ class HTMLBlockQuoteSerializer(BaseModel, BaseBlockQuoteSerializer):
         body = "\n".join(p.text for p in parts if p.text)
         cap_res = doc_serializer.serialize_captions(item=item, tag="figcaption", **kwargs)
 
+        cite_attr = f' cite="{html.escape(str(item.cite), quote=True)}"' if item.cite else ""
         if body:
-            cite_attr = f' cite="{html.escape(str(item.cite), quote=True)}"' if item.cite else ""
             text_res = f"<blockquote{cite_attr}>\n{body}\n</blockquote>"
-            if cap_res.text:
-                text_res = f"<figure>{text_res}{cap_res.text}</figure>"
+        elif cap_res.text:
+            # A figcaption is only valid inside a figure that also has flow
+            # content, so an attribution without quoted blocks keeps an empty quote.
+            text_res = f"<blockquote{cite_attr}></blockquote>"
         else:
-            text_res = cap_res.text
+            text_res = ""
+        if cap_res.text:
+            text_res = f"<figure>{text_res}{cap_res.text}</figure>"
         res_parts = [*parts, cap_res] if cap_res.text else parts
         return create_ser_result(text=text_res, span_source=res_parts)
 
