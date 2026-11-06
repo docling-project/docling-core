@@ -165,7 +165,8 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
 
         has_inline_repr = (
             item.text == ""
-            and len(item.children) == 1
+            and len(item.children) > 0
+            and (len(item.children) == 1 or isinstance(item, TitleItem | SectionHeaderItem))
             and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
         )
         if has_inline_repr:
@@ -255,9 +256,9 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             )
 
         # Recurse into children for branches that don't already consume them.
-        # has_inline_repr already consumed the single InlineGroup child; ListItem
-        # recursion is handled inline in its branch above.
-        if not has_inline_repr and not isinstance(item, ListItem) and item.children:
+        # The leading InlineGroup is already visited; headings can also have
+        # body children. ListItem recursion is handled in its branch above.
+        if not isinstance(item, ListItem) and item.children and (not has_inline_repr or len(item.children) > 1):
             nested_text = "\n".join(
                 r.text
                 for r in doc_serializer.get_parts(

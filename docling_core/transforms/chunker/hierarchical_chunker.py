@@ -256,9 +256,11 @@ class HierarchicalChunker(BaseChunker):
                 # capture current heading
                 heading_by_level[level] = item
                 heading_text = item.text
-                if not heading_text and len(item.children) == 1:
+                if not heading_text and item.children:
                     child = item.children[0].resolve(dl_doc)
-                    if isinstance(child, InlineGroup | FormulaItem | CodeItem):
+                    if isinstance(child, InlineGroup) or (
+                        len(item.children) == 1 and isinstance(child, FormulaItem | CodeItem)
+                    ):
                         # Rich headings keep their text in inline children. Consume
                         # those children here so they do not become body chunks.
                         heading_text = my_doc_ser.serialize(item=child, visited=visited, is_inline_scope=True).text

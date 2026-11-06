@@ -52,6 +52,7 @@ from docling_core.types.doc.document import (
     TableItem,
     TableToken,
     TextItem,
+    TitleItem,
 )
 
 
@@ -134,7 +135,8 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
         if params.add_content:
             if (
                 item.text == ""
-                and len(item.children) == 1
+                and len(item.children) > 0
+                and (len(item.children) == 1 or isinstance(item, TitleItem | SectionHeaderItem))
                 and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
             ):
                 ser_res = doc_serializer.serialize(item=child_group, visited=my_visited)
