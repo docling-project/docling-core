@@ -245,3 +245,22 @@ def test_frame_joins_the_block_that_starts_at_its_time():
     assert (
         '<track><bdiv/><seconds value="1"/><seconds value="4"/><frame/>Hello<bdiv/><seconds value="2"/><frame/></track>'
     ) in xml
+
+
+def test_turns_without_text_are_kept():
+    """A turn is kept even without text: of an empty block, a voice alone, or an empty voice."""
+    xml = (
+        "<doclang><track>"
+        "<bdiv/><seconds value='1'/>"
+        "<bdiv/><seconds value='2'/><voice>Host</voice>"
+        "<bdiv/><seconds value='3'/>Hi<voice/>"
+        "</track></doclang>"
+    )
+    doc = DocLangDocDeserializer().deserialize_str(xml)
+
+    assert _cues(doc, doc.tracks[0]) == [
+        ("TextItem", "", 1.0, 1.0, None),
+        ("TextItem", "", 2.0, 2.0, "Host"),
+        ("TextItem", "Hi", 3.0, 3.0, None),
+        ("TextItem", "", 3.0, 3.0, None),
+    ]

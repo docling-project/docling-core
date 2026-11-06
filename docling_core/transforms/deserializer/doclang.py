@@ -1892,9 +1892,13 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         voice: str | None = None
         turn: list[Node] = []
         bound: Element = cast(Element, nodes[0])
+        in_turn = False  # a <voice> starts a turn, even one without text
+        has_items = False
 
         def add_turn() -> None:
-            if text := self._track_turn_text(turn):
+            nonlocal has_items
+            text = self._track_turn_text(turn)
+            if text or in_turn:
                 item = doc.add_text(
                     label=DocItemLabel.TEXT,
                     text=text,
@@ -1902,6 +1906,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     source=TrackSource(start_time=start / 1000, end_time=end / 1000, voice=voice),
                 )
                 self._source_recorder.bind_item(bound, item)
+                has_items = True
 
         for node in content:
             name = node.tagName if isinstance(node, Element) else None
@@ -1913,6 +1918,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     source=TrackSource(start_time=start / 1000, end_time=start / 1000),
                 )
                 self._source_recorder.bind_item(cast(Element, node), frame)
+                has_items = True
             elif name in {DocLangToken.CHAPTER.value, DocLangToken.AUDIO.value}:
                 warnings.warn(f"<{name}> in <track> is not supported yet; skipped", stacklevel=2)
             elif name == DocLangToken.VOICE.value:
@@ -1920,8 +1926,11 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 voice = self._get_text(cast(Element, node)).strip() or None
                 turn = []
                 bound = cast(Element, node)
+                in_turn = True
             else:
                 turn.append(node)
+        # a block without a turn or a frame keeps its time as an empty turn
+        in_turn = in_turn or not has_items
         add_turn()
 
     def _track_turn_text(self, nodes: list[Node]) -> str:

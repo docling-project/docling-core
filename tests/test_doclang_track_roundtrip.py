@@ -211,7 +211,6 @@ FIXTURE_NAMES = sorted(path.stem for path in FIXTURES.glob("*.dclg"))
 
 # Known gaps, most important first.
 _FRAME_ONLY_END = "the end time of a block that holds only a frame has no meaning in DocLang 0.9"
-_EMPTY = "a cue block with no turn or frame is dropped"
 _FRAME_HEAD = "the head and text of a frame are dropped"
 _COVER = "a cover without a restored image, and the head of a cover, are dropped"
 _LABEL = "the label of a track is dropped"
@@ -264,9 +263,9 @@ CASES: dict[str, tuple[str, str | None]] = {
     # 2. Cue blocks with little or nothing in them
     "same_time_blocks": (_track(f"<bdiv/>{_sec(2)}A<bdiv/>{_sec(2)}B"), None),
     "same_interval_blocks": (_track(f"<bdiv/>{_sec(2)}{_sec(3)}A<bdiv/>{_sec(2)}{_sec(3)}B"), None),
-    "empty_block": (_track(f"<bdiv/>{_sec(2)}<bdiv/>{_sec(4)}B"), _EMPTY),
-    "only_empty_block": (_track(f"<bdiv/>{_sec(2)}"), _EMPTY),
-    "voice_only_block": (_track(f"<bdiv/>{_sec(2)}<voice>Host</voice>"), _EMPTY),
+    "empty_block": (_track(f"<bdiv/>{_sec(2)}<bdiv/>{_sec(4)}B"), None),
+    "only_empty_block": (_track(f"<bdiv/>{_sec(2)}"), None),
+    "voice_only_block": (_track(f"<bdiv/>{_sec(2)}<voice>Host</voice>"), None),
     "empty_track": (_track(""), None),
     # 3. Turns
     "voice": (_track(f"<bdiv/>{_sec(1)}<voice>Ann</voice>Hello"), None),
