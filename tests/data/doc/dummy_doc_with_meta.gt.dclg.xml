@@ -51,5 +51,10 @@
     <location value="251"/>
     <location value="218"/>
     <description>A description annotation for this table.</description>
+    <custom>
+      <docling_legacy__misc>
+        <foo>bar</foo>
+      </docling_legacy__misc>
+    </custom>
   </table>
 </doclang>
