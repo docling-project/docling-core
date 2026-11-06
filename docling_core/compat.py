@@ -194,11 +194,45 @@ def list_projectors() -> list[tuple[int, int]]:
 # ---------------------------------------------------------------------------
 # Projectors — one per schema minor bump within docling-core v2.x
 # ---------------------------------------------------------------------------
-# These cover every schema version step from the current schema (1.11) down
+# These cover every schema version step from the current schema (1.12) down
 # to the oldest v2.x schema (1.5).  Each projector represents the *minimal*
 # structural downgrade that allows an old client's Pydantic model to parse
 # the serialised dict without error.  Full semantic fidelity is not always
 # possible; the goal is a document that validates rather than crashes.
+
+# --- 1.12 → 1.11 ----------------------------------------------------------
+# Schema 1.12 (docling-core v2.107.0):
+#   • Added FieldItem.control, .description, .required and .options, giving
+#     AcroForm field metadata a typed home at document level.
+#   FieldItem is a strict model (extra="forbid"), so a 1.11 client raises on
+#   any of the four keys.
+#
+# Downgrade strategy:
+#   • Drop the four keys from every field item. The metadata has no 1.11
+#     equivalent to map onto -- the page-level PdfWidget entries it is derived
+#     from are unaffected and survive the downgrade untouched.
+# ---------------------------------------------------------------------------
+
+_NEW_FIELD_ITEM_KEYS_1_12 = {"control", "description", "required", "options"}
+
+
+@register_projector(from_minor=12, to_minor=11)
+def _project_1_12_to_1_11(data: dict) -> dict:
+    """Downgrade a schema 1.12 document dict to schema 1.11.
+
+    Handles:
+    - Strips ``control``, ``description``, ``required`` and ``options`` from
+      all ``FieldItem`` dicts.
+    """
+    data = dict(data)
+
+    data["field_items"] = [
+        {k: v for k, v in item.items() if k not in _NEW_FIELD_ITEM_KEYS_1_12} for item in data.get("field_items", [])
+    ]
+
+    data["version"] = "1.11.0"
+    return data
+
 
 # --- 1.11 → 1.10 ----------------------------------------------------------
 # Schema 1.11 (docling-core v2.106.0): InlineGroup runs carry their own
