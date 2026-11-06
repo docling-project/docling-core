@@ -183,7 +183,6 @@ _LOC = '<location value="1"/><location value="2"/><location value="30"/><locatio
 FIXTURE_NAMES = sorted(path.stem for path in FIXTURES.glob("*.dclg"))
 
 # Known gaps, most important first.
-_COMMENT = "a comment between the start and end time loses the end time"
 _POINT = "an instant is stored as a 1 ms interval, so a real 1 ms interval reads as an instant"
 _BLOCKS = "blocks with the same times merge: DoclingDocument has no cue block"
 _EMPTY = "a cue block with no turn or frame is dropped"
@@ -230,7 +229,11 @@ CASES: dict[str, tuple[str, str | None]] = {
     "overlapping_blocks": (_track(f"<bdiv/>{_sec(1)}{_sec(5)}A<bdiv/>{_sec(2)}{_sec(3)}B"), None),
     "tied_start_longer_first": (_track(f"<bdiv/>{_sec(1)}{_sec(9)}A<bdiv/>{_sec(1)}{_sec(2)}B"), None),
     "tied_start_shorter_first": (_track(f"<bdiv/>{_sec(1)}{_sec(2)}A<bdiv/>{_sec(1)}{_sec(9)}B"), None),
-    "comment_between_times": (_track(f"<bdiv/>{_sec(1)}<!-- end -->{_sec(9)}Hello"), _COMMENT),
+    "comment_between_times": (_track(f"<bdiv/>{_sec(1)}<!-- end -->{_sec(9)}Hello"), None),
+    "comment_inside_a_time": (
+        _track(f'<bdiv/><minutes value="1"/><!-- c -->{_sec(2)}<minutes value="1"/>{_sec(9)}Hello'),
+        None,
+    ),
     "comment_in_turn": (_track(f"<bdiv/>{_sec(1)}Hel<!-- c -->lo"), None),
     # 2. Cue blocks with little or nothing in them
     "same_time_blocks": (_track(f"<bdiv/>{_sec(2)}A<bdiv/>{_sec(2)}B"), _BLOCKS),

@@ -1863,6 +1863,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         run: dict[str, int] = {}
         content: list[Node] = []
         for node in nodes[1:]:
+            if not isinstance(node, Element | Text):
+                continue  # comments and processing instructions do not count
             name = node.tagName if isinstance(node, Element) else None
             if not content and name in self._TIMESTAMP_UNIT_MSECS:
                 # <seconds> anchors a run: a later unit than it, or a new <seconds>, starts the next one
