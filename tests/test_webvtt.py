@@ -9,6 +9,7 @@ import warnings
 import pytest
 from pydantic import ValidationError
 
+from docling_core.types.doc import DocItemLabel, DoclingDocument, TrackSource
 from docling_core.types.doc.webvtt import (
     _ENTITY_CHARS,
     WebVTTCueBlock,
@@ -446,3 +447,33 @@ def test_webvtt_file_unknown_tags() -> None:
     assert str(vtt[1]).rstrip("\n").endswith("\nWhere are you going?")
     assert str(vtt[2]).rstrip("\n").endswith("\n<v Anna>Home, I think.</v>")
     assert str(vtt[3]).rstrip("\n").endswith("\nLast cue")
+
+
+@pytest.mark.parametrize(
+    ("text", "voice", "cue"),
+    [
+        ("Tom & Jerry", None, "Tom &amp; Jerry"),
+        ("a < b", None, "a &lt; b"),
+        ("AT&amp;T", None, "AT&amp;amp;T"),
+        ("Hello", "Tom & Jerry", "<v Tom &amp; Jerry>Hello</v>"),
+    ],
+)
+def test_export_to_vtt_escapes_text_and_voice(text: str, voice: str | None, cue: str) -> None:
+    """Text and voice names with `&`, `<` or `>` are escaped and read back unchanged."""
+    doc = DoclingDocument(name="t")
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text=text,
+        source=TrackSource(start_time=1.0, end_time=2.0, voice=voice),
+    )
+
+    vtt = doc.export_to_vtt()
+
+    assert vtt.splitlines()[-1] == cue
+    component = WebVTTFile.parse(vtt).cue_blocks[0].payload[0].component
+    if voice:
+        assert isinstance(component, WebVTTCueVoiceSpan)
+        assert component.start_tag.annotation == voice
+        component = component.internal_text.components[0].component
+    assert isinstance(component, WebVTTCueTextSpan)
+    assert component.text == text
