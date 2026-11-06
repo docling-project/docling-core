@@ -906,13 +906,37 @@ class HTMLListSerializer(BaseModel, BaseListSerializer):
             **kwargs,
         )
 
-        # Add all child parts
-        text_res = "\n".join(p.text for p in parts if p.text)
+        # Add all child parts; a sub-list that is a child of this list group (not of a
+        # list item) has no <li> of its own, and <ul>/<ol> permit only <li> children.
+        my_texts: list[str] = []
+        for p in parts:
+            if not p.text:
+                continue
+            if p.text.startswith(("<ul>", "<ol>")):
+                if my_texts and my_texts[-1].endswith("</li>"):
+                    # nest it in the preceding item, as a sub-list owned by that item is
+                    my_texts[-1] = self._nest_in_list_item(item_text=my_texts[-1], sublist_text=p.text)
+                else:
+                    # no item to own it: give it an empty item of this list
+                    my_texts.append(f"<li>\n{p.text}\n</li>")
+            else:
+                my_texts.append(p.text)
+        text_res = "\n".join(my_texts)
         if text_res:
             tag = "ol" if item.first_item_is_enumerated(doc) else "ul"
             text_res = f"<{tag}>\n{text_res}\n</{tag}>"
 
         return create_ser_result(text=text_res, span_source=parts)
+
+    @staticmethod
+    def _nest_in_list_item(*, item_text: str, sublist_text: str) -> str:
+        """Place a sub-list inside a serialized ``<li>…</li>``, before its closing tag."""
+        body = item_text[: -len("</li>")]
+        open_end = body.index(">") + 1
+        head, content = body[:open_end], body[open_end:]
+        if not content.startswith("\n"):
+            content = f"\n{content}"
+        return f"{head}{content.rstrip(chr(10))}\n{sublist_text}\n</li>"
 
 
 class HTMLInlineSerializer(BaseInlineSerializer):

@@ -292,6 +292,56 @@ def test_md_nested_list_page_break_keeps_indent():
     assert f"\n\n    {_PAGE_BREAK}\n\n" in doc.export_to_markdown(page_break_placeholder=_PAGE_BREAK)
 
 
+def _html_body(doc: DoclingDocument) -> str:
+    html = doc.export_to_html()
+    return html[html.index("<body>") : html.index("</body>") + len("</body>")]
+
+
+def test_html_sublist_under_list_group_is_nested_in_preceding_item():
+    # the sub-list is a child of the list group, not of the list item before it
+    doc = DoclingDocument(name="group-child")
+    outer = doc.add_list_group(name="outer")
+    doc.add_list_item(text="outer one", parent=outer)
+    inner = doc.add_list_group(name="inner", parent=outer)
+    doc.add_list_item(text="inner a", parent=inner)
+    doc.add_list_item(text="outer two", parent=outer)
+
+    # the same list with the sub-list as a child of the list item
+    ref = DoclingDocument(name="item-child")
+    outer = ref.add_list_group(name="outer")
+    first = ref.add_list_item(text="outer one", parent=outer)
+    inner = ref.add_list_group(name="inner", parent=first)
+    ref.add_list_item(text="inner a", parent=inner)
+    ref.add_list_item(text="outer two", parent=outer)
+
+    expected = "<ul>\n<li>\nouter one\n<ul>\n<li>inner a</li>\n</ul>\n</li>\n<li>outer two</li>\n</ul>"
+    assert expected in _html_body(ref)
+    assert _html_body(doc) == _html_body(ref)
+    assert "</li>\n<ul>" not in _html_body(doc)
+
+
+def test_html_sublist_that_no_item_precedes_gets_an_item_of_its_own():
+    doc = DoclingDocument(name="sublist-first")
+    outer = doc.add_list_group(name="outer")
+    inner = doc.add_list_group(name="inner", parent=outer)
+    doc.add_list_item(text="inner a", parent=inner, enumerated=True)
+    doc.add_list_item(text="outer two", parent=outer)
+
+    expected = "<ul>\n<li>\n<ol>\n<li>inner a</li>\n</ol>\n</li>\n<li>outer two</li>\n</ul>"
+    assert expected in _html_body(doc)
+
+
+def test_html_cross_page_lists_nest_group_child_sublists():
+    doc = DoclingDocument.load_from_json("tests/data/doc/cross_page_lists.json")
+    # the fixture has three sub-lists parented by their list group rather than by an item
+    assert doc._migrate_non_list_item_list_children() == 3
+
+    html = DoclingDocument.load_from_json("tests/data/doc/cross_page_lists.json").export_to_html()
+    assert "</li>\n<ul>" not in html
+    assert "</li>\n<ol>" not in html
+    assert html.count("<ul>") == html.count("</ul>")
+
+
 def test_md_page_break_between_list_and_table():
     doc = _make_paged_doc([("item one", 1), ("item two", 1)], as_list=True, num_pages=2)
     doc.add_table(
