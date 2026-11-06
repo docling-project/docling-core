@@ -6,7 +6,7 @@ from io import BytesIO
 from pathlib import Path
 
 import pytest
-from pydantic import Field
+from pydantic import AnyHttpUrl, Field, TypeAdapter
 from requests import Response, Session
 
 from docling_core.types.doc import DocItemLabel, DoclingDocument, TableData
@@ -14,8 +14,11 @@ from docling_core.types.doc.document import GroupLabel, RichTableCell
 from docling_core.utils.alias import AliasModel
 from docling_core.utils.file import (
     _MAX_REDIRECTS,
+    FileSizeLimitExceededError,
+    RemoteAccessDeniedError,
     _is_safe_url,
     _sanitize_filename,
+    resolve_remote_filename,
     resolve_source_to_path,
     resolve_source_to_stream,
 )
@@ -571,3 +574,188 @@ def test_connect_time_validation_connects_to_validated_address(monkeypatch):
         server.shutdown()
 
     assert hits == []
+
+
+_DRIVE_WARNING_PAGE = """<!DOCTYPE html><html><head><title>Google Drive - Virus scan warning</title></head><body>
+<p class="uc-warning-subcaption"><span class="uc-name-size"><a href="/open?id=abc">big.pdf</a> (476M)</span>
+is too large for Google to scan for viruses. Would you still like to download this file?</p>
+<form id="download-form" action="{action}" method="get">
+<input type="submit" id="uc-download-link" value="Download anyway"/>
+<input type="hidden" name="id" value="abc"><input type="hidden" name="export" value="download">
+<input type="hidden" name="confirm" value="t"><input type="hidden" name="uuid" value="0e9c-41b3">
+</form></body></html>"""
+
+_HTML = {"Content-Type": "text/html; charset=utf-8"}
+_DOCX_ATTACHMENT = {"Content-Disposition": 'attachment; filename="Report.docx"'}
+
+
+def _serve(monkeypatch, *responses):
+    """Answer the requests with ``responses`` in order and record each URL, query and headers."""
+    seen = []
+
+    def mock_get(self, url, params=None, **kwargs):
+        response, final_url = responses[len(seen)]
+        seen.append((url, params, kwargs["headers"]))
+        response.url = final_url or url
+        return response
+
+    monkeypatch.setattr("docling_core.utils.file._is_safe_url", lambda url: True)
+    monkeypatch.setattr(Session, "get", mock_get)
+    return seen
+
+
+@pytest.mark.parametrize(
+    ("link", "fetched"),
+    [
+        (
+            "https://docs.google.com/document/d/abc_1-2/edit?usp=sharing",
+            "https://docs.google.com/document/d/abc_1-2/export?format=docx",
+        ),
+        (
+            "https://docs.google.com/document/u/1/d/abc/edit",
+            "https://docs.google.com/document/d/abc/export?format=docx",
+        ),
+        (
+            "https://docs.google.com/spreadsheets/d/abc/edit#gid=0",
+            "https://docs.google.com/spreadsheets/d/abc/export?format=xlsx",
+        ),
+        (
+            "https://docs.google.com/presentation/d/abc/edit",
+            "https://docs.google.com/presentation/d/abc/export?format=pptx",
+        ),
+        ("https://drive.google.com/file/d/abc/view?usp=sharing", "https://drive.google.com/uc?export=download&id=abc"),
+        ("https://drive.google.com/file/u/0/d/abc/view", "https://drive.google.com/uc?export=download&id=abc"),
+        ("https://drive.google.com/open?id=abc", "https://drive.google.com/uc?export=download&id=abc"),
+        ("https://docs.google.com/file/d/abc/edit", "https://drive.google.com/uc?export=download&id=abc"),
+        ("https://docs.google.com/document/d/e/2PACX-abc/pub", "https://docs.google.com/document/d/e/2PACX-abc/pub"),
+        (
+            "https://example.com/?next=https://docs.google.com/document/d/abc/edit",
+            "https://example.com/?next=https://docs.google.com/document/d/abc/edit",
+        ),
+    ],
+)
+def test_resolve_google_link_fetches_export(monkeypatch, link, fetched):
+    """Google document and Drive links are fetched from their export or download URL, other links as they are."""
+    seen = _serve(monkeypatch, (_closeable_response(content=b"data", headers=_DOCX_ATTACHMENT), None))
+
+    resolve_source_to_stream(link)
+
+    assert seen[0][0] == fetched
+
+
+@pytest.mark.parametrize(
+    ("link", "fetched", "name"),
+    [
+        (
+            "https://docs.google.com/document/d/abc/edit",
+            "https://www.googleapis.com/drive/v3/files/abc/export"
+            "?mimeType=application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "abc.docx",
+        ),
+        (
+            "https://drive.google.com/file/d/abc/view",
+            "https://www.googleapis.com/drive/v3/files/abc?alt=media&supportsAllDrives=true",
+            "abc",
+        ),
+    ],
+)
+def test_resolve_google_link_with_token_uses_drive_api(monkeypatch, link, fetched, name):
+    """With an Authorization header, Google links are fetched from the Drive API, which accepts OAuth tokens."""
+    seen = _serve(monkeypatch, (_closeable_response(content=b"data"), None))
+
+    doc_stream = resolve_source_to_stream(link, headers={"Authorization": "Bearer token"})
+
+    assert seen[0][0] == fetched
+    assert seen[0][2]["authorization"] == "Bearer token"
+    assert doc_stream.name == name
+
+
+def test_resolve_google_drive_folder_link_rejected():
+    """A Drive folder link cannot be downloaded, so it fails with an explanation instead of a 404."""
+    with pytest.raises(ValueError, match="folders cannot be converted"):
+        resolve_source_to_stream("https://drive.google.com/drive/folders/abc")
+
+
+def test_resolve_google_link_that_needs_sign_in(monkeypatch):
+    """A document that is not shared publicly ends on the sign-in page, which must not be returned as the file."""
+    link = "https://docs.google.com/document/d/abc/edit"
+    _serve(
+        monkeypatch,
+        (
+            _closeable_response(content=b"<html>Sign in</html>", headers=_HTML),
+            "https://accounts.google.com/v3/signin/identifier?continue=https://docs.google.com/document/d/abc/export",
+        ),
+    )
+
+    with pytest.raises(RemoteAccessDeniedError, match="Google asks to sign in") as error:
+        resolve_source_to_stream(link)
+
+    assert error.value.url == link
+
+
+def test_resolve_google_drive_large_file_confirms_download(monkeypatch):
+    """The Drive virus scan warning page is confirmed once, and the file it leads to is returned."""
+    action = "https://drive.usercontent.google.com/download"
+    page = _DRIVE_WARNING_PAGE.format(action=action).encode()
+    seen = _serve(
+        monkeypatch,
+        (_closeable_response(content=page, headers=_HTML), f"{action}?id=abc&export=download"),
+        (
+            _closeable_response(content=b"%PDF-1.7", headers={"Content-Disposition": 'attachment; filename="big.pdf"'}),
+            None,
+        ),
+    )
+
+    doc_stream = resolve_source_to_stream("https://drive.google.com/file/d/abc/view")
+
+    assert seen[1][:2] == (action, {"id": "abc", "export": "download", "confirm": "t", "uuid": "0e9c-41b3"})
+    assert doc_stream.name == "big.pdf"
+    assert doc_stream.stream.read() == b"%PDF-1.7"
+
+
+def test_resolve_google_drive_large_file_obeys_size_limit(monkeypatch):
+    """The size limit applies to the file that the Drive warning page leads to."""
+    action = "https://drive.usercontent.google.com/download"
+    page = _DRIVE_WARNING_PAGE.format(action=action).encode()
+    _serve(
+        monkeypatch,
+        (_closeable_response(content=page, headers=_HTML), None),
+        (_closeable_response(content=b"ignored", headers={"Content-Length": "10"}), None),
+    )
+
+    with pytest.raises(FileSizeLimitExceededError):
+        resolve_source_to_stream("https://drive.google.com/file/d/abc/view", max_file_size=5)
+
+
+@pytest.mark.parametrize(
+    "page",
+    [
+        b'<html><p class="uc-error-subcaption">Too many users have viewed or downloaded this file recently.</p></html>',
+        _DRIVE_WARNING_PAGE.format(action="https://attacker.example/download").encode(),
+    ],
+)
+def test_resolve_google_link_rejects_other_web_pages(monkeypatch, page):
+    """A Google web page that is not the file fails, and a warning form that leaves Google is not submitted."""
+    seen = _serve(monkeypatch, (_closeable_response(content=page, headers=_HTML), None))
+
+    with pytest.raises(ValueError, match="web page instead of the document"):
+        resolve_source_to_stream("https://drive.google.com/file/d/abc/view")
+
+    assert len(seen) == 1
+
+
+@pytest.mark.parametrize(
+    ("headers", "expected"),
+    [
+        ({"content-disposition": 'attachment; filename="Report.docx"'}, "Report.docx"),
+        (
+            {"Content-Disposition": "attachment; filename=\"Bo co.docx\"; filename*=UTF-8''B%C3%A1o%20c%C3%A1o.docx"},
+            "Báo cáo.docx",
+        ),
+    ],
+)
+def test_resolve_remote_filename_reads_any_header_case_and_extended_name(headers, expected):
+    """Google sends the header in lower case for Docs exports, and the real title only in ``filename*``."""
+    http_url = TypeAdapter(AnyHttpUrl).validate_python("https://docs.google.com/document/d/abc/export")
+
+    assert resolve_remote_filename(http_url=http_url, response_headers=headers) == expected
