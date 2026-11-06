@@ -1543,6 +1543,36 @@ def test_save_as_json_encoding_options(tmp_path: Path):
     assert reloaded.texts[0].text == polish_text
 
 
+def _doc_with_picture() -> DoclingDocument:
+    doc = DoclingDocument(name="pic")
+    doc.add_picture(image=ImageRef.from_pil(PILImage.new("RGB", (4, 4), "red"), dpi=72))
+    return doc
+
+
+def test_save_default_artifacts_dir_with_relative_filename(tmp_path: Path, monkeypatch):
+    # https://github.com/docling-project/docling/issues/2567
+    monkeypatch.chdir(tmp_path)
+    doc = _doc_with_picture()
+
+    doc.save_as_markdown(filename=Path("B/C/A.md"), image_mode=ImageRefMode.REFERENCED)
+
+    assert len(list((tmp_path / "B/C/A_artifacts").glob("*.png"))) == 1
+    assert not (tmp_path / "B/C/B").exists()
+    assert "](A_artifacts/" in (tmp_path / "B/C/A.md").read_text()
+
+
+def test_save_default_artifacts_dir_with_absolute_filename(tmp_path: Path):
+    doc = _doc_with_picture()
+    filename = tmp_path / "B/C/A.md"
+    filename.parent.mkdir(parents=True)
+
+    doc.save_as_markdown(filename=filename, image_mode=ImageRefMode.REFERENCED)
+
+    pngs = list((tmp_path / "B/C/A_artifacts").glob("*.png"))
+    assert len(pngs) == 1
+    assert f"]({pngs[0]})" in filename.read_text()
+
+
 def test_document_stack_operations(sample_doc):
     # _print(document=doc)
 
