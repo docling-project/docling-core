@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import pytest
 import tiktoken
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
 import docling_core.transforms.chunker.hybrid_chunker as _hybrid_mod
 from docling_core.transforms.chunker.base import BaseChunker
@@ -1632,3 +1632,29 @@ def test_split_using_plain_text_no_headings_avoids_infinite_recursion():
         tc = tokenizer.count_tokens(chunker.contextualize(chunk))
         assert tc <= max_tokens, f"Chunk {i} exceeds token limit: {tc} > {max_tokens}"
         assert chunk.meta.headings is None
+
+
+@pytest.mark.parametrize("merge_peers", [False, True])
+def test_chunk_preserves_inline_formatting_within_token_limit(merge_peers):
+    assert isinstance(INNER_TOKENIZER, PreTrainedTokenizerBase)
+    doc = DoclingDocument(name="inline")
+    doc.add_heading(text="Setup", level=1)
+    para = doc.add_inline_group()
+    items = [
+        doc.add_text(label=DocItemLabel.TEXT, text="Install with ", parent=para),
+        doc.add_code(text="pip install x", parent=para),
+        doc.add_text(label=DocItemLabel.TEXT, text=" first.", parent=para),
+    ]
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=MAX_TOKENS),
+        merge_peers=merge_peers,
+    )
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    assert len(chunks) == 1
+    assert isinstance(chunks[0], DocChunk)
+    assert chunks[0].text == "Install with `pip install x` first."
+    assert chunks[0].meta.headings == ["Setup"]
+    assert [item.self_ref for item in chunks[0].meta.doc_items] == [item.self_ref for item in items]
+    assert chunker.tokenizer.count_tokens(chunker.contextualize(chunks[0])) <= MAX_TOKENS
