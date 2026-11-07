@@ -2612,6 +2612,92 @@ def test_cross_page_table_emits_thread_and_page_break():
         assert ser_txt.count("<table") == 2
 
 
+def _doc_cross_page_table_uneven(origin: CoordOrigin) -> DoclingDocument:
+    """Table merged from page fragments of 3 rows and 1 row, with cell boxes in page coordinates."""
+    doc = DoclingDocument(name="cross_page_table_uneven")
+    page_h = 512.0
+    for page_no in (1, 2):
+        doc.add_page(page_no=page_no, size=Size(width=512, height=page_h), image=None)
+
+    def _box(left: float, top: float, right: float, bottom: float) -> BoundingBox:
+        box = BoundingBox.from_tuple((left, top, right, bottom), origin=CoordOrigin.TOPLEFT)
+        return box if origin == CoordOrigin.TOPLEFT else box.to_bottom_left_origin(page_h)
+
+    # (text, page row top): rows 0-2 sit at the bottom of page 1, row 3 at the top of page 2.
+    rows = [(["H1", "H2"], 380), (["A", "B"], 410), (["C", "D"], 440), (["E", "F"], 20)]
+    cells = [
+        TableCell(
+            text=text,
+            bbox=_box(10 + 200 * c, top, 100 + 200 * c, top + 20),
+            start_row_offset_idx=r,
+            end_row_offset_idx=r + 1,
+            start_col_offset_idx=c,
+            end_col_offset_idx=c + 1,
+            column_header=r == 0,
+        )
+        for r, (texts, top) in enumerate(rows)
+        for c, text in enumerate(texts)
+    ]
+    item = doc.add_table(
+        data=TableData(num_rows=4, num_cols=2, table_cells=cells),
+        prov=ProvenanceItem(page_no=1, bbox=_box(10, 380, 300, 460), charspan=(0, 0)),
+    )
+    item.prov.append(ProvenanceItem(page_no=2, bbox=_box(10, 20, 300, 40), charspan=(0, 0)))
+    return doc
+
+
+@pytest.mark.parametrize("origin", [CoordOrigin.TOPLEFT, CoordOrigin.BOTTOMLEFT])
+def test_cross_page_table_threads_rows_by_page(origin: CoordOrigin):
+    """Each threaded fragment holds the rows of its own page, not an even share of the rows."""
+    doc = _doc_cross_page_table_uneven(origin)
+    ser_txt = serialize_doclang(doc)
+
+    first, second = ser_txt.split("<page_break/>")
+    assert [t for t in ("H1", "A", "C", "E") if t in first] == ["H1", "A", "C"]
+    assert [t for t in ("H1", "A", "C", "E") if t in second] == ["E"]
+
+    # The fragments join back into the original table, with one provenance entry per page.
+    doc2 = DocLangDocDeserializer().deserialize_str(ser_txt)
+    assert [p.page_no for p in doc2.tables[0].prov] == [1, 2]
+    assert [[cell.text for cell in row] for row in doc2.tables[0].data.grid] == [
+        ["H1", "H2"],
+        ["A", "B"],
+        ["C", "D"],
+        ["E", "F"],
+    ]
+
+
+def test_cross_page_table_without_cell_boxes_splits_rows_evenly():
+    """Without cell geometry the page of each row is unknown, so the rows are shared evenly."""
+    doc = _doc_cross_page_table_uneven(CoordOrigin.TOPLEFT)
+    for cell in doc.tables[0].data.table_cells:
+        cell.bbox = None
+    params = DocLangParams(include_version=False, add_location=False)
+    first, second = serialize_doclang(doc, params).split("<page_break/>")
+    assert "A" in first and "C" in second
+
+
+def test_cross_page_table_with_rows_never_moving_up_splits_rows_evenly():
+    """Row positions that show no page change can't place the rows, so they are shared evenly."""
+    doc = _doc_cross_page_table_uneven(CoordOrigin.TOPLEFT)
+    for cell in doc.tables[0].data.table_cells:
+        if cell.start_row_offset_idx == 3:
+            cell.bbox = BoundingBox.from_tuple((cell.bbox.l, 470, cell.bbox.r, 490), origin=CoordOrigin.TOPLEFT)
+    params = DocLangParams(include_version=False, add_location=False)
+    first, second = serialize_doclang(doc, params).split("<page_break/>")
+    assert "A" in first and "C" in second
+
+
+def test_cross_page_table_with_two_boxes_on_one_page_splits_rows_evenly():
+    """Row positions only mark page changes, so several boxes on one page keep the even split."""
+    doc = _doc_cross_page_table_uneven(CoordOrigin.TOPLEFT)
+    table = doc.tables[0]
+    table.prov.insert(1, table.prov[0].model_copy())
+    params = DocLangParams(include_version=False, add_location=False)
+    first, second = serialize_doclang(doc, params).split("<page_break/>")
+    assert "A" in first and "C" in second and "E" in second
+
+
 @doclang_validator
 def test_cross_column_list_same_page():
     """Cross-column list: both items on one page with column-aligned locations."""
