@@ -58,7 +58,7 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from docling_core.types.doc.document import DoclingDocument
@@ -194,11 +194,68 @@ def list_projectors() -> list[tuple[int, int]]:
 # ---------------------------------------------------------------------------
 # Projectors — one per schema minor bump within docling-core v2.x
 # ---------------------------------------------------------------------------
-# These cover every schema version step from the current schema (1.11) down
+# These cover every schema version step from the current schema (1.12) down
 # to the oldest v2.x schema (1.5).  Each projector represents the *minimal*
 # structural downgrade that allows an old client's Pydantic model to parse
 # the serialised dict without error.  Full semantic fidelity is not always
 # possible; the goal is a document that validates rather than crashes.
+
+# --- 1.12 → 1.11 ----------------------------------------------------------
+# Schema 1.12 (docling-core v2.107.0):
+#   • Added TrackItem (a time-aligned media transcript, DocLang ``<track>``)
+#     with the new DocItemLabel value TRACK.
+#   • Added tracks as a new top-level list.
+#
+# Downgrade strategy:
+#   • Turn each track into a PictureItem (the nearest existing type: a
+#     floating item that keeps the cover image, location, captions and the
+#     cues as its children), appended to "pictures".
+#   • Rewrite every "#/tracks/N" reference to the new picture reference.
+#   • Drop the top-level "tracks" key.
+# ---------------------------------------------------------------------------
+
+
+def _rewrite_refs(node: Any, mapping: dict[str, str]) -> Any:
+    """Return *node* with every reference string in *mapping* replaced, at any depth."""
+    if isinstance(node, dict):
+        return {
+            key: (
+                mapping.get(value, value)
+                if key in {"cref", "$ref", "self_ref"} and isinstance(value, str)
+                else _rewrite_refs(value, mapping)
+            )
+            for key, value in node.items()
+        }
+    if isinstance(node, list):
+        return [_rewrite_refs(value, mapping) for value in node]
+    return node
+
+
+@register_projector(from_minor=12, to_minor=11)
+def _project_1_12_to_1_11(data: dict) -> dict:
+    """Downgrade a schema 1.12 document dict to schema 1.11.
+
+    Handles:
+    - Converts each ``TrackItem`` in ``tracks`` to a ``PictureItem`` appended to
+      ``pictures``, keeping its image (the cover), location, captions and children
+      (the cues), and rewrites all references to it.
+    - Removes the top-level ``tracks`` list (unknown to 1.11 clients).
+    """
+    data = dict(data)
+    tracks = data.pop("tracks", None) or []
+    if not tracks:
+        data["version"] = "1.11.0"
+        return data
+
+    first = len(data.get("pictures", []))
+    mapping = {f"#/tracks/{i}": f"#/pictures/{first + i}" for i in range(len(tracks))}
+    pictures = [{**track, "label": "picture"} for track in tracks]
+    data["pictures"] = [*data.get("pictures", []), *pictures]
+    data = _rewrite_refs(data, mapping)
+
+    data["version"] = "1.11.0"
+    return data
+
 
 # --- 1.11 → 1.10 ----------------------------------------------------------
 # Schema 1.11 (docling-core v2.106.0): InlineGroup runs carry their own
