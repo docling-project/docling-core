@@ -194,11 +194,70 @@ def list_projectors() -> list[tuple[int, int]]:
 # ---------------------------------------------------------------------------
 # Projectors — one per schema minor bump within docling-core v2.x
 # ---------------------------------------------------------------------------
-# These cover every schema version step from the current schema (1.11) down
+# These cover every schema version step from the current schema (1.12) down
 # to the oldest v2.x schema (1.5).  Each projector represents the *minimal*
 # structural downgrade that allows an old client's Pydantic model to parse
 # the serialised dict without error.  Full semantic fidelity is not always
 # possible; the goal is a document that validates rather than crashes.
+
+# --- 1.12 → 1.11 ----------------------------------------------------------
+# Schema 1.12 (docling-core v2.107.0):
+#   • Added FormulaMetaField / FormulaMeta and narrowed FormulaItem.meta
+#     from BaseMeta to FormulaMeta, adding the "formula" meta sub-field.
+#
+# Downgrade strategy:
+#   • Strip "formula" from every "meta" dict.
+#
+# Note: the JSON Schema diff cannot see this break.  BaseMeta allows extra
+# keys, so "formula" does not register as a new property on a strict model —
+# but _ExtraAllowingModel._validate_field_names rejects any extra key that is
+# not namespaced as "namespace__field", so a 1.11 client raises on the new
+# payload.  This is a serialization-semantic break of the kind CONTRIBUTING.md
+# flags as invisible to static analysis and the contributor's responsibility
+# to announce.
+# ---------------------------------------------------------------------------
+
+# Meta field keys added in the 1.12 era (strip when downgrading to 1.11).
+_NEW_META_KEYS_1_12 = {"formula"}
+
+
+def _downgrade_item_to_1_11(item: dict) -> dict:
+    """Return a copy of *item* safe for schema 1.11 clients."""
+    item = dict(item)
+
+    if "meta" in item and isinstance(item["meta"], dict):
+        item["meta"] = _strip_unknown_meta_fields(item["meta"], _NEW_META_KEYS_1_12)
+
+    return item
+
+
+@register_projector(from_minor=12, to_minor=11)
+def _project_1_12_to_1_11(data: dict) -> dict:
+    """Downgrade a schema 1.12 document dict to schema 1.11.
+
+    Handles:
+    - Strips the new ``formula`` meta sub-field from all ``BaseMeta`` dicts.
+    """
+    data = dict(data)
+
+    # Only FormulaItem carries the new sub-field today, but every item list is swept so
+    # the projector keeps working if "formula" meta is later attached elsewhere.
+    for list_key in (
+        "texts",
+        "pictures",
+        "tables",
+        "key_value_items",
+        "form_items",
+        "field_regions",
+        "field_items",
+        "groups",
+    ):
+        if list_key in data:
+            data[list_key] = [_downgrade_item_to_1_11(item) for item in data[list_key]]
+
+    data["version"] = "1.11.0"
+    return data
+
 
 # --- 1.11 → 1.10 ----------------------------------------------------------
 # Schema 1.11 (docling-core v2.106.0): InlineGroup runs carry their own
