@@ -2677,6 +2677,27 @@ def test_cross_page_table_without_cell_boxes_splits_rows_evenly():
     assert "A" in first and "C" in second
 
 
+def test_cross_page_table_with_rows_never_moving_up_splits_rows_evenly():
+    """Row positions that show no page change can't place the rows, so they are shared evenly."""
+    doc = _doc_cross_page_table_uneven(CoordOrigin.TOPLEFT)
+    for cell in doc.tables[0].data.table_cells:
+        if cell.start_row_offset_idx == 3:
+            cell.bbox = BoundingBox.from_tuple((cell.bbox.l, 470, cell.bbox.r, 490), origin=CoordOrigin.TOPLEFT)
+    params = DocLangParams(include_version=False, add_location=False)
+    first, second = serialize_doclang(doc, params).split("<page_break/>")
+    assert "A" in first and "C" in second
+
+
+def test_cross_page_table_with_two_boxes_on_one_page_splits_rows_evenly():
+    """Row positions only mark page changes, so several boxes on one page keep the even split."""
+    doc = _doc_cross_page_table_uneven(CoordOrigin.TOPLEFT)
+    table = doc.tables[0]
+    table.prov.insert(1, table.prov[0].model_copy())
+    params = DocLangParams(include_version=False, add_location=False)
+    first, second = serialize_doclang(doc, params).split("<page_break/>")
+    assert "A" in first and "C" in second and "E" in second
+
+
 @doclang_validator
 def test_cross_column_list_same_page():
     """Cross-column list: both items on one page with column-aligned locations."""
