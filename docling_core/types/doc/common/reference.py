@@ -1,0 +1,225 @@
+"""Reference, image-reference and provenance models."""
+
+import base64
+import mimetypes
+from io import BytesIO
+from pathlib import Path
+from typing import TYPE_CHECKING, Annotated, Optional, Union
+from urllib.parse import unquote
+
+import numpy as np
+from PIL import Image as PILImage
+from pydantic import AnyUrl, BaseModel, ConfigDict, Field, field_validator
+from typing_extensions import Self
+
+from docling_core.types.base import _JSON_POINTER_REGEX
+from docling_core.types.doc.base import BoundingBox, Size
+from docling_core.types.doc.common.scalars import CharSpan
+from docling_core.types.doc.utils import _ensure_within_size_limit, _normalize_image_for_png
+from docling_core.utils.settings import settings
+
+try:
+    import cv2
+
+    CV2_INSTALLED = True
+except ImportError:
+    CV2_INSTALLED = False
+
+if TYPE_CHECKING:
+    from docling_core.types.doc.document import DoclingDocument
+
+
+class RefItem(BaseModel):
+    """RefItem."""
+
+    cref: str = Field(alias="$ref", pattern=_JSON_POINTER_REGEX)
+
+    # This method makes RefItem compatible with DocItem
+    def get_ref(self):
+        """get_ref."""
+        return self
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+
+    def _split_ref_to_path(self):
+        """Get the path of the reference."""
+        return self.cref.split("/")
+
+    def resolve(self, doc: "DoclingDocument"):
+        """Resolve the path in the document."""
+        path_components = self.cref.split("/")
+        if (num_comps := len(path_components)) == 3:
+            _, path, index_str = path_components
+            index = int(index_str)
+            obj = doc.__getattribute__(path)[index]
+        elif num_comps == 2:
+            _, path = path_components
+            obj = doc.__getattribute__(path)
+        else:
+            raise RuntimeError(f"Unsupported number of path components: {num_comps}")
+        return obj
+
+    def _update_with_lookup(
+        self,
+        lookup: dict[str, dict[int, int]],
+    ) -> None:
+        path = self._split_ref_to_path()
+        if len(path) == 3 and (item_label := path[1]) in lookup:
+            item_index = int(path[2])
+            # Count how many items have been deleted in front of you
+            delta = sum(val if item_index >= key else 0 for key, val in lookup[item_label].items())
+            new_index = item_index + delta
+            self.cref = f"#/{item_label}/{new_index}"
+
+
+class FineRef(RefItem):
+    """Fine-granular reference item that can capture span range info."""
+
+    range: tuple[int, int] | None = None  # start_inclusive, end_exclusive
+
+
+class ImageRef(BaseModel):
+    """ImageRef."""
+
+    mimetype: str
+    dpi: int
+    size: Size
+    uri: AnyUrl | Path = Field(union_mode="left_to_right")
+    _pil: PILImage.Image | None = None
+
+    def _local_path(self) -> Path | None:
+        """Return the local filesystem path of a file:// or plain path URI, else None."""
+        if isinstance(self.uri, Path):
+            return self.uri
+        if isinstance(self.uri, AnyUrl) and self.uri.scheme == "file":
+            return Path(unquote(str(self.uri.path)))
+        return None
+
+    def _load_local_image(self, base_dir: Path | None = None) -> None:
+        """Read a local image into memory, without the settings check.
+
+        Only for explicit opt-ins, see ``DoclingDocument.load_local_images``.
+        """
+        if self._pil is not None or (local_path := self._local_path()) is None:
+            return
+        if base_dir is not None:
+            local_path = base_dir / local_path
+        if not local_path.is_file():
+            raise ValueError(f"Image file not found or not a regular file: {local_path}")
+        _ensure_within_size_limit(
+            local_path,
+            max_size=settings.max_image_decoded_size,
+            label="Image file",
+        )
+        with PILImage.open(local_path) as pil:
+            self._pil = pil.copy()
+
+    @property
+    def pil_image(self) -> PILImage.Image | None:
+        """Return the PIL Image."""
+        if self._pil is not None:
+            return self._pil
+
+        if (local_path := self._local_path()) is not None:
+            if not settings.allow_image_file_uri:
+                raise ValueError(
+                    "Reading local image files (file:// URIs and filesystem paths) is not enabled; "
+                    "set DOCLINGCORE_ALLOW_IMAGE_FILE_URI=true, or call DoclingDocument.load_local_images() "
+                    "for trusted documents."
+                )
+            _ensure_within_size_limit(
+                local_path,
+                max_size=settings.max_image_decoded_size,
+                label="Image file",
+            )
+            self._pil = PILImage.open(local_path)
+        elif isinstance(self.uri, AnyUrl) and self.uri.scheme == "data":
+            encoded_img = str(self.uri).split(",")[1]
+            decoded_img = base64.b64decode(encoded_img)
+
+            if len(decoded_img) > settings.max_image_decoded_size:
+                raise ValueError(f"Decoded image exceeds size limit of {settings.max_image_decoded_size} bytes.")
+
+            self._pil = PILImage.open(BytesIO(decoded_img))
+        # else: HTTP(S) and other remote schemes are intentionally not fetched.
+        # If remote fetch is enabled, it must use host allowlists and block
+        # private, link-local, and cloud-metadata addresses (SSRF controls).
+
+        return self._pil
+
+    @field_validator("mimetype")
+    @classmethod
+    def validate_mimetype(cls, v):
+        """validate_mimetype."""
+        # Check if the provided MIME type is valid using mimetypes module
+        if v not in mimetypes.types_map.values():
+            raise ValueError(f"'{v}' is not a valid MIME type")
+        return v
+
+    @staticmethod
+    def _to_img_str_cv2(image: PILImage.Image) -> str:
+        arr = np.ascontiguousarray(np.asarray(image))
+
+        if image.mode == "RGB":
+            encoded = cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
+        elif image.mode == "RGBA":
+            encoded = cv2.cvtColor(arr, cv2.COLOR_RGBA2BGRA)
+        elif image.mode == "L":
+            encoded = arr
+        else:
+            return ImageRef._to_img_str_pil(image)
+
+        # OpenCV defaults to compression level 1; 6 matches PIL and keeps files comparable.
+        ok, buffered = cv2.imencode(".png", encoded, [cv2.IMWRITE_PNG_COMPRESSION, 6])
+        if not ok:
+            return ImageRef._to_img_str_pil(image)
+
+        return base64.b64encode(buffered.tobytes()).decode("utf-8")
+
+    @staticmethod
+    def _to_img_str_pil(image: PILImage.Image) -> str:
+        buffered = BytesIO()
+        _normalize_image_for_png(image).save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        return img_str
+
+    @classmethod
+    def from_pil(cls, image: PILImage.Image, dpi: int) -> Self:
+        """Construct ImageRef from a PIL Image."""
+        if CV2_INSTALLED:
+            img_str = cls._to_img_str_cv2(image)
+        else:
+            img_str = cls._to_img_str_pil(image)
+        img_uri = f"data:image/png;base64,{img_str}"
+        return cls(
+            mimetype="image/png",
+            dpi=dpi,
+            size=Size(width=image.width, height=image.height),
+            uri=img_uri,
+            _pil=image,
+        )
+
+
+class ProvenanceItem(BaseModel):
+    """Provenance information for elements extracted from a textual document.
+
+    A `ProvenanceItem` object acts as a lightweight pointer back into the original
+    document for an extracted element. It applies to documents with an explicit
+    or implicit layout, such as PDF, HTML, docx, or pptx.
+    """
+
+    page_no: Annotated[int, Field(description="Page number")]
+    bbox: Annotated[BoundingBox, Field(description="Bounding box")]
+    charspan: CharSpan
+
+
+class PageItem(BaseModel):
+    """PageItem."""
+
+    # A page carries separate root items for furniture and body,
+    # only referencing items on the page
+    size: Size
+    image: ImageRef | None = None
+    page_no: int

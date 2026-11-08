@@ -52,7 +52,7 @@ def _get_tree_sitter_language(language: CodeLanguageLabel):
     return factory() if factory else None
 
 
-def _get_import_query(language: CodeLanguageLabel) -> Optional[str]:
+def _get_import_query(language: CodeLanguageLabel) -> str | None:
     """Get the tree-sitter query string for finding imports in this language."""
     if language == CodeLanguageLabel.PYTHON:
         return """
@@ -95,7 +95,7 @@ def _get_import_query(language: CodeLanguageLabel) -> Optional[str]:
         return None
 
 
-def _get_function_name(language: CodeLanguageLabel, node: Node) -> Optional[str]:
+def _get_function_name(language: CodeLanguageLabel, node: Node) -> str | None:
     """Extract the function name from a function node."""
     if language == CodeLanguageLabel.C:
         declarator = node.child_by_field_name("declarator")

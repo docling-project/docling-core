@@ -9,9 +9,14 @@ if [ -z "${TARGET_VERSION}" ]; then
 fi
 CHGLOG_FILE="${CHGLOG_FILE:-CHANGELOG.md}"
 
-# update package version
-uvx --from=toml-cli toml set --toml-path=pyproject.toml project.version "${TARGET_VERSION}"
-uv lock --upgrade-package docling-core
+# update package versions:
+#   - root pyproject.toml               = docling-core
+#   - packages/dclq/pyproject.toml    = dclq (lockstep, incl. its docling-core[dclq]== pin)
+uv version "${TARGET_VERSION}" --package docling-core --frozen
+uv version "${TARGET_VERSION}" --package dclq --frozen
+uv add "docling-core[dclq]==${TARGET_VERSION}" --package dclq --frozen
+
+uv lock --upgrade-package docling-core --upgrade-package dclq
 
 # collect release notes
 REL_NOTES=$(mktemp)
@@ -31,7 +36,7 @@ mv "${TMP_CHGLOG}" "${CHGLOG_FILE}"
 # push changes
 git config --global user.name 'github-actions[bot]'
 git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-git add pyproject.toml uv.lock "${CHGLOG_FILE}"
+git add pyproject.toml packages/dclq/pyproject.toml uv.lock "${CHGLOG_FILE}"
 COMMIT_MSG="chore: bump version to ${TARGET_VERSION} [skip ci]"
 git commit -m "${COMMIT_MSG}"
 git push origin main

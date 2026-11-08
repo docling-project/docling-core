@@ -1,0 +1,187 @@
+{
+    "root": [
+        {
+            "text": "The following inventory report is designed to test how document parsers handle multi-line annotations that are geographically tied to a table structure.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/1",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 78.0,
+                                    "t": 670.898,
+                                    "r": 511.4549999999999,
+                                    "b": 648.723,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    152
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Structured Document Parsing Test"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 4125187561242747673,
+                    "filename": "table_parsing_test.pdf"
+                }
+            }
+        },
+        {
+            "text": "440-A, Asset Category = Hardware. 440-A, Unit Count = 142. 440-A, Status = Operational. 440-B, Asset Category = Software License. 440-B, Unit Count = 12. 440-B, Status = Pending*. 441-C, Asset Category = Cloud Instance. 441-C, Unit Count = 3. 441-C, Status = Operational. 442-D, Asset Category = Legacy Support. 442-D, Unit Count = 1. 442-D, Status = Archived**\n\n*Note: The 'Pending' status indicates that the asset is awaiting final security validation.\n\n**Note: 'Archived' items are scheduled for decommissioning at the end of the current fiscal year.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/tables/0",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [
+                            {
+                                "$ref": "#/texts/2"
+                            },
+                            {
+                                "$ref": "#/texts/3"
+                            }
+                        ],
+                        "content_layer": "body",
+                        "label": "table",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 76.78719329833984,
+                                    "t": 635.6749267578125,
+                                    "r": 458.6939392089844,
+                                    "b": 537.5619354248047,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    0
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "self_ref": "#/texts/2",
+                        "parent": {
+                            "$ref": "#/tables/0"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "footnote",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 78.0,
+                                    "t": 532.026,
+                                    "r": 345.2879999999999,
+                                    "b": 525.551,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    91
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "self_ref": "#/texts/3",
+                        "parent": {
+                            "$ref": "#/tables/0"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "footnote",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 78.0,
+                                    "t": 523.026,
+                                    "r": 374.8419999999999,
+                                    "b": 516.551,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    97
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Structured Document Parsing Test"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 4125187561242747673,
+                    "filename": "table_parsing_test.pdf"
+                }
+            }
+        },
+        {
+            "text": "This final paragraph provides a clear end-of-section marker. Parsers should correctly associate the two footnotes with the table above rather than this trailing body text.",
+            "meta": {
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/4",
+                        "parent": {
+                            "$ref": "#/body"
+                        },
+                        "children": [],
+                        "content_layer": "body",
+                        "label": "text",
+                        "prov": [
+                            {
+                                "page_no": 1,
+                                "bbox": {
+                                    "l": 78.0,
+                                    "t": 492.898,
+                                    "r": 490.02700000000004,
+                                    "b": 470.723,
+                                    "coord_origin": "BOTTOMLEFT"
+                                },
+                                "charspan": [
+                                    0,
+                                    171
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "headings": [
+                    "Structured Document Parsing Test"
+                ],
+                "origin": {
+                    "mimetype": "application/pdf",
+                    "binary_hash": 4125187561242747673,
+                    "filename": "table_parsing_test.pdf"
+                }
+            }
+        }
+    ]
+}

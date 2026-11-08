@@ -1,7 +1,7 @@
 """Define base classes for serialization."""
 
 from abc import ABC, abstractmethod
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, Optional, Union
 
 from pydantic import AnyUrl, BaseModel
@@ -211,7 +211,7 @@ class BaseDocSerializer(ABC):
     def serialize(
         self,
         *,
-        item: Optional[NodeItem] = None,
+        item: NodeItem | None = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Run the serialization."""
@@ -251,7 +251,7 @@ class BaseDocSerializer(ABC):
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: Union[AnyUrl, Path],
+        hyperlink: AnyUrl | PurePath,
         **kwargs: Any,
     ) -> str:
         """Hook for hyperlink serialization."""
@@ -260,7 +260,7 @@ class BaseDocSerializer(ABC):
     @abstractmethod
     def get_parts(
         self,
-        item: Optional[NodeItem] = None,
+        item: NodeItem | None = None,
         **kwargs: Any,
     ) -> list[SerializationResult]:
         """Get the components to be combined for serializing this node."""
