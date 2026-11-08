@@ -26,6 +26,8 @@ def _cell_text_from_text_cells(text_cells: list[dict[str, Any]]) -> str:
     not carry a line structure by themselves. Rebuild it from the entry
     geometry: entries whose boxes overlap vertically share one visual line
     (joined with spaces), lines stack top to bottom (joined with newlines).
+    If any entry lacks a box, fall back to a single space-separated line in
+    the original entry order.
     """
     if not text_cells:
         return ""
@@ -43,17 +45,19 @@ def _cell_text_from_text_cells(text_cells: list[dict[str, Any]]) -> str:
         }
 
     entries = [_entry(el) for el in text_cells]
+    if any(e["b"] <= e["t"] for e in entries):
+        return " ".join(e["token"] for e in entries)
     entries.sort(key=lambda e: ((e["t"] + e["b"]) / 2.0, e["l"]))
 
     lines: list[list[dict[str, Any]]] = []
     for entry in entries:
+        height = entry["b"] - entry["t"]
         if lines:
             line_top = min(e["t"] for e in lines[-1])
             line_bottom = max(e["b"] for e in lines[-1])
             overlap = min(line_bottom, entry["b"]) - max(line_top, entry["t"])
-            heights = [e["b"] - e["t"] for e in lines[-1]]
-            heights.append(entry["b"] - entry["t"])
-            if overlap > 0.5 * min(heights):
+            min_height = min([e["b"] - e["t"] for e in lines[-1]] + [height])
+            if overlap > 0.5 * min_height:
                 lines[-1].append(entry)
                 continue
         lines.append([entry])

@@ -38,6 +38,41 @@ def test_word_level_entries_on_one_line_stay_space_separated():
     assert cell.text == "Contingent Tertiary"
 
 
+def test_entries_without_geometry_stay_on_one_line():
+    """Entries without boxes carry no line information, so they are not split."""
+    data = {
+        "start_row_offset_idx": 0,
+        "end_row_offset_idx": 1,
+        "start_col_offset_idx": 0,
+        "end_col_offset_idx": 1,
+        "bbox": {"l": 1.0, "t": 2.0, "r": 8.0, "b": 5.0},
+        "text_cell_bboxes": [
+            {"token": "Contingent"},
+            {"token": "Tertiary"},
+        ],
+    }
+    cell = TableCell.model_validate(data)
+    assert cell.text == "Contingent Tertiary"
+
+
+def test_mixed_entries_fall_back_to_single_line_in_entry_order():
+    """Once any entry lacks a box, the whole cell falls back to one line in input order."""
+    data = {
+        "start_row_offset_idx": 0,
+        "end_row_offset_idx": 1,
+        "start_col_offset_idx": 0,
+        "end_col_offset_idx": 1,
+        "bbox": {"l": 1.0, "t": 2.0, "r": 8.0, "b": 12.0},
+        "text_cell_bboxes": [
+            {"token": "bottom", "bbox": {"l": 1.0, "t": 9.0, "r": 3.0, "b": 12.0}},
+            {"token": "unknown"},
+            {"token": "top", "bbox": {"l": 1.0, "t": 2.0, "r": 3.0, "b": 5.0}},
+        ],
+    }
+    cell = TableCell.model_validate(data)
+    assert cell.text == "bottom unknown top"
+
+
 def test_word_level_entries_rebuild_stacked_lines():
     """Stacked word entries form separate lines, top row first."""
     data = {
