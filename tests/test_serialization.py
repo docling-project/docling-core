@@ -33,7 +33,7 @@ from docling_core.transforms.serializer.markdown import (
 )
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
-from docling_core.types.doc import DoclingDocument, ImageRef, ContentLayer
+from docling_core.types.doc import ContentLayer, DoclingDocument, ImageRef
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, ImageRefMode, Size
 from docling_core.types.doc.document import (
     BaseMeta,
@@ -1168,8 +1168,7 @@ def test_md_furniture_modes():
 
     # NONE (Default) but with EXPLICIT layers -> Should serialize furniture
     params_explicit = MarkdownParams(
-        furniture_mode=FurnitureMode.NONE, 
-        layers={ContentLayer.BODY, ContentLayer.FURNITURE}
+        furniture_mode=FurnitureMode.NONE, layers={ContentLayer.BODY, ContentLayer.FURNITURE}
     )
     ser_explicit = MarkdownDocSerializer(doc=doc, params=params_explicit)
     text_explicit = ser_explicit.serialize().text
@@ -1188,7 +1187,7 @@ def test_md_furniture_modes():
     assert "Main body paragraph text." in text_distinct
     assert text_distinct.count("Document Header Title") == 1
     assert "Different Footer Notice" in text_distinct
-    
+
     # Verify state does not leak across multiple serialize() calls on the same instance
     text_distinct_run_2 = ser_distinct.serialize().text
     assert text_distinct == text_distinct_run_2
