@@ -103,9 +103,9 @@ class TripletTableSerializer(BaseTableSerializer):
 
             if table_df.shape[0] >= 1 and table_df.shape[1] >= 1:
                 # Header Detection (metadata-first, fallback-safe)
-                has_row_headers = any(getattr(cell, "row_header", False) for row in item.data.grid for cell in row)
+                has_row_headers = any(cell.row_header for row in item.data.grid for cell in row)
 
-                has_col_headers = any(getattr(cell, "col_header", False) for row in item.data.grid for cell in row)
+                has_col_headers = any(cell.column_header for row in item.data.grid for cell in row)
 
                 # Fallback if metadata missing
                 if not has_col_headers:
