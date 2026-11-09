@@ -16,6 +16,7 @@ from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 from docling_core.transforms.serializer.html import HTMLDocSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
 from docling_core.types.doc import ContentLayer, DocItemLabel, DoclingDocument, PictureItem, TableData, TextItem
+from docling_core.types.doc.document import TableCell
 
 from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_rich_table_doc
 
@@ -86,7 +87,7 @@ def test_chunk_caption_stays_with_owner(kind: str, caption: str, expected: str, 
         chunk = chunks[0]
         assert chunk.text.count(expected) == 1
         if kind == "table":
-            assert chunk.text == expected + "\n\nA, 1 = B. 1, 1 = 2"
+            assert chunk.text == expected + "\n\nrow_0, col_0 = A. row_0, col_1 = B. row_1, col_0 = 1. row_1, col_1 = 2"
         else:
             assert chunk.text == expected
         refs = {item.self_ref for item in chunk.meta.doc_items}
@@ -106,7 +107,7 @@ def test_chunk_satellite_check_keeps_unrelated_inline_text() -> None:
         "<text>After</text></doclang>"
     )
     chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker().chunk(doc)]
-    assert [chunk.text for chunk in chunks] == ["Before **body**", "Table **1**: results\n\nA", "After"]
+    assert [chunk.text for chunk in chunks] == ["Before **body**", "Table **1**: results\n\nrow_0, col_0 = A", "After"]
     assert doc.tables[0].self_ref in {item.self_ref for item in chunks[1].meta.doc_items}
 
 
@@ -251,16 +252,33 @@ def test_triplet_table_serializer_single_column():
     """Test TripletTableSerializer with a single-column table."""
     # Create a document with a single-column table
     doc = DoclingDocument(name="test_single_column")
-    table_data = TableData(num_cols=1)
-    table_data.add_row(["Country"])  # Header row
-    table_data.add_row(["Italy"])
-    table_data.add_row(["Canada"])
-    table_data.add_row(["Switzerland"])
-    doc.add_table(data=table_data)
+    table_data = TableData(num_rows=4, num_cols=1)
+    table_item = doc.add_table(data=table_data)
+    doc.add_table_cell(
+        table_item=table_item,
+        cell=TableCell(
+            text="Country",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            column_header=True,
+        ),
+    )
+    for i, name in enumerate(["Italy", "Canada", "Switzerland"], start=1):
+        doc.add_table_cell(
+            table_item=table_item,
+            cell=TableCell(
+                text=name,
+                start_row_offset_idx=i,
+                end_row_offset_idx=i + 1,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+            ),
+        )
 
     serializer = ChunkingDocSerializer(doc=doc)
     table_serializer = TripletTableSerializer()
-    table_item = next(iter(doc.iterate_items()))[0]
 
     result = table_serializer.serialize(
         item=table_item,
@@ -338,7 +356,7 @@ def test_triplet_table_serializer_handles_empty_table_output():
     rich_serializer = ChunkingSerializerProvider().get_serializer(rich_doc)
     visited: set[str] = set()
     rich_result = rich_serializer.serialize(item=rich_doc.tables[0], visited=visited)
-    assert rich_result.text == "Important body text inside layout table"
+    assert rich_result.text == "row_0, col_0 = Important body text inside layout table"
     assert visited == {
         rich_doc.tables[0].self_ref,
         rich_doc.groups[0].self_ref,
@@ -354,7 +372,7 @@ def test_triplet_table_serializer_handles_empty_table_output():
 
     rich_chunks = list(HierarchicalChunker().chunk(dl_doc=rich_doc))
     assert len(rich_chunks) == 1
-    assert rich_chunks[0].text == "Important body text inside layout table"
+    assert rich_chunks[0].text == "row_0, col_0 = Important body text inside layout table"
     assert [item.self_ref for item in rich_chunks[0].meta.doc_items] == [rich_doc.tables[0].self_ref]
 
 
@@ -373,7 +391,7 @@ def test_chunk_table_keeps_footnotes():
 
     chunks = list(HierarchicalChunker().chunk(dl_doc=doc))
     assert [c.text for c in chunks] == [
-        "Country = Italy\n\nCountry footnote",
+        "row_0, col_0 = Country. row_1, col_0 = Italy\n\nCountry footnote",
         "Picture footnote",
         "```\nx = 1\n```\n\nCode footnote",
     ]
