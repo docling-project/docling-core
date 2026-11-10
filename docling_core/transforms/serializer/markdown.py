@@ -52,6 +52,7 @@ from docling_core.types.doc import (
     FieldRegionItem,
     FloatingItem,
     Formatting,
+    FormattingFallbackMode,
     FormItem,
     FormulaItem,
     GroupItem,
@@ -269,6 +270,13 @@ class MarkdownParams(CommonParams):
     )
     orig_list_item_marker_mode: OrigListItemMarkerMode = OrigListItemMarkerMode.AUTO
     ensure_valid_list_item_marker: bool = True
+    formatting_fallback_mode: FormattingFallbackMode = Field(
+        default=FormattingFallbackMode.NONE,
+        description=(
+            "How to render formatting that has no Markdown syntax (underline, subscript, "
+            "superscript): drop it (`none`) or use HTML tags (`html`)."
+        ),
+    )
     format_code_blocks: bool = Field(
         default=True,
         description="Whether to wrap code items in markdown code formatting (e.g. backticks).",
@@ -1212,6 +1220,26 @@ class MarkdownDocSerializer(DocSerializer):
     def serialize_strikethrough(self, text: str, **kwargs: Any):
         """Apply Markdown-specific strikethrough serialization."""
         return f"~~{text}~~"
+
+    def _fallback_formatting(self, text: str, tag: str) -> str:
+        if self.params.formatting_fallback_mode == FormattingFallbackMode.HTML:
+            return f"<{tag}>{text}</{tag}>"
+        return text
+
+    @override
+    def serialize_underline(self, text: str, **kwargs: Any):
+        """Apply Markdown-specific underline serialization."""
+        return self._fallback_formatting(text, "u")
+
+    @override
+    def serialize_subscript(self, text: str, **kwargs: Any):
+        """Apply Markdown-specific subscript serialization."""
+        return self._fallback_formatting(text, "sub")
+
+    @override
+    def serialize_superscript(self, text: str, **kwargs: Any):
+        """Apply Markdown-specific superscript serialization."""
+        return self._fallback_formatting(text, "sup")
 
     @override
     def serialize_hyperlink(

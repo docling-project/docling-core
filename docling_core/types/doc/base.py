@@ -21,6 +21,13 @@ class CaptionPlacement(str, Enum):
     LAYOUT = "layout"  # by bbox: after the item if the caption is centered lower on the page, else before
 
 
+class FormattingFallbackMode(str, Enum):
+    """How to render formatting that has no Markdown syntax (underline, sub/superscript)."""
+
+    NONE = "none"  # drop the formatting, keeping the plain text
+    HTML = "html"  # fall back to HTML tags
+
+
 class CoordOrigin(str, Enum):
     """CoordOrigin."""
 

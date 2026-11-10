@@ -55,6 +55,7 @@ from docling_core.types.doc import BoundingBox, Size
 from docling_core.types.doc.base import (
     CaptionPlacement,
     CoordOrigin,
+    FormattingFallbackMode,
     ImageRefMode,
     PydanticSerCtxKey,
     round_pydantic_float,
@@ -4001,6 +4002,7 @@ class DoclingDocument(BaseModel):
         use_legacy_annotations: bool | None = None,  # deprecated
         include_picture_classification: bool = True,
         caption_placement: CaptionPlacement = CaptionPlacement.STANDARD,
+        formatting_fallback_mode: FormattingFallbackMode = FormattingFallbackMode.NONE,
     ):
         """Save to markdown."""
         if isinstance(filename, str):
@@ -4035,6 +4037,7 @@ class DoclingDocument(BaseModel):
             mark_meta=mark_meta,
             include_picture_classification=include_picture_classification,
             caption_placement=caption_placement,
+            formatting_fallback_mode=formatting_fallback_mode,
         )
 
         filename.write_text(md_out, encoding="utf-8")
@@ -4069,6 +4072,7 @@ class DoclingDocument(BaseModel):
         mark_meta: bool = False,
         include_picture_classification: bool = True,
         caption_placement: CaptionPlacement = CaptionPlacement.STANDARD,
+        formatting_fallback_mode: FormattingFallbackMode = FormattingFallbackMode.NONE,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -4150,6 +4154,10 @@ class DoclingDocument(BaseModel):
             else before, falling back to "standard" when positions are unavailable.
             (Default value = CaptionPlacement.STANDARD).
         :type caption_placement: CaptionPlacement = CaptionPlacement.STANDARD
+        :param formatting_fallback_mode: How to render formatting that has no Markdown
+            syntax (underline, subscript, superscript): drop it (NONE) or use HTML tags
+            (HTML). (Default value = FormattingFallbackMode.NONE).
+        :type formatting_fallback_mode: FormattingFallbackMode = FormattingFallbackMode.NONE
         """
         from docling_core.transforms.serializer.markdown import (
             MarkdownDocSerializer,
@@ -4203,6 +4211,7 @@ class DoclingDocument(BaseModel):
                 traverse_pictures=traverse_pictures,
                 include_picture_classification=include_picture_classification,
                 caption_placement=caption_placement,
+                formatting_fallback_mode=formatting_fallback_mode,
             ),
         )
         ser_res = serializer.serialize()
