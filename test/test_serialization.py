@@ -16,12 +16,14 @@ from docling_core.transforms.serializer.html import (
     HTMLTableSerializer,
 )
 from docling_core.transforms.serializer.markdown import (
+    FormattingFallbackMode,
     MarkdownDocSerializer,
     MarkdownParams,
     MarkdownTableSerializer,
     OrigListItemMarkerMode,
     _cell_content_has_table,
 )
+from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer, PlainTextParams
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
 from docling_core.types.doc import DoclingDocument, Formatting, Script
@@ -204,30 +206,32 @@ def test_md_inline_and_formatting():
     verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
 
 
-def test_md_subscript_formatting():
-    """Subscript spans are exported as inline <sub> HTML in Markdown."""
+@pytest.mark.parametrize(
+    ("mode", "expected"),
+    [
+        (FormattingFallbackMode.NONE, "a H2O E=mc 2 &lt;x&gt;"),
+        (FormattingFallbackMode.HTML, "a <u>H2O</u> E=mc <sup>2</sup> <sub>&lt;x&gt;</sub>"),
+    ],
+)
+def test_md_formatting_fallback_mode(mode: FormattingFallbackMode, expected: str, tmp_path: Path):
+    """Formatting without Markdown syntax is dropped or rendered as HTML."""
     doc = DoclingDocument(name="test")
-    doc.add_text(
-        label=DocItemLabel.TEXT,
-        text="H2O",
-        formatting=Formatting(script=Script.SUB),
-    )
+    inline = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="a", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="H2O", formatting=Formatting(underline=True), parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="E=mc", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="2", formatting=Formatting(script=Script.SUPER), parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="<x>", formatting=Formatting(script=Script.SUB), parent=inline)
 
-    actual = MarkdownDocSerializer(doc=doc).serialize().text
-    assert "<sub>H2O</sub>" in actual
+    params = MarkdownParams(formatting_fallback_mode=mode)
+    assert MarkdownDocSerializer(doc=doc, params=params).serialize().text == expected
+    assert doc.export_to_markdown(formatting_fallback_mode=mode) == expected
+    md_path = tmp_path / "doc.md"
+    doc.save_as_markdown(md_path, formatting_fallback_mode=mode)
+    assert md_path.read_text(encoding="utf-8") == expected
 
-
-def test_md_superscript_formatting():
-    """Superscript spans are exported as inline <sup> HTML in Markdown."""
-    doc = DoclingDocument(name="test")
-    doc.add_text(
-        label=DocItemLabel.TEXT,
-        text="2",
-        formatting=Formatting(script=Script.SUPER),
-    )
-
-    actual = MarkdownDocSerializer(doc=doc).serialize().text
-    assert "<sup>2</sup>" in actual
+    plain_params = PlainTextParams(formatting_fallback_mode=mode)
+    assert PlainTextDocSerializer(doc=doc, params=plain_params).serialize().text == "a H2O E=mc 2 <x>"
 
 
 def test_md_pb_placeholder_and_page_filter():

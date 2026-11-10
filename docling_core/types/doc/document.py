@@ -54,6 +54,7 @@ from docling_core.types.base import _JSON_POINTER_REGEX, VERSION_PATTERN, Unique
 from docling_core.types.doc import BoundingBox, Size
 from docling_core.types.doc.base import (
     CoordOrigin,
+    FormattingFallbackMode,
     ImageRefMode,
     PydanticSerCtxKey,
     round_pydantic_float,
@@ -6323,6 +6324,7 @@ class DoclingDocument(BaseModel):
         *,
         mark_meta: bool = False,
         use_legacy_annotations: Optional[bool] = None,  # deprecated
+        formatting_fallback_mode: FormattingFallbackMode = FormattingFallbackMode.NONE,
     ):
         """Save to markdown."""
         if isinstance(filename, str):
@@ -6353,6 +6355,7 @@ class DoclingDocument(BaseModel):
             compact_tables=compact_tables,
             use_legacy_annotations=use_legacy_annotations,
             mark_meta=mark_meta,
+            formatting_fallback_mode=formatting_fallback_mode,
         )
 
         with open(filename, "w", encoding="utf-8") as fw:
@@ -6384,6 +6387,7 @@ class DoclingDocument(BaseModel):
         allowed_meta_names: Optional[set[str]] = None,
         blocked_meta_names: Optional[set[str]] = None,
         mark_meta: bool = False,
+        formatting_fallback_mode: FormattingFallbackMode = FormattingFallbackMode.NONE,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -6446,6 +6450,10 @@ class DoclingDocument(BaseModel):
         :type allowed_meta_names: Optional[set[str]] = None
         :param blocked_meta_names: Optional[set[str]]: Meta names to block; takes precedence over allowed_meta_names.
         :type blocked_meta_names: Optional[set[str]] = None
+        :param formatting_fallback_mode: How to render formatting that has no Markdown
+            syntax (underline, subscript, superscript): drop it (NONE) or use HTML tags
+            (HTML). (Default value = FormattingFallbackMode.NONE).
+        :type formatting_fallback_mode: FormattingFallbackMode = FormattingFallbackMode.NONE
         """
         from docling_core.transforms.serializer.markdown import (
             MarkdownDocSerializer,
@@ -6484,6 +6492,7 @@ class DoclingDocument(BaseModel):
                 mark_annotations=mark_annotations,
                 compact_tables=compact_tables,
                 traverse_pictures=traverse_pictures,
+                formatting_fallback_mode=formatting_fallback_mode,
             ),
         )
         ser_res = serializer.serialize()

@@ -1,6 +1,6 @@
 """Package for models defined by the Document type."""
 
-from .base import BoundingBox, CoordOrigin, ImageRefMode, Size
+from .base import BoundingBox, CoordOrigin, FormattingFallbackMode, ImageRefMode, Size
 from .document import (
     AnyTableCell,
     BaseAnnotation,

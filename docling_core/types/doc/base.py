@@ -14,6 +14,13 @@ class ImageRefMode(str, Enum):
     REFERENCED = "referenced"  # reference the image via uri
 
 
+class FormattingFallbackMode(str, Enum):
+    """How to render formatting that has no Markdown syntax (underline, sub/superscript)."""
+
+    NONE = "none"  # drop the formatting, keeping the plain text
+    HTML = "html"  # fall back to HTML tags
+
+
 class CoordOrigin(str, Enum):
     """CoordOrigin."""
 
