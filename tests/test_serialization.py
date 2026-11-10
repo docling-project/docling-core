@@ -394,10 +394,7 @@ def test_md_serialize_param_patch_reaches_text_formatting():
     doc.add_text(label=DocItemLabel.TEXT, text="2", formatting=Formatting(script=Script.SUB))
     ser = MarkdownDocSerializer(doc=doc)
     assert ser.serialize().text == "2"
-    assert (
-        ser.serialize(formatting_fallback_mode=FormattingFallbackMode.HTML).text
-        == "<sub>2</sub>"
-    )
+    assert ser.serialize(formatting_fallback_mode=FormattingFallbackMode.HTML).text == "<sub>2</sub>"
 
 
 def test_md_pb_placeholder_and_page_filter():
