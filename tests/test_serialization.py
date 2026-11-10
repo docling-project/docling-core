@@ -992,6 +992,71 @@ def test_md_compact_table():
     assert len(compact_result) < len(padded_table)
 
 
+def test_md_compact_table_keeps_header_text_with_crlf():
+    """A header cell with ``\\r\\n`` must not lose its second line in compact tables (#1001)."""
+    doc = _table_with_rows([["Model", "mAP(0.75) \r\ntime (secs)"], ["A", "0.88 2.73"]], num_header_rows=1)
+    assert doc.export_to_markdown(compact_tables=True) == (
+        "| Model | mAP(0.75)  time (secs) |\n| - | - |\n| A | 0.88 2.73 |"
+    )
+    assert doc.export_to_markdown() == (
+        "| Model   | mAP(0.75)  time (secs)   |\n"
+        "|---------|--------------------------|\n"
+        "| A       | 0.88 2.73                |"
+    )
+
+
+@pytest.mark.parametrize("line_break", ["\n", "\r\n", "\r", "\u2028"], ids=["lf", "crlf", "cr", "u2028"])
+@pytest.mark.parametrize(
+    ("compact", "expected"),
+    [
+        (False, "| Model   | top bottom   |\n|---------|--------------|\n| A       | 0.88 2.73    |"),
+        (True, "| Model | top bottom |\n| - | - |\n| A | 0.88 2.73 |"),
+    ],
+    ids=["padded", "compact"],
+)
+def test_md_table_header_line_breaks_are_escaped(line_break: str, compact: bool, expected: str):
+    """Every line break in a header cell becomes a space, exactly as ``\\n`` always has."""
+    doc = _table_with_rows([["Model", f"top{line_break}bottom"], ["A", "0.88 2.73"]], num_header_rows=1)
+    assert doc.export_to_markdown(compact_tables=compact) == expected
+
+
+@pytest.mark.parametrize(
+    ("cell_text", "compact", "expected"),
+    [
+        ("app\r\nle", False, "| Model   | Fruit   |\n|---------|---------|\n| A       | app le  |"),
+        ("app\r\nle", True, "| Model | Fruit |\n| - | - |\n| A | app le |"),
+        ("abc\n", False, "| Model   | Fruit   |\n|---------|---------|\n| A       | abc     |"),
+        ("abc\n", True, "| Model | Fruit |\n| - | - |\n| A | abc |"),
+    ],
+    ids=["crlf-padded", "crlf-compact", "trailing-lf-padded", "trailing-lf-compact"],
+)
+def test_md_table_body_line_breaks_add_no_row(cell_text: str, compact: bool, expected: str):
+    """A line break in a body cell must not split the row into two table rows."""
+    doc = _table_with_rows([["Model", "Fruit"], ["A", cell_text]], num_header_rows=1)
+    assert doc.export_to_markdown(compact_tables=compact) == expected
+
+
+def test_md_compact_table_finds_separator_after_multiline_header():
+    """``_compact_table`` locates the separator row instead of assuming it is the second line."""
+    padded_table = (
+        "| Model   | mAP(0.75)      |\n"
+        "|         |  time (secs)   |\n"
+        "|---------|---------------:|\n"
+        "| A       | 0.88 2.73      |"
+    )
+    assert MarkdownTableSerializer._compact_table(padded_table) == (
+        "| Model | mAP(0.75) |\n|  | time (secs) |\n| - | -: |\n| A | 0.88 2.73 |"
+    )
+
+
+@pytest.mark.parametrize("line_break", ["\n", "\r\n", "\r"], ids=["lf", "crlf", "cr"])
+def test_md_heading_line_breaks_are_escaped(line_break: str):
+    """A heading stays on one line whatever line break its text contains."""
+    doc = DoclingDocument(name="")
+    doc.add_heading(text=f"Results{line_break}and discussion")
+    assert doc.export_to_markdown() == "## Results and discussion"
+
+
 def test_md_numeric_precision_preserved():
     """Test that numeric values in tables preserve their full precision.
 
