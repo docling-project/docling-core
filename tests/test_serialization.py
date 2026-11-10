@@ -382,6 +382,24 @@ def test_md_formatting_fallback_mode(mode: FormattingFallbackMode, expected: str
     assert plain == "Water is H2O, energy is E=mc2, <tag>"
 
 
+def test_md_serialize_param_patch_reaches_text_formatting():
+    """Per-call serialize() patches apply to text formatting and its HTML fallback."""
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True))
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "**bold**"
+    assert ser.serialize(include_formatting=False).text == "bold"
+
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="2", formatting=Formatting(script=Script.SUB))
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "2"
+    assert (
+        ser.serialize(formatting_fallback_mode=FormattingFallbackMode.HTML).text
+        == "<sub>2</sub>"
+    )
+
+
 def test_md_pb_placeholder_and_page_filter():
     src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
