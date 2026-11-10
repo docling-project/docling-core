@@ -397,6 +397,25 @@ def test_md_serialize_param_patch_reaches_text_formatting():
     assert ser.serialize(formatting_fallback_mode=FormattingFallbackMode.HTML).text == "<sub>2</sub>"
 
 
+def test_md_serialize_param_patch_reaches_inline_group():
+    """Per-call serialize() patches reach formatting inside inline-group text items."""
+    doc = DoclingDocument(name="test")
+    holder = doc.add_text(label=DocItemLabel.TEXT, text="")
+    inline = doc.add_inline_group(parent=holder)
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True), parent=inline)
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "**bold**"
+    assert ser.serialize(include_formatting=False).text == "bold"
+
+    doc = DoclingDocument(name="test")
+    holder = doc.add_text(label=DocItemLabel.TEXT, text="")
+    inline = doc.add_inline_group(parent=holder)
+    doc.add_text(label=DocItemLabel.TEXT, text="2", formatting=Formatting(script=Script.SUB), parent=inline)
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "2"
+    assert ser.serialize(formatting_fallback_mode=FormattingFallbackMode.HTML).text == "<sub>2</sub>"
+
+
 def test_md_pb_placeholder_and_page_filter():
     src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
