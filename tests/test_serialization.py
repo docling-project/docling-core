@@ -2648,3 +2648,91 @@ def test_code_footnotes_serialized_to_markdown_and_html():
         '<figure><pre><code>print(1)</code></pre><div class="footnote">Code note.</div></figure>'
         in doc.export_to_html()
     )
+
+
+def _span_cell(
+    text: str,
+    row: int,
+    col: int,
+    *,
+    row_span: int = 1,
+    col_span: int = 1,
+    column_header: bool = False,
+) -> TableCell:
+    """A TableCell covering ``row_span`` x ``col_span`` grid slots from (row, col)."""
+    return TableCell(
+        text=text,
+        start_row_offset_idx=row,
+        end_row_offset_idx=row + row_span,
+        start_col_offset_idx=col,
+        end_col_offset_idx=col + col_span,
+        row_span=row_span,
+        col_span=col_span,
+        column_header=column_header,
+    )
+
+
+def _doc_with_cells(num_rows: int, num_cols: int, cells: list[TableCell]) -> DoclingDocument:
+    doc = DoclingDocument(name="")
+    table = doc.add_table(data=TableData(num_rows=num_rows, num_cols=num_cols))
+    for cell in cells:
+        doc.add_table_cell(table_item=table, cell=cell)
+    return doc
+
+
+def test_md_serialize_spans_once_keeps_row_spanning_cell_text_once():
+    doc = _doc_with_cells(
+        2,
+        2,
+        [
+            _span_cell("Price", 0, 0, column_header=True),
+            _span_cell("Category", 0, 1, row_span=2, column_header=True),
+            _span_cell("10.00", 1, 0),
+        ],
+    )
+    params = MarkdownParams(compact_tables=True, serialize_spans_once=True)
+    actual = MarkdownDocSerializer(doc=doc, params=params).serialize().text
+    assert actual == "| Price | Category |\n| - | - |\n| 10.00 |  |"
+
+    # The default stays untouched: the spanning cell is repeated in every slot.
+    default = MarkdownDocSerializer(doc=doc, params=MarkdownParams(compact_tables=True)).serialize().text
+    assert default == "| Price | Category |\n| - | - |\n| 10.00 | Category |"
+
+
+def test_md_serialize_spans_once_keeps_col_and_row_spanning_cell_text_once():
+    doc = _doc_with_cells(
+        3,
+        2,
+        [
+            _span_cell("Item", 0, 0, column_header=True),
+            _span_cell("Total", 0, 1, column_header=True),
+            _span_cell("MergedBlock", 1, 0, row_span=2, col_span=2),
+        ],
+    )
+    params = MarkdownParams(compact_tables=True, serialize_spans_once=True)
+    actual = MarkdownDocSerializer(doc=doc, params=params).serialize().text
+    assert actual == "| Item | Total |\n| - | - |\n| MergedBlock |  |\n|  |  |"
+    assert actual.count("MergedBlock") == 1
+    # The table keeps its full 3x2 shape; only the covered slots are empty.
+    assert len(actual.splitlines()[0].split("|")) == 4
+
+
+def test_md_serialize_spans_once_is_available_through_export_helpers(tmp_path):
+    doc = _doc_with_cells(
+        3,
+        2,
+        [
+            _span_cell("Item", 0, 0, column_header=True),
+            _span_cell("Total", 0, 1, column_header=True),
+            _span_cell("MergedBlock", 1, 0, row_span=2, col_span=2),
+        ],
+    )
+    expected = "| Item | Total |\n| - | - |\n| MergedBlock |  |\n|  |  |"
+
+    assert doc.export_to_markdown(compact_tables=True, serialize_spans_once=True) == expected
+
+    out = tmp_path / "spans.md"
+    doc.save_as_markdown(out, compact_tables=True, serialize_spans_once=True)
+    assert out.read_text(encoding="utf-8") == expected
+
+    assert doc.export_to_markdown(compact_tables=True).count("MergedBlock") == 4
