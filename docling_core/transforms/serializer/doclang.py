@@ -1264,6 +1264,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                         text=own_part,
                         formatting=item.formatting,
                         hyperlink=None,
+                        **kwargs,
                     )
                     if item.label == DocItemLabel.HANDWRITTEN_TEXT:
                         own_part = _wrap(text=own_part, wrap_tag=DocLangToken.HANDWRITING.value)
@@ -1297,6 +1298,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                     text=text_part,
                     formatting=item.formatting,
                     hyperlink=None,
+                    **kwargs,
                 )
                 if item.label == DocItemLabel.HANDWRITTEN_TEXT:
                     text_part = _wrap(text=text_part, wrap_tag=DocLangToken.HANDWRITING.value)
