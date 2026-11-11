@@ -2,6 +2,11 @@
   "schema_name": "DoclingDocument",
   "version": "1.11.0",
   "name": "2408.09869v3",
+  "origin": {
+    "mimetype": "application/pdf",
+    "binary_hash": 14981478401387673002,
+    "filename": "2408.09869v3.pdf"
+  },
   "furniture": {
     "self_ref": "#/furniture",
     "children": [],
