@@ -881,7 +881,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             ]
             # FIXME: using the caption_delimiter for now ...
             text_res = params.caption_delim.join([r.text for r in results])
-            text_res = self.post_process(text=text_res)
+            text_res = self.post_process(text=text_res, **kwargs)
         else:
             text_res = ""
         return create_ser_result(text=text_res, span_source=results)

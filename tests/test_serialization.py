@@ -439,6 +439,22 @@ def test_md_serialize_param_patch_controls_escaping():
     assert ser.serialize(escape_html=False).text == "<i>y</i>"
 
 
+def test_md_serialize_param_patch_controls_footnote_escaping():
+    """Per-call escape patches reach footnote text through serialize_footnotes."""
+    doc = DoclingDocument(name="t")
+    tbl = doc.add_table(data=TableData(num_rows=1, num_cols=1, table_cells=[]))
+    tbl.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="foot_note_text").get_ref())
+
+    default = MarkdownDocSerializer(doc=doc).serialize().text
+    assert "foot\\_note" in default
+
+    patched = MarkdownDocSerializer(doc=doc).serialize(escape_underscores=False).text
+    assert "foot_note_text" in patched
+
+    ctor = MarkdownDocSerializer(doc=doc, params=MarkdownParams(escape_underscores=False)).serialize().text
+    assert patched == ctor
+
+
 def test_md_pb_placeholder_and_page_filter():
     src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
