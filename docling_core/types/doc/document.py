@@ -4003,6 +4003,7 @@ class DoclingDocument(BaseModel):
         include_picture_classification: bool = True,
         caption_placement: CaptionPlacement = CaptionPlacement.STANDARD,
         formatting_fallback_mode: FormattingFallbackMode = FormattingFallbackMode.NONE,
+        escape_markdown_syntax: bool = False,
     ):
         """Save to markdown."""
         if isinstance(filename, str):
@@ -4038,6 +4039,7 @@ class DoclingDocument(BaseModel):
             include_picture_classification=include_picture_classification,
             caption_placement=caption_placement,
             formatting_fallback_mode=formatting_fallback_mode,
+            escape_markdown_syntax=escape_markdown_syntax,
         )
 
         filename.write_text(md_out, encoding="utf-8")
@@ -4073,6 +4075,7 @@ class DoclingDocument(BaseModel):
         include_picture_classification: bool = True,
         caption_placement: CaptionPlacement = CaptionPlacement.STANDARD,
         formatting_fallback_mode: FormattingFallbackMode = FormattingFallbackMode.NONE,
+        escape_markdown_syntax: bool = False,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -4097,6 +4100,10 @@ class DoclingDocument(BaseModel):
         :param escape_underscores: bool: Whether to escape underscores in the
             text content of the document. (Default value = True).
         :type escape_underscores: bool = True
+        :param escape_markdown_syntax: bool: Whether to backslash-escape Markdown syntax
+            (line-start block markers and literal asterisks) in plain text items.
+            (Default value = False).
+        :type escape_markdown_syntax: bool = False
         :param image_placeholder: The placeholder to include to position
             images in the markdown. (Default value = "\<!-- image --\>").
         :type image_placeholder: str = "<!-- image -->"
@@ -4196,6 +4203,7 @@ class DoclingDocument(BaseModel):
                 stop_idx=to_element,
                 escape_html=escape_html,
                 escape_underscores=escape_underscores,
+                escape_markdown_syntax=escape_markdown_syntax,
                 image_placeholder=image_placeholder,
                 enable_chart_tables=enable_chart_tables,
                 image_mode=image_mode,
