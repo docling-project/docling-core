@@ -416,6 +416,29 @@ def test_md_serialize_param_patch_reaches_inline_group():
     assert ser.serialize(formatting_fallback_mode=FormattingFallbackMode.HTML).text == "<sub>2</sub>"
 
 
+def test_md_serialize_param_patch_controls_escaping():
+    """Per-call escape_html/escape_underscores patches reach Markdown post_process."""
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="<b>x</b>")
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "&lt;b&gt;x&lt;/b&gt;"
+    assert ser.serialize(escape_html=False).text == "<b>x</b>"
+
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="a_b")
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "a\\_b"
+    assert ser.serialize(escape_underscores=False).text == "a_b"
+
+    doc = DoclingDocument(name="test")
+    holder = doc.add_text(label=DocItemLabel.TEXT, text="")
+    inline = doc.add_inline_group(parent=holder)
+    doc.add_text(label=DocItemLabel.TEXT, text="<i>y</i>", parent=inline)
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "&lt;i&gt;y&lt;/i&gt;"
+    assert ser.serialize(escape_html=False).text == "<i>y</i>"
+
+
 def test_md_pb_placeholder_and_page_filter():
     src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)

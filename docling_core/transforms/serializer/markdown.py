@@ -366,8 +366,8 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         my_visited = visited if visited is not None else set()
         params = MarkdownParams(**kwargs)
         res_parts: list[SerializationResult] = []
-        escape_html = True
-        escape_underscores = True
+        escape_html = kwargs.get("escape_html", True)
+        escape_underscores = kwargs.get("escape_underscores", True)
 
         has_inline_repr = (
             item.text == ""
@@ -375,11 +375,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
         )
         if has_inline_repr:
-            text = doc_serializer.serialize(
-                item=child_group,
-                visited=my_visited,
-                **{k: v for k, v in kwargs.items() if k not in ("escape_html", "escape_underscores")},
-            ).text
+            text = doc_serializer.serialize(item=child_group, visited=my_visited, **kwargs).text
             processing_pending = False
         else:
             text = item.text
