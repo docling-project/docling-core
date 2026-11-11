@@ -1,10 +1,10 @@
 """Text-bearing document items: TextItem and subclasses."""
 
 import typing
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Optional, Union
 
-from pydantic import AnyUrl, Field
+from pydantic import AnyUrl, Field, field_serializer
 from typing_extensions import deprecated
 
 from docling_core.types.doc.common.formatting import Formatting
@@ -41,6 +41,18 @@ class TextItem(DocItem):
 
     formatting: Formatting | None = None
     hyperlink: AnyUrl | Path | None = Field(union_mode="left_to_right", default=None)
+
+    @field_serializer("hyperlink")
+    def _serialize_hyperlink(self, value: AnyUrl | Path | None) -> AnyUrl | str | None:
+        """Serialize path-like hyperlinks with POSIX separators.
+
+        A hyperlink is a URI, so serialized documents must be interchangeable
+        across platforms. The in-memory type stays the declared
+        ``AnyUrl | Path | None``; at serialization time only, a native ``Path``
+        value is rendered through ``as_posix()`` so payloads never carry
+        OS-native separators.
+        """
+        return value.as_posix() if isinstance(value, PurePath) else value
 
     def _get_plain_text(self, doc: "DoclingDocument") -> str:
         """Read the item's own text and its descendant text without document-wide scans."""
