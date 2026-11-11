@@ -8,7 +8,11 @@ docling code from crashing when it accesses the deprecated converter hook.
 class _NullLegacyDocument:
     # Legacy callers may iterate this and call the methods below. Keep the
     # object inert so old package code can limp along without real legacy data.
-    main_text: list[object] = []
+    main_text: list[object]
+
+    def __init__(self) -> None:
+        # per-instance, so that state of one shim cannot leak into another
+        self.main_text = []
 
     def _resolve_ref(self, item):
         return item

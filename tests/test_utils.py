@@ -19,6 +19,7 @@ from docling_core.utils.file import (
     resolve_source_to_path,
     resolve_source_to_stream,
 )
+from docling_core.utils.legacy import _NullLegacyDocument
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -369,6 +370,14 @@ def test_resolve_remote_filename_sanitizes_content_disposition(monkeypatch):
 
     doc_stream = resolve_source_to_stream("https://example.com/file")
     assert doc_stream.name == "config.txt"
+
+
+def test_legacy_document_main_text_is_per_instance():
+    """The legacy shim object carries no state shared between instances."""
+    first = _NullLegacyDocument()
+    first.main_text.append("stale")
+
+    assert _NullLegacyDocument().main_text == []
 
 
 def test_resolve_source_rejects_non_public_urls(monkeypatch):
