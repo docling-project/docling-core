@@ -164,6 +164,7 @@ class WebVTTTextSerializer(BaseModel, BaseTextSerializer):
             text=item.text,
             formatting=item.formatting,
             voice=source.voice,
+            **kwargs,
         )
         if is_inline_scope:
             # Iteratively remove unnecessary consecutive tag pairs until no more changes
@@ -514,7 +515,7 @@ class WebVTTDocSerializer(DocSerializer):
         """
         res: str = text
 
-        res = super().post_process(text=res, formatting=formatting)
+        res = super().post_process(text=res, formatting=formatting, **kwargs)
 
         voice: str | None = kwargs.get("voice", None)
         if voice:

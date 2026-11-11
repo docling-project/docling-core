@@ -2012,6 +2012,32 @@ def test_webvtt_params():
     assert len(actual) <= len(actual_default) or actual != actual_default
 
 
+def test_webvtt_serialize_param_patch_controls_formatting():
+    """Per-call param patches reach WebVTT post_process: include_formatting is honored."""
+    src = Path("./tests/data/doc/webvtt_example_02.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    default = WebVTTDocSerializer(doc=doc).serialize().text
+    assert "<i>" in default
+
+    patched = WebVTTDocSerializer(doc=doc).serialize(include_formatting=False).text
+    assert "<i>" not in patched
+    # Voice spans are cue metadata, not formatting: they stay.
+    assert "<v " in patched
+
+    # The per-call patch matches the constructor-level parameter.
+    ctor = WebVTTDocSerializer(doc=doc, params=WebVTTParams(include_formatting=False)).serialize().text
+    assert patched == ctor
+
+    # A per-call patch wins over the constructor parameter in both directions.
+    restored = (
+        WebVTTDocSerializer(doc=doc, params=WebVTTParams(include_formatting=False))
+        .serialize(include_formatting=True)
+        .text
+    )
+    assert restored == default
+
+
 def test_html_meta_emits_xhtml_compatible_attributes():
     """Test that metadata attributes are name=value pairs."""
     doc = DoclingDocument(name="x")
