@@ -338,6 +338,22 @@ class DoclingDocument(BaseModel):
             bbox_label="Provenance bbox",
         )
 
+    def _doc_item_lists(self) -> tuple[Iterable[NodeItem], ...]:
+        """All item lists that can hold items with provenance (everything but `groups`).
+
+        Single source of truth for code that must visit every bbox of the document.
+        A new item list field must be added here (guarded by a test).
+        """
+        return (
+            self.texts,
+            self.pictures,
+            self.tables,
+            self.key_value_items,
+            self.form_items,
+            self.field_regions,
+            self.field_items,
+        )
+
     def _clamp_provenance_bboxes_to_pages(self) -> None:
         def clamp_prov(prov: ProvenanceItem) -> None:
             page = self.pages.get(prov.page_no)
@@ -362,16 +378,7 @@ class DoclingDocument(BaseModel):
                         bbox_label="Table cell bbox",
                     )
 
-        item_lists: tuple[Iterable[NodeItem], ...] = (
-            self.texts,
-            self.pictures,
-            self.tables,
-            self.key_value_items,
-            self.form_items,
-            self.field_regions,
-            self.field_items,
-        )
-        for item_list in item_lists:
+        for item_list in self._doc_item_lists():
             for item in item_list:
                 if isinstance(item, DocItem):
                     for prov in item.prov:
@@ -5634,6 +5641,50 @@ class DoclingDocument(BaseModel):
 
         self.pages[page_no] = pitem
         return pitem
+
+    def get_page_extent(self, page_no: int) -> Size:
+        """Get the smallest page size that contains all content of a page.
+
+        The extent is the largest horizontal and vertical coordinate over all
+        bounding boxes anchored on the page: item provenances, table cell
+        bboxes and key-value/form graph cell provenances, in every content
+        layer. Coordinates are taken as offsets from ``0`` (as the page-bounds
+        validation does), so the result is the minimum page size for which
+        validation does not clamp any content bbox.
+
+        Args:
+            page_no: 1-based page number to measure.
+
+        Returns:
+            The width and height of the extent, ``Size(width=0, height=0)`` if
+            the page has no bounding boxes.
+        """
+        width = 0.0
+        height = 0.0
+
+        def extend(bbox: BoundingBox | None) -> None:
+            nonlocal width, height
+            if bbox is not None:
+                width = max(width, bbox.l, bbox.r)
+                height = max(height, bbox.t, bbox.b)
+
+        for item_list in self._doc_item_lists():
+            for item in item_list:
+                if isinstance(item, DocItem):
+                    for prov in item.prov:
+                        if prov.page_no == page_no:
+                            extend(prov.bbox)
+                if isinstance(item, TableItem):
+                    # Cell bboxes belong to the page only for single-page tables
+                    if {prov.page_no for prov in item.prov} == {page_no}:
+                        for cell in item.data.table_cells:
+                            extend(cell.bbox)
+                if isinstance(item, KeyValueItem | FormItem):
+                    for graph_cell in item.graph.cells:
+                        if graph_cell.prov is not None and graph_cell.prov.page_no == page_no:
+                            extend(graph_cell.prov.bbox)
+
+        return Size(width=width, height=height)
 
     def get_visualization(
         self,
