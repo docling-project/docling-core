@@ -13,6 +13,7 @@ from pydantic import AnyUrl
 
 from docling_core.transforms.chunker.hierarchical_chunker import TripletTableSerializer
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
+from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
     HTMLMetaSerializer,
@@ -2381,6 +2382,31 @@ def test_doclang_src_stays_inside_attribute():
     root = ET.fromstring(doc.export_to_doclang(image_mode=ImageRefMode.REFERENCED))
 
     assert [el.get("uri") for el in root.iter("src")] == [str(uri)]
+
+
+def test_doclang_serialize_param_patch_controls_formatting():
+    """Per-call param patches reach DocLang post_process: include_formatting is honored."""
+    doc = DoclingDocument(name="x")
+    doc.add_text(label=DocItemLabel.TEXT, text="bold words", formatting=Formatting(bold=True))
+
+    default = DocLangDocSerializer(doc=doc).serialize().text
+    assert "<bold>" in default
+
+    patched = DocLangDocSerializer(doc=doc).serialize(include_formatting=False).text
+    assert "<bold>" not in patched
+    assert "bold words" in patched
+
+    # The per-call patch matches the constructor-level parameter.
+    ctor = DocLangDocSerializer(doc=doc, params=DocLangParams(include_formatting=False)).serialize().text
+    assert patched == ctor
+
+    # A per-call patch wins over the constructor parameter in both directions.
+    restored = (
+        DocLangDocSerializer(doc=doc, params=DocLangParams(include_formatting=False))
+        .serialize(include_formatting=True)
+        .text
+    )
+    assert restored == default
 
 
 def test_export_to_markdown_image_dir_saves_and_references_images(sample_doc, tmp_path):
