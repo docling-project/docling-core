@@ -471,6 +471,52 @@ def test_md_escape_markdown_syntax_keeps_own_markup():
     )
 
 
+@pytest.mark.parametrize("as_text_item", [False, True], ids=["inline-group", "text-item-inline-group"])
+@pytest.mark.parametrize(
+    ("first", "escaped"),
+    [
+        pytest.param("# not a heading", r"\# not a heading", id="atx-heading"),
+        pytest.param("1. not a list", r"1\. not a list", id="ordered-list"),
+        pytest.param("- not a bullet", r"\- not a bullet", id="bullet"),
+    ],
+)
+def test_md_escape_markdown_syntax_inline_group_first_run(first: str, escaped: str, as_text_item: bool):
+    """The first run of an inline group that starts a line gets the line-start rules."""
+    doc = DoclingDocument(name="escape")
+    parent = doc.add_text(label=DocItemLabel.TEXT, text="") if as_text_item else None
+    inline = doc.add_inline_group(parent=parent)
+    doc.add_text(label=DocItemLabel.TEXT, text=first, parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text=" then 2*3 and # mid", parent=inline)
+
+    default = MarkdownDocSerializer(doc=doc).serialize().text
+    result = MarkdownDocSerializer(doc=doc, params=MarkdownParams(escape_markdown_syntax=True)).serialize().text
+
+    assert default == f"{first} then 2*3 and # mid"
+    assert result == f"{escaped} then 2\\*3 and # mid"
+
+
+def test_md_escape_markdown_syntax_inline_group_mid_line_runs():
+    """Runs after a list marker, a heading marker or another run get `*` escaping only.
+
+    A nested group that opens its parent group still starts the line.
+    """
+    doc = DoclingDocument(name="escape")
+    list_item = doc.add_list_item(text="", parent=doc.add_list_group())
+    doc.add_text(label=DocItemLabel.TEXT, text="# in list item", parent=doc.add_inline_group(parent=list_item))
+    heading = doc.add_heading(text="", level=1)
+    doc.add_text(label=DocItemLabel.TEXT, text="1. in heading", parent=doc.add_inline_group(parent=heading))
+    inline = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="start ", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="# second *run*", parent=inline)
+    outer = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="- nested first", parent=doc.add_inline_group(parent=outer))
+    doc.add_text(label=DocItemLabel.TEXT, text=" tail", parent=outer)
+
+    result = MarkdownDocSerializer(doc=doc, params=MarkdownParams(escape_markdown_syntax=True)).serialize().text
+
+    assert result == "- # in list item\n\n## 1. in heading\n\nstart # second \\*run\\*\n\n\\- nested first tail"
+
+
 def test_md_pb_placeholder_and_page_filter():
     src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)

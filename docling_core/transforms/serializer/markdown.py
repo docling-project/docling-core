@@ -237,6 +237,27 @@ def _code_block(text: str) -> str:
     return f"{fence}\n{text}\n{fence}"
 
 
+def _inline_run_starts_line(item: TextItem, doc: DoclingDocument) -> bool:
+    """Whether `item` is the first run of an inline group that starts a Markdown line.
+
+    Walks up through nested inline groups while `item` (or its group) is the first child.
+    A group that is the inline representation of a list item or heading follows a marker,
+    so its first run is mid-line; any other group starts a block of its own.
+    """
+    node: NodeItem = item
+    parent = node.parent.resolve(doc) if node.parent else None
+    while isinstance(parent, InlineGroup):
+        if not parent.children or parent.children[0].cref != node.self_ref:
+            return False
+        node = parent
+        parent = node.parent.resolve(doc) if node.parent else None
+    if node is item:
+        return False
+    if isinstance(parent, TextItem) and parent.text == "" and len(parent.children) == 1:
+        return parent.label in (DocItemLabel.TEXT, DocItemLabel.PARAGRAPH)
+    return True
+
+
 class OrigListItemMarkerMode(str, Enum):
     """Display mode for original list item marker."""
 
@@ -512,7 +533,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             # Raw text only: formatting/hyperlink markup is added later in post_process.
             text_part = self._escape_md_syntax(
                 text_part,
-                line_starts=not is_inline_scope,
+                line_starts=not is_inline_scope or _inline_run_starts_line(item, doc),
                 escape_gt=not params.escape_html,
             )
 
