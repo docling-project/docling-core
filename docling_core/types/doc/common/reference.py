@@ -3,13 +3,20 @@
 import base64
 import mimetypes
 from io import BytesIO
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Annotated, Optional, Union
 from urllib.parse import unquote
 
 import numpy as np
 from PIL import Image as PILImage
-from pydantic import AnyUrl, BaseModel, ConfigDict, Field, field_validator
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_serializer,
+    field_validator,
+)
 from typing_extensions import Self
 
 from docling_core.types.base import _JSON_POINTER_REGEX
@@ -88,6 +95,18 @@ class ImageRef(BaseModel):
     size: Size
     uri: AnyUrl | Path = Field(union_mode="left_to_right")
     _pil: PILImage.Image | None = None
+
+    @field_serializer("uri")
+    def _serialize_uri(self, value: AnyUrl | Path) -> AnyUrl | str:
+        """Serialize path-like URIs with POSIX separators.
+
+        The URI of an image reference is embedded in JSON payloads and
+        archives that must stay interchangeable across platforms. The
+        in-memory type stays the declared ``AnyUrl | Path``; at serialization
+        time only, a native ``Path`` value is rendered through ``as_posix()``
+        so payloads never carry OS-native separators.
+        """
+        return value.as_posix() if isinstance(value, PurePath) else value
 
     def _local_path(self) -> Path | None:
         """Return the local filesystem path of a file:// or plain path URI, else None."""
