@@ -169,7 +169,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
         )
         if has_inline_repr:
-            text = doc_serializer.serialize(item=child_group, visited=my_visited).text
+            text = doc_serializer.serialize(item=child_group, visited=my_visited, **kwargs).text
             post_processed = True
         else:
             text = item.text
@@ -178,7 +178,9 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 if not isinstance(item, CodeItem):
                     text = text.replace("\n", "<br>")
             if not isinstance(item, CodeItem | FormulaItem | ListItem):
-                text = doc_serializer.post_process(text=text, formatting=item.formatting, hyperlink=item.hyperlink)
+                text = doc_serializer.post_process(
+                    text=text, formatting=item.formatting, hyperlink=item.hyperlink, **kwargs
+                )
                 post_processed = True
 
         # Prepare the HTML based on item type
@@ -212,6 +214,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                         text=text,
                         formatting=item.formatting,
                         hyperlink=item.hyperlink,
+                        **kwargs,
                     )
                     post_processed = True
                 text_parts.append(text)
@@ -252,6 +255,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 text=text,
                 formatting=item.formatting,
                 hyperlink=item.hyperlink,
+                **kwargs,
             )
 
         # Recurse into children for branches that don't already consume them.
