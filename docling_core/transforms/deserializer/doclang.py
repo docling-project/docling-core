@@ -15,7 +15,7 @@ from xml.sax.saxutils import escape
 
 from defusedxml.minidom import parseString
 from PIL import Image as PILImage
-from pydantic import AnyUrl, BaseModel, PrivateAttr
+from pydantic import AnyUrl, BaseModel, PrivateAttr, ValidationError
 from typing_extensions import override
 
 from docling_core.transforms.deserializer.base import BaseDocDeserializer
@@ -555,6 +555,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 return
             item = doc.add_code(
                 text=code_text,
+                hyperlink=self._extract_hyperlink(el),
                 code_language=lang_label,
                 parent=parent,
                 prov=(prov_list[0] if prov_list else None),
@@ -628,6 +629,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 parent=parent,
                 prov=(prov_list[0] if prov_list else None),
                 formatting=formatting,
+                hyperlink=self._extract_hyperlink(el),
                 content_layer=content_layer,
             )
             self._apply_initial_text_provenance(item, text=text, prov_list=prov_list)
@@ -646,6 +648,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 return
             item = doc.add_formula(
                 text=text,
+                hyperlink=self._extract_hyperlink(el),
                 parent=parent,
                 prov=(prov_list[0] if prov_list else None),
                 formatting=formatting,
@@ -694,6 +697,11 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         content_layer = self._extract_layer(el=el)
         text = self._get_text(el)
         if text:
+            # Flattening a heading with linked runs discards each run's target.
+            has_linked_runs = self._get_children_simple_text_block(el) is None and bool(
+                el.getElementsByTagName(DocLangToken.HREF.value)
+            )
+            heading_text = "" if has_linked_runs else text
             thread_id = self._extract_thread_id(el)
             if (
                 thread_id
@@ -706,20 +714,25 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             # Level 1 maps to TitleItem, level > 1 maps to SectionHeaderItem with level-1
             if level == 1:
                 item = doc.add_title(
-                    text=text,
+                    text=heading_text,
+                    hyperlink=self._extract_hyperlink(el),
                     parent=parent,
                     prov=(prov_list[0] if prov_list else None),
                     content_layer=content_layer,
                 )
             else:
                 item = doc.add_heading(
-                    text=text,
+                    text=heading_text,
+                    hyperlink=self._extract_hyperlink(el),
                     level=level - 1,
                     parent=parent,
                     prov=(prov_list[0] if prov_list else None),
                     content_layer=content_layer,
                 )
-            self._apply_initial_text_provenance(item, text=text, prov_list=prov_list)
+            self._apply_initial_text_provenance(item, text=heading_text, prov_list=prov_list)
+            if has_linked_runs:
+                _, body_nodes = self._split_element_children_head_body(el)
+                self._parse_inline_group(doc=doc, el=el, parent=item, nodes=body_nodes)
             if thread_id:
                 self._register_thread(thread_id=thread_id, host=DocLangToken.HEADING.value, item=item)
             self._apply_custom_meta_from_element(item=item, el=el)
@@ -1413,6 +1426,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                             enumerated=ordered,
                             marker=marker_text,
                             prov=(prov_list[0] if prov_list else None),
+                            hyperlink=self._extract_hyperlink(content_el),
                         )
                 else:
                     # Other single element (heading, code, nested list, etc.)
@@ -1456,6 +1470,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                             enumerated=ordered,
                             marker=marker_text,
                             prov=(prov_list[0] if prov_list else None),
+                            hyperlink=self._extract_hyperlink(first_el),
                         )
                         # Dispatch the nested list(s) as children
                         for content_el in remaining_els:
@@ -1539,6 +1554,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                             text=text_content,
                             parent=parent,
                             formatting=formatting,
+                            hyperlink=self._extract_hyperlink(node),
                         )
                 elif node.tagName in _FORMATTING_TAGS:
                     # Accumulate this tag's style and keep descending, so e.g. <bold>a
@@ -1571,6 +1587,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                         text=text_content,
                         parent=parent,
                         formatting=formatting,
+                        hyperlink=self._extract_hyperlink(cast(Element, node.parentNode)),
                     )
 
     def _parse_inline_group(
@@ -1629,6 +1646,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             parent=parent,
             prov=(prov_list[0] if prov_list else None),
             content_layer=content_layer,
+            hyperlink=self._extract_hyperlink(el),
         )
         self._apply_initial_text_provenance(item, text="", prov_list=prov_list)
         _, body_nodes = self._split_element_children_head_body(el)
@@ -1979,6 +1997,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             text=text,
             prov=(prov_list[0] if prov_list else None),
             content_layer=self._extract_layer(el=cap_el),
+            hyperlink=self._extract_hyperlink(cap_el),
         )
         for p in prov_list[1:]:
             item.prov.append(p)
@@ -2566,6 +2585,28 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         r"""Extract content layer from element-head ``<layer value=\"...\"/>``."""
         head_nodes, _ = self._split_element_children_head_body(el)
         return self._layer_from_nodes(head_nodes)
+
+    def _extract_hyperlink(self, el: Element) -> AnyUrl | Path | None:
+        """Read the nearest element-head href, including one on an enclosing text host.
+
+        Only immediate head nodes are inspected at each level. A descendant's
+        link must never be applied to its parent or to a neighbouring run.
+        Relative targets and fragments use the model's Path representation.
+        """
+        current: Node | None = el
+        while isinstance(current, Element):
+            head_nodes, _ = self._split_element_children_head_body(current)
+            for node in head_nodes:
+                if isinstance(node, Element) and node.tagName == DocLangToken.HREF.value:
+                    uri = node.getAttribute(DocLangAttributeKey.URI.value)
+                    if not uri:
+                        return None
+                    try:
+                        return AnyUrl(uri)
+                    except ValidationError:
+                        return Path(uri)
+            current = current.parentNode
+        return None
 
     def _extract_label_value(self, *, el: Element) -> str | None:
         r"""Extract ``<label value=\"...\"/>`` from element head."""

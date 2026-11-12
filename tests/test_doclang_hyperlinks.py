@@ -1,0 +1,186 @@
+"""Hyperlink targets and their text scopes survive DocLang and DCLX conversion."""
+
+from pathlib import Path
+
+import pytest
+from pydantic import AnyUrl
+
+from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
+from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
+from docling_core.types.doc import (
+    CodeLanguageLabel,
+    DocItemLabel,
+    DoclingDocument,
+    Formatting,
+    RichTableCell,
+    TableCell,
+    TableData,
+    TextItem,
+)
+from tests.doclang_validation import assert_valid_dclg_xml
+
+
+def _text_runs(doc: DoclingDocument) -> list[tuple[str, str | None, Formatting | None]]:
+    return [
+        (item.text, str(item.hyperlink) if item.hyperlink is not None else None, item.formatting)
+        for item, _ in doc.iterate_items(traverse_pictures=True)
+        if isinstance(item, TextItem) and item.text
+    ]
+
+
+@pytest.mark.parametrize("indent", [None, "  "])
+@pytest.mark.parametrize(
+    "target",
+    [
+        AnyUrl("https://example.com/docs?a=1&b=2#part"),
+        AnyUrl("mailto:maintainer@example.com"),
+        Path("../guide.md#example"),
+        Path("#details"),
+    ],
+)
+def test_inline_link_roundtrip(target: AnyUrl | Path, indent: str | None) -> None:
+    doc = DoclingDocument(name="inline-link")
+    group = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="before ", parent=group)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="linked",
+        parent=group,
+        hyperlink=target,
+        formatting=Formatting(bold=True, italic=True),
+    )
+    doc.add_text(label=DocItemLabel.TEXT, text=" after", parent=group)
+
+    xml = DocLangDocSerializer(doc=doc, params=DocLangParams(pretty_indentation=indent)).serialize().text
+    assert_valid_dclg_xml(xml)
+    loaded = DocLangDocDeserializer().deserialize_str(xml)
+
+    assert _text_runs(loaded) == _text_runs(doc)
+
+
+@pytest.mark.parametrize(
+    ("body", "expected"),
+    [
+        (
+            '<text><href uri="https://example.com/?a=1&amp;b=2#part"/>linked</text>',
+            [("linked", "https://example.com/?a=1&b=2#part", None)],
+        ),
+        (
+            '<text><href uri="https://example.com/"/>before <bold>linked</bold> after</text>',
+            [
+                ("before ", "https://example.com/", None),
+                ("linked", "https://example.com/", Formatting(bold=True)),
+                (" after", "https://example.com/", None),
+            ],
+        ),
+        (
+            '<text><href uri="https://example.com/outer"/>before '
+            '<text><href uri="https://example.com/inner"/>inner</text> after</text>',
+            [
+                ("before ", "https://example.com/outer", None),
+                ("inner", "https://example.com/inner", None),
+                (" after", "https://example.com/outer", None),
+            ],
+        ),
+        (
+            '<text>before <text><href uri="https://example.com/"/>linked</text> after</text>',
+            [("before ", None, None), ("linked", "https://example.com/", None), (" after", None, None)],
+        ),
+    ],
+)
+def test_read_href_scope(body: str, expected: list[tuple[str, str | None, Formatting | None]]) -> None:
+    xml = f'<doclang version="0.9">{body}</doclang>'
+    assert_valid_dclg_xml(xml)
+
+    loaded = DocLangDocDeserializer().deserialize_str(xml)
+
+    assert _text_runs(loaded) == expected
+
+
+@pytest.mark.parametrize("container", ["paragraph", "heading", "list", "table"])
+def test_adjacent_links_preserve_text_and_targets(container: str, tmp_path: Path) -> None:
+    doc = DoclingDocument(name="adjacent-links")
+    if container == "paragraph":
+        group = doc.add_inline_group()
+    elif container == "heading":
+        heading = doc.add_heading(text="", level=1)
+        group = doc.add_inline_group(parent=heading)
+    elif container == "list":
+        item = doc.add_list_item(text="", parent=doc.add_list_group())
+        group = doc.add_inline_group(parent=item)
+    else:
+        table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
+        group = doc.add_inline_group(parent=table)
+        doc.add_table_cell(
+            table,
+            RichTableCell(
+                text="firstsecond",
+                ref=group.get_ref(),
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+            ),
+        )
+    doc.add_text(label=DocItemLabel.TEXT, text="first", parent=group, hyperlink=AnyUrl("https://example.com/first"))
+    doc.add_text(label=DocItemLabel.TEXT, text="second", parent=group, hyperlink=AnyUrl("https://example.com/second"))
+
+    path = tmp_path / "adjacent-links.dclx"
+    doc.save_as_doclang_archive(path)
+    loaded = DoclingDocument.load_from_doclang_archive(path)
+
+    assert _text_runs(loaded) == _text_runs(doc)
+
+
+def test_conversation_links_survive_dclx(tmp_path: Path) -> None:
+    doc = DoclingDocument(name="conversation")
+    doc.add_title(text="Source", hyperlink=AnyUrl("https://github.com/owner/repo/issues/1"))
+    doc.add_heading(text="Labels", level=1, hyperlink=AnyUrl("https://github.com/owner/repo/labels"))
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=2))
+    label_group = doc.add_inline_group(parent=table)
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="bug",
+        parent=label_group,
+        hyperlink=AnyUrl("https://github.com/owner/repo/labels/bug"),
+    )
+    doc.add_table_cell(
+        table,
+        RichTableCell(
+            text="bug",
+            ref=label_group.get_ref(),
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+        ),
+    )
+    doc.add_table_cell(
+        table,
+        TableCell(
+            text="Unexpected behavior",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+        ),
+    )
+    doc.add_list_item(
+        text="Comment",
+        parent=doc.add_list_group(),
+        hyperlink=AnyUrl("https://github.com/owner/repo/issues/1#issuecomment-2"),
+    )
+    doc.add_code(
+        text='\n    value = "<tag>&amp;</tag>"  \n\n',
+        code_language=CodeLanguageLabel.PYTHON,
+        hyperlink=AnyUrl("https://github.com/owner/repo/pull/3#discussion_r4"),
+    )
+
+    xml = doc.export_to_doclang()
+    assert_valid_dclg_xml(xml)
+    path = tmp_path / "conversation.dclx"
+    doc.save_as_doclang_archive(path)
+    loaded = DoclingDocument.load_from_doclang_archive(path)
+
+    assert _text_runs(loaded) == _text_runs(doc)
+    assert loaded.tables[0].data.grid[0][1].text == "Unexpected behavior"

@@ -1056,7 +1056,11 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
             string or None, and tok is the DocLangToken or None.
         """
         if item.text:
-            if use_virtual_text and not self._list_item_has_segment_siblings(item=item, doc=doc):
+            if (
+                use_virtual_text
+                and _text_item_hyperlink_uri(item) is None
+                and not self._list_item_has_segment_siblings(item=item, doc=doc)
+            ):
                 return None, None
             tok = DocLangToken.TEXT
             return f"<{tok.value}>", tok
@@ -1214,7 +1218,9 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 item=item, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
             )
 
-        include_href = not is_inline_scope
+        # A linked run needs its own element head, even within an inline group.
+        href_uri = _text_item_hyperlink_uri(item)
+        include_href = not is_inline_scope or href_uri is not None
         if not skip_location:
             # An inline run is located through its host.
             head_params = params.model_copy()
@@ -1323,6 +1329,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
 
         if wrap_open_token is not None and not (
             is_inline_scope
+            and href_uri is None
             and item.label
             in {
                 DocItemLabel.TEXT,
