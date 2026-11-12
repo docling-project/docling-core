@@ -74,6 +74,8 @@ from docling_core.types.doc import (
     RichTableCell,
     SectionHeaderItem,
     SummaryMetaField,
+    TableCell,
+    TableData,
     TableItem,
     TabularChartMetaField,
     TextItem,
@@ -645,13 +647,14 @@ class MarkdownAnnotationSerializer(BaseModel, BaseAnnotationSerializer):
         )
 
 
-def _count_header_rows(item: TableItem) -> int:
+def _count_header_rows(item: TableItem, grid: list[list[TableCell]] | None = None) -> int:
     """Count the leading grid rows that form the Markdown column header.
 
     The header block is determined by ``TableData._count_column_header_rows``.
 
     Args:
         item: The table whose header rows are to be counted.
+        grid: Optional grid already materialized from this table.
 
     Returns:
         The number of leading rows that form the column header, with two
@@ -664,7 +667,8 @@ def _count_header_rows(item: TableItem) -> int:
           (i.e. the flags begin on a later row).  The caller treats this as
           "no promotable header block", and every row stays in the body.
     """
-    grid = item.data.grid
+    if grid is None:
+        grid = item.data.grid
     num_headers = item.data._count_column_header_rows(grid=grid)
     if num_headers == 0 and grid and not any(cell.column_header for row in grid[1:] for cell in row):
         return 1
@@ -842,7 +846,13 @@ class MarkdownTableSerializer(BaseTableSerializer):
 
             rows = []
             rich_texts: dict[tuple[int, int], str] = {}
-            for row in item.data.grid:
+            reuse_grid = (
+                type(item) is TableItem
+                and type(item.data) is TableData
+                and all(type(cell) is TableCell and type(cell.text) is str for cell in item.data.table_cells)
+            )
+            grid: list[list[TableCell]] | None = item.data.grid
+            for row in grid:
                 rendered_row = []
                 for col in row:
                     if isinstance(col, RichTableCell):
@@ -863,7 +873,10 @@ class MarkdownTableSerializer(BaseTableSerializer):
                 rows.append(rendered_row)
             if len(rows) > 0:
                 # Resolve the column headers to the single row GFM allows
-                num_headers = _count_header_rows(item)
+                if rich_texts or not reuse_grid:
+                    grid = None
+                num_headers = _count_header_rows(item, grid=grid)
+                grid = None
                 header_row = _flatten_header_rows(rows[:num_headers], len(rows[0]))
                 body_rows = rows[num_headers:]
                 # Always disable numparse to prevent silent precision loss in numeric values
@@ -873,6 +886,9 @@ class MarkdownTableSerializer(BaseTableSerializer):
                     num_cols = len(rows[0])
                     for col_idx in range(num_cols):
                         col_values = [row[col_idx] if col_idx < len(row) else "" for row in body_rows]
+                        if "" in col_values:
+                            # Preserve one blank: tabulate versions differ in its alignment effect.
+                            col_values = [""] + [value for value in col_values if value != ""]
                         col_type = _column_type(col_values)
                         colalign.append("right" if col_type in (int, float) else "left")
                 table_text = tabulate(

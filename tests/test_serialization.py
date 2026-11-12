@@ -9,9 +9,11 @@ from xml.etree import ElementTree as ET
 
 import pytest
 from PIL import Image
-from pydantic import AnyUrl
+from pydantic import AnyUrl, PrivateAttr
+from tabulate import _column_type, tabulate
 
 from docling_core.transforms.chunker.hierarchical_chunker import TripletTableSerializer
+from docling_core.transforms.serializer import markdown
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
@@ -53,6 +55,7 @@ from docling_core.types.doc.document import (
     SummaryMetaField,
     TableCell,
     TableData,
+    TableItem,
     TextItem,
 )
 from docling_core.types.doc.labels import DocItemLabel
@@ -616,6 +619,180 @@ def _cell(text: str, row: int, col: int, *, row_span: int = 1, column_header: bo
         row_span=row_span,
         column_header=column_header,
     )
+
+
+def test_md_table_reuses_grid_without_caching_between_exports(monkeypatch):
+    doc = DoclingDocument(name="sparse-table")
+    table = doc.add_table(
+        data=TableData(num_rows=4, num_cols=1, table_cells=[_cell("Header", 0, 0), _cell("Value", 3, 0)])
+    )
+    original_grid = TableData.grid.fget
+    assert original_grid is not None
+    reads = []
+
+    def counted_grid(data):
+        reads.append(data)
+        return original_grid(data)
+
+    monkeypatch.setattr(TableData, "grid", property(counted_grid))
+    assert doc.export_to_markdown(compact_tables=True) == "| Header |\n| - |\n|  |\n|  |\n| Value |"
+    assert len(reads) == 1
+
+    table.data.table_cells.append(_cell("New", 1, 0))
+    assert doc.export_to_markdown(compact_tables=True) == "| Header |\n| - |\n| New |\n|  |\n| Value |"
+    assert len(reads) == 2
+
+
+@pytest.mark.parametrize(
+    ("values", "classified"),
+    [
+        (["", "123", "", "123", ""], ["", "123", "123"]),
+        (["", "", ""], [""]),
+        (["123", "123"], ["123", "123"]),
+        (["", " ", "", "text"], ["", " ", "text"]),
+        (["", "医", "", "0012"], ["", "医", "0012"]),
+        (["", "9007199254740993", "", "10.00"], ["", "9007199254740993", "10.00"]),
+    ],
+)
+def test_md_table_alignment_classifies_repeated_blanks_once(monkeypatch, values, classified):
+    doc = _table_with_rows([["Header"], *[[value] for value in values]], num_header_rows=1)
+    alignment = "right" if _column_type(values) in (int, float) else "left"
+    expected = tabulate(
+        [[value] for value in values],
+        headers=["Header"],
+        tablefmt="github",
+        disable_numparse=True,
+        colalign=(alignment,),
+    )
+    seen = []
+
+    def counted_column_type(column):
+        seen.append(list(column))
+        return _column_type(column)
+
+    monkeypatch.setattr(markdown, "_column_type", counted_column_type)
+    assert doc.export_to_markdown() == expected
+    assert seen == [classified]
+
+
+@pytest.mark.parametrize("extension", ["rich", "grid", "text"])
+def test_md_table_header_detection_observes_changes_during_rendering(extension):
+    cells = [_cell("Header", 0, 0, column_header=True), _cell("Body", 1, 0)]
+    data = TableData(num_rows=2, num_cols=1, table_cells=cells)
+
+    if extension == "grid":
+
+        class ChangingGrid(TableData):
+            _reads: int = PrivateAttr(0)
+
+            @property
+            def grid(self):
+                result = super().grid
+                self._reads += 1
+                if self._reads == 1:
+                    self.table_cells.append(_cell("Body", 1, 0, column_header=True))
+                return result
+
+        data = ChangingGrid(num_rows=2, num_cols=1, table_cells=cells)
+
+    doc = DoclingDocument(name="table-mutation")
+    table = doc.add_table(data=data)
+    text_serializer = markdown.MarkdownTextSerializer()
+
+    if extension == "rich":
+        text = doc.add_text(label=DocItemLabel.TEXT, text="Header", parent=table)
+        table.data.table_cells[0] = RichTableCell(**cells[0].model_dump(), ref=text.get_ref())
+
+        class ChangingSerializer(markdown.MarkdownTextSerializer):
+            def serialize(self, *, item, doc_serializer, doc, **kwargs):
+                table.data.table_cells.append(_cell("Body", 1, 0, column_header=True))
+                return super().serialize(item=item, doc_serializer=doc_serializer, doc=doc, **kwargs)
+
+        text_serializer = ChangingSerializer()
+
+    elif extension == "text":
+
+        class ChangingText(TableCell):
+            _armed: bool = PrivateAttr(False)
+
+            def __getattribute__(self, name):
+                if name == "text" and self._armed:
+                    self._armed = False
+                    table.data.table_cells.append(_cell("Body", 1, 0, column_header=True))
+                return super().__getattribute__(name)
+
+        source = ChangingText(**cells[1].model_dump())
+        table.data.table_cells[1] = source
+        source._armed = True
+
+    serializer = MarkdownDocSerializer(
+        doc=doc, text_serializer=text_serializer, params=MarkdownParams(compact_tables=True)
+    )
+    assert serializer.serialize().text == "| Header - Body |\n| - |"
+
+
+def test_md_table_header_detection_observes_string_extension():
+    doc = _table_with_rows([["Header"], ["Body"]], num_header_rows=1)
+    table = doc.tables[0]
+
+    class ChangingString(str):
+        def replace(self, *args, **kwargs):
+            table.data.table_cells.append(_cell("Body", 1, 0, column_header=True))
+            return super().replace(*args, **kwargs)
+
+    # Assignment preserves this str subclass; initial model validation normalizes it.
+    table.data.table_cells[1].text = ChangingString("Body")
+    assert doc.export_to_markdown(compact_tables=True) == "| Header - Body |\n| - |"
+
+
+def test_md_table_item_extension_keeps_existing_data_accesses():
+    doc = _table_with_rows([["Header"], ["Body"]], num_header_rows=1)
+
+    class ChangingTable(TableItem):
+        _armed: bool = PrivateAttr(False)
+        _reads: int = PrivateAttr(0)
+
+        def __getattribute__(self, name):
+            if name == "data" and self._armed:
+                self._reads += 1
+                # Document setup reads data three times, rendering uses read 4,
+                # and header detection uses read 5. Extra eligibility reads would
+                # make this mutation occur before the body is rendered.
+                if self._reads == 5:
+                    super().__getattribute__("data").table_cells[1].text = "Refreshed"
+            return super().__getattribute__(name)
+
+    table = ChangingTable.model_validate(doc.tables[0].model_dump())
+    doc.tables[0] = table
+    table._armed = True
+    actual = doc.export_to_markdown(compact_tables=True)
+    assert actual == "| Header |\n| - |\n| Body |"
+
+
+def test_md_table_alignment_preserves_false_valued_nonempty_strings():
+    class RenderedNumber(str):
+        def __bool__(self):
+            return False
+
+        def replace(self, *args, **kwargs):
+            return self
+
+    class CustomText(str):
+        def replace(self, *args, **kwargs):
+            return RenderedNumber("123")
+
+    doc = _table_with_rows([["Header"], ["123"], [""]], num_header_rows=1)
+    doc.tables[0].data.table_cells[1].text = CustomText("123")
+    values = [RenderedNumber("123"), ""]
+    alignment = "right" if _column_type(values) in (int, float) else "left"
+    expected = tabulate(
+        [[value] for value in values],
+        headers=["Header"],
+        tablefmt="github",
+        disable_numparse=True,
+        colalign=(alignment,),
+    )
+    assert doc.export_to_markdown() == expected
 
 
 @pytest.mark.parametrize(
