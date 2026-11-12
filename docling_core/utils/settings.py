@@ -29,6 +29,21 @@ class CoreSettings(BaseSettings):
             ],
         ),
     ] = []
+    trust_proxy_for_dns: Annotated[
+        bool,
+        Field(
+            description=(
+                "For URL sources fetched through a proxy (HTTP_PROXY / HTTPS_PROXY), skip the "
+                "local hostname lookup of the SSRF check and leave name resolution to the proxy. "
+                "Literal IP addresses are still checked. With this on, docling-core does not "
+                "check the address a proxied hostname resolves to, for the first URL and for "
+                "redirect targets: the proxy must enforce its own egress rules, such as "
+                "blocking private and link-local ranges, and allowed_private_ips has no effect "
+                "on proxied hostnames. Defaults to False, which keeps the local lookup for "
+                "every URL."
+            ),
+        ),
+    ] = False
 
     max_table_cells: Annotated[
         int,
