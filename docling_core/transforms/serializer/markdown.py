@@ -227,7 +227,10 @@ def _longest_backtick_run(text: str) -> int:
 def _code_span(text: str) -> str:
     """Wrap text in a code span whose delimiter no backtick run inside can close."""
     ticks = "`" * (_longest_backtick_run(text) + 1)
-    pad = " " if text.startswith("`") or text.endswith("`") else ""
+    # CommonMark normalizes line endings, then removes one paired edge space unless all spaces.
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n").replace("\n", " ")
+    needs_space_padding = normalized.startswith(" ") and normalized.endswith(" ") and bool(normalized.strip(" "))
+    pad = " " if text.startswith("`") or text.endswith("`") or needs_space_padding else ""
     return f"{ticks}{pad}{text}{pad}{ticks}"
 
 

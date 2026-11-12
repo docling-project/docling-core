@@ -2603,6 +2603,38 @@ def test_markdown_inline_code_span_outlasts_backticks_in_code(code: str, expecte
     assert doc.export_to_markdown() == f"see {expected}"
 
 
+@pytest.mark.parametrize(
+    ("code", "expected"),
+    [
+        (" x ", "`  x  `"),
+        ("  x  ", "`   x   `"),
+        (" ", "` `"),
+        ("   ", "`   `"),
+        (" x", "` x`"),
+        ("x ", "`x `"),
+        (" \t ", "`  \t  `"),
+        (" \u00a0 ", "`  \u00a0  `"),
+        ("\tx\t", "`\tx\t`"),
+        ("\u00a0x\u00a0", "`\u00a0x\u00a0`"),
+        (" `x` ", "``  `x`  ``"),
+        ("\nx ", "` \nx  `"),
+        (" x\n", "`  x\n `"),
+        ("\nx\n", "` \nx\n `"),
+        ("\r\nx\r\n", "` \r\nx\r\n `"),
+        ("\rx\r", "` \rx\r `"),
+        (" x\ny ", "`  x\ny  `"),
+        (" \n ", "` \n `"),
+        (" \r\n ", "` \r\n `"),
+    ],
+)
+def test_markdown_inline_code_span_preserves_spaces(code: str, expected: str):
+    doc = DoclingDocument(name="code")
+    group = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="see ", parent=group)
+    doc.add_code(text=code, parent=group)
+    assert doc.export_to_markdown() == f"see {expected}"
+
+
 def test_md_html_table_footnotes():
     """Real conversion of the PDF from #496: a table with two footnotes."""
     src = Path("./tests/data/doc/table_footnotes_496.json")
