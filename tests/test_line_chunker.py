@@ -1,3 +1,6 @@
+import subprocess
+import sys
+
 import pytest
 import tiktoken
 from transformers import AutoTokenizer
@@ -848,3 +851,18 @@ def test_omit_prefix_on_overflow_all_lines_overflow(default_tokenizer):
     for line in lines:
         line_found = any(line.strip() in chunk for chunk in chunks)
         assert line_found, f"Line content should be preserved: {line.strip()}"
+
+
+def test_import_does_not_load_transformers():
+    """Importing the chunkers must not import transformers.
+
+    A chunker given a non-Hugging Face tokenizer never needs it, and transformers
+    imports torch whenever torch is installed.
+    """
+    result = subprocess.run(
+        [sys.executable, "-c", "import sys, docling_core.transforms.chunker; print('transformers' in sys.modules)"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert result.stdout.strip() == "False"
