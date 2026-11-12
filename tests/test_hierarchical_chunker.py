@@ -15,7 +15,15 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
 from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 from docling_core.transforms.serializer.html import HTMLDocSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
-from docling_core.types.doc import ContentLayer, DocItemLabel, DoclingDocument, PictureItem, TableData, TextItem
+from docling_core.types.doc import (
+    ContentLayer,
+    DocItemLabel,
+    DoclingDocument,
+    DocumentOrigin,
+    PictureItem,
+    TableData,
+    TextItem,
+)
 
 from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_rich_table_doc
 
@@ -62,6 +70,19 @@ def test_rich_heading_is_emitted_before_a_sibling_heading() -> None:
     chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker(always_emit_headings=True).chunk(doc)]
     assert [chunk.text for chunk in chunks] == ["", "Body."]
     assert [chunk.meta.headings for chunk in chunks] == [["Energy $E=mc^2$"], ["Next"]]
+
+
+def test_heading_only_chunks_keep_origin() -> None:
+    origin = DocumentOrigin(filename="doc.pdf", mimetype="application/pdf", binary_hash=42)
+    doc = DoclingDocument(name="headings", origin=origin)
+    doc.add_heading(text="Empty", level=1)
+    doc.add_heading(text="Full", level=1)
+    doc.add_text(label=DocItemLabel.TEXT, text="Body.")
+    doc.add_heading(text="Trailing", level=1)
+
+    chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker(always_emit_headings=True).chunk(doc)]
+    assert [chunk.text for chunk in chunks] == ["", "Body.", ""]
+    assert [chunk.meta.origin for chunk in chunks] == [origin, origin, origin]
 
 
 @pytest.mark.parametrize("kind", ["table", "picture"])
