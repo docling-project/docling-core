@@ -33,7 +33,7 @@ from docling_core.transforms.serializer.markdown import (
 from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer, PlainTextParams
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
-from docling_core.types.doc import DoclingDocument, ImageRef
+from docling_core.types.doc import DoclingDocument, ImageRef, TrackSource
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, FormattingFallbackMode, ImageRefMode, Size
 from docling_core.types.doc.document import (
     BaseMeta,
@@ -1920,6 +1920,33 @@ def test_webvtt_params():
     ser_default = WebVTTDocSerializer(doc=doc, params=WebVTTParams())
     actual_default = ser_default.serialize().text
     assert len(actual) <= len(actual_default) or actual != actual_default
+
+
+def test_webvtt_cue_shorter_than_a_millisecond_stays_serializable():
+    """A sub-millisecond track segment must not abort the whole serialization.
+
+    TrackSource accepts any end_time greater than start_time, but WebVTT
+    timestamps carry milliseconds only, so both ends used to round onto the
+    same timestamp and WebVTTCueTimings rejected the zero-length cue.
+    """
+    doc = DoclingDocument(name="sub-millisecond-cue")
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="short cue",
+        source=TrackSource(start_time=11.00001, end_time=11.00002),
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="normal cue",
+        source=TrackSource(start_time=12.0, end_time=13.5),
+    )
+
+    actual = WebVTTDocSerializer(doc=doc).serialize().text
+
+    assert "00:00:11.000 --> 00:00:11.001" in actual
+    assert "short cue" in actual
+    assert "00:00:12.000 --> 00:00:13.500" in actual
+    assert "normal cue" in actual
 
 
 def test_html_meta_emits_xhtml_compatible_attributes():
