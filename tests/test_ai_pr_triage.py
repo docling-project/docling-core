@@ -9,6 +9,7 @@ import string
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -294,3 +295,148 @@ def test_failed_reference_lookup_does_not_stop_the_triage(monkeypatch: pytest.Mo
 def test_model_topics_must_come_from_the_repository_label_set() -> None:
     with pytest.raises(ValueError, match="unknown topic"):
         triage.parse_triage_result(answer(topics=["priority:high"]), {7})
+
+
+def _skip(files: list[dict[str, Any]], association: str = "CONTRIBUTOR", requested: bool = False) -> str:
+    return triage.llm_skip_reason(files, association, requested)
+
+
+def test_the_model_skips_github_changes_of_a_non_maintainer() -> None:
+    workflow = [{"filename": ".github/workflows/ci.yml"}]
+    assert _skip(workflow) == triage.LLM_SKIP_REASON
+    assert _skip(workflow, "NONE") == triage.LLM_SKIP_REASON
+    # A rename out of .github/ is still a change to it.
+    renamed = [{"filename": "docs/ci.yml", "previous_filename": ".github/workflows/ci.yml"}]
+    assert _skip(renamed) == triage.LLM_SKIP_REASON
+
+
+def test_the_model_runs_for_maintainers_requests_and_other_paths() -> None:
+    workflow = [{"filename": ".github/workflows/ci.yml"}]
+    for association in ("OWNER", "MEMBER", "COLLABORATOR"):
+        assert _skip(workflow, association) == ""
+    assert _skip(workflow, requested=True) == ""
+    assert _skip([{"filename": "docling_core/x.py"}, {"filename": "docs/.github/x.md"}]) == ""
+    assert _skip([{"filename": "github/x.yml"}]) == ""
+
+
+def test_one_unreadable_open_pr_does_not_fail_the_duplicate_scan(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    pr = {
+        "title": "fix: x",
+        "body": "",
+        "user": {"login": "alice"},
+        "author_association": "CONTRIBUTOR",
+        "base": {"sha": "a" * 40},
+        "head": {"sha": "b" * 40},
+    }
+    files = [{"filename": "docling_core/a.py", "status": "modified", "patch": "@@ -10,2 +10,3 @@\n+x"}]
+    good = {"number": 7, "title": "other", "state": "open", "html_url": "u", "user": {"login": "bob"}}
+    bad = {"number": 8, "title": "gone", "state": "open", "html_url": "u", "user": {"login": "eve"}}
+
+    def fake_api(path: str, *, paginate: bool = False, jq: str | None = None) -> Any:
+        if jq is not None:
+            return "c" * 40
+        return [bad, good] if "/pulls?state=open" in path else pr
+
+    def fake_files(repo: str, number: int) -> list[dict[str, Any]]:
+        if number == 8:
+            raise subprocess.CalledProcessError(1, ["gh"], stderr="HTTP 404")
+        return files
+
+    monkeypatch.setattr(triage, "gh_api", fake_api)
+    monkeypatch.setattr(triage, "pr_files", fake_files)
+    monkeypatch.setattr(triage, "fetch_pr_commits", lambda *args, **kwargs: True)
+    assert triage.prepare(REPO, 10, tmp_path, Path.cwd())
+    stored = json.loads((tmp_path / "context.json").read_text("utf-8"))
+    assert [c["number"] for c in stored["candidates"]] == [7]
+
+
+def test_find_sticky_comment_ignores_null_or_empty_comment_bodies(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    comments = [
+        {"id": 1, "user": {"login": "alice"}, "body": None},
+        {"id": 2, "user": {"login": triage.BOT_LOGIN}, "body": None},
+        {"id": 3, "user": {"login": triage.BOT_LOGIN}, "body": ""},
+        {"id": 4, "user": {"login": triage.BOT_LOGIN}, "body": f"Note\n{triage.COMMENT_MARKER}"},
+    ]
+    monkeypatch.setattr(triage, "gh_api", lambda path, paginate=False: comments)
+    found = triage._find_sticky_comment(REPO, 10)
+    assert found is not None
+    assert found["id"] == 4
+
+
+class FakeGitHub:
+    """Record the writes of `publish` and serve canned API answers."""
+
+    def __init__(self, comments: list[dict[str, Any]], labels: list[str]) -> None:
+        self.comments = comments
+        self.pr_labels = labels
+        self.writes: list[tuple[str, str, Any]] = []
+
+    def api(self, path: str, *, paginate: bool = False, jq: str | None = None) -> Any:
+        if path.endswith("/comments?per_page=100"):
+            return self.comments
+        if "/labels?per_page=100" in path:
+            return [{"name": name} for name in ("bug", "documentation", "dependencies")]
+        if path.endswith("/reviews?per_page=100"):
+            return []
+        return {"head": {"sha": "b" * 40}, "labels": [{"name": name} for name in self.pr_labels]}
+
+    def write(self, method: str, path: str, payload: dict[str, Any] | None = None) -> None:
+        self.writes.append((method, path, payload))
+
+
+def test_publish_without_a_context_posts_a_notice_and_removes_old_labels(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    fake = FakeGitHub(comments=[], labels=["ai:ci-safe", "ai:review-lgtm", "bug"])
+    monkeypatch.setattr(triage, "gh_api", fake.api)
+    monkeypatch.setattr(triage, "gh_write", fake.write)
+    triage.publish(REPO, 10, tmp_path / "missing.json", None)
+
+    deleted = {path.rsplit("/", 1)[1] for method, path, _ in fake.writes if method == "DELETE"}
+    assert deleted == {"ai:ci-safe", "ai:review-lgtm"}
+    method, path, payload = fake.writes[-1]
+    assert (method, path.endswith("/comments")) == ("POST", True)
+    assert triage.COMMENT_MARKER in payload["body"]
+    assert "did not run" in payload["body"]
+
+    # The notice replaces the sticky comment of an earlier run.
+    marker_comment = {"id": 5, "user": {"login": triage.BOT_LOGIN}, "body": triage.COMMENT_MARKER}
+    later = FakeGitHub(comments=[marker_comment], labels=[])
+    monkeypatch.setattr(triage, "gh_api", later.api)
+    monkeypatch.setattr(triage, "gh_write", later.write)
+    triage.publish(REPO, 10, tmp_path / "missing.json", None)
+    assert later.writes[-1][0] == "PATCH"
+
+
+def test_closed_pr_candidate_is_not_treated_as_duplicate_in_effective_verdicts() -> None:
+    context = make_context(candidates=[{"number": 7, "title": "fix", "state": "closed", "url": ""}])
+    result = triage.parse_triage_result(
+        answer(duplicates=[{"pr": 7, "verdict": "duplicate", "reason": "same"}]),
+        {7},
+    )
+    assert triage.effective_verdicts(context, result) == {7: "related"}
+    assert triage.decide_labels(context, result) == {triage.LABEL_CI_SAFE}
+
+
+@pytest.mark.parametrize(
+    "path",
+    [".skills/my-skill/SKILL.md", "CODEOWNERS"],
+)
+def test_agent_skills_and_codeowners_force_care(path: str) -> None:
+    report = triage.assess_risk([{"filename": path, "status": "modified", "patch": "@@ -1 +1 @@\n+x"}])
+    assert [finding.path for finding in report.forced] == [path]
+
+
+def test_the_workflow_publishes_after_a_failed_prepare_and_has_no_reset_job() -> None:
+    import yaml
+
+    root = Path(__file__).resolve().parents[1]
+    workflow = yaml.safe_load((root / ".github/workflows/ai-pr-triage.yml").read_text("utf-8"))
+    assert "reset-labels" not in workflow["jobs"]
+    condition = workflow["jobs"]["publish"]["if"]
+    assert "needs.context.outputs.run == 'true'" in condition
+    assert "run_llm" not in condition

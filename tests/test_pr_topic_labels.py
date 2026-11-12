@@ -47,6 +47,10 @@ def test_documentation_label_only_when_all_source_changes_are_docs() -> None:
     )
 
 
+def test_nested_markdown_files_are_not_documentation_only_changes() -> None:
+    assert "documentation" not in topics.deterministic_topics("chore: update readme", ["packages/dclq/README.md"])
+
+
 def test_unknown_title_types_and_scopes_add_nothing() -> None:
     assert topics.deterministic_topics("chore(release): 2.0", []) == []
     assert topics.deterministic_topics("Not a conventional title", []) == []
