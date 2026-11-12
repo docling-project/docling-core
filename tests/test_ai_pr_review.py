@@ -284,3 +284,24 @@ def test_duplicates_of_an_open_pr_from_another_author_skip_the_review(
     result.write_text(json.dumps({"duplicates": [{"pr": 1, "verdict": "related"}]}))
     write("open", "bob")
     assert review.should_review(result, context_path)
+
+
+def test_parse_review_result_caps_findings_at_max_findings() -> None:
+    findings = [finding(title=f"Finding {i}", quote=f"quote_{i}", line=i) for i in range(1, 10)]
+    raw = answer(*findings)
+    paths = {"docling_core/a.py"}
+    parsed = review.parse_review_result(raw, paths)
+    assert len(parsed.findings) == 5
+    assert [f.title for f in parsed.findings] == [f"Finding {i}" for i in range(1, 6)]
+
+
+def test_build_review_with_history_changed_adds_note() -> None:
+    result = review.parse_review_result(answer(finding()), {"docling_core/a.py"})
+    anchors = {"docling_core/a.py": review.right_side_lines(PATCH)}
+
+    normal_review = review.build_review(result, anchors, HEAD, None, history_changed=False)
+    assert "The history changed after the earlier AI review" not in normal_review["body"]
+
+    changed_review = review.build_review(result, anchors, HEAD, None, history_changed=True)
+    assert "> [!NOTE]" in changed_review["body"]
+    assert "The history changed after the earlier AI review" in changed_review["body"]
