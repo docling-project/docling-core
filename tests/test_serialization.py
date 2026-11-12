@@ -382,6 +382,141 @@ def test_md_formatting_fallback_mode(mode: FormattingFallbackMode, expected: str
     assert plain == "Water is H2O, energy is E=mc2, <tag>"
 
 
+def _md_text(text: str, **params) -> str:
+    doc = DoclingDocument(name="escape")
+    doc.add_text(label=DocItemLabel.TEXT, text=text)
+    return MarkdownDocSerializer(doc=doc, params=MarkdownParams(**params)).serialize().text
+
+
+@pytest.mark.parametrize(
+    ("text", "default", "escaped"),
+    [
+        pytest.param("# not a heading", "# not a heading", r"\# not a heading", id="atx-heading"),
+        pytest.param("- not a list", "- not a list", r"\- not a list", id="dash-bullet"),
+        pytest.param("+ plus", "+ plus", r"\+ plus", id="plus-bullet"),
+        pytest.param("-\tx", "-\tx", "\\-\tx", id="bullet-tab"),
+        pytest.param("1. not a list", "1. not a list", r"1\. not a list", id="ordered-dot"),
+        pytest.param("1) item", "1) item", r"1\) item", id="ordered-paren"),
+        pytest.param("1.\tx", "1.\tx", "1\\.\tx", id="ordered-tab"),
+        pytest.param("---", "---", r"\---", id="thematic-break-dash"),
+        pytest.param("***", "***", r"\*\*\*", id="thematic-break-star"),
+        pytest.param("    indented four", "    indented four", "indented four", id="indented-code"),
+        pytest.param(
+            "Use *stars* and _under_ literally",
+            r"Use *stars* and \_under\_ literally",
+            r"Use \*stars\* and \_under\_ literally",
+            id="inline-asterisks",
+        ),
+        pytest.param("Title\n===", "Title  \n===", "Title  \n\\===", id="setext-underline"),
+        pytest.param("5 * 3 = 15", "5 * 3 = 15", r"5 \* 3 = 15", id="mid-line-asterisk"),
+        pytest.param("plain sentence", "plain sentence", "plain sentence", id="plain"),
+        pytest.param("#hashtag", "#hashtag", "#hashtag", id="hashtag"),
+        pytest.param("-5 degrees", "-5 degrees", "-5 degrees", id="negative-number"),
+        pytest.param("2026-11-11", "2026-11-11", "2026-11-11", id="date"),
+        pytest.param("a - b", "a - b", "a - b", id="mid-line-dash"),
+    ],
+)
+def test_md_escape_markdown_syntax(text: str, default: str, escaped: str):
+    """Markdown syntax in plain text is escaped only when opted in."""
+    assert _md_text(text) == default
+    assert _md_text(text, escape_markdown_syntax=False) == default
+    assert _md_text(text, escape_markdown_syntax=True) == escaped
+
+
+def test_md_escape_markdown_syntax_export_to_markdown(tmp_path: Path):
+    """`export_to_markdown` and `save_as_markdown` match the serializer path."""
+    doc = DoclingDocument(name="escape")
+    doc.add_text(label=DocItemLabel.TEXT, text="# not a heading")
+    doc.add_text(label=DocItemLabel.TEXT, text="1. not a list with *stars*")
+    expected = MarkdownDocSerializer(doc=doc, params=MarkdownParams(escape_markdown_syntax=True)).serialize().text
+
+    assert expected == "\\# not a heading\n\n1\\. not a list with \\*stars\\*"
+    assert doc.export_to_markdown(escape_markdown_syntax=True) == expected
+    md_path = tmp_path / "doc.md"
+    doc.save_as_markdown(md_path, escape_markdown_syntax=True)
+    assert md_path.read_text(encoding="utf-8") == expected
+    assert doc.export_to_markdown() == "# not a heading\n\n1. not a list with *stars*"
+
+
+def test_md_escape_markdown_syntax_block_quote():
+    """`>` is escaped only when HTML escaping does not already turn it into `&gt;`."""
+    assert _md_text("> quote", escape_html=False) == "> quote"
+    assert _md_text("> quote", escape_html=False, escape_markdown_syntax=True) == r"\> quote"
+    assert _md_text("> quote", escape_markdown_syntax=True) == "&gt; quote"
+
+
+def test_md_escape_markdown_syntax_keeps_own_markup():
+    """Docling's own formatting and structural markup is never escaped."""
+    doc = DoclingDocument(name="escape")
+    doc.add_heading(text="# Heading", level=1)
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True))
+    doc.add_text(label=DocItemLabel.TEXT, text="italic", formatting=Formatting(italic=True))
+    doc.add_text(label=DocItemLabel.TEXT, text="- *x*", formatting=Formatting(bold=True))
+    group = doc.add_list_group()
+    doc.add_list_item(text="- item", parent=group)
+    doc.add_code(text="# comment\n- x * y")
+    inline = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="see *b* and", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="em", formatting=Formatting(italic=True), parent=inline)
+
+    default = MarkdownDocSerializer(doc=doc).serialize().text
+    escaped = MarkdownDocSerializer(doc=doc, params=MarkdownParams(escape_markdown_syntax=True)).serialize().text
+
+    assert default == (
+        "## # Heading\n\n**bold**\n\n*italic*\n\n**- *x***\n\n- - item\n\n```\n# comment\n- x * y\n```\n\nsee *b* and*em*"
+    )
+    assert escaped == (
+        "## # Heading\n\n**bold**\n\n*italic*\n\n**\\- \\*x\\***\n\n- - item\n\n```\n# comment\n- x * y\n```"
+        "\n\nsee \\*b\\* and*em*"
+    )
+
+
+@pytest.mark.parametrize("as_text_item", [False, True], ids=["inline-group", "text-item-inline-group"])
+@pytest.mark.parametrize(
+    ("first", "escaped"),
+    [
+        pytest.param("# not a heading", r"\# not a heading", id="atx-heading"),
+        pytest.param("1. not a list", r"1\. not a list", id="ordered-list"),
+        pytest.param("- not a bullet", r"\- not a bullet", id="bullet"),
+    ],
+)
+def test_md_escape_markdown_syntax_inline_group_first_run(first: str, escaped: str, as_text_item: bool):
+    """The first run of an inline group that starts a line gets the line-start rules."""
+    doc = DoclingDocument(name="escape")
+    parent = doc.add_text(label=DocItemLabel.TEXT, text="") if as_text_item else None
+    inline = doc.add_inline_group(parent=parent)
+    doc.add_text(label=DocItemLabel.TEXT, text=first, parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text=" then 2*3 and # mid", parent=inline)
+
+    default = MarkdownDocSerializer(doc=doc).serialize().text
+    result = MarkdownDocSerializer(doc=doc, params=MarkdownParams(escape_markdown_syntax=True)).serialize().text
+
+    assert default == f"{first} then 2*3 and # mid"
+    assert result == f"{escaped} then 2\\*3 and # mid"
+
+
+def test_md_escape_markdown_syntax_inline_group_mid_line_runs():
+    """Runs after a list marker, a heading marker or another run get `*` escaping only.
+
+    A nested group that opens its parent group still starts the line.
+    """
+    doc = DoclingDocument(name="escape")
+    list_item = doc.add_list_item(text="", parent=doc.add_list_group())
+    doc.add_text(label=DocItemLabel.TEXT, text="# in list item", parent=doc.add_inline_group(parent=list_item))
+    heading = doc.add_heading(text="", level=1)
+    doc.add_text(label=DocItemLabel.TEXT, text="1. in heading", parent=doc.add_inline_group(parent=heading))
+    inline = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="start ", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="# second *run*", parent=inline)
+    outer = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="- nested first", parent=doc.add_inline_group(parent=outer))
+    doc.add_text(label=DocItemLabel.TEXT, text=" tail", parent=outer)
+
+    result = MarkdownDocSerializer(doc=doc, params=MarkdownParams(escape_markdown_syntax=True)).serialize().text
+
+    assert result == "- # in list item\n\n## 1. in heading\n\nstart # second \\*run\\*\n\n\\- nested first tail"
+
+
 def test_md_pb_placeholder_and_page_filter():
     src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
