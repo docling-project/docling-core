@@ -55,6 +55,7 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
 )
+from docling_core.types.doc.common.reference import FineRef
 from docling_core.types.doc.document import (
     CURRENT_VERSION,
     FieldHeadingItem,
@@ -3063,6 +3064,91 @@ def test_docitem_comments_delete_updates_refs():
     # The resolved comment should still work
     resolved = updated_para.comments[0].resolve(doc)
     assert resolved.text == "Comment on second paragraph."
+
+
+def _doc_with_inline_group(num_leading: int) -> tuple[DoclingDocument, NodeItem, TextItem, TextItem]:
+    """A document with an inline group of two runs, ``num_leading`` texts before it and one after."""
+    doc = DoclingDocument(name="t")
+    for i in range(num_leading):
+        doc.add_text(label=DocItemLabel.TEXT, text=f"lead {i}")
+    group = doc.add_inline_group()
+    run = doc.add_text(label=DocItemLabel.TEXT, text="Figure 1:", parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text="a caption", parent=group)
+    trailing = doc.add_text(label=DocItemLabel.TEXT, text="trailing")
+    return doc, group, run, trailing
+
+
+def test_delete_items_drops_captions_of_cascade_deleted_descendants():
+    # the caption points at a run inside the deleted group, which is the first text item
+    doc, group, run, _ = _doc_with_inline_group(num_leading=0)
+    pic = doc.add_picture(caption=run)
+    doc.delete_items(node_items=[group])
+    assert pic.captions == []
+
+    # with a text before the group, the stale reference used to land on that text
+    doc, group, run, _ = _doc_with_inline_group(num_leading=1)
+    pic = doc.add_picture(caption=run)
+    doc.delete_items(node_items=[group])
+    assert pic.captions == []
+    assert [t.text for t in doc.texts] == ["lead 0", "trailing"]
+
+
+def test_delete_items_drops_comments_on_deleted_items():
+    # a comment on a descendant of the deleted group
+    doc, group, run, _ = _doc_with_inline_group(num_leading=0)
+    holder = doc.add_text(label=DocItemLabel.TEXT, text="holder")
+    holder.comments.append(FineRef(cref=run.self_ref))
+    doc.delete_items(node_items=[group])
+    assert holder.comments == []
+
+    # a comment on the deleted item itself: FineRef never equals RefItem, so it was kept
+    doc = DoclingDocument(name="t")
+    doc.add_text(label=DocItemLabel.TEXT, text="a")
+    b = doc.add_text(label=DocItemLabel.TEXT, text="b")
+    holder = doc.add_text(label=DocItemLabel.TEXT, text="holder")
+    holder.comments.append(FineRef(cref=b.self_ref))
+    doc.delete_items(node_items=[b])
+    assert holder.comments == []
+
+
+def _doc_with_rich_cell() -> tuple[DoclingDocument, TableItem, TextItem]:
+    doc = DoclingDocument(name="t")
+    doc.add_text(label=DocItemLabel.TEXT, text="lead")
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
+    rich_item = doc.add_text(label=DocItemLabel.TEXT, text="rich", parent=table)
+    doc.add_table_cell(
+        table,
+        RichTableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            ref=rich_item.get_ref(),
+        ),
+    )
+    return doc, table, rich_item
+
+
+def test_delete_items_refuses_to_delete_the_target_of_a_rich_cell():
+    doc, table, rich_item = _doc_with_rich_cell()
+    with pytest.raises(ValueError, match="rich cell"):
+        doc.delete_items(node_items=[rich_item])
+    # nothing was removed
+    assert [t.text for t in doc.texts] == ["lead", "rich"]
+    assert table.data.table_cells[0].ref.cref == rich_item.self_ref  # type: ignore[union-attr]
+
+    # deleting the table takes its rich items with it
+    doc.delete_items(node_items=[table])
+    assert doc.tables == []
+    assert [t.text for t in doc.texts] == ["lead"]
+
+
+def test_delete_items_renumbers_captions_of_survivors():
+    doc, group, _, trailing = _doc_with_inline_group(num_leading=1)
+    pic = doc.add_picture(caption=trailing)
+    doc.delete_items(node_items=[group])
+    assert pic.captions[0].cref == "#/texts/1"
+    assert pic.caption_text(doc) == "trailing"
 
 
 def test_table_data_vertical_bounding_boxes():
