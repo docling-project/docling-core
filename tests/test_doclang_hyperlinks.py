@@ -239,3 +239,32 @@ def test_heading_with_shared_link_keeps_its_runs() -> None:
     assert _text_runs(loaded) == _text_runs(doc)
     # The heading has no text of its own for its link to cover, so only the runs keep it.
     assert loaded.texts[0].hyperlink is None
+
+
+@pytest.mark.parametrize("level", [1, 2])
+@pytest.mark.parametrize("linked", [(True, True, True), (True, False, True), (False, True, False)])
+def test_threaded_heading_keeps_run_order_and_links(level: int, linked: tuple[bool, bool, bool]) -> None:
+    fragments = []
+    expected = []
+    location = '<location value="10"/><location value="20"/><location value="30"/><location value="40"/>'
+    for index, (text, has_link) in enumerate(zip(("One", "Two", "Three"), linked)):
+        target = f"https://example.com/{index}" if has_link else None
+        body = f'<text><href uri="{target}"/>{text}</text>' if target else text
+        fragments.append(f'<heading level="{level}"><thread thread_id="1"/>{location}{body}</heading>')
+        expected.append((text, target, None))
+    xml = '<doclang version="0.9">' + "<page_break/>".join(fragments) + "</doclang>"
+    assert_valid_dclg_xml(xml)
+
+    loaded = DocLangDocDeserializer().deserialize_str(xml)
+
+    assert _text_runs(loaded) == expected
+    headings = [item for item in loaded.texts if item.label in {DocItemLabel.TITLE, DocItemLabel.SECTION_HEADER}]
+    assert len(headings) == 1
+    assert headings[0].label == (DocItemLabel.TITLE if level == 1 else DocItemLabel.SECTION_HEADER)
+    assert [prov.page_no for prov in headings[0].prov] == [1, 2, 3]
+    assert all(prov.charspan == (0, 0) for prov in headings[0].prov)
+
+    serialized = DocLangDocSerializer(doc=loaded, params=DocLangParams(pretty_indentation=None)).serialize().text
+    assert_valid_dclg_xml(serialized)
+    reloaded = DocLangDocDeserializer().deserialize_str(serialized)
+    assert _text_runs(reloaded) == expected

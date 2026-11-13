@@ -711,7 +711,32 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 and (existing := self._get_thread_item(thread_id, host=DocLangToken.HEADING.value)) is not None
                 and isinstance(existing, TextItem)
             ):
-                self._merge_threaded_text_item(text=text, prov_list=prov_list, existing=existing)
+                first_child = existing.children[0].resolve(doc) if existing.children else None
+                if has_linked_runs or isinstance(first_child, InlineGroup):
+                    # All fragments must share one inline flow. A later fragment on the
+                    # host would precede its existing runs, and flattening loses links.
+                    if isinstance(first_child, InlineGroup):
+                        group = first_child
+                    else:
+                        group = doc.add_inline_group(parent=existing)
+                        if existing.text:
+                            doc.add_text(
+                                label=DocItemLabel.TEXT,
+                                text=existing.text,
+                                orig=existing.orig,
+                                parent=group,
+                                hyperlink=existing.hyperlink,
+                                formatting=existing.formatting,
+                                content_layer=existing.content_layer,
+                            )
+                            existing.text = existing.orig = ""
+                            existing.hyperlink = None
+                            for prov in existing.prov:
+                                prov.charspan = (0, 0)
+                    self._parse_inline_runs(doc=doc, nodes=body_nodes, parent=group, formatting=None)
+                    self._merge_threaded_text_item(text="", prov_list=prov_list, existing=existing)
+                else:
+                    self._merge_threaded_text_item(text=text, prov_list=prov_list, existing=existing)
                 self._source_recorder.bind_item(el, existing)
                 return
             # Level 1 maps to TitleItem, level > 1 maps to SectionHeaderItem with level-1
