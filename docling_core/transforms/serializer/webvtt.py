@@ -53,6 +53,7 @@ from docling_core.types.doc.webvtt import (
     WebVTTFile,
     WebVTTLineTerminator,
     WebVTTTimestamp,
+    _escape,
 )
 
 _logger = logging.getLogger(__name__)
@@ -160,8 +161,9 @@ class WebVTTTextSerializer(BaseModel, BaseTextSerializer):
         # Apply post-processing here: formatting and voice.
         # If the TextItem is part of an InlineGroup, we need to further post-process it within the group context.
         source: TrackSource = item.source[0]
+        # Escape the text, so that the cue parser reads it back literally.
         text: str = doc_serializer.post_process(
-            text=item.text,
+            text=_escape(item.text, "<"),
             formatting=item.formatting,
             **{**kwargs, "voice": source.voice},
         )
@@ -398,7 +400,8 @@ class WebVTTDocSerializer(DocSerializer):
                 _logger.warning(f"Invalid {tag} cue span without annotation: {text}")
                 return text
             else:
-                start_tag = WebVTTCueSpanStartTagAnnotated(name=tag, annotation=anno)
+                # The annotation is unescaped on validation, so it must be escaped to stay literal.
+                start_tag = WebVTTCueSpanStartTagAnnotated(name=tag, annotation=_escape(anno, ">"))
         else:
             return text
 

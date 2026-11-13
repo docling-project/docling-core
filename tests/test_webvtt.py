@@ -9,14 +9,16 @@ import warnings
 import pytest
 from pydantic import ValidationError
 
+from docling_core.types.doc import DocItemLabel, DoclingDocument, TrackSource
 from docling_core.types.doc.webvtt import (
-    _ENTITY_CHARS,
     WebVTTCueBlock,
     WebVTTCueComponentWithTerminator,
     WebVTTCueInternalText,
     WebVTTCueItalicSpan,
     WebVTTCueLanguageSpan,
     WebVTTCueLanguageSpanStartTag,
+    WebVTTCueRubySpan,
+    WebVTTCueRubyTextSpan,
     WebVTTCueSpanStartTagAnnotated,
     WebVTTCueTextSpan,
     WebVTTCueTimings,
@@ -105,19 +107,17 @@ def test_vtt_cue_commponents() -> None:
         WebVTTCueTextSpan(text=invalid_text)
 
     """Test with text containing ampersand."""
-    invalid_text = "This cue text span contains &."
-    with pytest.raises(ValidationError):
-        WebVTTCueTextSpan(text=invalid_text)
-    invalid_text = "An invalid &foo; entity"
-    with pytest.raises(ValidationError):
-        WebVTTCueTextSpan(text=invalid_text)
+    # A reference that does not resolve stays literal text instead of failing the cue.
+    assert WebVTTCueTextSpan(text="This cue text span contains &.").text == "This cue text span contains &."
+    assert WebVTTCueTextSpan(text="An unknown &foo; entity").text == "An unknown &foo; entity"
     valid_text = "My favorite book is Pride &amp; Prejudice"
     span = WebVTTCueTextSpan(text=valid_text)
     # An escape denotes the character, so the span holds the character and
     # writes the escape back out.
     assert span.text == "My favorite book is Pride & Prejudice"
     assert str(span) == valid_text
-    for name, char in _ENTITY_CHARS.items():
+    named = {"amp": "&", "lt": "<", "gt": ">", "lrm": "\u200e", "rlm": "\u200f", "nbsp": "\u00a0"}
+    for name, char in named.items():
         assert WebVTTCueTextSpan(text=f"a&{name};b").text == f"a{char}b"
     # Only the two that cannot be written literally come back escaped.
     assert str(WebVTTCueTextSpan(text="a&gt;b")) == "a>b"
@@ -280,6 +280,36 @@ def test_webvtt_parse_cr_separator() -> None:
     assert component.text == "Hello world"
 
 
+def test_webvtt_parse_whitespace_only_line() -> None:
+    """A line holding only whitespace is cue text unless the next cue starts right after it."""
+    # YouTube auto-generated captions start each cue payload with a line holding a single space.
+    content = (
+        "WEBVTT\n\n"
+        "00:00:00.160 --> 00:00:02.869 align:start position:0%\n"
+        " \n"
+        "hello<00:00:00.640><c> everyone</c>\n\n"
+        "00:00:02.879 --> 00:00:05.110 align:start position:0%\n"
+        "hello everyone\n"
+        "welcome back\n"
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+    assert len(vtt) == 2
+    assert str(vtt[0]) == "00:00:00.160 --> 00:00:02.869\nhello<c> everyone</c>\n"
+    assert str(vtt[1]) == "00:00:02.879 --> 00:00:05.110\nhello everyone\nwelcome back\n"
+
+    # A whitespace-only line between two cues still separates them, with or without an identifier.
+    content = "WEBVTT\n\n1\n00:01.000 --> 00:02.000\none\n \n2\n00:02.000 --> 00:03.000\ntwo\n \n00:03.000 --> 00:04.000\nthree\n"
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+    assert len(vtt) == 3
+    assert [block.identifier for block in vtt] == ["1", "2", None]
+    assert str(vtt[0]) == "1\n00:01.000 --> 00:02.000\none\n"
+    assert str(vtt[2]) == "00:03.000 --> 00:04.000\nthree\n"
+
+
 def test_webvtt_file() -> None:
     """Test WebVTT files."""
     with open("./tests/data/webvtt/webvtt_example_01.vtt", encoding="utf-8") as f:
@@ -370,6 +400,71 @@ def test_webvtt_cue_escapes_in_annotation() -> None:
     assert str(vtt.cue_blocks[0]).rstrip("\n").endswith("<v Ben &amp; Jerry>We charge 5 &lt; 10 &amp; win</v>")
 
 
+def test_webvtt_cue_html_character_references() -> None:
+    """Test that any HTML character reference in cue text or an annotation is resolved."""
+    # WebVTT 6.4 hands the data and annotation states to the full HTML character
+    # reference algorithm, so the six names of the syntax table are no whitelist.
+    content = (
+        "WEBVTT\n\n"
+        "00:01.000 --> 00:03.000\nIt&#39;s raining.\n\n"
+        "00:03.000 --> 00:05.000\nCaf&eacute; or caf&#xE9;?\n\n"
+        "00:05.000 --> 00:07.000\n<v Ren&eacute;>Tom &amp; Jerry</v>\n\n"
+        "00:07.000 --> 00:09.000\nR&foo;d &"
+    )
+    vtt = WebVTTFile.parse(content)
+
+    assert len(vtt) == 4
+    texts = []
+    for block in vtt.cue_blocks:
+        component = block.payload[0].component
+        if isinstance(component, WebVTTCueVoiceSpan):
+            assert component.start_tag.annotation == "Ren\u00e9"
+            component = component.internal_text.components[0].component
+        assert isinstance(component, WebVTTCueTextSpan)
+        texts.append(component.text)
+    assert texts == ["It's raining.", "Caf\u00e9 or caf\u00e9?", "Tom & Jerry", "R&foo;d &"]
+
+    # A reference to a line terminator would corrupt the cue on the way out.
+    with pytest.raises(ValidationError):
+        WebVTTCueTextSpan(text="a&#10;b")
+    with pytest.raises(ValidationError):
+        WebVTTCueSpanStartTagAnnotated(name="v", annotation="a&#13;b")
+
+    # Only the escapes that cannot be written literally are written back.
+    assert str(vtt.cue_blocks[0]).rstrip("\n").endswith("It's raining.")
+    assert str(vtt.cue_blocks[3]).rstrip("\n").endswith("R&amp;foo;d &amp;")
+
+
+@pytest.mark.parametrize(
+    ("text", "voice"),
+    [
+        ("Ask &copy and &amp; me", "Tom &amp; Jerry > Co"),
+        ("x < y > z", "Tom &amp; Jerry > Co"),
+        ("Tom & Jerry", None),
+        ("Hello", "Tom & Jerry > Co"),
+    ],
+)
+def test_webvtt_export_keeps_text_literal(text: str, voice: str | None) -> None:
+    """Test that document text and voice names resembling markup or references are exported literally."""
+    doc = DoclingDocument(name="refs")
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text=text,
+        source=TrackSource(start_time=0.0, end_time=1.0, voice=voice),
+    )
+
+    vtt = WebVTTFile.parse(doc.export_to_vtt())
+
+    assert len(vtt) == 1
+    component = vtt.cue_blocks[0].payload[0].component
+    if voice is not None:
+        assert isinstance(component, WebVTTCueVoiceSpan)
+        assert component.start_tag.annotation == voice
+        component = component.internal_text.components[0].component
+    assert isinstance(component, WebVTTCueTextSpan)
+    assert component.text == text
+
+
 def test_webvtt_cue_language_span_start_tag():
     WebVTTCueLanguageSpanStartTag.model_validate_json('{"annotation": "en"}')
     WebVTTCueLanguageSpanStartTag.model_validate_json('{"annotation": "en-US"}')
@@ -446,3 +541,92 @@ def test_webvtt_file_unknown_tags() -> None:
     assert str(vtt[1]).rstrip("\n").endswith("\nWhere are you going?")
     assert str(vtt[2]).rstrip("\n").endswith("\n<v Anna>Home, I think.</v>")
     assert str(vtt[3]).rstrip("\n").endswith("\nLast cue")
+
+
+@pytest.mark.parametrize(
+    ("cue_text", "expected_children", "expected_serialization"),
+    [
+        pytest.param(
+            "<ruby>漢字<rt>かんじ</rt></ruby> is kanji",
+            [("text", "漢字"), ("rt", "かんじ")],
+            "<ruby>漢字<rt>かんじ</rt></ruby> is kanji",
+            id="single_pair",
+        ),
+        pytest.param(
+            "<ruby>漢字<rt>かんじ</ruby> is kanji",
+            [("text", "漢字"), ("rt", "かんじ")],
+            "<ruby>漢字<rt>かんじ</rt></ruby> is kanji",
+            id="omitted_last_rt_end_tag",
+        ),
+        pytest.param(
+            "<ruby>日<rt>に</rt>本<rt>ほん</ruby>",
+            [("text", "日"), ("rt", "に"), ("text", "本"), ("rt", "ほん")],
+            "<ruby>日<rt>に</rt>本<rt>ほん</rt></ruby>",
+            id="several_pairs",
+        ),
+    ],
+)
+def test_webvtt_ruby_spans(
+    cue_text: str, expected_children: list[tuple[str, str]], expected_serialization: str
+) -> None:
+    """Test that ruby spans are parsed, keep their text and are serialized with all end tags."""
+    block = WebVTTCueBlock.parse(f"00:01.000 --> 00:02.000\n{cue_text}\n")
+
+    ruby = block.payload[0].component
+    assert isinstance(ruby, WebVTTCueRubySpan)
+    children: list[tuple[str, str]] = []
+    for child in ruby.internal_text.components:
+        component = child.component
+        if isinstance(component, WebVTTCueTextSpan):
+            children.append((component.kind, component.text))
+        else:
+            assert isinstance(component, WebVTTCueRubyTextSpan)
+            annotation = component.internal_text.components[0].component
+            assert isinstance(annotation, WebVTTCueTextSpan)
+            children.append((component.kind, annotation.text))
+    assert children == expected_children
+    assert str(block).rstrip("\n").endswith(f"\n{expected_serialization}")
+
+
+def test_webvtt_ruby_text_start_tag_inside_ruby_text_is_ignored() -> None:
+    """Test that an <rt> start tag inside an open <rt> is ignored and its text is kept."""
+    block = WebVTTCueBlock.parse("00:01.000 --> 00:02.000\n<ruby>日<rt>に<rt>ほん</rt></ruby>\n")
+    assert len(block.payload) == 1
+    ruby = block.payload[0].component
+    assert isinstance(ruby, WebVTTCueRubySpan)
+    assert [c.component.kind for c in ruby.internal_text.components] == ["text", "rt"]
+    rt = ruby.internal_text.components[1].component
+    assert isinstance(rt, WebVTTCueRubyTextSpan)
+    texts = [c.component.text for c in rt.internal_text.components if isinstance(c.component, WebVTTCueTextSpan)]
+    assert "".join(texts) == "にほん"
+    assert str(block).rstrip("\n").endswith("\n<ruby>日<rt>にほん</rt></ruby>")
+
+
+def test_webvtt_ruby_text_outside_ruby_is_ignored() -> None:
+    """Test that <rt> tags that are not directly inside a <ruby> span are ignored."""
+    block = WebVTTCueBlock.parse("00:01.000 --> 00:02.000\n<rt>x</rt> and <i><rt>y</rt></i>\n")
+    assert [type(c.component) for c in block.payload] == [
+        WebVTTCueTextSpan,
+        WebVTTCueTextSpan,
+        WebVTTCueItalicSpan,
+    ]
+    assert str(block).rstrip("\n").endswith("\nx and <i>y</i>")
+
+
+def test_webvtt_file_ruby_spans_example() -> None:
+    """Test a WebVTT file with ruby spans, including an omitted last end tag."""
+    with open("./tests/data/webvtt/webvtt_example_05.vtt", encoding="utf-8") as f:
+        content = f.read()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+
+    assert len(vtt) == 5
+    assert vtt.title == "Ruby annotations"
+    assert str(vtt[0]).endswith("\n<ruby>漢字<rt>かんじ</rt></ruby> is the Japanese word for kanji.\n")
+    assert str(vtt[1]).endswith("\n<ruby>東京<rt>とうきょう</rt></ruby> is the capital of Japan.\n")
+    assert str(vtt[2]).endswith("\n<ruby>日<rt>に</rt>本<rt>ほん</rt></ruby>語 is the Japanese language.\n")
+    voice = vtt[3].payload[0].component
+    assert isinstance(voice, WebVTTCueVoiceSpan)
+    assert isinstance(voice.internal_text.components[0].component, WebVTTCueRubySpan)
+    assert str(vtt[4]).endswith("\nPlain cue between ruby cues.\n")
