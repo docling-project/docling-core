@@ -1518,6 +1518,32 @@ def test_save_to_disk(sample_doc):
     assert True
 
 
+def test_export_to_markdown_image_dir(sample_doc: DoclingDocument, tmp_path: Path) -> None:
+    image_dir = tmp_path / "assets"
+
+    md = sample_doc.export_to_markdown(
+        image_mode=ImageRefMode.REFERENCED,
+        image_dir=image_dir,
+        image_uri_prefix="assets/",
+    )
+
+    saved_images = list(image_dir.glob("*.png"))
+    assert len(saved_images) == 1, "expected exactly one image to be saved to image_dir"
+
+    image_lines = [line for line in md.splitlines() if "![" in line]
+    assert len(image_lines) == 1, "expected exactly one image reference in the markdown output"
+    assert saved_images[0].name in image_lines[0], "markdown should reference the saved image's filename"
+    assert "assets" in image_lines[0], "markdown reference should include image_uri_prefix"
+
+
+def test_export_to_markdown_without_image_dir_is_unaffected(sample_doc: DoclingDocument) -> None:
+    # image_dir defaults to None, so no images should be written to disk and
+    # behavior should match calling export_to_markdown without the new params.
+    baseline = sample_doc.export_to_markdown(image_mode=ImageRefMode.PLACEHOLDER)
+    unchanged = sample_doc.export_to_markdown(image_mode=ImageRefMode.PLACEHOLDER, image_uri_prefix="assets/")
+    assert baseline == unchanged
+
+
 def test_save_as_json_encoding_options(tmp_path: Path):
     polish_text = "Należy wówczas zetrzeć warstwę"
     doc = DoclingDocument(name="non_ascii")
