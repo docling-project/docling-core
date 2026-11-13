@@ -5,6 +5,7 @@ import logging
 import re
 import socket
 import tempfile
+from email.message import Message
 from io import BytesIO
 from pathlib import Path
 from typing import Optional, Union
@@ -155,10 +156,9 @@ def resolve_remote_filename(
     """
     raw_fname = None
     if cont_disp := response_headers.get("Content-Disposition"):
-        for par in cont_disp.strip().split(";"):
-            if (split := par.split("=")) and split[0].strip() == "filename":
-                raw_fname = "=".join(split[1:]).strip().strip("'\"") or None
-                break
+        message = Message()
+        message["Content-Disposition"] = cont_disp
+        raw_fname = message.get_filename() or None
 
     if raw_fname is None:
         raw_fname = Path(http_url.path or "").name or fallback_filename

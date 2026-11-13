@@ -12,7 +12,7 @@ import sys
 import tempfile
 import typing
 import warnings
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO, StringIO
@@ -329,40 +329,12 @@ class DoclingDocument(BaseModel):
             }
         )
 
-    @classmethod
-    def _clamp_provenance_bbox_to_page(cls, *, prov: ProvenanceItem, page_size: Size) -> None:
-        prov.bbox = cls._clamp_bbox_to_page(
-            bbox=prov.bbox,
-            page_size=page_size,
-            page_no=prov.page_no,
-            bbox_label="Provenance bbox",
-        )
+    def _doc_item_lists(self) -> tuple[Iterable[NodeItem], ...]:
+        """All item lists that can hold items with provenance (everything but `groups`).
 
-    def _clamp_provenance_bboxes_to_pages(self) -> None:
-        def clamp_prov(prov: ProvenanceItem) -> None:
-            page = self.pages.get(prov.page_no)
-            if page is not None:
-                self._clamp_provenance_bbox_to_page(prov=prov, page_size=page.size)
-
-        def clamp_table_cell_bboxes(table: TableItem) -> None:
-            page_nos = {prov.page_no for prov in table.prov}
-            if len(page_nos) != 1:
-                return
-            page_no = next(iter(page_nos))
-            page = self.pages.get(page_no)
-            if page is None:
-                return
-
-            for cell in table.data.table_cells:
-                if cell.bbox is not None:
-                    cell.bbox = self._clamp_bbox_to_page(
-                        bbox=cell.bbox,
-                        page_size=page.size,
-                        page_no=page_no,
-                        bbox_label="Table cell bbox",
-                    )
-
-        item_lists: tuple[Iterable[NodeItem], ...] = (
+        A new item list field must be added here (guarded by a test).
+        """
+        return (
             self.texts,
             self.pictures,
             self.tables,
@@ -371,17 +343,43 @@ class DoclingDocument(BaseModel):
             self.field_regions,
             self.field_items,
         )
-        for item_list in item_lists:
+
+    def _iter_page_bboxes(self) -> Iterator[tuple[int, BoundingBox, ProvenanceItem | TableCell]]:
+        """Yield `(page_no, bbox, holder)` for every bbox anchored on a page.
+
+        Single source of truth for code that must visit every page bbox of the
+        document: item provenances, table cell bboxes of single-page tables and
+        key-value/form graph cell provenances. `holder` is the object whose
+        `bbox` attribute holds the yielded bbox.
+        """
+        for item_list in self._doc_item_lists():
             for item in item_list:
                 if isinstance(item, DocItem):
                     for prov in item.prov:
-                        clamp_prov(prov)
+                        yield prov.page_no, prov.bbox, prov
                 if isinstance(item, TableItem):
-                    clamp_table_cell_bboxes(item)
+                    # cell bboxes belong to a page only for single-page tables
+                    page_nos = {prov.page_no for prov in item.prov}
+                    if len(page_nos) == 1:
+                        page_no = next(iter(page_nos))
+                        for cell in item.data.table_cells:
+                            if cell.bbox is not None:
+                                yield page_no, cell.bbox, cell
                 if isinstance(item, KeyValueItem | FormItem):
-                    for cell in item.graph.cells:
-                        if cell.prov is not None:
-                            clamp_prov(cell.prov)
+                    for graph_cell in item.graph.cells:
+                        if graph_cell.prov is not None:
+                            yield graph_cell.prov.page_no, graph_cell.prov.bbox, graph_cell.prov
+
+    def _clamp_provenance_bboxes_to_pages(self) -> None:
+        for page_no, bbox, holder in self._iter_page_bboxes():
+            page = self.pages.get(page_no)
+            if page is not None:
+                holder.bbox = self._clamp_bbox_to_page(
+                    bbox=bbox,
+                    page_size=page.size,
+                    page_no=page_no,
+                    bbox_label="Table cell bbox" if isinstance(holder, TableCell) else "Provenance bbox",
+                )
 
     @model_validator(mode="before")
     @classmethod
@@ -5634,6 +5632,42 @@ class DoclingDocument(BaseModel):
 
         self.pages[page_no] = pitem
         return pitem
+
+    def get_min_page_sizes(self) -> dict[int, Size]:
+        """Get the smallest page size that contains all content, for every page with content.
+
+        The size of a page is the largest horizontal and vertical coordinate
+        over all bounding boxes anchored on it: item provenances, table cell
+        bboxes and key-value/form graph cell provenances, in every content
+        layer. Coordinates are measured from ``0``, as the page-bounds
+        validation does, so with these sizes validation does not clamp any
+        content bbox from above. Negative coordinates are not accounted for and
+        are still clamped to ``0``.
+
+        Returns:
+            A mapping from 1-based page number to minimum page size, for each
+            page that has at least one bounding box.
+        """
+        sizes: dict[int, Size] = {}
+        for page_no, bbox, _ in self._iter_page_bboxes():
+            size = sizes.setdefault(page_no, Size(width=0.0, height=0.0))
+            size.width = max(size.width, bbox.l, bbox.r)
+            size.height = max(size.height, bbox.t, bbox.b)
+        return sizes
+
+    def get_min_page_size(self, page_no: int) -> Size:
+        """Get the smallest page size that contains all content of a page.
+
+        See `get_min_page_sizes`, which computes all pages in one pass.
+
+        Args:
+            page_no: 1-based page number to measure.
+
+        Returns:
+            The minimum page size, ``Size(width=0, height=0)`` if the page has
+            no bounding boxes.
+        """
+        return self.get_min_page_sizes().get(page_no, Size(width=0.0, height=0.0))
 
     def get_visualization(
         self,
