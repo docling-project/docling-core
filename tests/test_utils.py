@@ -593,3 +593,31 @@ def test_resolve_remote_filename_quoted_parameters(disposition: str, expected: s
         )
         == expected
     )
+
+
+@pytest.mark.parametrize(
+    "headers",
+    [
+        {"content-disposition": 'attachment; filename="report.pdf"'},
+        {"Content-Disposition": 'attachment; Filename="report.pdf"'},
+    ],
+)
+def test_resolve_remote_filename_ignores_header_name_case(headers):
+    """HTTP field names and the `filename` parameter are case-insensitive."""
+    assert resolve_remote_filename(AnyHttpUrl("https://example.com/downloads/xyz"), headers) == "report.pdf"
+
+
+def test_resolve_source_filename_from_lowercase_header(monkeypatch):
+    """A server sending the header name in lowercase still names the download."""
+
+    def get_response(*args, **kwargs):
+        return _closeable_response(
+            content=b"test content",
+            headers={"content-disposition": 'attachment; filename="report.pdf"'},
+        )
+
+    monkeypatch.setattr("docling_core.utils.file._is_safe_url", lambda url: True)
+    monkeypatch.setattr(Session, "get", get_response)
+
+    doc_stream = resolve_source_to_stream("https://example.com/downloads/xyz")
+    assert doc_stream.name == "report.pdf"
