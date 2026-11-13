@@ -25,11 +25,6 @@ _ENTITY_CHARS: dict[str, str] = {
 _ESCAPE_NAMES: dict[str, str] = {char: name for name, char in _ENTITY_CHARS.items()}
 
 
-def _unescape(value: str) -> str:
-    """Resolve HTML character references; one that does not resolve stays literal."""
-    return html.unescape(value)
-
-
 def _escape(value: str, terminator: str) -> str:
     """Escape the characters that cannot be written literally in a construct.
 
@@ -212,13 +207,13 @@ class WebVTTCueTextSpan(BaseModel):
     @field_validator("text", mode="after")
     @classmethod
     def is_valid_text(cls, value: str) -> str:
-        """Ensure cue text contains only permitted characters and resolve its character references."""
+        """Validate cue text characters and resolve HTML character references, returning the decoded string."""
         if any(ch in value for ch in {"\n", "\r", "<"}):
             raise ValueError("Cue text contains invalid characters")
         if len(value) == 0:
             raise ValueError("Cue text cannot be empty")
 
-        value = _unescape(value)
+        value = html.unescape(value)
         if any(ch in value for ch in {"\n", "\r"}):
             raise ValueError("Cue text contains a character reference for a line terminator")
         return value
@@ -301,7 +296,7 @@ class WebVTTCueSpanStartTagAnnotated(WebVTTCueSpanStartTag):
         if len(value) == 0:
             raise ValueError("Annotation cannot be empty")
 
-        value = _unescape(value)
+        value = html.unescape(value)
         if any(ch in value for ch in {"\n", "\r"}):
             raise ValueError("Annotation contains a character reference for a line terminator")
         return value
