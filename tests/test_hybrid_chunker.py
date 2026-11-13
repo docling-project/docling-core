@@ -447,6 +447,21 @@ def test_chunk_openai():
     )
 
 
+@pytest.mark.parametrize("max_tokens", [8, 64])
+def test_chunk_openai_literal_special_token(max_tokens: int):
+    text = "Tokenizer documentation mentions the literal marker <|endoftext|>."
+    doc = DoclingDocument(name="tokenizer-documentation")
+    doc.add_text(label=DocItemLabel.PARAGRAPH, text=text)
+    encoding = tiktoken.get_encoding("cl100k_base")
+    tokenizer = OpenAITokenizer(tokenizer=encoding, max_tokens=max_tokens)
+
+    chunks = list(HybridChunker(tokenizer=tokenizer).chunk(dl_doc=doc))
+
+    assert " ".join(chunk.text for chunk in chunks) == text
+    assert all(tokenizer.count_tokens(chunk.text) <= max_tokens for chunk in chunks)
+    assert tokenizer.count_tokens(text) == len(encoding.encode_ordinary(text))
+
+
 def test_chunk_default():
     EXPECTED_OUT_FILE = "tests/data/chunker/2g_out_chunks.json"
 
