@@ -184,3 +184,58 @@ def test_conversation_links_survive_dclx(tmp_path: Path) -> None:
 
     assert _text_runs(loaded) == _text_runs(doc)
     assert loaded.tables[0].data.grid[0][1].text == "Unexpected behavior"
+
+
+def test_linked_host_with_unlinked_run_roundtrip() -> None:
+    doc = DoclingDocument(name="linked-host")
+    footnote = doc.add_text(label=DocItemLabel.FOOTNOTE, text="", hyperlink=AnyUrl("https://example.com/host"))
+    group = doc.add_inline_group(parent=footnote)
+    doc.add_text(label=DocItemLabel.TEXT, text="plain ", parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text="linked", parent=group, hyperlink=AnyUrl("https://example.com/run"))
+
+    xml = DocLangDocSerializer(doc=doc).serialize().text
+    assert_valid_dclg_xml(xml)
+    loaded = DocLangDocDeserializer().deserialize_str(xml)
+
+    assert _text_runs(loaded) == _text_runs(doc)
+
+
+def test_heading_own_href_is_not_copied_to_runs() -> None:
+    xml = '<doclang version="0.9"><heading level="2"><href uri="https://example.com/"/>a <formula>x</formula></heading></doclang>'
+    loaded = DocLangDocDeserializer().deserialize_str(xml)
+
+    assert [str(it.hyperlink) for it, _ in loaded.iterate_items() if isinstance(it, TextItem)] == [
+        "https://example.com/"
+    ]
+
+
+def test_link_shared_by_all_runs_moves_to_enclosing_element() -> None:
+    doc = DoclingDocument(name="shared-link")
+    group = doc.add_inline_group()
+    link = AnyUrl("https://example.com/")
+    doc.add_text(label=DocItemLabel.TEXT, text="plain ", parent=group, hyperlink=link)
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", parent=group, hyperlink=link, formatting=Formatting(bold=True))
+
+    xml = DocLangDocSerializer(doc=doc, params=DocLangParams(pretty_indentation=None)).serialize().text
+    assert xml.count("<href ") == 1
+    assert_valid_dclg_xml(xml)
+    loaded = DocLangDocDeserializer().deserialize_str(xml)
+
+    assert _text_runs(loaded) == _text_runs(doc)
+
+
+def test_heading_with_shared_link_keeps_its_runs() -> None:
+    doc = DoclingDocument(name="heading-shared-link")
+    link = AnyUrl("https://example.com/")
+    heading = doc.add_heading(text="", level=1, hyperlink=link)
+    group = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="a ", parent=group, hyperlink=link)
+    doc.add_text(label=DocItemLabel.TEXT, text="b", parent=group, hyperlink=link, formatting=Formatting(bold=True))
+
+    xml = DocLangDocSerializer(doc=doc).serialize().text
+    assert_valid_dclg_xml(xml)
+    loaded = DocLangDocDeserializer().deserialize_str(xml)
+
+    assert _text_runs(loaded) == _text_runs(doc)
+    # The heading has no text of its own for its link to cover, so only the runs keep it.
+    assert loaded.texts[0].hyperlink is None

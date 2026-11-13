@@ -351,6 +351,25 @@ def _text_item_hyperlink_uri(item: DocItem) -> str | None:
     return None
 
 
+def _shared_href(*, group: InlineGroup, doc: DoclingDocument) -> str | None:
+    """Return the link shared by all runs of ``group``, if its enclosing element can carry it.
+
+    An href applies to all content of its element, so it can move up to the
+    element head only when every run, and the host's own text, has that link.
+    """
+    parent = group.parent.resolve(doc) if group.parent else None
+    # A heading reads formatted-only content as flat text, so its runs must keep their links.
+    # A host's own link covers only its own text: with none, there is nothing to write it on.
+    if isinstance(parent, ListItem | InlineGroup | TitleItem | SectionHeaderItem):
+        return None
+    uris = {_text_item_hyperlink_uri(child.resolve(doc)) for child in group.children}
+    if len(uris) != 1 or (uri := uris.pop()) is None:
+        return None
+    if isinstance(parent, TextItem) and parent.text and _text_item_hyperlink_uri(parent) != uri:
+        return None
+    return uri
+
+
 def _meta_field_serialization_allowed(name: str, params: DocLangParams) -> bool:
     return (params.allowed_meta_names is None or name in params.allowed_meta_names) and (
         name not in params.blocked_meta_names
@@ -366,6 +385,7 @@ def _element_head_prefix(
     caption_text: str | None = None,
     custom_text: str | None = None,
     include_href: bool = True,
+    href_uri: str | None = None,
     include_layer: bool = True,
     include_item_meta_head: bool = True,
     thread_id: str | None = None,
@@ -376,7 +396,7 @@ def _element_head_prefix(
         parts.append(_create_label_token(value=label_value))
     if thread_id:
         parts.append(DocLangVocabulary._create_threading_token(thread_id=thread_id))
-    if include_href and (href_uri := _text_item_hyperlink_uri(item)):
+    if include_href and (href_uri := href_uri or _text_item_hyperlink_uri(item)):
         parts.append(_create_href_token(uri=href_uri))
     if include_layer and (layer_token := _create_layer_token(item=item, params=params)):
         parts.append(layer_token)
@@ -1218,9 +1238,17 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 item=item, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
             )
 
-        # A linked run needs its own element head, even within an inline group.
+        # An href applies to all content of its element. A linked run needs its own
+        # element head, unless the enclosing element carries the link (_shared_href).
         href_uri = _text_item_hyperlink_uri(item)
-        include_href = not is_inline_scope or href_uri is not None
+        parent_group = item.parent.resolve(doc) if is_inline_scope and item.parent else None
+        if isinstance(parent_group, InlineGroup) and href_uri == _shared_href(group=parent_group, doc=doc):
+            href_uri = None
+        first_child = item.children[0].resolve(doc) if item.children else None
+        # A host of runs carries a link only if all its content shares it.
+        runs_href = _shared_href(group=first_child, doc=doc) if isinstance(first_child, InlineGroup) else None
+        head_href = runs_href if isinstance(first_child, InlineGroup) else href_uri
+        include_href = head_href is not None
         if not skip_location:
             # An inline run is located through its host.
             head_params = params.model_copy()
@@ -1234,6 +1262,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                     caption_text=caption_head or None,
                     custom_text=custom_head or None,
                     include_href=include_href,
+                    href_uri=head_href,
                     # An inline run inherits its host's layer; a head token here is invalid mid-content.
                     include_layer=not is_inline_scope,
                     thread_id=thread_id,
@@ -1244,8 +1273,8 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 parts.append(_create_label_token(value=code_label))
             if thread_id:
                 parts.append(DocLangVocabulary._create_threading_token(thread_id=thread_id))
-            if include_href and (href_uri := _text_item_hyperlink_uri(item)):
-                parts.append(_create_href_token(uri=href_uri))
+            if head_href:
+                parts.append(_create_href_token(uri=head_href))
             if layer_token := _create_layer_token(item=item, params=params):
                 parts.append(layer_token)
             if custom_head:
@@ -1257,7 +1286,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
             or (isinstance(item, FormulaItem) and ContentType.TEXT_FORMULA in params.content_types)
             or (not isinstance(item, CodeItem | FormulaItem) and ContentType.TEXT_OTHER in params.content_types)
         ):
-            first_child_item = item.children[0].resolve(doc) if item.children else None
+            first_child_item = first_child
             if isinstance(first_child_item, InlineGroup):
                 # Only serialize the first child (InlineGroup) as the text content
                 # Other children are hierarchical subordinates and will be serialized separately.
@@ -1282,6 +1311,10 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                             selected=(item.label == DocItemLabel.CHECKBOX_SELECTED)
                         )
                         own_part = checkbox_token + own_part
+                    if href_uri and runs_href is None:
+                        own_part = _wrap(
+                            text=_create_href_token(uri=href_uri) + own_part, wrap_tag=DocLangToken.TEXT.value
+                        )
                     # Join with a plain space rather than the pretty-printing delimiter:
                     # own_part and inline_part are two runs of the same inline flow, so
                     # they need a real word boundary even in minimized (non-pretty) output.
@@ -1325,6 +1358,10 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
         if isinstance(item, ListItem) and params.suppress_empty_elements and not text_res:
             # Empty ListItem with suppression: emit nothing (not even ldiv)
             # This allows the list serializer to detect all-empty lists and suppress them
+            return create_ser_result(text="", span_source=item)
+
+        if is_inline_scope and href_uri and not text_part:
+            # A linked run whose content is excluded leaves nothing to link.
             return create_ser_result(text="", span_source=item)
 
         if wrap_open_token is not None and not (
@@ -1935,6 +1972,9 @@ class DocLangInlineSerializer(BaseInlineSerializer):
             should_wrap = False
         else:
             should_wrap = True
+        # A link shared by all runs moves to the <text> wrapper (see _shared_href).
+        if should_wrap and (href_uri := _shared_href(group=item, doc=doc)):
+            parts.append(create_ser_result(text=_create_href_token(uri=href_uri)))
         # The runs emit no layer of their own, so the <text> wrapper carries the group's.
         if should_wrap and (layer_token := _create_layer_token(item=item, params=params)):
             parts.append(create_ser_result(text=layer_token))

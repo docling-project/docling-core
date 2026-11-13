@@ -697,11 +697,14 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         content_layer = self._extract_layer(el=el)
         text = self._get_text(el)
         if text:
-            # Flattening a heading with linked runs discards each run's target.
-            has_linked_runs = self._get_children_simple_text_block(el) is None and bool(
-                el.getElementsByTagName(DocLangToken.HREF.value)
+            # Flattening a heading with linked runs discards each run's target. The runs
+            # then carry the links, including the heading's own (see _extract_hyperlink).
+            _, body_nodes = self._split_element_children_head_body(el)
+            has_linked_runs = self._get_children_simple_text_block(el) is None and any(
+                isinstance(n, Element) and n.getElementsByTagName(DocLangToken.HREF.value) for n in body_nodes
             )
             heading_text = "" if has_linked_runs else text
+            heading_link = None if has_linked_runs else self._extract_hyperlink(el)
             thread_id = self._extract_thread_id(el)
             if (
                 thread_id
@@ -715,7 +718,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             if level == 1:
                 item = doc.add_title(
                     text=heading_text,
-                    hyperlink=self._extract_hyperlink(el),
+                    hyperlink=heading_link,
                     parent=parent,
                     prov=(prov_list[0] if prov_list else None),
                     content_layer=content_layer,
@@ -723,7 +726,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             else:
                 item = doc.add_heading(
                     text=heading_text,
-                    hyperlink=self._extract_hyperlink(el),
+                    hyperlink=heading_link,
                     level=level - 1,
                     parent=parent,
                     prov=(prov_list[0] if prov_list else None),
@@ -731,7 +734,6 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 )
             self._apply_initial_text_provenance(item, text=heading_text, prov_list=prov_list)
             if has_linked_runs:
-                _, body_nodes = self._split_element_children_head_body(el)
                 self._parse_inline_group(doc=doc, el=el, parent=item, nodes=body_nodes)
             if thread_id:
                 self._register_thread(thread_id=thread_id, host=DocLangToken.HEADING.value, item=item)
@@ -1646,7 +1648,6 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             parent=parent,
             prov=(prov_list[0] if prov_list else None),
             content_layer=content_layer,
-            hyperlink=self._extract_hyperlink(el),
         )
         self._apply_initial_text_provenance(item, text="", prov_list=prov_list)
         _, body_nodes = self._split_element_children_head_body(el)
@@ -2589,14 +2590,18 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
     def _extract_hyperlink(self, el: Element) -> AnyUrl | Path | None:
         """Read the nearest element-head href, including one on an enclosing text host.
 
-        Only immediate head nodes are inspected at each level. A descendant's
-        link must never be applied to its parent or to a neighbouring run.
-        Relative targets and fragments use the model's Path representation.
+        An href applies to all content of its element, so runs inherit it; a host
+        holding runs therefore does not carry it itself. Only immediate head nodes
+        are inspected at each level. Relative targets and fragments use the model's
+        Path representation.
         """
         current: Node | None = el
         while isinstance(current, Element):
-            head_nodes, _ = self._split_element_children_head_body(current)
-            for node in head_nodes:
+            for node in current.childNodes:
+                if not self._is_ignorable_head_whitespace(node) and not (
+                    isinstance(node, Element) and self._is_element_head_tag(node)
+                ):
+                    break  # end of the element head
                 if isinstance(node, Element) and node.tagName == DocLangToken.HREF.value:
                     uri = node.getAttribute(DocLangAttributeKey.URI.value)
                     if not uri:
