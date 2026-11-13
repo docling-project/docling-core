@@ -130,6 +130,10 @@ def _cue_timings(start_time: float, end_time: float) -> WebVTTCueTimings:
     end = WebVTTTimestamp.from_seconds(end_time)
     if end <= start:
         end = WebVTTTimestamp.from_seconds(start.seconds + 0.001)
+        _logger.warning(
+            f"Track segment {start_time}..{end_time} collapses onto {start} at WebVTT "
+            f"millisecond precision, extending the cue end to {end}"
+        )
     return WebVTTCueTimings(start=start, end=end)
 
 
