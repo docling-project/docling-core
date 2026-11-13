@@ -1180,6 +1180,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
     ) -> None:
         """Parse list-item body emitted as virtual ``<text>`` after ``<ldiv>``."""
         prov_list = self._provenance_from_location_nodes(doc=doc, nodes=all_content_nodes)
+        hyperlink = self._extract_hyperlink_from_nodes(all_content_nodes)
         body_nodes = self._content_nodes_after_list_item_head(all_content_nodes)
         leading_text, rest_nodes = self._split_virtual_text_leading_text(body_nodes)
         rest_elements = [node for node in rest_nodes if isinstance(node, Element)]
@@ -1196,6 +1197,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 enumerated=ordered,
                 marker=marker_text,
                 prov_list=prov_list,
+                hyperlink=hyperlink,
             )
             for content_el in rest_elements:
                 self._dispatch_element(doc=doc, el=content_el, parent=li)
@@ -1207,6 +1209,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 enumerated=ordered,
                 marker=marker_text,
                 prov_list=prov_list,
+                hyperlink=hyperlink,
             )
         elif self._is_simple_virtual_text_nodes(body_nodes):
             text = self._get_text_from_nodes(body_nodes)
@@ -1217,6 +1220,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 enumerated=ordered,
                 marker=marker_text,
                 prov_list=prov_list,
+                hyperlink=hyperlink,
             )
         else:
             li = self._add_list_item_with_provenance(
@@ -1228,7 +1232,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 prov_list=prov_list,
             )
             if body_nodes:
-                self._parse_inline_group(doc=doc, el=el, parent=li, nodes=body_nodes)
+                self._parse_inline_group(doc=doc, el=el, parent=li, nodes=body_nodes, hyperlink=hyperlink)
 
     def _is_simple_virtual_text_nodes(self, nodes: Sequence[Node]) -> bool:
         """True when virtual-text body is plain text (optionally via ``<content>``)."""
@@ -1299,6 +1303,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         enumerated: bool,
         marker: str,
         prov_list: list[ProvenanceItem],
+        hyperlink: AnyUrl | Path | None = None,
     ) -> ListItem:
         item = doc.add_list_item(
             text=text,
@@ -1306,6 +1311,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             enumerated=enumerated,
             marker=marker,
             prov=(prov_list[0] if prov_list else None),
+            hyperlink=hyperlink,
         )
         self._apply_initial_text_provenance(item, text=text, prov_list=prov_list)
         return item
@@ -1530,8 +1536,13 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         parent: NodeItem | None,
         formatting: Formatting | None,
         label: DocItemLabel = DocItemLabel.TEXT,
+        hyperlink: AnyUrl | Path | None = None,
     ) -> None:
-        """Add text runs for ``nodes``, carrying ``formatting`` and ``label`` through nested text-level tags."""
+        """Add text runs for ``nodes``, carrying ``formatting`` and ``label`` through nested text-level tags.
+
+        ``hyperlink`` is the element-head target of the flat host being read (a virtual cell or
+        list item), inherited by runs that have no target of their own.
+        """
         # Comments and text nodes left empty by the whitespace rules separate nothing.
         runs = [n for n in nodes if isinstance(n, Element) or (isinstance(n, Text) and n.data)]
         skip_next = False
@@ -1556,14 +1567,19 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                             text=text_content,
                             parent=parent,
                             formatting=formatting,
-                            hyperlink=self._extract_hyperlink(node),
+                            hyperlink=self._extract_hyperlink(node) or hyperlink,
                         )
                 elif node.tagName in _FORMATTING_TAGS:
                     # Accumulate this tag's style and keep descending, so e.g. <bold>a
                     # <italic>b</italic></bold> gives "a" bold and "b" bold+italic.
                     merged = self._merge_formatting_tag(node.tagName, formatting)
                     self._parse_inline_runs(
-                        doc=doc, nodes=node.childNodes, parent=parent, formatting=merged, label=label
+                        doc=doc,
+                        nodes=node.childNodes,
+                        parent=parent,
+                        formatting=merged,
+                        label=label,
+                        hyperlink=hyperlink,
                     )
                 elif node.tagName == DocLangToken.HANDWRITING.value:
                     self._parse_inline_runs(
@@ -1572,11 +1588,17 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                         parent=parent,
                         formatting=formatting,
                         label=DocItemLabel.HANDWRITTEN_TEXT,
+                        hyperlink=hyperlink,
                     )
                 elif node.tagName == DocLangToken.RTL.value:
                     # The model has no text direction: its runs are read as plain ones.
                     self._parse_inline_runs(
-                        doc=doc, nodes=node.childNodes, parent=parent, formatting=formatting, label=label
+                        doc=doc,
+                        nodes=node.childNodes,
+                        parent=parent,
+                        formatting=formatting,
+                        label=label,
+                        hyperlink=hyperlink,
                     )
                 else:
                     self._dispatch_element(doc=doc, el=node, parent=parent)
@@ -1589,7 +1611,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                         text=text_content,
                         parent=parent,
                         formatting=formatting,
-                        hyperlink=self._extract_hyperlink(cast(Element, node.parentNode)),
+                        hyperlink=self._extract_hyperlink(cast(Element, node.parentNode)) or hyperlink,
                     )
 
     def _parse_inline_group(
@@ -1600,6 +1622,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         parent: NodeItem | None,
         nodes: Sequence[Node] | None = None,
         formatting: Formatting | None = None,
+        hyperlink: AnyUrl | Path | None = None,
     ) -> InlineGroup:
         """Parse <inline> elements into InlineGroup objects."""
         # Create the inline group
@@ -1608,7 +1631,9 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             self._source_recorder.bind_item(el, inline_group)
 
         my_nodes = nodes if nodes is not None else el.childNodes
-        self._parse_inline_runs(doc=doc, nodes=my_nodes, parent=inline_group, formatting=formatting)
+        self._parse_inline_runs(
+            doc=doc, nodes=my_nodes, parent=inline_group, formatting=formatting, hyperlink=hyperlink
+        )
         return inline_group
 
     def _parse_mixed_text_like(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
@@ -2331,6 +2356,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 cell_bbox: BoundingBox | None = None
                 content_idx = i + 1
                 cell_parts: list[Text | Element] = []
+                cell_hyperlink: AnyUrl | Path | None = None
                 if t != ecel and content_idx < len(texts):
                     content_idx, cell_bbox = self._consume_leading_location_fragments(
                         doc=doc,
@@ -2338,6 +2364,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                         start=content_idx,
                     )
                     content_idx, cell_parts = self._consume_otsl_cell_body_parts(texts, content_idx)
+                    cell_hyperlink = self._extract_hyperlink_from_nodes(cell_parts)
                     cell_text = "".join(
                         part.data if isinstance(part, Text) else self._collect_text(part) for part in cell_parts
                     )
@@ -2365,7 +2392,13 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                         with self._source_recorder.suspend():
                             if _is_virtual_text(cell_parts):
                                 cell_group = doc.add_inline_group(parent=parent)
-                                self._parse_inline_runs(doc=doc, nodes=cell_parts, parent=cell_group, formatting=None)
+                                self._parse_inline_runs(
+                                    doc=doc,
+                                    nodes=cell_parts,
+                                    parent=cell_group,
+                                    formatting=None,
+                                    hyperlink=cell_hyperlink,
+                                )
                             else:
                                 cell_group = doc.add_group(parent=parent, label=GroupLabel.UNSPECIFIED)
                                 for part in element_parts:
@@ -2587,6 +2620,32 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         head_nodes, _ = self._split_element_children_head_body(el)
         return self._layer_from_nodes(head_nodes)
 
+    def _extract_hyperlink_from_nodes(self, nodes: Sequence[Node]) -> AnyUrl | Path | None:
+        """Read an element-head href from a flat node sequence.
+
+        Virtual table-cell and list-item bodies put the owning element's head
+        (including ``<href>``) directly in the container, so there is no host
+        element whose head could be inspected.
+        """
+        for node in nodes:
+            if self._is_ignorable_head_whitespace(node):
+                continue
+            if not isinstance(node, Element) or not self._is_element_head_tag(node):
+                break
+            if node.tagName == DocLangToken.HREF.value:
+                return self._hyperlink_target(node)
+        return None
+
+    def _hyperlink_target(self, el: Element) -> AnyUrl | Path | None:
+        """Read the target of an ``<href>`` element."""
+        uri = el.getAttribute(DocLangAttributeKey.URI.value)
+        if not uri:
+            return None
+        try:
+            return AnyUrl(uri)
+        except ValidationError:
+            return Path(uri)
+
     def _extract_hyperlink(self, el: Element) -> AnyUrl | Path | None:
         """Read the nearest element-head href, including one on an enclosing text host.
 
@@ -2603,13 +2662,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 ):
                     break  # end of the element head
                 if isinstance(node, Element) and node.tagName == DocLangToken.HREF.value:
-                    uri = node.getAttribute(DocLangAttributeKey.URI.value)
-                    if not uri:
-                        return None
-                    try:
-                        return AnyUrl(uri)
-                    except ValidationError:
-                        return Path(uri)
+                    return self._hyperlink_target(node)
             current = current.parentNode
         return None
 
