@@ -4305,7 +4305,7 @@ class DoclingDocument(BaseModel):
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
         formula_to_mathml: bool = True,
         page_no: int | None = None,
-        html_lang: str = "en",
+        html_lang: str | None = None,
         html_head: str = "null",  # should be deprecated
         included_content_layers: set[ContentLayer] | None = None,
         split_page_view: bool = False,
@@ -4403,7 +4403,7 @@ class DoclingDocument(BaseModel):
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
         formula_to_mathml: bool = True,
         page_no: int | None = None,
-        html_lang: str = "en",
+        html_lang: str | None = None,
         html_head: str = "null",  # should be deprecated ...
         included_content_layers: set[ContentLayer] | None = None,
         split_page_view: bool = False,
