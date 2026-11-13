@@ -435,27 +435,34 @@ def test_webvtt_cue_html_character_references() -> None:
     assert str(vtt.cue_blocks[3]).rstrip("\n").endswith("R&amp;foo;d &amp;")
 
 
-def test_webvtt_export_keeps_text_literal() -> None:
-    """Test that document text resembling a character reference is exported literally."""
+@pytest.mark.parametrize(
+    ("text", "voice"),
+    [
+        ("Ask &copy and &amp; me", "Tom &amp; Jerry > Co"),
+        ("x < y > z", "Tom &amp; Jerry > Co"),
+        ("Tom & Jerry", None),
+        ("Hello", "Tom & Jerry > Co"),
+    ],
+)
+def test_webvtt_export_keeps_text_literal(text: str, voice: str | None) -> None:
+    """Test that document text and voice names resembling markup or references are exported literally."""
     doc = DoclingDocument(name="refs")
-    texts = ["Ask &copy and &amp; me", "x < y > z"]
-    for idx, text in enumerate(texts):
-        doc.add_text(
-            label=DocItemLabel.TEXT,
-            text=text,
-            source=TrackSource(start_time=float(idx), end_time=idx + 1.0, voice="Tom &amp; Jerry > Co"),
-        )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text=text,
+        source=TrackSource(start_time=0.0, end_time=1.0, voice=voice),
+    )
 
     vtt = WebVTTFile.parse(doc.export_to_vtt())
 
-    assert len(vtt) == len(texts)
-    for block, text in zip(vtt.cue_blocks, texts):
-        voice = block.payload[0].component
-        assert isinstance(voice, WebVTTCueVoiceSpan)
-        assert voice.start_tag.annotation == "Tom &amp; Jerry > Co"
-        span = voice.internal_text.components[0].component
-        assert isinstance(span, WebVTTCueTextSpan)
-        assert span.text == text
+    assert len(vtt) == 1
+    component = vtt.cue_blocks[0].payload[0].component
+    if voice is not None:
+        assert isinstance(component, WebVTTCueVoiceSpan)
+        assert component.start_tag.annotation == voice
+        component = component.internal_text.components[0].component
+    assert isinstance(component, WebVTTCueTextSpan)
+    assert component.text == text
 
 
 def test_webvtt_cue_language_span_start_tag():
