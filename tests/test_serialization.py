@@ -13,6 +13,7 @@ from pydantic import AnyUrl
 
 from docling_core.transforms.chunker.hierarchical_chunker import TripletTableSerializer
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
+from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
     HTMLMetaSerializer,
@@ -380,6 +381,144 @@ def test_md_formatting_fallback_mode(mode: FormattingFallbackMode, expected: str
     plain_params = PlainTextParams(formatting_fallback_mode=mode)
     plain = PlainTextDocSerializer(doc=doc, params=plain_params).serialize().text
     assert plain == "Water is H2O, energy is E=mc2, <tag>"
+
+
+def test_md_serialize_param_patch_reaches_text_formatting():
+    """Per-call serialize() patches apply to text formatting and its HTML fallback."""
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True))
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "**bold**"
+    assert ser.serialize(include_formatting=False).text == "bold"
+
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="2", formatting=Formatting(script=Script.SUB))
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "2"
+    assert ser.serialize(formatting_fallback_mode=FormattingFallbackMode.HTML).text == "<sub>2</sub>"
+
+
+def test_md_serialize_param_patch_reaches_inline_group():
+    """Per-call serialize() patches reach formatting inside inline-group text items."""
+    doc = DoclingDocument(name="test")
+    holder = doc.add_text(label=DocItemLabel.TEXT, text="")
+    inline = doc.add_inline_group(parent=holder)
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True), parent=inline)
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "**bold**"
+    assert ser.serialize(include_formatting=False).text == "bold"
+
+    doc = DoclingDocument(name="test")
+    holder = doc.add_text(label=DocItemLabel.TEXT, text="")
+    inline = doc.add_inline_group(parent=holder)
+    doc.add_text(label=DocItemLabel.TEXT, text="2", formatting=Formatting(script=Script.SUB), parent=inline)
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "2"
+    assert ser.serialize(formatting_fallback_mode=FormattingFallbackMode.HTML).text == "<sub>2</sub>"
+
+
+def test_md_serialize_param_patch_controls_escaping():
+    """Per-call escape_html/escape_underscores patches reach Markdown post_process."""
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="<b>x</b>")
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "&lt;b&gt;x&lt;/b&gt;"
+    assert ser.serialize(escape_html=False).text == "<b>x</b>"
+
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="a_b")
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "a\\_b"
+    assert ser.serialize(escape_underscores=False).text == "a_b"
+
+    doc = DoclingDocument(name="test")
+    holder = doc.add_text(label=DocItemLabel.TEXT, text="")
+    inline = doc.add_inline_group(parent=holder)
+    doc.add_text(label=DocItemLabel.TEXT, text="<i>y</i>", parent=inline)
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "&lt;i&gt;y&lt;/i&gt;"
+    assert ser.serialize(escape_html=False).text == "<i>y</i>"
+
+
+@pytest.mark.parametrize("plain_text", [False, True])
+@pytest.mark.parametrize("enabled", [False, True])
+@pytest.mark.parametrize("scope", ["text", "heading", "list", "inline", "footnote"])
+@pytest.mark.parametrize(
+    ("parameter", "text", "escaped"),
+    [("escape_html", "<b>x</b>", "&lt;b&gt;x&lt;/b&gt;"), ("escape_underscores", "a_b", "a\\_b")],
+)
+def test_md_serialize_param_patch_escaping_both_directions(plain_text, enabled, scope, parameter, text, escaped):
+    doc = DoclingDocument(name="test")
+    if scope == "heading":
+        doc.add_heading(text=text)
+    elif scope == "list":
+        doc.add_list_item(text=text, parent=doc.add_list_group())
+    elif scope == "inline":
+        holder = doc.add_text(label=DocItemLabel.TEXT, text="")
+        inline = doc.add_inline_group(parent=holder)
+        doc.add_text(label=DocItemLabel.TEXT, text=text, parent=inline)
+    elif scope == "footnote":
+        table = doc.add_table(data=TableData(num_rows=1, num_cols=1, table_cells=[]))
+        table.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text=text).get_ref())
+    else:
+        doc.add_text(label=DocItemLabel.TEXT, text=text)
+    serializer_cls = PlainTextDocSerializer if plain_text else MarkdownDocSerializer
+    params_cls = PlainTextParams if plain_text else MarkdownParams
+    serializer = serializer_cls(doc=doc, params=params_cls(**{parameter: not enabled}))
+    original = serializer.serialize().text
+    expected = serializer_cls(doc=doc, params=params_cls(**{parameter: enabled})).serialize().text
+    assert (escaped if enabled else text) in expected
+    assert serializer.serialize(**{parameter: enabled}).text == expected
+    assert serializer.serialize().text == original
+
+
+@pytest.mark.parametrize("plain_text", [False, True])
+@pytest.mark.parametrize("kind", ["code", "formula"])
+@pytest.mark.parametrize("enabled", [False, True])
+def test_md_serialize_param_patch_keeps_code_formula_unescaped(plain_text, kind, enabled):
+    doc = DoclingDocument(name="test")
+    text = "<b>a_b</b>"
+    if kind == "code":
+        doc.add_code(text=text)
+    else:
+        doc.add_formula(text=text)
+    serializer_cls = PlainTextDocSerializer if plain_text else MarkdownDocSerializer
+    serializer = serializer_cls(doc=doc)
+    assert text in serializer.serialize(escape_html=enabled, escape_underscores=enabled).text
+    assert serializer.serialize(escape_html=enabled, escape_underscores=enabled).text == serializer.serialize().text
+
+
+def test_md_serialize_param_patch_controls_footnote_escaping():
+    """Per-call escape patches reach footnote text through serialize_footnotes."""
+    doc = DoclingDocument(name="t")
+    tbl = doc.add_table(data=TableData(num_rows=1, num_cols=1, table_cells=[]))
+    tbl.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="foot_note_text").get_ref())
+
+    default = MarkdownDocSerializer(doc=doc).serialize().text
+    assert "foot\\_note" in default
+
+    patched = MarkdownDocSerializer(doc=doc).serialize(escape_underscores=False).text
+    assert "foot_note_text" in patched
+
+    ctor = MarkdownDocSerializer(doc=doc, params=MarkdownParams(escape_underscores=False)).serialize().text
+    assert patched == ctor
+
+
+def test_html_serialize_param_patch_reaches_text_formatting():
+    """Per-call serialize() patches apply to HTML text formatting."""
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True))
+    ser = HTMLDocSerializer(doc=doc)
+    assert "<strong>bold</strong>" in ser.serialize().text
+    assert "<strong>bold</strong>" not in ser.serialize(include_formatting=False).text
+
+    doc = DoclingDocument(name="test")
+    holder = doc.add_text(label=DocItemLabel.TEXT, text="")
+    inline = doc.add_inline_group(parent=holder)
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True), parent=inline)
+    ser = HTMLDocSerializer(doc=doc)
+    assert "<strong>bold</strong>" in ser.serialize().text
+    assert "<strong>bold</strong>" not in ser.serialize(include_formatting=False).text
 
 
 def test_md_pb_placeholder_and_page_filter():
@@ -1922,6 +2061,42 @@ def test_webvtt_params():
     assert len(actual) <= len(actual_default) or actual != actual_default
 
 
+def test_webvtt_serialize_param_patch_controls_formatting():
+    """Per-call param patches reach WebVTT post_process: include_formatting is honored."""
+    src = Path("./tests/data/doc/webvtt_example_02.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    default = WebVTTDocSerializer(doc=doc).serialize().text
+    assert "<i>" in default
+
+    patched = WebVTTDocSerializer(doc=doc).serialize(include_formatting=False).text
+    assert "<i>" not in patched
+    # Voice spans are cue metadata, not formatting: they stay.
+    assert "<v " in patched
+
+    # The per-call patch matches the constructor-level parameter.
+    ctor = WebVTTDocSerializer(doc=doc, params=WebVTTParams(include_formatting=False)).serialize().text
+    assert patched == ctor
+
+    # A per-call patch wins over the constructor parameter in both directions.
+    restored = (
+        WebVTTDocSerializer(doc=doc, params=WebVTTParams(include_formatting=False))
+        .serialize(include_formatting=True)
+        .text
+    )
+    assert restored == default
+
+
+@pytest.mark.parametrize("voice", ["X", "", None])
+@pytest.mark.parametrize("include_formatting", [True, False])
+def test_webvtt_param_patch_preserves_document_voices(voice, include_formatting):
+    doc = DoclingDocument.load_from_json(Path("./tests/data/doc/webvtt_example_02.json"))
+    expected = WebVTTDocSerializer(doc=doc).serialize(include_formatting=include_formatting).text
+    actual = WebVTTDocSerializer(doc=doc).serialize(voice=voice, include_formatting=include_formatting).text
+    assert "<v " in expected
+    assert actual == expected
+
+
 def test_html_meta_emits_xhtml_compatible_attributes():
     """Test that metadata attributes are name=value pairs."""
     doc = DoclingDocument(name="x")
@@ -2381,6 +2556,31 @@ def test_doclang_src_stays_inside_attribute():
     root = ET.fromstring(doc.export_to_doclang(image_mode=ImageRefMode.REFERENCED))
 
     assert [el.get("uri") for el in root.iter("src")] == [str(uri)]
+
+
+def test_doclang_serialize_param_patch_controls_formatting():
+    """Per-call param patches reach DocLang post_process: include_formatting is honored."""
+    doc = DoclingDocument(name="x")
+    doc.add_text(label=DocItemLabel.TEXT, text="bold words", formatting=Formatting(bold=True))
+
+    default = DocLangDocSerializer(doc=doc).serialize().text
+    assert "<bold>" in default
+
+    patched = DocLangDocSerializer(doc=doc).serialize(include_formatting=False).text
+    assert "<bold>" not in patched
+    assert "bold words" in patched
+
+    # The per-call patch matches the constructor-level parameter.
+    ctor = DocLangDocSerializer(doc=doc, params=DocLangParams(include_formatting=False)).serialize().text
+    assert patched == ctor
+
+    # A per-call patch wins over the constructor parameter in both directions.
+    restored = (
+        DocLangDocSerializer(doc=doc, params=DocLangParams(include_formatting=False))
+        .serialize(include_formatting=True)
+        .text
+    )
+    assert restored == default
 
 
 def test_export_to_markdown_image_dir_saves_and_references_images(sample_doc, tmp_path):

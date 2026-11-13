@@ -616,3 +616,20 @@ def test_latex_keeps_first_title_when_later_title_is_formatted() -> None:
     assert result.count(r"\maketitle") == 1
     assert "Between titles." in result
     assert "After titles." in result
+
+
+def test_latex_serialize_param_patch_reaches_text_formatting():
+    """Per-call serialize() patches apply to LaTeX text formatting."""
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True))
+    ser = LaTeXDocSerializer(doc=doc)
+    assert "\\textbf{bold}" in ser.serialize().text
+    assert "\\textbf{bold}" not in ser.serialize(include_formatting=False).text
+
+    doc = DoclingDocument(name="test")
+    holder = doc.add_text(label=DocItemLabel.TEXT, text="")
+    inline = doc.add_inline_group(parent=holder)
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True), parent=inline)
+    ser = LaTeXDocSerializer(doc=doc)
+    assert "\\textbf{bold}" in ser.serialize().text
+    assert "\\textbf{bold}" not in ser.serialize(include_formatting=False).text
