@@ -12,7 +12,8 @@ import pytest
 import yaml
 
 from docling_core.transforms.serializer.latex import LaTeXDocSerializer, LaTeXParams
-from docling_core.types.doc.base import ImageRefMode
+from docling_core.types.doc import ImageRef
+from docling_core.types.doc.base import ImageRefMode, Size
 from docling_core.types.doc.document import (
     BaseMeta,
     CodeMetaField,
@@ -616,3 +617,31 @@ def test_latex_keeps_first_title_when_later_title_is_formatted() -> None:
     assert result.count(r"\maketitle") == 1
     assert "Between titles." in result
     assert "After titles." in result
+
+
+@pytest.mark.parametrize(
+    "uri, expected_line",
+    [
+        (
+            Path("100% Report_artifacts/img.png"),
+            r"\begingroup\catcode`\%=12 \catcode`\#=12 "
+            r"\includegraphics[width=\linewidth]{100% Report_artifacts/img.png}\endgroup",
+        ),
+        (
+            Path("odd/a#b.png"),
+            r"\begingroup\catcode`\%=12 \catcode`\#=12 \includegraphics[width=\linewidth]{odd/a#b.png}\endgroup",
+        ),
+        (
+            Path("doc_artifacts/image_000001_ab12.png"),
+            r"\includegraphics[width=\linewidth]{doc_artifacts/image_000001_ab12.png}",
+        ),
+    ],
+)
+def test_latex_referenced_image_path(uri: Path, expected_line: str):
+    """A '%' or '#' in a referenced image path must not break the generated LaTeX."""
+    doc = DoclingDocument(name="x")
+    doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=10, height=10), uri=uri))
+
+    out = LaTeXDocSerializer(doc=doc, params=LaTeXParams(image_mode=ImageRefMode.REFERENCED)).serialize().text
+
+    assert expected_line in out.splitlines()
