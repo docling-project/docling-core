@@ -27,6 +27,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
+from ai_pr_event import MAINTAINER_ASSOCIATIONS
 from groundtruth_diff import is_groundtruth_path, render_markdown, summarize_file
 from pr_topic_labels import deterministic_topics, parse_model_topics, select_topics
 from safe_markdown import clean_text, markdown_code, markdown_text
@@ -38,8 +39,14 @@ LABEL_CI_NEEDS_CARE = "ai:ci-needs-care"
 MANAGED_LABELS = (LABEL_DUPLICATE, LABEL_CI_SAFE, LABEL_CI_NEEDS_CARE)
 TRIAGE_ANSWER_KEYS = ("ci_safety",)
 
+# The AI model does not read a PR from an author without maintainer rights when
+# the PR changes these paths. The model runs with a secret in its environment,
+# and a change here is the most likely way to steer it or to run code in CI.
+LLM_PROTECTED_PREFIXES = (".github/",)
+LLM_SKIP_REASON = "the PR changes `.github/` and its author is not a maintainer"
+
 MAX_ISSUE_REFS = 5
-MAX_OPEN_PRS_SCANNED = 50
+MAX_OPEN_PRS_SCANNED = 30
 MAX_CANDIDATES = 5
 MAX_PR_DIFF_CHARS = 120_000
 MAX_CANDIDATE_DIFF_CHARS = 20_000
@@ -80,6 +87,8 @@ SENSITIVE_PATHS: tuple[tuple[str, str], ...] = (
     (".claude/*", "changes instructions for AI agents"),
     (".codex/*", "changes instructions for AI agents"),
     (".bob/*", "changes instructions for AI agents"),
+    (".skills/*", "changes instructions for AI agents"),
+    ("CODEOWNERS", "changes who must review code"),
 )
 BINARY_SUFFIXES = frozenset({".so", ".dll", ".dylib", ".exe", ".whl", ".pyc", ".pyd", ".bin", ".jar"})
 # Added lines that match these patterns are shown to the model as hints. They
@@ -173,6 +182,8 @@ class TriageContext:
     groundtruth_markdown: str
     diff_truncated: bool
     topic_labels: list[str]
+    # Not empty when the AI model must not read this PR. The text says why.
+    llm_skip_reason: str = ""
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> TriageContext:
@@ -188,6 +199,7 @@ class TriageContext:
             groundtruth_markdown=data["groundtruth_markdown"],
             diff_truncated=data["diff_truncated"],
             topic_labels=list(data["topic_labels"]),
+            llm_skip_reason=str(data.get("llm_skip_reason", "")),
         )
 
 
@@ -475,6 +487,22 @@ def extract_issue_refs(text: str, repo: str, own_number: int) -> list[int]:
     return refs[:MAX_ISSUE_REFS]
 
 
+def llm_skip_reason(files: list[dict[str, Any]], author_association: str, maintainer_requested: bool) -> str:
+    """Return why the AI model must not read this PR, or "" when it may.
+
+    A maintainer who asks (`/ai` command or manual run) accepts the risk, so
+    the request lifts the skip. A rename out of a protected path counts as a
+    change to it.
+    """
+    if maintainer_requested or author_association in MAINTAINER_ASSOCIATIONS:
+        return ""
+    for item in files:
+        for path in (item["filename"], item.get("previous_filename")):
+            if path and path.startswith(LLM_PROTECTED_PREFIXES):
+                return LLM_SKIP_REASON
+    return ""
+
+
 def matches_any(path: str, patterns: tuple[str, ...]) -> bool:
     return any(fnmatch.fnmatchcase(path, pattern) for pattern in patterns)
 
@@ -633,6 +661,20 @@ def read_blob(git_dir: Path, commit: str, path: str) -> bytes | None:
 # Jobs
 
 
+def _pr_files_or_none(repo: str, number: int) -> list[dict[str, Any]] | None:
+    """Return the files of another PR, or None when the API call fails.
+
+    One PR that cannot be read (deleted, rate limit) must not remove the
+    deterministic checks of the PR under triage.
+    """
+    try:
+        return pr_files(repo, number)
+    except subprocess.CalledProcessError as exc:
+        detail = clean_text(str(exc.stderr or ""), 200)
+        print(f"::warning::PR #{number} is skipped in the duplicate scan: {detail or 'the API call failed'}")
+        return None
+
+
 def find_candidates(
     repo: str,
     pr_number: int,
@@ -665,13 +707,14 @@ def find_candidates(
         # the triage.
         try:
             issue = gh_api(f"repos/{repo}/issues/{ref}")
-            if "pull_request" in issue:
-                add(issue, f"referenced as #{ref}")
-                continue
+        except (subprocess.CalledProcessError, json.JSONDecodeError):
+            continue
+        if "pull_request" in issue:
+            add(issue, f"referenced as #{ref}")
+            continue
+        try:
             events = gh_api(f"repos/{repo}/issues/{ref}/timeline?per_page=100", paginate=True)
-        except subprocess.CalledProcessError as exc:
-            reason = clean_text(exc.stderr or "", 200)
-            print(f"::warning::Skipped the reference #{ref}: {reason}")
+        except (subprocess.CalledProcessError, json.JSONDecodeError):
             continue
         for event in events:
             source = (event.get("source") or {}).get("issue") or {}
@@ -690,7 +733,9 @@ def find_candidates(
         number = int(other["number"])
         if number == pr_number:
             continue
-        other_files = pr_files(repo, number)
+        other_files = _pr_files_or_none(repo, number)
+        if other_files is None:
+            continue
         files_by_pr[number] = other_files
         shared, overlaps = compare_files(files, other_files)
         if is_overlap_candidate(shared, overlaps):
@@ -709,7 +754,7 @@ def find_candidates(
     for candidate in selected:
         other_files = files_by_pr.get(candidate.number)
         if other_files is None:
-            other_files = pr_files(repo, candidate.number)
+            other_files = _pr_files_or_none(repo, candidate.number) or []
             candidate.shared_files, candidate.overlapping_hunks = compare_files(files, other_files)
         result.append((candidate, other_files))
     return result
@@ -740,7 +785,7 @@ def summarize_groundtruth(
     return markdown
 
 
-def prepare(repo: str, pr_number: int, out_dir: Path, git_dir: Path) -> bool:
+def prepare(repo: str, pr_number: int, out_dir: Path, git_dir: Path, maintainer_requested: bool = False) -> bool:
     pr = gh_api(f"repos/{repo}/pulls/{pr_number}")
     base_sha = pr["base"]["sha"]
     head_sha = pr["head"]["sha"]
@@ -760,6 +805,9 @@ def prepare(repo: str, pr_number: int, out_dir: Path, git_dir: Path) -> bool:
         additions=int(pr.get("additions", 0)),
         deletions=int(pr.get("deletions", 0)),
     )
+    skip_reason = llm_skip_reason(files, info.author_association, maintainer_requested)
+    if skip_reason:
+        print(f"The AI analysis is skipped: {skip_reason}.")
     refs = extract_issue_refs(f"{pr['title']}\n{body}", repo, pr_number)
     candidates = find_candidates(repo, pr_number, refs, files)
     diff, truncated = build_diff(files, MAX_PR_DIFF_CHARS)
@@ -771,6 +819,7 @@ def prepare(repo: str, pr_number: int, out_dir: Path, git_dir: Path) -> bool:
         groundtruth_markdown=summarize_groundtruth(git_dir, pr_number, merge_base, head_sha, files),
         diff_truncated=truncated,
         topic_labels=deterministic_topics(pr["title"], [item["filename"] for item in files]),
+        llm_skip_reason=skip_reason,
     )
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -783,7 +832,7 @@ def prepare(repo: str, pr_number: int, out_dir: Path, git_dir: Path) -> bool:
         only = set(candidate.shared_files) or None
         candidate_diff, _ = build_diff(other_files, MAX_CANDIDATE_DIFF_CHARS, only)
         (candidates_dir / f"{candidate.number}.diff").write_text(candidate_diff, encoding="utf-8")
-    return bool(files)
+    return bool(files) and not skip_reason
 
 
 def extract(bob_output: Path, context_path: Path, out_path: Path) -> None:
@@ -794,13 +843,27 @@ def extract(bob_output: Path, context_path: Path, out_path: Path) -> None:
     out_path.write_text(json.dumps(asdict(result), indent=2), encoding="utf-8")
 
 
+def effective_verdicts(context: TriageContext, result: TriageResult | None) -> dict[int, str]:
+    """Return the verdict of each assessed candidate.
+
+    A closed PR that was not merged is at most related, whatever the model says.
+    """
+    if result is None:
+        return {}
+    states = {candidate.number: candidate.state for candidate in context.candidates}
+    return {
+        d.pr: "related" if d.verdict == "duplicate" and states.get(d.pr) == "closed" else d.verdict
+        for d in result.duplicates
+    }
+
+
 def decide_labels(context: TriageContext, result: TriageResult | None) -> set[str]:
     labels: set[str] = set()
     if context.risk.forced or (result is not None and result.ci_verdict != "safe"):
         labels.add(LABEL_CI_NEEDS_CARE)
     elif result is not None:
         labels.add(LABEL_CI_SAFE)
-    if result is not None and any(d.verdict == "duplicate" for d in result.duplicates):
+    if "duplicate" in effective_verdicts(context, result).values():
         labels.add(LABEL_DUPLICATE)
     return labels
 
@@ -819,7 +882,14 @@ def render_comment(
         f"Checked commit `{head}`. The analysis read the diff only. It did not run code from this pull request.",
         "",
     ]
-    if result is None:
+    if result is None and context.llm_skip_reason:
+        lines += [
+            "> [!NOTE]",
+            f"> The AI analysis was skipped: {context.llm_skip_reason}. Only the deterministic checks are shown.",
+            "> A maintainer can comment `/ai triage` or `/ai review` to run it.",
+            "",
+        ]
+    elif result is None:
         lines += [
             "> [!WARNING]",
             "> The AI analysis did not finish. Only the deterministic checks are shown.",
@@ -845,7 +915,7 @@ def render_comment(
             lines.append(f"- {path}{markdown_inline(concern.reason)}")
     lines.append("")
 
-    verdicts = {d.pr: d.verdict for d in result.duplicates} if result else {}
+    verdicts = effective_verdicts(context, result)
     reasons = {d.pr: d.reason for d in result.duplicates} if result else {}
     # Duplicates and unassessed candidates stay visible. Related PRs are
     # collapsed, and unrelated PRs are hidden.
@@ -905,7 +975,60 @@ def stale_review_labels(current: set[str], reviewed_shas: list[str], head_sha: s
     return current & set(REVIEW_LABELS)
 
 
+def _find_sticky_comment(repo: str, pr_number: int) -> dict[str, Any] | None:
+    comments = gh_api(f"repos/{repo}/issues/{pr_number}/comments?per_page=100", paginate=True)
+    return next(
+        (
+            comment
+            for comment in comments
+            if comment["user"]["login"] == BOT_LOGIN and COMMENT_MARKER in (comment.get("body") or "")
+        ),
+        None,
+    )
+
+
+def _write_sticky_comment(repo: str, pr_number: int, existing: dict[str, Any] | None, body: str) -> None:
+    if existing is None:
+        gh_write("POST", f"repos/{repo}/issues/{pr_number}/comments", {"body": body})
+    else:
+        gh_write("PATCH", f"repos/{repo}/issues/comments/{existing['id']}", {"body": body})
+
+
+def render_failure_comment() -> str:
+    return "\n".join(
+        [
+            COMMENT_MARKER,
+            "### AI triage (advisory)",
+            "",
+            "> [!WARNING]",
+            "> The AI triage did not run for this commit. The collection of the PR data failed, so no checks,"
+            " labels, or review are shown. Do not read the missing result as a clean result.",
+            "> A maintainer can comment `/ai triage` to run it again. See the workflow run for the error.",
+            "",
+            "<sub>The `ai:*` labels are advisory. They do not approve CI.</sub>",
+        ]
+    )
+
+
+def publish_failure(repo: str, pr_number: int) -> None:
+    """Tell maintainers that the triage did not run, instead of staying silent.
+
+    The labels of an earlier commit are removed, so that they do not look like
+    a result for this commit.
+    """
+    pr = gh_api(f"repos/{repo}/pulls/{pr_number}")
+    stale = {label["name"] for label in pr["labels"]} & {*MANAGED_LABELS, *REVIEW_LABELS}
+    for label in sorted(stale):
+        gh_write("DELETE", f"repos/{repo}/issues/{pr_number}/labels/{label}")
+    existing = _find_sticky_comment(repo, pr_number)
+    _write_sticky_comment(repo, pr_number, existing, render_failure_comment())
+
+
 def publish(repo: str, pr_number: int, context_path: Path, result_path: Path | None) -> None:
+    if not context_path.is_file():
+        print("::warning::No triage context. The collection of the PR data failed.")
+        publish_failure(repo, pr_number)
+        return
     context = TriageContext.from_dict(json.loads(context_path.read_text("utf-8")))
     pr = gh_api(f"repos/{repo}/pulls/{pr_number}")
     if pr["head"]["sha"] != context.pr.head_sha:
@@ -921,15 +1044,7 @@ def publish(repo: str, pr_number: int, context_path: Path, result_path: Path | N
         except (ValueError, KeyError, TypeError) as exc:
             print(f"Ignoring an invalid analysis result: {exc}")
 
-    comments = gh_api(f"repos/{repo}/issues/{pr_number}/comments?per_page=100", paginate=True)
-    existing = next(
-        (
-            comment
-            for comment in comments
-            if comment["user"]["login"] == "github-actions[bot]" and COMMENT_MARKER in comment["body"]
-        ),
-        None,
-    )
+    existing = _find_sticky_comment(repo, pr_number)
 
     labels = decide_labels(context, result)
     # Topic labels are set only on the first triage of a PR, so a label that a
@@ -958,10 +1073,7 @@ def publish(repo: str, pr_number: int, context_path: Path, result_path: Path | N
         )
 
     body = render_comment(context, result, labels, [t for t in topics if t not in current])
-    if existing is None:
-        gh_write("POST", f"repos/{repo}/issues/{pr_number}/comments", {"body": body})
-    else:
-        gh_write("PATCH", f"repos/{repo}/issues/comments/{existing['id']}", {"body": body})
+    _write_sticky_comment(repo, pr_number, existing, body)
 
 
 def _result_to_answer(data: dict[str, Any]) -> dict[str, Any]:
@@ -990,6 +1102,11 @@ def main(argv: list[str] | None = None) -> int:
     prep.add_argument("--pr", type=int, required=True)
     prep.add_argument("--out", type=Path, required=True)
     prep.add_argument("--git-dir", type=Path, default=Path.cwd())
+    prep.add_argument(
+        "--maintainer-requested",
+        action="store_true",
+        help="A maintainer started this run, so the AI model may read a PR that is otherwise skipped.",
+    )
 
     ext = sub.add_parser("extract")
     ext.add_argument("--bob-output", type=Path, required=True)
@@ -1004,7 +1121,7 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
     if args.command == "prepare":
-        has_changes = prepare(args.repo, args.pr, args.out, args.git_dir)
+        has_changes = prepare(args.repo, args.pr, args.out, args.git_dir, args.maintainer_requested)
         github_output = os.environ.get("GITHUB_OUTPUT")
         if github_output:
             with Path(github_output).open("a", encoding="utf-8") as handle:

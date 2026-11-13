@@ -1,3 +1,10 @@
+# Bob Shell 2.0.5, tarball SHA-256
+# eff232eb1b69f34f984ddd295e6960470058ca922b1c751879c5a8d06199f566.
+#
+# To update: two maintainers each download the new tarball on a clean machine,
+# compute `sha256sum`, and compare the digests with each other and with the
+# checksum that IBM publishes for the release, if there is one. Change the
+# version and the digest together in one PR.
 name: Run Bob Shell (read-only)
 description: >-
   Install a pinned Bob Shell and run one headless task in a read-only custom
@@ -33,7 +40,9 @@ inputs:
     required: false
     default: "2.0.5"
   sha256:
-    description: SHA-256 of the Bob Shell tarball for this version.
+    description: >-
+      SHA-256 of the Bob Shell tarball for this version. See the comment at
+      the top of this file for how to verify a new digest.
     required: false
     default: "eff232eb1b69f34f984ddd295e6960470058ca922b1c751879c5a8d06199f566"
 
@@ -78,6 +87,20 @@ runs:
         if [ -n "${BOB_TEAM_ID}" ]; then
           team_args=(--team-id "${BOB_TEAM_ID}")
         fi
+        # Start bob with an empty environment plus an allowlist, so the model
+        # cannot read other runner variables through a file tool. The API key
+        # stays in the environment because `bob run` requires it there. A
+        # private HOME keeps it away from the runner user's files.
+        bob_home="${RUNNER_TEMP}/bob-home"
+        mkdir -p "${bob_home}"
+        env -i \
+          PATH="${PATH}" \
+          HOME="${bob_home}" \
+          TMPDIR="${RUNNER_TEMP}" \
+          LANG="C.UTF-8" \
+          CI="true" \
+          NO_COLOR="1" \
+          BOB_API_KEY="${BOB_API_KEY}" \
         bob run \
           --accept-license \
           --trust \
