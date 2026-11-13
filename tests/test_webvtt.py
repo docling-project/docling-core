@@ -296,18 +296,43 @@ def test_webvtt_parse_whitespace_only_line() -> None:
         warnings.simplefilter("error")
         vtt = WebVTTFile.parse(content)
     assert len(vtt) == 2
-    assert str(vtt[0]) == "00:00:00.160 --> 00:00:02.869\nhello<c> everyone</c>\n"
+    assert str(vtt[0]) == "00:00:00.160 --> 00:00:02.869\n \nhello<c> everyone</c>\n"
     assert str(vtt[1]) == "00:00:02.879 --> 00:00:05.110\nhello everyone\nwelcome back\n"
 
-    # A whitespace-only line between two cues still separates them, with or without an identifier.
+    # A whitespace-only line right before the next cue ends the cue and stays in its text,
+    # like the one followed by an empty line, with or without an identifier.
     content = "WEBVTT\n\n1\n00:01.000 --> 00:02.000\none\n \n2\n00:02.000 --> 00:03.000\ntwo\n \n00:03.000 --> 00:04.000\nthree\n"
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         vtt = WebVTTFile.parse(content)
     assert len(vtt) == 3
     assert [block.identifier for block in vtt] == ["1", "2", None]
-    assert str(vtt[0]) == "1\n00:01.000 --> 00:02.000\none\n"
+    assert str(vtt[0]) == "1\n00:01.000 --> 00:02.000\none\n \n"
+    assert str(vtt[1]) == "2\n00:02.000 --> 00:03.000\ntwo\n \n"
     assert str(vtt[2]) == "00:03.000 --> 00:04.000\nthree\n"
+    content = "WEBVTT\n\n00:01.000 --> 00:02.000\nhi\n \n\n00:02.000 --> 00:03.000\nyo\n"
+    assert str(WebVTTFile.parse(content)[0]) == str(WebVTTFile.parse(content.replace("\n \n\n", "\n \n"))[0])
+
+    # The cue text is kept as written, including whitespace at its start and end.
+    content = "WEBVTT\n\n00:01.000 --> 00:02.000\n \n  hello  \n \n\n00:02.000 --> 00:03.000\nx\n"
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+    assert len(vtt) == 2
+    assert str(vtt[0]) == "00:01.000 --> 00:02.000\n \n  hello  \n \n"
+
+    # Whitespace before the timings of a standalone cue block is not an identifier.
+    block = WebVTTCueBlock.parse(" \n00:01.000 --> 00:02.000\nhi\n")
+    assert block.identifier is None
+    assert str(block) == "00:01.000 --> 00:02.000\nhi\n"
+
+    # The identifier is kept as written.
+    assert WebVTTCueBlock.parse("  id \n00:01.000 --> 00:02.000\nhi\n").identifier == "  id "
+    # Only the WebVTT line terminators split the cue text, not other Unicode line boundaries.
+    block = WebVTTCueBlock.parse("00:01.000 --> 00:02.000\nfirst\u2028same line\x0csame line\x85\nsecond\n")
+    texts = [c.component.text for c in block.payload if isinstance(c.component, WebVTTCueTextSpan)]
+    assert texts == ["first\u2028same line\x0csame line\x85", "second"]
+    assert str(WebVTTCueBlock.parse("00:01.000 --> 00:02.000\r\none\rtwo\r\n")) == "00:01.000 --> 00:02.000\none\ntwo\n"
 
 
 @pytest.mark.parametrize(
