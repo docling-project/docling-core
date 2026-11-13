@@ -161,7 +161,7 @@ class WebVTTTextSerializer(BaseModel, BaseTextSerializer):
         # Apply post-processing here: formatting and voice.
         # If the TextItem is part of an InlineGroup, we need to further post-process it within the group context.
         source: TrackSource = item.source[0]
-        # The cue text is parsed again when the file is built, so `&` and `<` are escaped.
+        # Escape the text, so that the cue parser reads it back literally.
         text: str = doc_serializer.post_process(
             text=_escape(item.text, "<"),
             formatting=item.formatting,
@@ -400,6 +400,7 @@ class WebVTTDocSerializer(DocSerializer):
                 _logger.warning(f"Invalid {tag} cue span without annotation: {text}")
                 return text
             else:
+                # The annotation is unescaped on validation, so it must be escaped to stay literal.
                 start_tag = WebVTTCueSpanStartTagAnnotated(name=tag, annotation=_escape(anno, ">"))
         else:
             return text
