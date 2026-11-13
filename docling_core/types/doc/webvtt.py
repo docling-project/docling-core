@@ -6,7 +6,7 @@ import warnings
 from collections.abc import Iterator
 from enum import Enum
 from functools import total_ordering
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, ClassVar, Literal, get_args
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic.types import StringConstraints
@@ -330,7 +330,7 @@ class WebVTTCueComponentBase(BaseModel):
     except the WebVTT cue text span, which requires different definitions.
     """
 
-    kind: Literal["c", "b", "i", "u", "v", "lang", "ruby", "rt"]
+    kind: START_TAG_NAMES
     start_tag: WebVTTCueSpanStartTag
     internal_text: WebVTTCueInternalText
 
@@ -441,6 +441,9 @@ class WebVTTCueBlock(BaseModel):
     underline, voice, language, ruby, and ruby text. Other tags found in real-world
     files, such as `<font>` or an upper-case `<B>`, are removed and their text is
     kept.
+    An end tag that does not match the innermost open span, such as the `</ruby>` in
+    `<ruby>a<rt>b<i>c</ruby>`, makes `parse` raise a `ValueError`. Spans left open at
+    the end of the cue are closed implicitly.
     """
 
     model_config = ConfigDict(regex_engine="python-re")
@@ -455,7 +458,7 @@ class WebVTTCueBlock(BaseModel):
     # pattern of a WebVTT cue span start/end tag
     _pattern_tag: ClassVar[re.Pattern] = re.compile(
         r"<(?P<end>/?)"
-        r"(?P<tag>i|b|c|u|v|lang|ruby|rt)"
+        rf"(?P<tag>{'|'.join(get_args(START_TAG_NAMES))})"
         r"(?P<class>(?:\.[^\t\n\r &<>.]+)*)"
         r"(?:[ \t](?P<annotation>[^\n\r>]*))?>"
     )
@@ -601,24 +604,21 @@ class WebVTTCueBlock(BaseModel):
                 stack[-1].extend(cls._create_text_components(text))
             gps = {k: (v if v else None) for k, v in match.groupdict().items()}
 
-            if gps["tag"] in {"c", "b", "i", "u", "v", "lang", "ruby", "rt"}:
-                # Following WebVTT 1, 6.4, <rt> only applies directly inside <ruby>; otherwise its
-                # start tag, and its end tag when no <rt> is open, are ignored.
-                if not gps["end"]:
-                    if gps["tag"] != "rt" or (tag_stack and tag_stack[-1]["tag"] == "ruby"):
-                        tag_stack.append(gps)
-                        stack.append([])
-                elif tag_stack and (gps["tag"] != "rt" or tag_stack[-1]["tag"] == "rt"):
-                    # The end tag of the last ruby text span may be omitted, so
-                    # </ruby> implicitly closes an open <rt> (WebVTT 1, 4.2.2).
-                    if gps["tag"] == "ruby" and tag_stack[-1]["tag"] == "rt":
-                        _close_top_span()
-                    children = stack.pop()
-                    closed = tag_stack.pop()
-                    if closed["tag"] != gps["tag"]:
-                        raise ValueError(f"Incorrect end tag: {closed['tag']}")
-                    stack[-1].append(WebVTTCueComponentWithTerminator(component=cls._create_span(closed, children)))
-                # Ignore stray end tags that have no matching open span.
+            # Following WebVTT 1, 6.4, <rt> only applies directly inside <ruby>; otherwise its
+            # start tag, and its end tag when no <rt> is open, are ignored. Any other end tag
+            # without an open span is ignored as well.
+            if not gps["end"]:
+                if gps["tag"] != "rt" or (tag_stack and tag_stack[-1]["tag"] == "ruby"):
+                    tag_stack.append(gps)
+                    stack.append([])
+            elif tag_stack and (gps["tag"] != "rt" or tag_stack[-1]["tag"] == "rt"):
+                # The end tag of the last ruby text span may be omitted, so
+                # </ruby> implicitly closes an open <rt> (WebVTT 1, 4.2.2).
+                if gps["tag"] == "ruby" and tag_stack[-1]["tag"] == "rt":
+                    _close_top_span()
+                if tag_stack[-1]["tag"] != gps["tag"]:
+                    raise ValueError(f"Incorrect end tag: {tag_stack[-1]['tag']}")
+                _close_top_span()
 
             pos = match.end()
             i += 1
@@ -629,8 +629,7 @@ class WebVTTCueBlock(BaseModel):
 
         # Close any remaining unclosed spans at the end of the cue.
         while tag_stack:
-            children = stack.pop()
-            stack[-1].append(WebVTTCueComponentWithTerminator(component=cls._create_span(tag_stack.pop(), children)))
+            _close_top_span()
 
         return cls(
             identifier=identifier,
