@@ -9,8 +9,8 @@ import warnings
 import pytest
 from pydantic import ValidationError
 
+from docling_core.types.doc import DocItemLabel, DoclingDocument, TrackSource
 from docling_core.types.doc.webvtt import (
-    _ENTITY_CHARS,
     WebVTTCueBlock,
     WebVTTCueComponentWithTerminator,
     WebVTTCueInternalText,
@@ -114,7 +114,8 @@ def test_vtt_cue_commponents() -> None:
     # writes the escape back out.
     assert span.text == "My favorite book is Pride & Prejudice"
     assert str(span) == valid_text
-    for name, char in _ENTITY_CHARS.items():
+    named = {"amp": "&", "lt": "<", "gt": ">", "lrm": "\u200e", "rlm": "\u200f", "nbsp": "\u00a0"}
+    for name, char in named.items():
         assert WebVTTCueTextSpan(text=f"a&{name};b").text == f"a{char}b"
     # Only the two that cannot be written literally come back escaped.
     assert str(WebVTTCueTextSpan(text="a&gt;b")) == "a>b"
@@ -394,10 +395,35 @@ def test_webvtt_cue_html_character_references() -> None:
     # A reference to a line terminator would corrupt the cue on the way out.
     with pytest.raises(ValidationError):
         WebVTTCueTextSpan(text="a&#10;b")
+    with pytest.raises(ValidationError):
+        WebVTTCueSpanStartTagAnnotated(name="v", annotation="a&#13;b")
 
     # Only the escapes that cannot be written literally are written back.
     assert str(vtt.cue_blocks[0]).rstrip("\n").endswith("It's raining.")
     assert str(vtt.cue_blocks[3]).rstrip("\n").endswith("R&amp;foo;d &amp;")
+
+
+def test_webvtt_export_keeps_text_literal() -> None:
+    """Test that document text resembling a character reference is exported literally."""
+    doc = DoclingDocument(name="refs")
+    texts = ["Ask &copy and &amp; me", "x < y > z"]
+    for idx, text in enumerate(texts):
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text=text,
+            source=TrackSource(start_time=float(idx), end_time=idx + 1.0, voice="Tom &amp; Jerry > Co"),
+        )
+
+    vtt = WebVTTFile.parse(doc.export_to_vtt())
+
+    assert len(vtt) == len(texts)
+    for block, text in zip(vtt.cue_blocks, texts):
+        voice = block.payload[0].component
+        assert isinstance(voice, WebVTTCueVoiceSpan)
+        assert voice.start_tag.annotation == "Tom &amp; Jerry > Co"
+        span = voice.internal_text.components[0].component
+        assert isinstance(span, WebVTTCueTextSpan)
+        assert span.text == text
 
 
 def test_webvtt_cue_language_span_start_tag():

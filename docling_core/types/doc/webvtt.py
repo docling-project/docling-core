@@ -12,17 +12,21 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from pydantic.types import StringConstraints
 from typing_extensions import Self, override
 
-# The escapes written back out, and the characters they denote (W3C WebVTT 1, 6.3).
-# Reading accepts every HTML character reference (6.4), so this is no whitelist.
-_ENTITY_CHARS: dict[str, str] = {
-    "amp": "&",
-    "lt": "<",
-    "gt": ">",
-    "lrm": "\u200e",
-    "rlm": "\u200f",
-    "nbsp": "\u00a0",
-}
-_ESCAPE_NAMES: dict[str, str] = {char: name for name, char in _ENTITY_CHARS.items()}
+# The named escapes written back out (W3C WebVTT 1, 6.3): only the character that
+# would end the construct. Reading accepts every HTML character reference (6.4).
+_ESCAPE_NAMES: dict[str, str] = {"<": "lt", ">": "gt"}
+
+
+def _unescape(value: str, what: str) -> str:
+    """Resolve the HTML character references in cue text or an annotation.
+
+    A reference to a line terminator is rejected, since the value would be
+    written back across two lines.
+    """
+    value = html.unescape(value)
+    if any(ch in value for ch in {"\n", "\r"}):
+        raise ValueError(f"{what} contains a character reference for a line terminator")
+    return value
 
 
 def _escape(value: str, terminator: str) -> str:
@@ -213,10 +217,7 @@ class WebVTTCueTextSpan(BaseModel):
         if len(value) == 0:
             raise ValueError("Cue text cannot be empty")
 
-        value = html.unescape(value)
-        if any(ch in value for ch in {"\n", "\r"}):
-            raise ValueError("Cue text contains a character reference for a line terminator")
-        return value
+        return _unescape(value, "Cue text")
 
     @override
     def __str__(self) -> str:
@@ -296,10 +297,7 @@ class WebVTTCueSpanStartTagAnnotated(WebVTTCueSpanStartTag):
         if len(value) == 0:
             raise ValueError("Annotation cannot be empty")
 
-        value = html.unescape(value)
-        if any(ch in value for ch in {"\n", "\r"}):
-            raise ValueError("Annotation contains a character reference for a line terminator")
-        return value
+        return _unescape(value, "Annotation")
 
     @override
     def __str__(self) -> str:
