@@ -594,14 +594,20 @@ class WebVTTCueBlock(BaseModel):
             closed = tag_stack.pop()
             stack[-1].append(WebVTTCueComponentWithTerminator(component=cls._create_span(closed, children)))
 
+        def _add_text(text: str) -> None:
+            # A line break right after an end tag belongs to the span that just closed.
+            components = stack[-1]
+            if text.startswith("\n") and components and components[-1].terminator is None:
+                components[-1].terminator = WebVTTLineTerminator.LF
+            components.extend(cls._create_text_components(text))
+
         pos = 0
         matches = list(cls._pattern_tag.finditer(cue_text))
         i = 0
         while i < len(matches):
             match = matches[i]
             if match.start() > pos:
-                text = cue_text[pos : match.start()]
-                stack[-1].extend(cls._create_text_components(text))
+                _add_text(cue_text[pos : match.start()])
             gps = {k: (v if v else None) for k, v in match.groupdict().items()}
 
             # Following WebVTT 1, 6.4, <rt> only applies directly inside <ruby>; otherwise its
@@ -624,8 +630,7 @@ class WebVTTCueBlock(BaseModel):
             i += 1
 
         if pos < len(cue_text):
-            text = cue_text[pos:]
-            stack[-1].extend(cls._create_text_components(text))
+            _add_text(cue_text[pos:])
 
         # Close any remaining unclosed spans at the end of the cue.
         while tag_stack:
