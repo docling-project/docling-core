@@ -654,3 +654,18 @@ def test_webvtt_file_cues_out_of_start_time_order() -> None:
     # A model built directly still requires the cues to be in order.
     with pytest.raises(ValidationError):
         WebVTTFile(cue_blocks=[vtt[3], vtt[0]])
+
+
+@pytest.mark.parametrize(
+    "cue_text",
+    [
+        "<i>Previously on the show</i>\nwe met the team.",
+        "<v Ann>Hello there</v>\n<v Bob>Hi Ann</v>",
+        "Text <b>bold</b>\n<i>italic</i> text",
+    ],
+)
+def test_webvtt_parse_line_break_after_end_tag(cue_text: str) -> None:
+    """A line that ends with an end tag keeps its line terminator."""
+    timings = "00:01.000 --> 00:02.000\n"
+    block = WebVTTCueBlock.parse(timings + cue_text)
+    assert str(block) == timings + cue_text + "\n"
