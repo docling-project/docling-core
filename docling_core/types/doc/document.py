@@ -4362,6 +4362,9 @@ class DoclingDocument(BaseModel):
             # Remove the extension and add '_artifacts'
             artifacts_dir = filename.with_suffix("")
             artifacts_dir = artifacts_dir.with_name(artifacts_dir.name + "_artifacts")
+            if not artifacts_dir.is_absolute():
+                # Derived from ``filename``, so it already includes its parent.
+                return artifacts_dir, filename.parent
         if artifacts_dir.is_absolute():
             reference_path = None
         else:
