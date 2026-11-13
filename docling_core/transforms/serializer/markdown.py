@@ -9,7 +9,7 @@ from pathlib import Path, PurePath
 from typing import Annotated, Any, ClassVar, Final, Optional, Union
 from urllib.parse import quote, urlsplit, urlunsplit
 
-from pydantic import AnyUrl, BaseModel, Field, PositiveInt
+from pydantic import AnyUrl, BaseModel, Field, PositiveInt, model_validator
 from tabulate import _column_type, tabulate
 from typing_extensions import override
 
@@ -248,6 +248,14 @@ class OrigListItemMarkerMode(str, Enum):
     AUTO = "auto"
 
 
+class FurnitureMode(str, Enum):
+    """Display mode for document furniture (headers/footers)."""
+
+    NONE = "none"
+    ALL = "all"
+    DISTINCT = "distinct"
+
+
 class MarkdownParams(CommonParams):
     """Markdown-specific serialization parameters."""
 
@@ -294,6 +302,10 @@ class MarkdownParams(CommonParams):
             )
         ),
     ] = False
+    furniture_mode: FurnitureMode = Field(
+        default=FurnitureMode.NONE,
+        description="Control whether headers and footers are serialized (none, all, or distinct).",
+    )
     include_picture_classification: bool = Field(
         default=True,
         description="Include the picture classification prediction (the image's predicted class).",
@@ -307,6 +319,13 @@ class MarkdownParams(CommonParams):
             "falling back to 'standard' when positions are unavailable."
         ),
     )
+
+    @model_validator(mode="after")
+    def _adjust_layers_for_furniture(self) -> "MarkdownParams":
+        """Automatically include FURNITURE layer if mode is not NONE."""
+        if self.furniture_mode != FurnitureMode.NONE:
+            self.layers.add(ContentLayer.FURNITURE)
+        return self
 
 
 class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
@@ -1344,6 +1363,42 @@ class MarkdownDocSerializer(DocSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a given node."""
+
+        # Reset the state at the start of a new top-level document serialization
+        if item is None:
+            self._seen_furniture = set()
+
+        if item is not None and getattr(item, "content_layer", None) == ContentLayer.FURNITURE:
+            # 'distinct' mode: deduplicate based on text
+            if self.params.furniture_mode == FurnitureMode.DISTINCT:
+                # Ensure set exists (fallback in case item is passed directly without item=None first)
+                if not hasattr(self, "_seen_furniture"):
+                    self._seen_furniture: set[str] = set()
+
+                # Extract text for comparison
+                item_text = getattr(item, "text", None)
+                if not item_text:
+                    item_text = item.self_ref
+
+                # If seen before, skip immediately
+                if item_text in self._seen_furniture:
+                    return create_ser_result()
+
+                # Serialize the item first to see if it actually produces output
+                result = super().serialize(
+                    item=item,
+                    list_level=list_level,
+                    is_inline_scope=is_inline_scope,
+                    visited=visited,
+                    **(dict(delim="\n\n") | kwargs),
+                )
+
+                # Only mark as seen if it actually generated valid text
+                if result and getattr(result, "text", ""):
+                    self._seen_furniture.add(item_text)
+
+                return result
+
         return super().serialize(
             item=item,
             list_level=list_level,

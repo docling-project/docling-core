@@ -23,6 +23,7 @@ from docling_core.transforms.serializer.html import (
 from docling_core.transforms.serializer.latex import LaTeXDocSerializer
 from docling_core.transforms.serializer.markdown import (
     CaptionPlacement,
+    FurnitureMode,
     MarkdownDocSerializer,
     MarkdownParams,
     MarkdownPictureSerializer,
@@ -33,7 +34,7 @@ from docling_core.transforms.serializer.markdown import (
 from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer, PlainTextParams
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
-from docling_core.types.doc import DoclingDocument, ImageRef
+from docling_core.types.doc import ContentLayer, DoclingDocument, ImageRef
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, FormattingFallbackMode, ImageRefMode, Size
 from docling_core.types.doc.document import (
     BaseMeta,
@@ -1174,6 +1175,56 @@ def test_md_line_breaks():
     )
     result = MarkdownDocSerializer(doc=doc).serialize().text
     assert "\n" not in result.split("|")[1].strip()
+
+
+def test_md_furniture_modes():
+    """Test that furniture_mode correctly filters and deduplicates headers/footers."""
+    doc = DoclingDocument(name="Furniture Test")
+
+    # 1. Add standard body text
+    doc.add_text(label=DocItemLabel.PARAGRAPH, text="Main body paragraph text.")
+
+    # 2. Add headers/footers and tag them as FURNITURE layer items
+    h1 = doc.add_text(label=DocItemLabel.TEXT, text="Document Header Title")
+    h1.content_layer = ContentLayer.FURNITURE
+
+    h2 = doc.add_text(label=DocItemLabel.TEXT, text="Document Header Title")  # Duplicate text
+    h2.content_layer = ContentLayer.FURNITURE
+
+    h3 = doc.add_text(label=DocItemLabel.TEXT, text="Different Footer Notice")
+    h3.content_layer = ContentLayer.FURNITURE
+
+    # Test Mode 1: NONE (Default) -> Should completely drop furniture items
+    ser_none = MarkdownDocSerializer(doc=doc, params=MarkdownParams(furniture_mode=FurnitureMode.NONE))
+    text_none = ser_none.serialize().text
+    assert "Main body paragraph text." in text_none
+    assert "Document Header Title" not in text_none
+
+    # NONE (Default) but with EXPLICIT layers -> Should serialize furniture
+    params_explicit = MarkdownParams(
+        furniture_mode=FurnitureMode.NONE, layers={ContentLayer.BODY, ContentLayer.FURNITURE}
+    )
+    ser_explicit = MarkdownDocSerializer(doc=doc, params=params_explicit)
+    text_explicit = ser_explicit.serialize().text
+    assert "Document Header Title" in text_explicit
+
+    # Test Mode 2: ALL -> Should render every furniture item, including duplicates
+    ser_all = MarkdownDocSerializer(doc=doc, params=MarkdownParams(furniture_mode=FurnitureMode.ALL))
+    text_all = ser_all.serialize().text
+    assert "Main body paragraph text." in text_all
+    assert text_all.count("Document Header Title") == 2
+    assert "Different Footer Notice" in text_all
+
+    # Test Mode 3: DISTINCT -> Should render unique text items exactly once
+    ser_distinct = MarkdownDocSerializer(doc=doc, params=MarkdownParams(furniture_mode=FurnitureMode.DISTINCT))
+    text_distinct = ser_distinct.serialize().text
+    assert "Main body paragraph text." in text_distinct
+    assert text_distinct.count("Document Header Title") == 1
+    assert "Different Footer Notice" in text_distinct
+
+    # Verify state does not leak across multiple serialize() calls on the same instance
+    text_distinct_run_2 = ser_distinct.serialize().text
+    assert text_distinct == text_distinct_run_2
 
 
 # ===============================
