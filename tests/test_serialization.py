@@ -440,6 +440,54 @@ def test_md_serialize_param_patch_controls_escaping():
     assert ser.serialize(escape_html=False).text == "<i>y</i>"
 
 
+@pytest.mark.parametrize("plain_text", [False, True])
+@pytest.mark.parametrize("enabled", [False, True])
+@pytest.mark.parametrize("scope", ["text", "heading", "list", "inline", "footnote"])
+@pytest.mark.parametrize(
+    ("parameter", "text", "escaped"),
+    [("escape_html", "<b>x</b>", "&lt;b&gt;x&lt;/b&gt;"), ("escape_underscores", "a_b", "a\\_b")],
+)
+def test_md_serialize_param_patch_escaping_both_directions(plain_text, enabled, scope, parameter, text, escaped):
+    doc = DoclingDocument(name="test")
+    if scope == "heading":
+        doc.add_heading(text=text)
+    elif scope == "list":
+        doc.add_list_item(text=text, parent=doc.add_list_group())
+    elif scope == "inline":
+        holder = doc.add_text(label=DocItemLabel.TEXT, text="")
+        inline = doc.add_inline_group(parent=holder)
+        doc.add_text(label=DocItemLabel.TEXT, text=text, parent=inline)
+    elif scope == "footnote":
+        table = doc.add_table(data=TableData(num_rows=1, num_cols=1, table_cells=[]))
+        table.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text=text).get_ref())
+    else:
+        doc.add_text(label=DocItemLabel.TEXT, text=text)
+    serializer_cls = PlainTextDocSerializer if plain_text else MarkdownDocSerializer
+    params_cls = PlainTextParams if plain_text else MarkdownParams
+    serializer = serializer_cls(doc=doc, params=params_cls(**{parameter: not enabled}))
+    original = serializer.serialize().text
+    expected = serializer_cls(doc=doc, params=params_cls(**{parameter: enabled})).serialize().text
+    assert (escaped if enabled else text) in expected
+    assert serializer.serialize(**{parameter: enabled}).text == expected
+    assert serializer.serialize().text == original
+
+
+@pytest.mark.parametrize("plain_text", [False, True])
+@pytest.mark.parametrize("kind", ["code", "formula"])
+@pytest.mark.parametrize("enabled", [False, True])
+def test_md_serialize_param_patch_keeps_code_formula_unescaped(plain_text, kind, enabled):
+    doc = DoclingDocument(name="test")
+    text = "<b>a_b</b>"
+    if kind == "code":
+        doc.add_code(text=text)
+    else:
+        doc.add_formula(text=text)
+    serializer_cls = PlainTextDocSerializer if plain_text else MarkdownDocSerializer
+    serializer = serializer_cls(doc=doc)
+    assert text in serializer.serialize(escape_html=enabled, escape_underscores=enabled).text
+    assert serializer.serialize(escape_html=enabled, escape_underscores=enabled).text == serializer.serialize().text
+
+
 def test_md_serialize_param_patch_controls_footnote_escaping():
     """Per-call escape patches reach footnote text through serialize_footnotes."""
     doc = DoclingDocument(name="t")

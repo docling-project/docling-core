@@ -369,8 +369,8 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         my_visited = visited if visited is not None else set()
         params = MarkdownParams(**kwargs)
         res_parts: list[SerializationResult] = []
-        escape_html = kwargs.get("escape_html", True)
-        escape_underscores = kwargs.get("escape_underscores", True)
+        escape_html = kwargs.get("escape_html")
+        escape_underscores = kwargs.get("escape_underscores")
 
         has_inline_repr = (
             item.text == ""
@@ -1295,8 +1295,8 @@ class MarkdownDocSerializer(DocSerializer):
         self,
         text: str,
         *,
-        escape_html: bool = True,
-        escape_underscores: bool = True,
+        escape_html: bool | None = None,
+        escape_underscores: bool | None = None,
         formatting: Formatting | None = None,
         hyperlink: AnyUrl | PurePath | None = None,
         **kwargs: Any,
@@ -1304,9 +1304,11 @@ class MarkdownDocSerializer(DocSerializer):
         """Apply some text post-processing steps."""
         res = text
         params = self.params.merge_with_patch(patch=kwargs)
-        if escape_underscores and params.escape_underscores:
+        escape_underscores = params.escape_underscores if escape_underscores is None else escape_underscores
+        escape_html = params.escape_html if escape_html is None else escape_html
+        if escape_underscores:
             res = self._escape_underscores(text)
-        if escape_html and params.escape_html:
+        if escape_html:
             res = html.escape(res, quote=False)
         res = super().post_process(
             text=res,
