@@ -1632,3 +1632,22 @@ def test_split_using_plain_text_no_headings_avoids_infinite_recursion():
         tc = tokenizer.count_tokens(chunker.contextualize(chunk))
         assert tc <= max_tokens, f"Chunk {i} exceeds token limit: {tc} > {max_tokens}"
         assert chunk.meta.headings is None
+
+
+def test_semantic_split_retains_no_token_counters():
+    """Splitting oversized text leaves no token counter in semchunk's module-level memo."""
+    from semchunk import semchunk
+
+    doc = DoclingDocument(name="oversized_doc")
+    for i in range(3):
+        doc.add_text(label=DocItemLabel.PARAGRAPH, text=f"Paragraph {i} exceeds the chunk token budget. " * 20)
+    chunker = HybridChunker(
+        tokenizer=HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=32),
+        merge_peers=False,
+    )
+    before = len(semchunk._memoized_token_counters)
+
+    chunks = list(chunker.chunk(dl_doc=doc))
+
+    assert len(chunks) > 3
+    assert len(semchunk._memoized_token_counters) == before
