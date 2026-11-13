@@ -255,7 +255,7 @@ class LineBasedTokenChunker(BaseChunker):
                     )
 
                 if not take:
-                    if current:
+                    if current and (self.prefix_len == 0 or current != self.prefix or self.omit_prefix_on_overflow):
                         chunks.append(current)
                         if self.prefix_len > 0 and not self.omit_prefix_on_overflow:
                             current = self.prefix
@@ -266,6 +266,7 @@ class LineBasedTokenChunker(BaseChunker):
                         continue
                     raise ValueError(
                         f"Character {remaining[0]!r} cannot fit within the token budget of {self.max_tokens}"
+                        + (f" with prefix {self.prefix!r}" if current == self.prefix and self.prefix_len > 0 else "")
                     )
 
                 # Add the taken part
