@@ -97,6 +97,32 @@ def test_read_href_scope(body: str, expected: list[tuple[str, str | None, Format
     assert _text_runs(loaded) == expected
 
 
+@pytest.mark.parametrize(
+    ("body", "expected"),
+    [
+        (
+            '<table><fcel/>Same<fcel/><href uri="https://example.test/second"/>Same<nl/></table>',
+            [("Same", "https://example.test/second")],
+        ),
+        (
+            '<list><ldiv/>Same<ldiv/><href uri="https://example.test/second"/>Same</list>',
+            [("Same", None), ("Same", "https://example.test/second")],
+        ),
+    ],
+)
+def test_virtual_text_cell_and_list_item_links(body: str, expected: list[tuple[str, str | None]]) -> None:
+    xml = f'<doclang version="0.9">{body}</doclang>'
+    assert_valid_dclg_xml(xml)
+
+    loaded = DocLangDocDeserializer().deserialize_str(xml)
+
+    assert [
+        (item.text, str(item.hyperlink) if item.hyperlink is not None else None)
+        for item in loaded.texts
+        if isinstance(item, TextItem)
+    ] == expected
+
+
 @pytest.mark.parametrize("container", ["paragraph", "heading", "list", "table"])
 def test_adjacent_links_preserve_text_and_targets(container: str, tmp_path: Path) -> None:
     doc = DoclingDocument(name="adjacent-links")
