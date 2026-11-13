@@ -42,6 +42,9 @@ from docling_core.types.doc.document import (
     EntitiesMetaField,
     EntityMention,
     Formatting,
+    GraphCell,
+    GraphData,
+    GraphLink,
     LanguageMetaField,
     PictureClassificationMetaField,
     PictureClassificationPrediction,
@@ -55,7 +58,7 @@ from docling_core.types.doc.document import (
     TableData,
     TextItem,
 )
-from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc.labels import DocItemLabel, GraphCellLabel, GraphLinkLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -1290,6 +1293,33 @@ def test_html_charts():
     )
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".gt.html"), actual=actual)
+
+
+def test_html_key_value_graph_with_cycle():
+    """A to_child cycle, as XBRL presentation and calculation links can form, is rendered once."""
+    doc = DoclingDocument(name="kv_cycle")
+    doc.add_key_values(
+        graph=GraphData(
+            cells=[
+                GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="Statement", orig="Statement"),
+                GraphCell(label=GraphCellLabel.KEY, cell_id=1, text="Expenses", orig="Expenses"),
+                GraphCell(label=GraphCellLabel.KEY, cell_id=2, text="Income", orig="Income"),
+                GraphCell(label=GraphCellLabel.VALUE, cell_id=3, text="42", orig="42"),
+            ],
+            links=[
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=0, target_cell_id=1),
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=1, target_cell_id=2),
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=2, target_cell_id=1),
+                GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=2, target_cell_id=3),
+            ],
+        )
+    )
+
+    actual = doc.export_to_html()
+
+    assert actual.count("<li>Statement</li>") == 1
+    assert actual.count("<li>Expenses</li>") == 1
+    assert actual.count("<li><strong>Income</strong>: 42</li>") == 1
 
 
 def test_html_cross_page_list_page_break():
