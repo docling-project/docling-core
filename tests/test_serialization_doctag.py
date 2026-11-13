@@ -2,11 +2,13 @@
 
 from pathlib import Path
 
+import pytest
+
 from docling_core.transforms.serializer.doctags import (
     DocTagsDocSerializer,
     DocTagsParams,
 )
-from docling_core.types.doc import DocItemLabel, DoclingDocument, TableData
+from docling_core.types.doc import DocItemLabel, DoclingDocument, Formatting, TableData
 
 from .test_serialization import verify
 
@@ -108,3 +110,40 @@ def test_doctags_meta():
     ser = DocTagsDocSerializer(doc=doc)
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".gt.dt"), actual=actual)
+
+
+@pytest.mark.parametrize("mode", list(DocTagsParams.Mode))
+def test_doctags_serialize_param_patch_reaches_inline_group(mode):
+    doc = DoclingDocument(name="test")
+    holder = doc.add_text(label=DocItemLabel.TEXT, text="")
+    inline = doc.add_inline_group(parent=holder)
+    doc.add_text(label=DocItemLabel.TEXT, text="hello", parent=inline)
+    initial_mode = next(value for value in DocTagsParams.Mode if value != mode)
+    serializer = DocTagsDocSerializer(doc=doc, params=DocTagsParams(mode=initial_mode))
+    original = serializer.serialize().text
+    expected = DocTagsDocSerializer(doc=doc, params=DocTagsParams(mode=mode)).serialize().text
+    assert serializer.serialize(mode=mode).text == expected
+    assert serializer.serialize().text == original
+
+
+@pytest.mark.parametrize("inline", [False, True])
+@pytest.mark.parametrize("include_formatting", [False, True])
+def test_doctags_serialize_param_patch_reaches_formatting_hook(inline, include_formatting):
+    class BoldDocTagsSerializer(DocTagsDocSerializer):
+        def serialize_bold(self, text: str, **kwargs) -> str:
+            return f"<bold>{text}</bold>"
+
+    doc = DoclingDocument(name="test")
+    parent = None
+    if inline:
+        holder = doc.add_text(label=DocItemLabel.TEXT, text="")
+        parent = doc.add_inline_group(parent=holder)
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True), parent=parent)
+    serializer = BoldDocTagsSerializer(doc=doc, params=DocTagsParams(include_formatting=not include_formatting))
+    original = serializer.serialize().text
+    expected = (
+        BoldDocTagsSerializer(doc=doc, params=DocTagsParams(include_formatting=include_formatting)).serialize().text
+    )
+    assert ("<bold>bold</bold>" in expected) == include_formatting
+    assert serializer.serialize(include_formatting=include_formatting).text == expected
+    assert serializer.serialize().text == original
