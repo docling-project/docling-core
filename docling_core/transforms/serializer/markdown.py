@@ -328,11 +328,12 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
     def _heading_line_breaks(self, text: str) -> str:
         """Replace newlines in heading text with a space.
 
-        GFM headings cannot span multiple lines, so `\\n` is collapsed to a
-        space rather than a hard line break.  Override to change this behaviour
-        in subclasses.
+        GFM headings cannot span multiple lines, so every line break (`\\n`,
+        `\\r\\n`, a lone `\\r`, and the other breaks `str.splitlines` recognizes)
+        is collapsed to a space rather than a hard line break.  Override to
+        change this behaviour in subclasses.
         """
-        return text.replace("\n", " ")
+        return " ".join(text.splitlines())
 
     @override
     def serialize(
@@ -778,6 +779,9 @@ class MarkdownTableSerializer(BaseTableSerializer):
         """
         lines = table_text.split("\n")
         compact_lines = []
+        # Locate the separator row instead of assuming it is the second line,
+        # so a header that spans several lines is not overwritten with dashes.
+        sep_idx = next((i for i, line in enumerate(lines) if MARKDOWN_SEPARATOR_ROW_RE.match(line)), None)
 
         for i, line in enumerate(lines):
             if not line:
@@ -785,8 +789,8 @@ class MarkdownTableSerializer(BaseTableSerializer):
 
             parts = line.split("|")[1:-1]
 
-            # For separator line (second line), preserve alignment marks
-            if i == 1:
+            # For the separator line, preserve alignment marks
+            if i == sep_idx:
                 compact_parts = []
                 for part in parts:
                     p = part.strip()
@@ -860,9 +864,9 @@ class MarkdownTableSerializer(BaseTableSerializer):
                         cell_text = rich_texts[key]
                     else:
                         cell_text = col.text or ""
-                    # Newlines and pipes must be escaped in every cell so the
-                    # markdown table stays valid.
-                    rendered_row.append(cell_text.replace("\n", " ").replace("|", "&#124;"))
+                    # Line breaks (\n, \r\n, a lone \r, ...) and pipes must be
+                    # escaped in every cell so the markdown table stays valid.
+                    rendered_row.append(" ".join(cell_text.splitlines()).replace("|", "&#124;"))
                 rows.append(rendered_row)
             if len(rows) > 0:
                 # Resolve the column headers to the single row GFM allows
