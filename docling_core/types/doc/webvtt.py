@@ -743,7 +743,7 @@ class WebVTTFile(BaseModel):
         body = re.sub(cls._pattern, "", body)
 
         # Split into cue blocks
-        raw_blocks = re.split(r"\n\s*\n", body.strip())
+        raw_blocks = cls._split_blocks(body.strip())
         cues: list[WebVTTCueBlock] = []
         for block in raw_blocks:
             if not block.strip():
@@ -754,6 +754,24 @@ class WebVTTFile(BaseModel):
                 warnings.warn(f"Failed to parse cue block:\n{block}\n{e}", RuntimeWarning)
 
         return cls(title=title, cue_blocks=cues)
+
+    @staticmethod
+    def _split_blocks(body: str) -> list[str]:
+        """Split the file body into blocks at empty lines.
+
+        A line holding only whitespace is cue text, like the " " line that starts every
+        cue of a YouTube caption file. It still separates two cues when the next cue
+        starts right after it: its timings are on the next line, or on the one after an
+        identifier.
+        """
+        lines = body.split("\n")
+        blocks: list[list[str]] = [[]]
+        for index, line in enumerate(lines):
+            if not line or (not line.strip() and any("-->" in following for following in lines[index + 1 : index + 3])):
+                blocks.append([])
+            else:
+                blocks[-1].append(line)
+        return ["\n".join(block) for block in blocks if block]
 
     def __iter__(self) -> Iterator[WebVTTCueBlock]:  # type: ignore[override]
         """Return an iterator over the cue blocks."""
