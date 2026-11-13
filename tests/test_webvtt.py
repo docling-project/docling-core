@@ -17,6 +17,8 @@ from docling_core.types.doc.webvtt import (
     WebVTTCueItalicSpan,
     WebVTTCueLanguageSpan,
     WebVTTCueLanguageSpanStartTag,
+    WebVTTCueRubySpan,
+    WebVTTCueRubyTextSpan,
     WebVTTCueSpanStartTagAnnotated,
     WebVTTCueTextSpan,
     WebVTTCueTimings,
@@ -502,3 +504,92 @@ def test_webvtt_file_unknown_tags() -> None:
     assert str(vtt[1]).rstrip("\n").endswith("\nWhere are you going?")
     assert str(vtt[2]).rstrip("\n").endswith("\n<v Anna>Home, I think.</v>")
     assert str(vtt[3]).rstrip("\n").endswith("\nLast cue")
+
+
+@pytest.mark.parametrize(
+    ("cue_text", "expected_children", "expected_serialization"),
+    [
+        pytest.param(
+            "<ruby>漢字<rt>かんじ</rt></ruby> is kanji",
+            [("text", "漢字"), ("rt", "かんじ")],
+            "<ruby>漢字<rt>かんじ</rt></ruby> is kanji",
+            id="single_pair",
+        ),
+        pytest.param(
+            "<ruby>漢字<rt>かんじ</ruby> is kanji",
+            [("text", "漢字"), ("rt", "かんじ")],
+            "<ruby>漢字<rt>かんじ</rt></ruby> is kanji",
+            id="omitted_last_rt_end_tag",
+        ),
+        pytest.param(
+            "<ruby>日<rt>に</rt>本<rt>ほん</ruby>",
+            [("text", "日"), ("rt", "に"), ("text", "本"), ("rt", "ほん")],
+            "<ruby>日<rt>に</rt>本<rt>ほん</rt></ruby>",
+            id="several_pairs",
+        ),
+    ],
+)
+def test_webvtt_ruby_spans(
+    cue_text: str, expected_children: list[tuple[str, str]], expected_serialization: str
+) -> None:
+    """Test that ruby spans are parsed, keep their text and are serialized with all end tags."""
+    block = WebVTTCueBlock.parse(f"00:01.000 --> 00:02.000\n{cue_text}\n")
+
+    ruby = block.payload[0].component
+    assert isinstance(ruby, WebVTTCueRubySpan)
+    children: list[tuple[str, str]] = []
+    for child in ruby.internal_text.components:
+        component = child.component
+        if isinstance(component, WebVTTCueTextSpan):
+            children.append((component.kind, component.text))
+        else:
+            assert isinstance(component, WebVTTCueRubyTextSpan)
+            annotation = component.internal_text.components[0].component
+            assert isinstance(annotation, WebVTTCueTextSpan)
+            children.append((component.kind, annotation.text))
+    assert children == expected_children
+    assert str(block).rstrip("\n").endswith(f"\n{expected_serialization}")
+
+
+def test_webvtt_ruby_text_start_tag_inside_ruby_text_is_ignored() -> None:
+    """Test that an <rt> start tag inside an open <rt> is ignored and its text is kept."""
+    block = WebVTTCueBlock.parse("00:01.000 --> 00:02.000\n<ruby>日<rt>に<rt>ほん</rt></ruby>\n")
+    assert len(block.payload) == 1
+    ruby = block.payload[0].component
+    assert isinstance(ruby, WebVTTCueRubySpan)
+    assert [c.component.kind for c in ruby.internal_text.components] == ["text", "rt"]
+    rt = ruby.internal_text.components[1].component
+    assert isinstance(rt, WebVTTCueRubyTextSpan)
+    texts = [c.component.text for c in rt.internal_text.components if isinstance(c.component, WebVTTCueTextSpan)]
+    assert "".join(texts) == "にほん"
+    assert str(block).rstrip("\n").endswith("\n<ruby>日<rt>にほん</rt></ruby>")
+
+
+def test_webvtt_ruby_text_outside_ruby_is_ignored() -> None:
+    """Test that <rt> tags that are not directly inside a <ruby> span are ignored."""
+    block = WebVTTCueBlock.parse("00:01.000 --> 00:02.000\n<rt>x</rt> and <i><rt>y</rt></i>\n")
+    assert [type(c.component) for c in block.payload] == [
+        WebVTTCueTextSpan,
+        WebVTTCueTextSpan,
+        WebVTTCueItalicSpan,
+    ]
+    assert str(block).rstrip("\n").endswith("\nx and <i>y</i>")
+
+
+def test_webvtt_file_ruby_spans_example() -> None:
+    """Test a WebVTT file with ruby spans, including an omitted last end tag."""
+    with open("./tests/data/webvtt/webvtt_example_05.vtt", encoding="utf-8") as f:
+        content = f.read()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+
+    assert len(vtt) == 5
+    assert vtt.title == "Ruby annotations"
+    assert str(vtt[0]).endswith("\n<ruby>漢字<rt>かんじ</rt></ruby> is the Japanese word for kanji.\n")
+    assert str(vtt[1]).endswith("\n<ruby>東京<rt>とうきょう</rt></ruby> is the capital of Japan.\n")
+    assert str(vtt[2]).endswith("\n<ruby>日<rt>に</rt>本<rt>ほん</rt></ruby>語 is the Japanese language.\n")
+    voice = vtt[3].payload[0].component
+    assert isinstance(voice, WebVTTCueVoiceSpan)
+    assert isinstance(voice.internal_text.components[0].component, WebVTTCueRubySpan)
+    assert str(vtt[4]).endswith("\nPlain cue between ruby cues.\n")
