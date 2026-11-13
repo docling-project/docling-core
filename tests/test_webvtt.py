@@ -310,6 +310,53 @@ def test_webvtt_parse_whitespace_only_line() -> None:
     assert str(vtt[2]) == "00:03.000 --> 00:04.000\nthree\n"
 
 
+@pytest.mark.parametrize(
+    "block",
+    [
+        "NOTE a\n \nstill a note",
+        "STYLE\n::cue { color: red; }\n \n::cue(b) { color: blue; }",
+        "REGION\nid:r1\n \nwidth:40%",
+    ],
+)
+def test_webvtt_parse_note_with_whitespace_only_line(block: str) -> None:
+    """A NOTE, STYLE or REGION block ends at an empty line, or where the next cue starts."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(f"WEBVTT\n\n{block}\n\n00:01.000 --> 00:02.000\nhi\n")
+    assert [str(cue) for cue in vtt] == ["00:01.000 --> 00:02.000\nhi\n"]
+
+    # A whitespace-only line, not an empty one, between the block and the next cue.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(f"WEBVTT\n\n{block}\n \n00:01.000 --> 00:02.000\nhi\n")
+    assert [str(cue) for cue in vtt] == ["00:01.000 --> 00:02.000\nhi\n"]
+
+    # The next cue starts right after the block, without any separator line.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(f"WEBVTT\n\n{block}\n00:01.000 --> 00:02.000\nhi\n")
+    assert [str(cue) for cue in vtt] == ["00:01.000 --> 00:02.000\nhi\n"]
+
+
+def test_webvtt_parse_cue_text_starting_with_block_keyword() -> None:
+    """A cue text line that starts with NOTE, STYLE or REGION is cue text, not a block to ignore."""
+    content = (
+        "WEBVTT\n\n"
+        "00:01.000 --> 00:02.000\nNOTE: buy milk\nand eggs\n\n"
+        "00:03.000 --> 00:04.000\nSTYLE guide\n \nREGION x\n\n"
+        "NOTE a real comment\n\n"
+        "00:05.000 --> 00:06.000\nbye\n"
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+    assert [str(cue) for cue in vtt] == [
+        "00:01.000 --> 00:02.000\nNOTE: buy milk\nand eggs\n",
+        "00:03.000 --> 00:04.000\nSTYLE guide\n \nREGION x\n",
+        "00:05.000 --> 00:06.000\nbye\n",
+    ]
+
+
 def test_webvtt_file() -> None:
     """Test WebVTT files."""
     with open("./tests/data/webvtt/webvtt_example_01.vtt", encoding="utf-8") as f:

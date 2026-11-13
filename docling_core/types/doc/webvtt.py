@@ -678,7 +678,10 @@ class WebVTTCueBlock(BaseModel):
 class WebVTTFile(BaseModel):
     """A model representing a WebVTT file."""
 
-    _pattern: ClassVar[re.Pattern] = re.compile(r"(?m)^(STYLE|NOTE|REGION)\b[\s\S]*?(?:\n\s*\n|\Z)")
+    # pattern of a NOTE, STYLE or REGION block: it starts at the first line of the body or after an empty line
+    _pattern: ClassVar[re.Pattern] = re.compile(
+        r"(?:\A|(?<=\n\n))(STYLE|NOTE|REGION)\b[\s\S]*?(?:\n\n|\n(?=[^\n]*-->)|\Z)"
+    )
     cue_blocks: list[WebVTTCueBlock]
     title: str | None = None
 
@@ -721,6 +724,10 @@ class WebVTTFile(BaseModel):
     def parse(cls, raw: str) -> Self:
         """Parse a WebVTT file.
 
+        NOTE, STYLE and REGION blocks are ignored. They start at the beginning of the body or after an
+        empty line, and end at an empty line or where a line with cue timings starts. A line holding
+        only whitespace is not an empty line.
+
         Args:
             raw: The raw WebVTT file content.
 
@@ -738,6 +745,9 @@ class WebVTTFile(BaseModel):
         lines = raw.split("\n", 1)
         title = lines[0].removeprefix("WEBVTT").strip() or None
         body = lines[1] if len(lines) > 1 else ""
+
+        # Skip the empty lines that follow the signature
+        body = body.lstrip("\n")
 
         # Remove NOTE/STYLE/REGION blocks
         body = re.sub(cls._pattern, "", body)
