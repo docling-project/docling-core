@@ -296,18 +296,133 @@ def test_webvtt_parse_whitespace_only_line() -> None:
         warnings.simplefilter("error")
         vtt = WebVTTFile.parse(content)
     assert len(vtt) == 2
-    assert str(vtt[0]) == "00:00:00.160 --> 00:00:02.869\nhello<c> everyone</c>\n"
+    assert str(vtt[0]) == "00:00:00.160 --> 00:00:02.869\n \nhello<c> everyone</c>\n"
     assert str(vtt[1]) == "00:00:02.879 --> 00:00:05.110\nhello everyone\nwelcome back\n"
 
-    # A whitespace-only line between two cues still separates them, with or without an identifier.
+    # A whitespace-only line right before the next cue ends the cue and stays in its text,
+    # like the one followed by an empty line, with or without an identifier.
     content = "WEBVTT\n\n1\n00:01.000 --> 00:02.000\none\n \n2\n00:02.000 --> 00:03.000\ntwo\n \n00:03.000 --> 00:04.000\nthree\n"
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         vtt = WebVTTFile.parse(content)
     assert len(vtt) == 3
     assert [block.identifier for block in vtt] == ["1", "2", None]
-    assert str(vtt[0]) == "1\n00:01.000 --> 00:02.000\none\n"
+    assert str(vtt[0]) == "1\n00:01.000 --> 00:02.000\none\n \n"
+    assert str(vtt[1]) == "2\n00:02.000 --> 00:03.000\ntwo\n \n"
     assert str(vtt[2]) == "00:03.000 --> 00:04.000\nthree\n"
+    content = "WEBVTT\n\n00:01.000 --> 00:02.000\nhi\n \n\n00:02.000 --> 00:03.000\nyo\n"
+    assert str(WebVTTFile.parse(content)[0]) == str(WebVTTFile.parse(content.replace("\n \n\n", "\n \n"))[0])
+
+    # The cue text is kept as written, including whitespace at its start and end.
+    content = "WEBVTT\n\n00:01.000 --> 00:02.000\n \n  hello  \n \n\n00:02.000 --> 00:03.000\nx\n"
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+    assert len(vtt) == 2
+    assert str(vtt[0]) == "00:01.000 --> 00:02.000\n \n  hello  \n \n"
+
+    # Whitespace before the timings of a standalone cue block is not an identifier.
+    block = WebVTTCueBlock.parse(" \n00:01.000 --> 00:02.000\nhi\n")
+    assert block.identifier is None
+    assert str(block) == "00:01.000 --> 00:02.000\nhi\n"
+
+    # The identifier is kept as written.
+    assert WebVTTCueBlock.parse("  id \n00:01.000 --> 00:02.000\nhi\n").identifier == "  id "
+    # Only the WebVTT line terminators split the cue text, not other Unicode line boundaries.
+    block = WebVTTCueBlock.parse("00:01.000 --> 00:02.000\nfirst\u2028same line\x0csame line\x85\nsecond\n")
+    texts = [c.component.text for c in block.payload if isinstance(c.component, WebVTTCueTextSpan)]
+    assert texts == ["first\u2028same line\x0csame line\x85", "second"]
+    assert str(WebVTTCueBlock.parse("00:01.000 --> 00:02.000\r\none\rtwo\r\n")) == "00:01.000 --> 00:02.000\none\ntwo\n"
+
+
+@pytest.mark.parametrize(
+    "block",
+    [
+        "NOTE a\n \nstill a note",
+        "STYLE\n::cue { color: red; }\n \n::cue(b) { color: blue; }",
+        "REGION\nid:r1\n \nwidth:40%",
+    ],
+)
+def test_webvtt_parse_note_with_whitespace_only_line(block: str) -> None:
+    """A NOTE, STYLE or REGION block ends at an empty line, or where the next cue starts."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(f"WEBVTT\n\n{block}\n\n00:01.000 --> 00:02.000\nhi\n")
+    assert [str(cue) for cue in vtt] == ["00:01.000 --> 00:02.000\nhi\n"]
+
+    # A whitespace-only line, not an empty one, between the block and the next cue.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(f"WEBVTT\n\n{block}\n \n00:01.000 --> 00:02.000\nhi\n")
+    assert [str(cue) for cue in vtt] == ["00:01.000 --> 00:02.000\nhi\n"]
+
+    # The next cue starts right after the block, without any separator line.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(f"WEBVTT\n\n{block}\n00:01.000 --> 00:02.000\nhi\n")
+    assert [str(cue) for cue in vtt] == ["00:01.000 --> 00:02.000\nhi\n"]
+
+
+def test_webvtt_parse_cue_text_starting_with_block_keyword() -> None:
+    """A cue text line that starts with NOTE, STYLE or REGION is cue text, not a block to ignore."""
+    content = (
+        "WEBVTT\n\n"
+        "00:01.000 --> 00:02.000\nNOTE: buy milk\nand eggs\n\n"
+        "00:03.000 --> 00:04.000\nSTYLE guide\n \nREGION x\n\n"
+        "NOTE a real comment\n\n"
+        "00:05.000 --> 00:06.000\nbye\n"
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+    assert [str(cue) for cue in vtt] == [
+        "00:01.000 --> 00:02.000\nNOTE: buy milk\nand eggs\n",
+        "00:03.000 --> 00:04.000\nSTYLE guide\n \nREGION x\n",
+        "00:05.000 --> 00:06.000\nbye\n",
+    ]
+
+
+@pytest.mark.parametrize("newline", ["\n", "\r\n"])
+def test_webvtt_parse_metadata_header(newline: str) -> None:
+    """The header lines of YouTube captions (yt-dlp) are not a cue."""
+    content = (
+        "WEBVTT\nKind: captions\nLanguage: en\n\n"
+        "00:00:01.050 --> 00:00:04.860 align:start position:0%\n \nobviously good evening\n\n"
+        "00:00:04.860 --> 00:00:04.870 align:start position:0%\nobviously good evening\n \n"
+    ).replace("\n", newline)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+    assert [str(cue) for cue in vtt] == [
+        "00:00:01.050 --> 00:00:04.860\n \nobviously good evening\n",
+        "00:00:04.860 --> 00:00:04.870\nobviously good evening\n \n",
+    ]
+
+    # A cue right after "WEBVTT", without the empty line, is not a header.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse("WEBVTT\n00:01.000 --> 00:02.000\nhi\n")
+    assert len(vtt) == 1
+
+    # A header without any cue.
+    assert len(WebVTTFile.parse("WEBVTT\nKind: captions\nLanguage: en\n")) == 0
+
+    # The header ends at the first cue even without an empty line, and a whitespace-only line is a header line.
+    for content in (
+        "WEBVTT\nKind: captions\nLanguage: en\n00:01.000 --> 00:02.000\nhi\n",
+        "WEBVTT\nKind: captions\n \n00:01.000 --> 00:02.000\nhi\n",
+        "WEBVTT\nKind: captions\n \nLanguage: en\n\n00:01.000 --> 00:02.000\nhi\n",
+    ):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            vtt = WebVTTFile.parse(content)
+        assert [str(cue) for cue in vtt] == ["00:01.000 --> 00:02.000\nhi\n"]
+
+    # Every line before the first cue timings is a header line, also a would-be cue identifier.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse("WEBVTT\nKind: captions\n1\n00:01.000 --> 00:02.000\nhi\n")
+    assert [str(cue) for cue in vtt] == ["00:01.000 --> 00:02.000\nhi\n"]
 
 
 def test_webvtt_file() -> None:
@@ -630,3 +745,29 @@ def test_webvtt_file_ruby_spans_example() -> None:
     assert isinstance(voice, WebVTTCueVoiceSpan)
     assert isinstance(voice.internal_text.components[0].component, WebVTTCueRubySpan)
     assert str(vtt[4]).endswith("\nPlain cue between ruby cues.\n")
+
+
+def test_webvtt_file_youtube_header_example() -> None:
+    """Test a yt-dlp YouTube transcript with the "Kind" and "Language" header lines."""
+    with open("./tests/data/webvtt/webvtt_example_06.vtt", encoding="utf-8") as f:
+        content = f.read()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+
+    assert len(vtt) == 4
+    assert vtt.title is None
+    assert str(vtt[0]) == (
+        "00:00:00.200 --> 00:00:03.450\nWelcome back to the channel. Today we are looking\nat a simple example.\n"
+    )
+    assert str(vtt[1]) == (
+        "00:00:03.450 --> 00:00:07.100\nIf you extract subtitles using yt-dlp,\nthis is the structure you get.\n"
+    )
+    assert str(vtt[2]) == "00:00:07.100 --> 00:00:10.520\nEach block has a timestamp and a line of text.\n"
+    # The leading whitespace of a cue is kept: a whitespace-only line, then an indented line.
+    assert str(vtt[3]) == "00:00:10.520 --> 00:00:13.000\n \n   This cue starts with blank spaces.\n"
+    # The serialized file is the original one without the "Kind" and "Language" header lines
+    # (and without the final newline, which the serialization does not emit).
+    assert str(vtt) == content.replace("Kind: captions\nLanguage: en\n", "").rstrip("\n")
+    # The serialized file is valid WebVTT and parses back to the same cues.
+    assert WebVTTFile.parse(str(vtt)).cue_blocks == vtt.cue_blocks

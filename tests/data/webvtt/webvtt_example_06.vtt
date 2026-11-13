@@ -1,0 +1,18 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.200 --> 00:00:03.450
+Welcome back to the channel. Today we are looking
+at a simple example.
+
+00:00:03.450 --> 00:00:07.100
+If you extract subtitles using yt-dlp,
+this is the structure you get.
+
+00:00:07.100 --> 00:00:10.520
+Each block has a timestamp and a line of text.
+
+00:00:10.520 --> 00:00:13.000
+ 
+   This cue starts with blank spaces.
