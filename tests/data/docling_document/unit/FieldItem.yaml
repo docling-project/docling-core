@@ -1,7 +1,11 @@
 children: []
 content_layer: body
+control: null
+description: null
 label: field_item
 meta: null
+options: []
 parent: null
 prov: []
+required: false
 self_ref: '#'
