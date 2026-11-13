@@ -309,6 +309,10 @@ def test_webvtt_parse_whitespace_only_line() -> None:
     assert str(vtt[0]) == "1\n00:01.000 --> 00:02.000\none\n"
     assert str(vtt[2]) == "00:03.000 --> 00:04.000\nthree\n"
 
+    # At the end of the file, a whitespace-only line is dropped as it is between cues.
+    vtt = WebVTTFile.parse("WEBVTT\n\n00:01.000 --> 00:02.000\none\n \n\n00:02.000 --> 00:03.000\ntwo\n \n")
+    assert [str(block) for block in vtt] == ["00:01.000 --> 00:02.000\none\n", "00:02.000 --> 00:03.000\ntwo\n"]
+
 
 @pytest.mark.parametrize(
     ("cue_text", "expected"),
@@ -324,6 +328,10 @@ def test_webvtt_parse_keeps_cue_text_as_written(cue_text: str, expected: str) ->
     timings = "00:01.000 --> 00:02.000\n"
     block = WebVTTCueBlock.parse(timings + cue_text + "\n")
     assert str(block) == timings + expected + "\n"
+
+    # The last cue of a file keeps its whitespace too.
+    vtt = WebVTTFile.parse("WEBVTT\n\n" + timings + cue_text + "\n")
+    assert str(vtt[0]) == timings + expected + "\n"
 
 
 def test_webvtt_file() -> None:

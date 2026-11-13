@@ -742,8 +742,9 @@ class WebVTTFile(BaseModel):
         # Remove NOTE/STYLE/REGION blocks
         body = re.sub(cls._pattern, "", body)
 
-        # Split into cue blocks
-        raw_blocks = cls._split_blocks(body.strip())
+        # Split into cue blocks. Whitespace-only lines at the end of the file are dropped, as
+        # between cues, but the whitespace at the end of the last cue line is kept.
+        raw_blocks = cls._split_blocks(re.sub(r"(?:\n[^\S\n]*)+\Z", "", body.lstrip()))
         cues: list[WebVTTCueBlock] = []
         for block in raw_blocks:
             if not block.strip():
