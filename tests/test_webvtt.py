@@ -296,7 +296,7 @@ def test_webvtt_parse_whitespace_only_line() -> None:
         warnings.simplefilter("error")
         vtt = WebVTTFile.parse(content)
     assert len(vtt) == 2
-    assert str(vtt[0]) == "00:00:00.160 --> 00:00:02.869\nhello<c> everyone</c>\n"
+    assert str(vtt[0]) == "00:00:00.160 --> 00:00:02.869\n \nhello<c> everyone</c>\n"
     assert str(vtt[1]) == "00:00:02.879 --> 00:00:05.110\nhello everyone\nwelcome back\n"
 
     # A whitespace-only line between two cues still separates them, with or without an identifier.
@@ -308,6 +308,22 @@ def test_webvtt_parse_whitespace_only_line() -> None:
     assert [block.identifier for block in vtt] == ["1", "2", None]
     assert str(vtt[0]) == "1\n00:01.000 --> 00:02.000\none\n"
     assert str(vtt[2]) == "00:03.000 --> 00:04.000\nthree\n"
+
+
+@pytest.mark.parametrize(
+    ("cue_text", "expected"),
+    [
+        ("  - Hi\n  - Hello", "  - Hi\n  - Hello"),
+        (" <b>bold</b> tail", " <b>bold</b> tail"),
+        ("<i>one</i> \ntwo  ", "<i>one</i> \ntwo  "),
+        ("\t<00:00:01.500>word", "\tword"),
+    ],
+)
+def test_webvtt_parse_keeps_cue_text_as_written(cue_text: str, expected: str) -> None:
+    """Whitespace at the start and end of the cue text is kept, like on every other line."""
+    timings = "00:01.000 --> 00:02.000\n"
+    block = WebVTTCueBlock.parse(timings + cue_text + "\n")
+    assert str(block) == timings + expected + "\n"
 
 
 def test_webvtt_file() -> None:

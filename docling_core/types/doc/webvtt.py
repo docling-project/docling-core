@@ -560,7 +560,7 @@ class WebVTTCueBlock(BaseModel):
         Returns:
             The parsed WebVTT cue block.
         """
-        lines = raw.strip().splitlines()
+        lines = raw.lstrip().rstrip("\r\n").splitlines()
         if not lines:
             raise ValueError("Cue block must have at least one line")
         identifier: WebVTTCueIdentifier | None = None
@@ -578,7 +578,7 @@ class WebVTTCueBlock(BaseModel):
         start, end = [t.strip() for t in timing_line.split("-->")]
         end = re.split(" |\t", end)[0]  # ignore the cue settings list
         timings: WebVTTCueTimings = WebVTTCueTimings(start=WebVTTTimestamp(raw=start), end=WebVTTTimestamp(raw=end))
-        cue_text = "\n".join(cue_lines).strip()
+        cue_text = "\n".join(cue_lines)
 
         # Strip cue timestamp tags (e.g. <00:00:01.500>) — they carry no text content.
         cue_text = cls._pattern_cue_timestamp.sub("", cue_text)
