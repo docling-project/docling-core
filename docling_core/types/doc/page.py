@@ -843,6 +843,7 @@ class SegmentedPdfPage(SegmentedPage):
         Returns:
             Extracted text from the cells
         """
+        bbox = bbox.to_bottom_left_origin(page_height=self.dimension.height)
         selection = []
         for page_cell in self.iterate_cells(cell_unit):
             cell_bbox = page_cell.rect.to_bottom_left_origin(page_height=self.dimension.height).to_bounding_box()
