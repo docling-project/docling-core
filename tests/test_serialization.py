@@ -2039,6 +2039,16 @@ def test_webvtt_serialize_param_patch_controls_formatting():
     assert restored == default
 
 
+@pytest.mark.parametrize("voice", ["X", "", None])
+@pytest.mark.parametrize("include_formatting", [True, False])
+def test_webvtt_param_patch_preserves_document_voices(voice, include_formatting):
+    doc = DoclingDocument.load_from_json(Path("./tests/data/doc/webvtt_example_02.json"))
+    expected = WebVTTDocSerializer(doc=doc).serialize(include_formatting=include_formatting).text
+    actual = WebVTTDocSerializer(doc=doc).serialize(voice=voice, include_formatting=include_formatting).text
+    assert "<v " in expected
+    assert actual == expected
+
+
 def test_html_meta_emits_xhtml_compatible_attributes():
     """Test that metadata attributes are name=value pairs."""
     doc = DoclingDocument(name="x")

@@ -163,8 +163,7 @@ class WebVTTTextSerializer(BaseModel, BaseTextSerializer):
         text: str = doc_serializer.post_process(
             text=item.text,
             formatting=item.formatting,
-            voice=source.voice,
-            **kwargs,
+            **{**kwargs, "voice": source.voice},
         )
         if is_inline_scope:
             # Iteratively remove unnecessary consecutive tag pairs until no more changes
@@ -502,6 +501,7 @@ class WebVTTDocSerializer(DocSerializer):
         *,
         formatting: Formatting | None = None,
         hyperlink: AnyUrl | PurePath | None = None,
+        voice: str | None = None,
         **kwargs: Any,
     ) -> str:
         """Apply some text post-processing steps by adding formatting tags.
@@ -517,7 +517,6 @@ class WebVTTDocSerializer(DocSerializer):
 
         res = super().post_process(text=res, formatting=formatting, **kwargs)
 
-        voice: str | None = kwargs.get("voice", None)
         if voice:
             res = self.serialize_cue_span(text=res, tag="v", anno=voice)
 
