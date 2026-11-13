@@ -728,6 +728,8 @@ class WebVTTFile(BaseModel):
     _pattern: ClassVar[re.Pattern] = re.compile(
         r"(?:\A|(?<=\n\n))(STYLE|NOTE|REGION)\b[\s\S]*?(?:\n\n|\n(?=[^\n]*-->)|\Z)"
     )
+    # consecutive non-empty lines without cue timings at the start of the text that follows "WEBVTT"
+    _pattern_header: ClassVar[re.Pattern] = re.compile(r"\A(?:(?![^\n]*-->)[^\n]+(?:\n|\Z))*")
     cue_blocks: list[WebVTTCueBlock]
     title: str | None = None
 
@@ -774,9 +776,11 @@ class WebVTTFile(BaseModel):
         RuntimeWarning is emitted. Cues with the same start time keep their order in
         the file.
 
-        Blocks end at an empty line. A line holding only whitespace is cue text. NOTE, STYLE and
-        REGION blocks are ignored, and also end where a line with cue timings starts. The cue text is
-        kept as written.
+        Blocks end at an empty line. A line holding only whitespace is cue text. The lines
+        after "WEBVTT", for example the "Kind: captions" and "Language: en" lines of YouTube
+        captions, are a header that is ignored. It ends at the first empty line, or where a
+        line with cue timings starts. NOTE, STYLE and REGION blocks are ignored too, and also
+        end where a line with cue timings starts. The cue text is kept as written.
 
         Args:
             raw: The raw WebVTT file content.
@@ -796,8 +800,8 @@ class WebVTTFile(BaseModel):
         title = lines[0].removeprefix("WEBVTT").strip() or None
         body = lines[1] if len(lines) > 1 else ""
 
-        # Skip the empty lines that follow the signature
-        body = body.lstrip("\n")
+        # Skip the header lines and the empty lines that follow them
+        body = cls._pattern_header.sub("", body).lstrip("\n")
 
         # Remove NOTE/STYLE/REGION blocks
         body = re.sub(cls._pattern, "", body)
