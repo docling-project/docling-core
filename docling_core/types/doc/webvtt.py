@@ -602,16 +602,16 @@ class WebVTTCueBlock(BaseModel):
             gps = {k: (v if v else None) for k, v in match.groupdict().items()}
 
             if gps["tag"] in {"c", "b", "i", "u", "v", "lang", "ruby", "rt"}:
+                # Following WebVTT 1, 6.4, <rt> only applies directly inside <ruby>; otherwise its
+                # start tag, and its end tag when no <rt> is open, are ignored.
                 if not gps["end"]:
-                    # A new <rt> implicitly closes an open sibling <rt>.
-                    if gps["tag"] == "rt" and tag_stack and tag_stack[-1]["tag"] == "rt":
-                        _close_top_span()
-                    tag_stack.append(gps)
-                    stack.append([])
-                elif tag_stack:
+                    if gps["tag"] != "rt" or (tag_stack and tag_stack[-1]["tag"] == "ruby"):
+                        tag_stack.append(gps)
+                        stack.append([])
+                elif tag_stack and (gps["tag"] != "rt" or tag_stack[-1]["tag"] == "rt"):
                     # The end tag of the last ruby text span may be omitted, so
                     # </ruby> implicitly closes an open <rt> (WebVTT 1, 4.2.2).
-                    if gps["tag"] == "ruby" and len(tag_stack) > 1 and tag_stack[-1]["tag"] == "rt":
+                    if gps["tag"] == "ruby" and tag_stack[-1]["tag"] == "rt":
                         _close_top_span()
                     children = stack.pop()
                     closed = tag_stack.pop()

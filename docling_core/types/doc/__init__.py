@@ -192,6 +192,8 @@ from docling_core.types.doc.webvtt import (
     WebVTTCueItalicSpan,
     WebVTTCueLanguageSpan,
     WebVTTCueLanguageSpanStartTag,
+    WebVTTCueRubySpan,
+    WebVTTCueRubyTextSpan,
     WebVTTCueSpanStartTag,
     WebVTTCueSpanStartTagAnnotated,
     WebVTTCueTextSpan,
