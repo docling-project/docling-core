@@ -155,7 +155,10 @@ def resolve_remote_filename(
         str: The actual filename of the remote url.
     """
     raw_fname = None
-    if cont_disp := response_headers.get("Content-Disposition"):
+    # HTTP field names are case-insensitive (RFC 9110, Section 5.1), while a plain
+    # dict lookup is not, so normalise the names before looking the header up.
+    headers_by_lc = {key.lower(): value for key, value in response_headers.items()}
+    if cont_disp := headers_by_lc.get("content-disposition"):
         message = Message()
         message["Content-Disposition"] = cont_disp
         raw_fname = message.get_filename() or None
