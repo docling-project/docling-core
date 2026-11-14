@@ -2788,6 +2788,16 @@ def test_filter_invalid_pages():
         doc.filter(page_nrs={3})
 
 
+def test_filter_preserves_document_origin():
+    doc = _create_doc_for_filtering()
+    doc.origin = DocumentOrigin(filename="doc.pdf", mimetype="application/pdf", binary_hash=123)
+
+    filtered = doc.filter(page_nrs={2})
+
+    assert filtered.name == doc.name
+    assert filtered.origin == doc.origin
+
+
 def test_validate_rules():
     doc = _create_doc_for_filtering()
 

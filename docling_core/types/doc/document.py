@@ -6177,6 +6177,8 @@ class DoclingDocument(BaseModel):
         doc_index.index(doc=self, page_nrs=page_nrs)
         res_doc = DoclingDocument(name=self.name)
         res_doc._update_from_index(doc_index)
+        # the filtered document is the same document, so it keeps its origin
+        res_doc.origin = self.origin
         return res_doc
 
     @classmethod
