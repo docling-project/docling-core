@@ -2351,6 +2351,67 @@ def test_concatenate_shifts_graph_cell_pages_for_keyvalue_and_form():
     assert form_item_pages == [[1], [2]]
 
 
+def test_concatenate_keeps_rich_table_cell_refs():
+    """Concatenating docs must not swap rich table cell contents.
+
+    Regression test for docling-project/docling#5198: when the first document
+    holds fewer rich-cell groups than the second, the new ref assigned to an
+    early group of the second document can equal the old ref of a later group
+    of the same document. Rewriting cell refs in place while iterating then
+    matched the already-rewritten cell first, swapping the two cells' contents
+    (e.g. a row's first cell showing another row's text) in the merged doc.
+    """
+
+    def _make_doc(name: str, first_cells: list[str]) -> DoclingDocument:
+        doc = DoclingDocument(name=name)
+        doc.add_page(page_no=1, size=Size(width=100, height=100))
+        table = doc.add_table(data=TableData(num_rows=len(first_cells), num_cols=2))
+        for row_idx, text in enumerate(first_cells):
+            group = doc.add_group(label=GroupLabel.UNSPECIFIED, parent=table)
+            doc.add_text(parent=group, text=text, label=DocItemLabel.TEXT)
+            doc.add_table_cell(
+                table_item=table,
+                cell=RichTableCell(
+                    text=text,
+                    start_row_offset_idx=row_idx,
+                    end_row_offset_idx=row_idx + 1,
+                    start_col_offset_idx=0,
+                    end_col_offset_idx=1,
+                    ref=group.get_ref(),
+                ),
+            )
+            doc.add_table_cell(
+                table_item=table,
+                cell=TableCell(
+                    text=f"plain-{row_idx}",
+                    start_row_offset_idx=row_idx,
+                    end_row_offset_idx=row_idx + 1,
+                    start_col_offset_idx=1,
+                    end_col_offset_idx=2,
+                ),
+            )
+        return doc
+
+    def _first_cells(doc: DoclingDocument, table_idx: int) -> list[str]:
+        return [
+            " ".join(child.resolve(doc).text for child in cell.ref.resolve(doc).children)
+            for cell in doc.tables[table_idx].data.table_cells
+            if isinstance(cell, RichTableCell)
+        ]
+
+    doc1 = _make_doc(name="doc1", first_cells=["AAA"])
+    doc2 = _make_doc(name="doc2", first_cells=["BBB", "CCC"])
+    doc3 = _make_doc(name="doc3", first_cells=["DDD", "EEE", "FFF"])
+
+    merged = DoclingDocument.concatenate(docs=[doc1, doc2, doc3])
+
+    assert _first_cells(merged, 0) == ["AAA"]
+    assert _first_cells(merged, 1) == ["BBB", "CCC"]
+    assert _first_cells(merged, 2) == ["DDD", "EEE", "FFF"]
+    assert "| BBB   | plain-0   |" in merged.export_to_markdown()
+    assert "| CCC   | plain-1   |" in merged.export_to_markdown()
+
+
 def test_concatenate_squeezes_successive_duplicate_names():
     def _make_doc(name: str) -> DoclingDocument:
         doc = DoclingDocument(name=name)
