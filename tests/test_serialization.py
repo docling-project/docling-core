@@ -2570,7 +2570,7 @@ def test_md_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_t
 def test_triplet_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_table_doc):
     ser = MarkdownDocSerializer(doc=col_span_rich_table_doc, table_serializer=TripletTableSerializer())
     actual = ser.serialize().text
-    assert actual == "Status, Partner = Done. Status, Partner = Open"
+    assert actual == "row_0, col_0 = Status. row_0, Partner = Done. row_0, Partner = Open"
 
 
 @pytest.mark.parametrize(
