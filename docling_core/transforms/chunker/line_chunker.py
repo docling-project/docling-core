@@ -10,11 +10,20 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
     ChunkingSerializerProvider,
 )
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
-from docling_core.transforms.chunker.tokenizer.huggingface import get_default_tokenizer
 from docling_core.transforms.serializer.base import (
     BaseSerializerProvider,
 )
 from docling_core.types import DoclingDocument
+
+
+def _get_default_tokenizer() -> BaseTokenizer:
+    """Get default tokenizer instance.
+
+    Defer import to avoid pulling in transformers at module import time.
+    """
+    from docling_core.transforms.chunker.tokenizer.huggingface import get_default_tokenizer
+
+    return get_default_tokenizer()
 
 
 class LineBasedTokenChunker(BaseChunker):
@@ -42,7 +51,7 @@ class LineBasedTokenChunker(BaseChunker):
     tokenizer: Annotated[
         BaseTokenizer,
         Field(
-            default_factory=get_default_tokenizer,
+            default_factory=_get_default_tokenizer,
             description="The tokenizer to use; either instantiated object or name or path of respective pretrained model",
         ),
     ]
