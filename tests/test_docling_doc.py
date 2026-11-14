@@ -1053,6 +1053,16 @@ def test_local_image_allowed_in_embedded_exports_when_enabled(
     assert "data:image/png;base64," in _embedded_exports(doc, tmp_path)[export]()
 
 
+@pytest.mark.parametrize("uri", ["C:\\images\\fig.png", "C:/images/fig.png"])
+def test_windows_drive_path_is_gated_as_local_image(uri: str):
+    """A Windows path parses as a URL whose scheme is the drive letter, but it is a local path."""
+    image = _doc_with_local_picture(uri).pictures[0].image
+    assert image is not None
+
+    with pytest.raises(ValueError, match="Reading local image files"):
+        _ = image.pil_image
+
+
 def test_local_image_blocked_in_referenced_export(tmp_path: Path):
     """Referenced exports must not copy local files into the artifacts directory."""
     secret = tmp_path / "secret.png"

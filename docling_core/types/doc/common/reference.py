@@ -6,6 +6,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Optional, Union
 from urllib.parse import unquote
+from urllib.request import url2pathname
 
 import numpy as np
 from PIL import Image as PILImage
@@ -94,7 +95,10 @@ class ImageRef(BaseModel):
         if isinstance(self.uri, Path):
             return self.uri
         if isinstance(self.uri, AnyUrl) and self.uri.scheme == "file":
-            return Path(unquote(str(self.uri.path)))
+            return Path(url2pathname(str(self.uri.path)))
+        # A Windows path such as `C:\img.png` parses as a URL whose scheme is the drive letter.
+        if isinstance(self.uri, AnyUrl) and len(self.uri.scheme) == 1:
+            return Path(unquote(str(self.uri)))
         return None
 
     def _load_local_image(self, base_dir: Path | None = None) -> None:
