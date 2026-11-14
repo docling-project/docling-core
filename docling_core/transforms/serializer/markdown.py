@@ -79,6 +79,7 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
     TopicsMetaField,
+    TrackItem,
 )
 
 _logger = logging.getLogger(__name__)
@@ -1175,7 +1176,8 @@ class MarkdownFallbackSerializer(BaseFallbackSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        if isinstance(item, GroupItem):
+        # a track has no content of its own: it is serialized as its cues
+        if isinstance(item, GroupItem | TrackItem):
             parts = doc_serializer.get_parts(item=item, **kwargs)
             text_res = "\n\n".join([p.text for p in parts if p.text])
             return create_ser_result(text=text_res, span_source=parts)
