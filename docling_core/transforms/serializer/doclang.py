@@ -1581,7 +1581,7 @@ class DocLangPictureSerializer(BasePictureSerializer):
 
         uri: str | None = None
         if params.image_mode in [ImageRefMode.REFERENCED, ImageRefMode.EMBEDDED] and item.image and item.image.uri:
-            uri = str(item.image.uri)
+            uri = hyperlink_uri(item.image.uri)
         elif params.image_mode == ImageRefMode.EMBEDDED and (img := item.get_image(doc)):
             imgb64 = item._image_to_base64(img)
             uri = f"data:image/png;base64,{imgb64}"
