@@ -3,7 +3,7 @@
 import logging
 from collections.abc import Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Optional, Union, cast
 
 from pydantic import BaseModel, Field, computed_field, model_validator
 from typing_extensions import Self, override
@@ -130,34 +130,44 @@ class TableData(BaseModel):  # TBD
         self,
     ) -> list[list[TableCell]]:
         """Grid."""
-        # Initialise empty table data grid (only empty cells)
-        table_data = [
-            [
-                TableCell(
-                    text="",
-                    start_row_offset_idx=i,
-                    end_row_offset_idx=i + 1,
-                    start_col_offset_idx=j,
-                    end_col_offset_idx=j + 1,
-                )
-                for j in range(self.num_cols)
-            ]
-            for i in range(self.num_rows)
-        ]
-
-        # Overwrite cells in table data for which there is actual cell content.
+        num_cols = max(0, self.num_cols)
+        column_indices = range(num_cols)
+        table_data: list[list[TableCell | None] | None] = [None] * max(0, self.num_rows)
         for cell in self.table_cells:
-            for i in range(
-                min(cell.start_row_offset_idx, self.num_rows),
-                min(cell.end_row_offset_idx, self.num_rows),
-            ):
-                for j in range(
-                    min(cell.start_col_offset_idx, self.num_cols),
-                    min(cell.end_col_offset_idx, self.num_cols),
-                ):
-                    table_data[i][j] = cell
-
-        return table_data
+            columns = range(min(cell.start_col_offset_idx, self.num_cols), min(cell.end_col_offset_idx, self.num_cols))
+            # Preserve the empty inner loop before looking up a row.
+            if not columns:
+                continue
+            for i in range(min(cell.start_row_offset_idx, self.num_rows), min(cell.end_row_offset_idx, self.num_rows)):
+                row = table_data[i]
+                if row is None:
+                    row = table_data[i] = [None] * num_cols
+                for j in columns:
+                    row[j] = cell
+        for i, row in enumerate(table_data):
+            if row is None:
+                table_data[i] = [
+                    TableCell(
+                        text="",
+                        start_row_offset_idx=i,
+                        end_row_offset_idx=i + 1,
+                        start_col_offset_idx=j,
+                        end_col_offset_idx=j + 1,
+                    )
+                    for j in column_indices
+                ]
+            else:
+                for j, cell in enumerate(row):
+                    if cell is None:
+                        row[j] = TableCell(
+                            text="",
+                            start_row_offset_idx=i,
+                            end_row_offset_idx=i + 1,
+                            start_col_offset_idx=j,
+                            end_col_offset_idx=j + 1,
+                        )
+        # Both branches fill every missing row and cell before returning.
+        return cast(list[list[TableCell]], table_data)
 
     def _count_column_header_rows(self, grid: list[list[TableCell]] | None = None) -> int:
         """Count the leading grid rows that form the column header block.

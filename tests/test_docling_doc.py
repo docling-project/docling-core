@@ -3724,3 +3724,125 @@ def test_validate_rejects_total_table_cells_over_limit(monkeypatch, body, furnit
     DoclingDocument.model_validate(_tables_doc_dict(body=2))
     with pytest.raises(ValidationError, match="exceeding the limit of 8"):
         DoclingDocument.model_validate(_tables_doc_dict(body=body, furniture=furniture, orphans=orphans))
+
+
+def _make_grid_cell(row_start, row_end, col_start, col_end, text="value"):
+    return TableCell(
+        text=text,
+        start_row_offset_idx=row_start,
+        end_row_offset_idx=row_end,
+        start_col_offset_idx=col_start,
+        end_col_offset_idx=col_end,
+        row_span=row_end - row_start,
+        col_span=col_end - col_start,
+    )
+
+
+@pytest.mark.parametrize(
+    ("coordinates", "holes"),
+    [
+        ([(r, r + 1, c, c + 1) for r in range(3) for c in range(3)], 0),
+        ([(0, 3, 0, 3)], 0),
+        ([(0, 2, 0, 2), (1, 2, 1, 2)], 5),
+        ([], 9),
+    ],
+    ids=["dense", "full-span", "partial-span-overlap", "empty-control"],
+)
+def test_table_grid_constructs_only_uncovered_cells(monkeypatch, coordinates, holes):
+    source_cells = [_make_grid_cell(*values) for values in coordinates]
+    table = TableData(num_rows=3, num_cols=3, table_cells=source_cells)
+    original_init = TableCell.__init__
+    constructed = []
+
+    def counted_init(self, *args, **kwargs):
+        original_init(self, *args, **kwargs)
+        constructed.append(self)
+
+    with monkeypatch.context() as scoped:
+        scoped.setattr(TableCell, "__init__", counted_init)
+        grid = table.grid
+
+    source_ids = {id(item) for item in source_cells}
+    missing = [item for row in grid for item in row if id(item) not in source_ids]
+    assert len(missing) == holes
+    assert len({id(item) for item in missing}) == holes
+    assert all(item.text == "" for item in missing)
+    # Every constructed cell must survive in the result, rather than be overwritten.
+    assert len(constructed) == holes
+    assert {id(item) for item in constructed} == {id(item) for item in missing}
+
+
+def test_table_grid_preserves_source_identity_and_fresh_holes():
+    rich = RichTableCell(**_make_grid_cell(0, 2, 0, 2).model_dump(), ref=RefItem.model_validate({"$ref": "#/texts/0"}))
+    # Occupancy follows offsets, even when span metadata disagrees.
+    rich.row_span = rich.col_span = 1
+    explicit_empty = _make_grid_cell(1, 2, 1, 2, text="")
+    table = TableData(num_rows=3, num_cols=3, table_cells=[rich, explicit_empty])
+    first, second = table.grid, table.grid
+
+    assert first[0][0] is rich and first[0][1] is rich and first[1][0] is rich
+    assert first[1][1] is explicit_empty
+    assert len({id(row) for row in first}) == 3
+    assert first is not second and all(a is not b for a, b in zip(first, second))
+    holes = [item for row in first for item in row if item is not rich and item is not explicit_empty]
+    assert len(holes) == len({id(item) for item in holes}) == 5
+    for i, row in enumerate(first):
+        for j, item in enumerate(row):
+            if item is not rich and item is not explicit_empty:
+                assert item is not second[i][j]
+                assert item.model_dump() == _make_grid_cell(i, i + 1, j, j + 1, text="").model_dump()
+
+    first[0][2].text = "local gap edit"
+    first[2][0].text = "untouched row edit"
+    rich.text = "source edit"
+    assert table.grid[0][2].text == ""
+    assert table.grid[2][0].text == ""
+    assert table.grid[0][0].text == "source edit"
+    table.table_cells.reverse()
+    assert table.grid[1][1] is rich
+    table.num_rows = table.num_cols = 4
+    assert len(table.grid) == 4 and all(len(row) == 4 for row in table.grid)
+    table.table_cells.clear()
+    assert all(item.text == "" for row in table.grid for item in row)
+
+
+@pytest.mark.parametrize(
+    ("rows", "cols", "expected"),
+    [(0, 2, []), (2, 0, [[], []]), (-1, 2, []), (2, -1, [[], []]), (1, -(2**100), [[]]), (-(2**100), 1, [])],
+)
+def test_table_grid_preserves_empty_and_negative_dimensions(rows, cols, expected):
+    assert TableData(num_rows=rows, num_cols=cols).grid == expected
+
+
+def test_table_grid_preserves_large_negative_columns_with_nonempty_source():
+    table = TableData(num_rows=1, num_cols=-(2**100), table_cells=[_make_grid_cell(0, 0, 0, 0)])
+    assert table.grid == [[]]
+
+
+def test_table_grid_preserves_clipping_and_negative_indices():
+    clipped = _make_grid_cell(0, 5, 0, 5)
+    negative = _make_grid_cell(-1, 0, -1, 0)
+    table = TableData(num_rows=2, num_cols=2, table_cells=[clipped, negative])
+    grid = table.grid
+    assert grid[0][0] is clipped and grid[0][1] is clipped and grid[1][0] is clipped
+    assert grid[1][1] is negative
+    table.table_cells.append(_make_grid_cell(-3, -2, 0, 1))
+    with pytest.raises(IndexError):
+        _ = table.grid
+
+
+@pytest.mark.parametrize(("col_start", "col_end"), [(0, 0), (7, 8)])
+def test_table_grid_does_not_index_invalid_row_for_empty_column_range(col_start, col_end):
+    source = _make_grid_cell(-3, -2, col_start, col_end)
+    table = TableData(num_rows=2, num_cols=2, table_cells=[source])
+    assert table.grid == TableData(num_rows=2, num_cols=2).grid
+
+
+@pytest.mark.parametrize(
+    ("rows", "cols", "coordinates"),
+    [(0, 2, (-1, 0, 0, 1)), (2, 0, (0, 1, -1, 0))],
+)
+def test_table_grid_preserves_invalid_assignment_errors_with_empty_dimensions(rows, cols, coordinates):
+    table = TableData(num_rows=rows, num_cols=cols, table_cells=[_make_grid_cell(*coordinates)])
+    with pytest.raises(IndexError):
+        _ = table.grid
