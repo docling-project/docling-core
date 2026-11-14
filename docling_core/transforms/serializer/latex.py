@@ -45,6 +45,7 @@ from docling_core.types.doc.document import (
     Formatting,
     FormItem,
     FormulaItem,
+    FormulaMetaField,
     GroupItem,
     ImageRef,
     InlineGroup,
@@ -367,6 +368,8 @@ class LaTeXMetaSerializer(BaseModel, BaseMetaSerializer):
             txt = field_val.text
         elif isinstance(field_val, TabularChartMetaField):
             return None  # rendered as a table by LaTeXPictureSerializer
+        elif isinstance(field_val, FormulaMetaField):
+            return None  # the formula is already emitted as the item's own text
         else:
             txt = str(field_val or "")
 

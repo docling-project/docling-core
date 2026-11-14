@@ -5,7 +5,7 @@ from typing import Final
 
 from docling_core.types.doc.labels import DocItemLabel
 
-CURRENT_VERSION: Final = "1.11.0"
+CURRENT_VERSION: Final = "1.12.0"
 """Current DoclingDocument schema version.
 
 Bump this (minor) whenever a change to the serialised format would cause an
@@ -25,6 +25,7 @@ SCHEMA_VERSION_HISTORY: Final[list[dict]] = [
         "library_version": "v2.106.0",
         "note": "InlineGroup runs carry their own significant whitespace",
     },
+    {"schema": "1.12.0", "library_version": "v2.107.0", "note": "FormulaMeta, FormulaItem.meta"},
 ]
 """Ordered history of DoclingDocument schema versions in docling-core v2.x.
 
