@@ -1,10 +1,15 @@
+import warnings
+
 import pytest
 import tiktoken
 from transformers import AutoTokenizer
 
+from docling_core.transforms.chunker.hierarchical_chunker import ChunkingDocSerializer, ChunkingSerializerProvider
 from docling_core.transforms.chunker.line_chunker import LineBasedTokenChunker
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
 from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
+from docling_core.transforms.serializer.common import create_ser_result
+from docling_core.types.doc import BoundingBox, ProvenanceItem, Size
 from docling_core.types.doc import DoclingDocument as DLDocument
 from docling_core.types.doc.labels import DocItemLabel
 
@@ -396,6 +401,158 @@ def test_chunk_document_with_long_content(default_tokenizer):
         assert chunk.text.startswith(prefix)
         token_count = chunker.tokenizer.count_tokens(chunk.text)
         assert token_count <= MAX_TOKENS
+
+
+def _paged_doc(paragraphs: list[str]) -> DLDocument:
+    """Build a document with one paragraph per page."""
+    doc = DLDocument(name="paged_doc")
+    for page_no, text in enumerate(paragraphs, start=1):
+        doc.add_page(page_no=page_no, size=Size(width=600, height=800))
+        prov = ProvenanceItem(page_no=page_no, bbox=BoundingBox(l=10, t=10, r=500, b=40), charspan=(0, len(text)))
+        doc.add_text(label=DocItemLabel.PARAGRAPH, text=text, prov=prov)
+    return doc
+
+
+def test_chunk_document_doc_items_per_chunk(default_tokenizer):
+    """Each chunk lists only the items whose text it holds, with or without a prefix."""
+    paragraphs = [
+        "Revenue grew twelve percent in the third quarter, driven by strong demand in Europe.",
+        "The board approved a new dividend policy for all shareholders starting next spring.",
+        "Hiring will slow down until the end of the next fiscal year in every region.",
+    ]
+    doc = _paged_doc(paragraphs)
+
+    for prefix in ("", "Report: "):
+        chunks = list(LineBasedTokenChunker(tokenizer=default_tokenizer, prefix=prefix).chunk(doc))
+
+        assert [c.text.removeprefix(prefix).strip() for c in chunks] == paragraphs
+        for page_no, chunk in enumerate(chunks, start=1):
+            assert [item.text for item in chunk.meta.doc_items] == [paragraphs[page_no - 1]]
+            assert [p.page_no for item in chunk.meta.doc_items for p in item.prov] == [page_no]
+
+
+def test_chunk_document_doc_items_of_split_line(default_tokenizer):
+    """A paragraph split across chunks keeps its item in every part, and only there."""
+    long_text = "This is a sentence with multiple words. " * 10
+    short_text = "A short closing remark."
+    doc = _paged_doc([long_text, short_text])
+    long_item, short_item = doc.texts
+
+    chunks = list(LineBasedTokenChunker(tokenizer=default_tokenizer).chunk(doc))
+
+    assert len(chunks) > 2
+    for chunk in chunks:
+        expected = []
+        if "sentence" in chunk.text:
+            expected.append(long_item.self_ref)
+        if short_text in chunk.text:
+            expected.append(short_item.self_ref)
+        assert [item.self_ref for item in chunk.meta.doc_items] == expected
+
+
+class _UpperCaseSerializer(ChunkingDocSerializer):
+    """Rewrites the parts as it joins them, so they are not found in the output."""
+
+    def serialize_doc(self, *, parts, **kwargs):
+        res = super().serialize_doc(parts=parts, **kwargs)
+        return create_ser_result(text=res.text.upper(), span_source=parts)
+
+
+class _UpperCaseProvider(ChunkingSerializerProvider):
+    def get_serializer(self, doc):
+        return _UpperCaseSerializer(doc=doc)
+
+
+def _paged_list_doc(items: list[str]) -> DLDocument:
+    """Build a document with one list that has one item per page."""
+    doc = DLDocument(name="paged_list_doc")
+    group = doc.add_list_group()
+    for page_no, text in enumerate(items, start=1):
+        doc.add_page(page_no=page_no, size=Size(width=600, height=800))
+        prov = ProvenanceItem(page_no=page_no, bbox=BoundingBox(l=10, t=10, r=500, b=40), charspan=(0, len(text)))
+        doc.add_list_item(text=text, parent=group, prov=prov)
+    return doc
+
+
+_LIST_ITEMS = [
+    "Revenue grew twelve percent in the third quarter, driven by strong demand in Europe.",
+    "The board approved a new dividend policy for all shareholders starting next spring.",
+    "Hiring will slow down until the end of the next fiscal year in every region.",
+]
+
+
+class _PageBreakProvider(ChunkingSerializerProvider):
+    def get_serializer(self, doc):
+        serializer = ChunkingDocSerializer(doc=doc)
+        serializer.params = serializer.params.model_copy(update={"page_break_placeholder": "<!-- page break -->"})
+        return serializer
+
+
+@pytest.mark.parametrize(
+    "provider", [ChunkingSerializerProvider(), _PageBreakProvider()], ids=["default", "page_breaks"]
+)
+def test_chunk_document_list_items_per_chunk(default_tokenizer, provider):
+    """A list split across chunks gives each chunk only its own list items, with or without page breaks."""
+    doc = _paged_list_doc(_LIST_ITEMS)
+
+    chunks = list(LineBasedTokenChunker(tokenizer=default_tokenizer, serializer_provider=provider).chunk(doc))
+
+    # With page breaks, a chunk can hold only a placeholder; it gets the fallback.
+    content = [chunk for chunk in chunks if any(text in chunk.text for text in _LIST_ITEMS)]
+    assert len(content) == len(_LIST_ITEMS)
+    for page_no, (chunk, text) in enumerate(zip(content, _LIST_ITEMS), start=1):
+        assert text in chunk.text
+        assert [item.text for item in chunk.meta.doc_items] == [text]
+        assert [p.page_no for item in chunk.meta.doc_items for p in item.prov] == [page_no]
+
+
+def test_chunk_document_doc_items_when_parts_are_rewritten(default_tokenizer):
+    """If the parts cannot be found in the output, each chunk keeps all doc items."""
+    doc = _paged_doc(["First page text.", "Second page text."])
+
+    chunks = list(
+        LineBasedTokenChunker(tokenizer=default_tokenizer, serializer_provider=_UpperCaseProvider()).chunk(doc)
+    )
+
+    assert chunks
+    for chunk in chunks:
+        assert [item.self_ref for item in chunk.meta.doc_items] == [item.self_ref for item in doc.texts]
+
+
+def test_chunk_document_with_body_meta(default_tokenizer):
+    """A chunk of document-level meta text (a summary) keeps all doc items; others stay precise."""
+    doc = DLDocument.load_from_json("tests/data/doc/2408.09869v5_enriched_summary.json")
+
+    chunks = list(LineBasedTokenChunker(tokenizer=default_tokenizer, max_tokens_override=64).chunk(doc))
+
+    all_refs = {item.self_ref for chunk in chunks for item in chunk.meta.doc_items}
+    assert all(chunk.meta.doc_items for chunk in chunks)
+    assert any(len(chunk.meta.doc_items) == len(all_refs) for chunk in chunks)
+    assert any(len(chunk.meta.doc_items) < len(all_refs) for chunk in chunks)
+
+
+@pytest.mark.parametrize(
+    ("prefix", "omit_prefix_on_overflow"),
+    [("header " * 20, False), ("H: ", True)],
+    ids=["prefix_too_long", "omit_prefix_on_overflow"],
+)
+def test_chunk_document_prefix_only_chunks(default_tokenizer, prefix, omit_prefix_on_overflow):
+    """A chunk that holds only the prefix still gets the document's items."""
+    doc = _paged_doc(["word " * 30])
+    chunker = LineBasedTokenChunker(
+        tokenizer=default_tokenizer,
+        max_tokens_override=10,
+        prefix=prefix,
+        omit_prefix_on_overflow=omit_prefix_on_overflow,
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        chunks = list(chunker.chunk(doc))
+
+    assert any("word" not in chunk.text for chunk in chunks)  # a prefix-only chunk exists
+    for chunk in chunks:
+        assert [item.self_ref for item in chunk.meta.doc_items] == [doc.texts[0].self_ref]
 
 
 def test_chunk_text_preserves_long_unbreakable_token(default_tokenizer):

@@ -1,3 +1,4 @@
+import re
 import warnings
 from collections.abc import Iterator
 from functools import cached_property
@@ -13,8 +14,87 @@ from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 from docling_core.transforms.chunker.tokenizer.huggingface import get_default_tokenizer
 from docling_core.transforms.serializer.base import (
     BaseSerializerProvider,
+    SerializationResult,
 )
 from docling_core.types import DoclingDocument
+from docling_core.types.doc.document import DocItem, TextItem
+
+_ItemRange = tuple[int, int, DocItem]
+_PAGE_BREAK_MARKER = re.compile(r"#_#_DOCLING_DOC_PAGE_BREAK_\d+_\d+_#_#")
+
+
+def _find_line_end(text: str, needle: str, start: int, end: int) -> int:
+    """Find ``needle`` in ``text[start:end]`` where it ends a line; -1 if absent.
+
+    Requiring the line end skips a match inside a list marker or another item,
+    such as the "1" of "1. 1".
+    """
+    pos = text.find(needle, start, end)
+    while pos >= 0:
+        stop = pos + len(needle)
+        if stop == end or text[stop] == "\n":
+            return pos
+        pos = text.find(needle, pos + 1, end)
+    return -1
+
+
+def _locate_items(text: str, items: list[DocItem], start: int, end: int) -> list[_ItemRange]:
+    """Find the range of each item of a part, in order, within ``text[start:end]``.
+
+    An item whose text is not found as such, for example a table or a run with
+    Markdown formatting, covers the whole part.
+    """
+    if len(items) == 1:
+        return [(start, end, items[0])]
+    ranges: list[_ItemRange] = []
+    cursor = start
+    for item in items:
+        needle = item.text if isinstance(item, TextItem) else ""
+        pos = _find_line_end(text, needle, cursor, end) if needle else -1
+        if pos >= 0:
+            cursor = pos + len(needle)
+            ranges.append((pos, cursor, item))
+        else:
+            ranges.append((start, end, item))
+    return ranges
+
+
+def _find_part(text: str, part_text: str, cursor: int) -> tuple[int, int] | None:
+    """Find a part in the serialized text from ``cursor``; None if it is not there.
+
+    Serializers write a page break inside a part as a marker that they replace
+    once the parts are joined (see ``DocSerializer._create_page_break``), so the
+    text around each marker is found on its own.
+    """
+    pieces = [p for p in _PAGE_BREAK_MARKER.split(part_text) if p]
+    start = end = -1
+    for piece in pieces:
+        pos = text.find(piece, cursor)
+        if pos < 0:
+            return None
+        if start < 0:
+            start = pos
+        end = cursor = pos + len(piece)
+    return (start, end) if start >= 0 else None
+
+
+def _locate_parts(text: str, parts: list[SerializationResult]) -> list[tuple[int, int, list[_ItemRange]]] | None:
+    """Find the range of each part in the serialized text, and of each item in it.
+
+    Returns None if a part with doc items is not found, for example when a custom
+    serializer rewrites the parts as it joins them.
+    """
+    ranges: list[tuple[int, int, list[_ItemRange]]] = []
+    cursor = 0
+    for part in parts:
+        if not part.text or not part.spans:
+            continue
+        found = _find_part(text, part.text, cursor)
+        if found is None:
+            return None
+        start, cursor = found
+        ranges.append((start, cursor, _locate_items(text, part.get_unique_doc_items(), start, cursor)))
+    return ranges
 
 
 class LineBasedTokenChunker(BaseChunker):
@@ -141,7 +221,8 @@ class LineBasedTokenChunker(BaseChunker):
             dl_doc (DoclingDocument): document to chunk
 
         Yields:
-            Iterator[BaseChunk]: iterator over extracted chunks
+            Iterator[BaseChunk]: iterator over extracted chunks. Each chunk's
+            ``meta.doc_items`` holds the items whose serialized text it contains.
         """
         my_doc_ser = self.serializer_provider.get_serializer(doc=dl_doc)
         ser_res = my_doc_ser.serialize()
@@ -149,25 +230,64 @@ class LineBasedTokenChunker(BaseChunker):
         if not ser_res.text:
             return
 
-        text_chunks = self.chunk_text(lines=ser_res.text.splitlines(True))
+        text_chunks, chunk_ends = self._chunk_lines(lines=ser_res.text.splitlines(True))
+        part_ranges = _locate_parts(ser_res.text, my_doc_ser.get_parts())
 
-        for chunk_text in text_chunks:
+        start = 0
+        first_part = 0
+        for chunk_text, end in zip(text_chunks, chunk_ends):
+            if part_ranges is None:
+                doc_items = ser_res.get_unique_doc_items()
+            else:
+                # Chunks and parts both run forward through the text.
+                while first_part < len(part_ranges) and part_ranges[first_part][1] <= start:
+                    first_part += 1
+                overlapping: list[DocItem] = []
+                part_items: list[DocItem] = []
+                for part_start, _, item_ranges in part_ranges[first_part:]:
+                    if part_start >= end:
+                        break
+                    for item_start, item_end, item in item_ranges:
+                        part_items.append(item)
+                        if item_start < end and start < item_end:
+                            overlapping.append(item)
+                # A chunk of list markers or blank lines overlaps a part but none of
+                # its items; one of prefix or document-level meta text overlaps no
+                # part. DocMeta needs at least one item.
+                items = overlapping or part_items or ser_res.get_unique_doc_items()
+                doc_items = list({item.self_ref: item for item in items}.values())
             yield DocChunk(
                 text=chunk_text,
                 meta=DocMeta(
-                    doc_items=ser_res.get_unique_doc_items(),
+                    doc_items=doc_items,
                     headings=None,
                     origin=dl_doc.origin,
                 ),
             )
+            start = end
 
     def chunk_text(self, lines: list[str]) -> list[str]:
-        chunks = []
+        return self._chunk_lines(lines)[0]
+
+    def _chunk_lines(self, lines: list[str]) -> tuple[list[str], list[int]]:
+        """Chunk lines, and give the end offset of each chunk in ``"".join(lines)``.
+
+        A chunk holds the prefix, if any, and the text after the previous chunk's
+        end; a chunk that holds only the prefix ends where the previous one did.
+        """
+        chunks: list[str] = []
+        ends: list[int] = []
+        pos = 0  # characters of the joined lines placed in chunks so far
+
+        def flush(text: str) -> None:
+            chunks.append(text)
+            ends.append(pos)
 
         # Handle prefix chunks - add them first if prefix is too large
         if self.prefix_chunks and self.prefix_len == 0:
             # Prefix is too large, add prefix chunks first
-            chunks.extend(self.prefix_chunks)
+            for prefix_chunk in self.prefix_chunks:
+                flush(prefix_chunk)
             # Continue with regular chunking without prefix
             current = ""
             current_len = 0
@@ -177,7 +297,7 @@ class LineBasedTokenChunker(BaseChunker):
             if self.omit_prefix_on_overflow and self.prefix_len > 0 and lines:
                 # If first line would overflow with prefix, add prefix as standalone chunk
                 if self.tokenizer.count_tokens(self.prefix + lines[0]) > self.max_tokens:
-                    chunks.append(self.prefix)
+                    flush(self.prefix)
                     current = ""
                     current_len = 0
                 else:
@@ -199,6 +319,7 @@ class LineBasedTokenChunker(BaseChunker):
                 # If the remaining part fits entirely into current chunk → append and stop
                 if self.tokenizer.count_tokens(current + remaining) <= self.max_tokens:
                     current += remaining
+                    pos += len(remaining)
                     current_len = self.tokenizer.count_tokens(current)
                     break
 
@@ -207,7 +328,7 @@ class LineBasedTokenChunker(BaseChunker):
                 fresh_prefix = self.prefix if self.prefix_len > 0 else ""
                 if self.tokenizer.count_tokens(fresh_prefix + remaining) <= self.max_tokens:
                     if current:
-                        chunks.append(current)
+                        flush(current)
                     # Only add prefix to new chunks if it fits (prefix_len > 0)
                     current = fresh_prefix
                     current_len = self.prefix_len
@@ -231,7 +352,7 @@ class LineBasedTokenChunker(BaseChunker):
                     # Omit prefix for this line to make it fit
                     # Only append current if it contains more than just the prefix
                     if current and current != self.prefix:
-                        chunks.append(current)
+                        flush(current)
                     current = ""
                     current_len = 0
                     # loop continues to retry fitting `remaining` without prefix
@@ -256,7 +377,7 @@ class LineBasedTokenChunker(BaseChunker):
 
                 if not take:
                     if current:
-                        chunks.append(current)
+                        flush(current)
                         if self.prefix_len > 0 and not self.omit_prefix_on_overflow:
                             current = self.prefix
                             current_len = self.prefix_len
@@ -270,10 +391,11 @@ class LineBasedTokenChunker(BaseChunker):
 
                 # Add the taken part
                 current += take
+                pos += len(take)
                 current_len = self.tokenizer.count_tokens(current)
 
                 # flush the current chunk (full)
-                chunks.append(current)
+                flush(current)
 
                 # Determine whether to add prefix to the next chunk
                 # If omit_prefix_on_overflow is True, don't add prefix for overflow chunks
@@ -299,9 +421,9 @@ class LineBasedTokenChunker(BaseChunker):
         # push final chunk if non-empty
         # Check against both empty string and prefix (for when prefix fits)
         if current and (self.prefix_len == 0 or current != self.prefix):
-            chunks.append(current)
+            flush(current)
 
-        return chunks
+        return chunks, ends
 
     def split_by_token_limit(
         self,
