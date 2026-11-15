@@ -1153,6 +1153,15 @@ def test_load_local_images_rejects_non_regular_file(tmp_path: Path):
         doc.load_local_images()
 
 
+@pytest.mark.parametrize("uri", ["C:\\docling-missing\\fig.png", "C:/docling-missing/fig.png"])
+def test_load_local_images_reports_missing_windows_drive_path(uri: str):
+    """A drive path is a local path on every OS, so a missing file is reported like any other."""
+    doc = _doc_with_local_picture(uri)
+
+    with pytest.raises(ValueError, match="not a regular file"):
+        doc.load_local_images()
+
+
 def test_load_local_images_rejects_oversize_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     big = tmp_path / "big.png"
     PILImage.new("RGB", (50, 50), color=(1, 2, 3)).save(big)
