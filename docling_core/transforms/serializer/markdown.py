@@ -52,6 +52,7 @@ from docling_core.types.doc import (
     FieldRegionItem,
     FloatingItem,
     Formatting,
+    FormattingFallbackMode,
     FormItem,
     FormulaItem,
     GroupItem,
@@ -226,7 +227,10 @@ def _longest_backtick_run(text: str) -> int:
 def _code_span(text: str) -> str:
     """Wrap text in a code span whose delimiter no backtick run inside can close."""
     ticks = "`" * (_longest_backtick_run(text) + 1)
-    pad = " " if text.startswith("`") or text.endswith("`") else ""
+    # CommonMark normalizes line endings, then removes one paired edge space unless all spaces.
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n").replace("\n", " ")
+    needs_space_padding = normalized.startswith(" ") and normalized.endswith(" ") and bool(normalized.strip(" "))
+    pad = " " if text.startswith("`") or text.endswith("`") or needs_space_padding else ""
     return f"{ticks}{pad}{text}{pad}{ticks}"
 
 
@@ -269,6 +273,13 @@ class MarkdownParams(CommonParams):
     )
     orig_list_item_marker_mode: OrigListItemMarkerMode = OrigListItemMarkerMode.AUTO
     ensure_valid_list_item_marker: bool = True
+    formatting_fallback_mode: FormattingFallbackMode = Field(
+        default=FormattingFallbackMode.NONE,
+        description=(
+            "How to render formatting that has no Markdown syntax (underline, subscript, "
+            "superscript): drop it (`none`) or use HTML tags (`html`)."
+        ),
+    )
     format_code_blocks: bool = Field(
         default=True,
         description="Whether to wrap code items in markdown code formatting (e.g. backticks).",
@@ -1212,6 +1223,26 @@ class MarkdownDocSerializer(DocSerializer):
     def serialize_strikethrough(self, text: str, **kwargs: Any):
         """Apply Markdown-specific strikethrough serialization."""
         return f"~~{text}~~"
+
+    def _fallback_formatting(self, text: str, tag: str) -> str:
+        if self.params.formatting_fallback_mode == FormattingFallbackMode.HTML:
+            return f"<{tag}>{text}</{tag}>"
+        return text
+
+    @override
+    def serialize_underline(self, text: str, **kwargs: Any):
+        """Apply Markdown-specific underline serialization."""
+        return self._fallback_formatting(text, "u")
+
+    @override
+    def serialize_subscript(self, text: str, **kwargs: Any):
+        """Apply Markdown-specific subscript serialization."""
+        return self._fallback_formatting(text, "sub")
+
+    @override
+    def serialize_superscript(self, text: str, **kwargs: Any):
+        """Apply Markdown-specific superscript serialization."""
+        return self._fallback_formatting(text, "sup")
 
     @override
     def serialize_hyperlink(

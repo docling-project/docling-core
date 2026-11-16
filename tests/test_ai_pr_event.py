@@ -51,6 +51,7 @@ def test_push_events_skip_drafts_and_bots() -> None:
         return event.resolve("pull_request_target", {"pull_request": pull})
 
     assert push(False, "User") == event.Decision(3, True, False, "push")
+    assert not push(False, "User").maintainer_requested
     assert not push(True, "User").run
     assert not push(False, "Bot").run
 
@@ -58,6 +59,7 @@ def test_push_events_skip_drafts_and_bots() -> None:
 def test_commands_need_a_maintainer_and_an_open_pr() -> None:
     review = event.resolve("issue_comment", comment_event("/ai review"))
     assert (review.pr, review.run, review.force_review) == (7, True, True)
+    assert review.maintainer_requested
 
     triage = event.resolve("issue_comment", comment_event("/ai triage", "OWNER"))
     assert (triage.run, triage.force_review) == (True, False)
@@ -76,7 +78,7 @@ def test_manual_runs_need_the_matching_open_pr() -> None:
         payload = {"inputs": {"pr": "7", "mode": mode}}
         return event.resolve("workflow_dispatch", payload, pull_data)
 
-    assert dispatch() == event.Decision(7, True, False, "manual triage")
+    assert dispatch() == event.Decision(7, True, False, "manual triage", maintainer_requested=True)
     assert dispatch("review").force_review
     assert not dispatch(state="closed").run
     with pytest.raises(ValueError, match="does not match"):

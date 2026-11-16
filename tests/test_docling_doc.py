@@ -3436,6 +3436,148 @@ def test_document_validation_clamps_table_cell_bbox() -> None:
     assert any("Table cell bbox coordinate r on page 1 is outside page bounds" in message for message in messages)
 
 
+def test_doc_item_lists_cover_all_item_fields() -> None:
+    """A new item list on DoclingDocument must be registered in `_doc_item_lists`.
+
+    Otherwise bbox clamping and `get_min_page_sizes` would silently skip its items.
+    Groups carry no provenance and are the only intended exception.
+    """
+    doc = DoclingDocument(name="test")
+    registered = {id(item_list) for item_list in doc._doc_item_lists()}
+    for field_name, value in doc:  # pydantic models iterate as (field name, value)
+        if isinstance(value, list) and field_name != "groups":
+            assert id(value) in registered, f"{field_name} is missing in DoclingDocument._doc_item_lists"
+
+
+def test_get_min_page_size_empty_page() -> None:
+    doc = DoclingDocument(name="test")
+    assert doc.get_min_page_sizes() == {}
+    assert doc.get_min_page_size(1) == Size(width=0.0, height=0.0)
+
+
+def test_get_min_page_size_covers_content_and_survives_validation() -> None:
+    doc = DoclingDocument(name="test")
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="a",
+        prov=ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox(l=1.0, t=1.0, r=3.0, b=2.0, coord_origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 1),
+        ),
+    )
+    # furniture layer is included
+    doc.add_text(
+        label=DocItemLabel.PAGE_FOOTER,
+        text="f",
+        content_layer=ContentLayer.FURNITURE,
+        prov=ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox(l=0.0, t=8.0, r=2.0, b=10.0, coord_origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 1),
+        ),
+    )
+    # other pages are ignored
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="p2",
+        prov=ProvenanceItem(
+            page_no=2,
+            bbox=BoundingBox(l=0.0, t=0.0, r=50.0, b=60.0, coord_origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 2),
+        ),
+    )
+    # table cell bboxes count as well
+    doc.add_table(
+        data=TableData(
+            num_rows=1,
+            num_cols=1,
+            table_cells=[
+                TableCell(
+                    text="cell",
+                    start_row_offset_idx=0,
+                    end_row_offset_idx=1,
+                    start_col_offset_idx=0,
+                    end_col_offset_idx=1,
+                    bbox=BoundingBox(l=0.0, t=0.0, r=7.0, b=4.0, coord_origin=CoordOrigin.TOPLEFT),
+                )
+            ],
+        ),
+        prov=ProvenanceItem(
+            page_no=1,
+            bbox=BoundingBox(l=0.0, t=0.0, r=5.0, b=4.0, coord_origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 4),
+        ),
+    )
+
+    # cell bboxes of multi-page tables are not anchored on a page
+    doc.add_table(
+        data=TableData(
+            num_rows=1,
+            num_cols=1,
+            table_cells=[
+                TableCell(
+                    text="cell",
+                    start_row_offset_idx=0,
+                    end_row_offset_idx=1,
+                    start_col_offset_idx=0,
+                    end_col_offset_idx=1,
+                    bbox=BoundingBox(l=0.0, t=0.0, r=99.0, b=99.0, coord_origin=CoordOrigin.TOPLEFT),
+                )
+            ],
+        ),
+        prov=ProvenanceItem(
+            page_no=2,
+            bbox=BoundingBox(l=0.0, t=0.0, r=1.0, b=1.0, coord_origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 4),
+        ),
+    ).prov.append(
+        ProvenanceItem(
+            page_no=3,
+            bbox=BoundingBox(l=0.0, t=0.0, r=1.0, b=1.0, coord_origin=CoordOrigin.TOPLEFT),
+            charspan=(0, 4),
+        )
+    )
+    # key-value graph cell provenances count as well
+    doc.add_key_values(
+        graph=GraphData(
+            cells=[
+                GraphCell(
+                    label=GraphCellLabel.KEY,
+                    cell_id=0,
+                    text="k",
+                    orig="k",
+                    prov=ProvenanceItem(
+                        page_no=3,
+                        bbox=BoundingBox(l=0.0, t=0.0, r=20.0, b=30.0, coord_origin=CoordOrigin.TOPLEFT),
+                        charspan=(0, 1),
+                    ),
+                )
+            ],
+            links=[],
+        )
+    )
+
+    sizes = doc.get_min_page_sizes()
+    assert sizes == {
+        1: Size(width=7.0, height=10.0),
+        2: Size(width=50.0, height=60.0),
+        3: Size(width=20.0, height=30.0),
+    }
+    size = doc.get_min_page_size(1)
+    assert size == sizes[1]
+
+    # a page of exactly this size loses no content to the bbox clamping
+    doc.add_page(page_no=1, size=size)
+    validated = _validate_doc(doc)
+    bbox = validated.texts[0].prov[0].bbox
+    assert (bbox.l, bbox.t, bbox.r, bbox.b) == (1.0, 1.0, 3.0, 2.0)
+    cell_bbox = validated.tables[0].data.table_cells[0].bbox
+    assert cell_bbox and cell_bbox.r == 7.0
+    footer_bbox = validated.texts[1].prov[0].bbox
+    assert footer_bbox.b == 10.0
+
+
 def _nested_doc_dict(depth: int, *, kind: str) -> dict:
     """Build a document dict whose nodes reference their single child more than once.
 

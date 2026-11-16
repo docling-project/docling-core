@@ -244,6 +244,7 @@ class HierarchicalChunker(BaseChunker):
                         meta=DocMeta(
                             doc_items=[heading_by_level[k] for k in sorted_keys],
                             headings=[heading_text_by_level[k] for k in sorted_keys],
+                            origin=dl_doc.origin,
                         ),
                     )
                     heading_emitted.add(leaf_ref)
@@ -309,6 +310,7 @@ class HierarchicalChunker(BaseChunker):
                 meta=DocMeta(
                     doc_items=[heading_by_level[k] for k in sorted_keys],
                     headings=[heading_text_by_level[k] for k in sorted_keys],
+                    origin=dl_doc.origin,
                 ),
             )
             heading_emitted.add(leaf_ref)

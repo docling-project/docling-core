@@ -122,9 +122,12 @@ CONTRACT_TABLE: list[tuple[str, list[Run], dict[str, str]]] = [
             "itxt": "bold tail",
             "html": '<a href="https://example.com/x"><strong>bold</strong></a> tail',
             "latex": "\\href{https://example.com/x}{\\textbf{bold}} tail",
-            # DocLang has no place for a hyperlink on an inline run (pre-existing gap, not
-            # part of this contract): the href is dropped. The whitespace still hoists.
-            "doclang": "<doclang><text><bold>bold </bold>tail</text></doclang>",
+            # A nested text element scopes the link to this run. Its trailing space
+            # needs the lossless content wrapper at the linked element's boundary.
+            "doclang": (
+                '<doclang><text><text><href uri="https://example.com/x"/>'
+                "<bold><content>bold </content></bold></text>tail</text></doclang>"
+            ),
         },
     ),
     (
@@ -199,13 +202,10 @@ def test_doclang_roundtrip_is_lossless(name: str, runs: list[Run], expected: dic
     compact, since the whitespace channel must survive the pretty printer.
     """
     doc = _build(runs)
-    # DocLang drops hyperlinks on inline runs (pre-existing, see the table), so compare the
-    # whitespace rather than the full markdown for that one case.
-    expected_md = expected["md"] if not any(link for _, _, link in runs) else "**bold** tail"
     for params in (DocLangParams(), DocLangParams(pretty_indentation=None)):
         xml = DocLangDocSerializer(doc=doc, params=params).serialize().text
         roundtripped = DocLangDocDeserializer().deserialize_str(xml)
-        assert roundtripped.export_to_markdown() == expected_md, (name, params.pretty_indentation)
+        assert roundtripped.export_to_markdown() == expected["md"], (name, params.pretty_indentation)
         assert roundtripped.export_to_text() == doc.export_to_text(), (name, params.pretty_indentation)
 
 

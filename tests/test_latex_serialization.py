@@ -223,6 +223,39 @@ def test_latex_deep_section_headers():
     assert "\\subparagraph{Level 9}" in body
 
 
+def test_latex_inline_code_escapes_hash_with_a_single_backslash():
+    r"""Regression test: a `#` in inline code must become `\#`, not `\\#`.
+
+    `#` is a macro parameter character, so it has to be escaped inside
+    ``\texttt{}``. The escape has to be a single backslash: ``\\`` is a line
+    break, which leaves the `#` unescaped and drops the rest of the line out of
+    the code span. Paragraph text already goes through `_escape_latex` and has
+    always produced `\#`.
+    """
+    doc = DoclingDocument(name="t")
+    para = doc.add_text(label=DocItemLabel.TEXT, text="")
+    ig = doc.add_inline_group(parent=para)
+    doc.add_code(text="C# and F#", parent=ig)
+
+    body = LaTeXDocSerializer(doc=doc).serialize().text.split("\\begin{document}")[1]
+
+    assert "\\texttt{C\\# and F\\#}" in body
+    # A line break followed by an unescaped macro parameter character
+    assert "\\\\#" not in body
+
+
+def test_latex_inline_code_without_hash_is_unchanged():
+    r"""Inline code without `#` keeps its text, including underscores."""
+    doc = DoclingDocument(name="t")
+    para = doc.add_text(label=DocItemLabel.TEXT, text="")
+    ig = doc.add_inline_group(parent=para)
+    doc.add_code(text="git checkout -b feature", parent=ig)
+
+    body = LaTeXDocSerializer(doc=doc).serialize().text.split("\\begin{document}")[1]
+
+    assert "\\texttt{git checkout -b feature}" in body
+
+
 def test_latex_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_table_doc):
     actual = LaTeXDocSerializer(doc=col_span_rich_table_doc).serialize().text
     assert " & Partner & Partner \\\\ \\hline\nStatus & Done & Open \\\\ \\hline" in actual
@@ -553,3 +586,49 @@ def test_latex_meta_name_filters_on_picture_and_table():
     assert "annotation[description]: A sample bar chart" in allowed
     assert "annotation[description]: A table description" in allowed
     assert "annotation[classification]" not in allowed
+
+
+@pytest.mark.parametrize(
+    ("text", "formatting", "expected"),
+    [
+        ("Plain", None, r"\title{Plain}"),
+        ("Bold", Formatting(bold=True), r"\title{\textbf{Bold}}"),
+        (
+            "Nested",
+            Formatting(bold=True, italic=True),
+            r"\title{\textit{\textbf{Nested}}}",
+        ),
+        ("Set {a}", None, r"\title{Set \{a\}}"),
+        ("Unmatched {", None, r"\title{Unmatched \{}"),
+    ],
+)
+def test_latex_title_with_braces(text: str, formatting: Formatting | None, expected: str) -> None:
+    """Titles containing formatting or escaped braces still reach maketitle."""
+    doc = DoclingDocument(name="title")
+    doc.add_title(text=text, formatting=formatting)
+    doc.add_text(label=DocItemLabel.TEXT, text="Body remains.")
+
+    result = LaTeXDocSerializer(doc=doc).serialize().text
+
+    assert expected in result
+    assert result.index(expected) < result.index(r"\begin{document}")
+    assert result.count(r"\maketitle") == 1
+    assert result.index(r"\maketitle") < result.index("Body remains.")
+
+
+def test_latex_keeps_first_title_when_later_title_is_formatted() -> None:
+    """Nested titles follow the existing first-title-wins behavior."""
+    doc = DoclingDocument(name="titles")
+    doc.add_title(text="First", formatting=Formatting(bold=True))
+    doc.add_text(label=DocItemLabel.TEXT, text="Between titles.")
+    doc.add_title(text="Second", formatting=Formatting(italic=True))
+    doc.add_text(label=DocItemLabel.TEXT, text="After titles.")
+
+    result = LaTeXDocSerializer(doc=doc).serialize().text
+
+    assert result.count(r"\title{") == 1
+    assert r"\title{\textbf{First}}" in result
+    assert "Second" not in result
+    assert result.count(r"\maketitle") == 1
+    assert "Between titles." in result
+    assert "After titles." in result
