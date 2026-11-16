@@ -381,3 +381,46 @@ def test_load_from_doclang_archive_rejects_oversize_asset_image(
             archive_path,
             artifacts_dir=tmp_path / "artifacts",
         )
+
+
+def _doc_with_content_on(content_pages: list[int], num_pages: int = 4) -> DoclingDocument:
+    from PIL import Image
+
+    from docling_core.types.doc import BoundingBox, DocItemLabel, ProvenanceItem, Size
+
+    doc = DoclingDocument(name="blank_pages")
+    for page_no in range(1, num_pages + 1):
+        doc.add_page(
+            page_no=page_no,
+            size=Size(width=100, height=100),
+            image=ImageRef.from_pil(Image.new("RGB", (8, 8), "white"), dpi=72),
+        )
+    for page_no in content_pages:
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text=f"text on page {page_no}",
+            prov=ProvenanceItem(page_no=page_no, bbox=BoundingBox(l=1, t=1, r=2, b=2), charspan=(0, 1)),
+        )
+    return doc
+
+
+@pytest.mark.parametrize(
+    "content_pages",
+    [[1, 2, 3, 4], [1, 2, 3], [2, 3, 4], [1, 3, 4], [1, 4], [3], []],
+    ids=["full", "blank-last", "blank-first", "blank-middle", "gap", "single", "empty"],
+)
+def test_doclang_archive_keeps_pages_without_content(content_pages: list[int], tmp_path: Path) -> None:
+    """Pages without content still occupy a page, so page images and page numbers stay aligned."""
+    doc = _doc_with_content_on(content_pages)
+    dclx_path = tmp_path / "blank_pages.dclx"
+    doc.save_as_doclang_archive(dclx_path)
+
+    with zipfile.ZipFile(dclx_path) as archive:
+        markup = archive.read("document.xml").decode("utf-8")
+        page_images = [name for name in archive.namelist() if name.startswith("pages/")]
+    assert markup.count("<page_break") == len(doc.pages) - 1
+    assert len(page_images) == len(doc.pages)
+
+    loaded = DoclingDocument.load_from_doclang_archive(dclx_path, artifacts_dir=tmp_path / "artifacts")
+    found = {item.text: item.prov[0].page_no for item in loaded.texts if item.text.startswith("text on page")}
+    assert found == {f"text on page {page_no}": page_no for page_no in content_pages}
