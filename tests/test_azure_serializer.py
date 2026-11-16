@@ -146,3 +146,24 @@ def test_azure_serialize_construct_doc_minimal_prov(sample_doc: DoclingDocument)
 
     exp_file = Path("./tests/data/doc/constructed.gt.azure.json")
     _verify_json(exp_file=exp_file, actual_json=actual_json)
+
+
+def test_azure_serialize_is_repeatable():
+    """A serializer instance gives the same Azure JSON on every call.
+
+    The item serializers fill a private accumulator while the document is
+    traversed, so without clearing it each pass appends a second copy of the
+    paragraphs, tables, figures and pages. A single per-item call before a
+    whole-document pass leaks into that pass the same way.
+    """
+    src = Path("./tests/data/doc/activities.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    ser = AzureDocSerializer(doc=doc, params=AzureParams(indent=2))
+    first = ser.serialize().text
+    assert ser.serialize().text == first
+    assert ser.serialize().text == first
+
+    fresh = AzureDocSerializer(doc=doc, params=AzureParams(indent=2))
+    fresh.serialize(item=doc.texts[0])
+    assert fresh.serialize().text == first
