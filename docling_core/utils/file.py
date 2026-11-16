@@ -9,7 +9,7 @@ from email.message import Message
 from io import BytesIO
 from pathlib import Path
 from typing import Optional, Union
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 import requests
 from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
@@ -133,7 +133,7 @@ def _sanitize_filename(filename: str) -> str | None:
     normalized = filename.replace("\\", "/")
     basename = Path(normalized).name
 
-    if not basename or basename in (".", "..") or "/" in basename:
+    if not basename or basename in (".", "..") or "/" in basename or "\x00" in basename:
         return None
 
     return basename
@@ -161,7 +161,8 @@ def resolve_remote_filename(
         raw_fname = message.get_filename() or None
 
     if raw_fname is None:
-        raw_fname = Path(http_url.path or "").name or fallback_filename
+        # The URL path is percent-encoded; Content-Disposition values are decoded by get_filename().
+        raw_fname = unquote(Path(http_url.path or "").name) or fallback_filename
 
     if fname := _sanitize_filename(raw_fname):
         return fname
