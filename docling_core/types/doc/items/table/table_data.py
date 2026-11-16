@@ -131,42 +131,29 @@ class TableData(BaseModel):  # TBD
     ) -> list[list[TableCell]]:
         """Grid."""
         num_cols = max(0, self.num_cols)
-        column_indices = range(num_cols)
-        table_data: list[list[TableCell | None] | None] = [None] * max(0, self.num_rows)
+        table_data: list[list[TableCell | None]] = [[None] * num_cols for _ in range(self.num_rows)]
+        # Place source cells before constructing empty cells for the remaining gaps.
         for cell in self.table_cells:
-            columns = range(min(cell.start_col_offset_idx, self.num_cols), min(cell.end_col_offset_idx, self.num_cols))
-            # Preserve the empty inner loop before looking up a row.
-            if not columns:
-                continue
-            for i in range(min(cell.start_row_offset_idx, self.num_rows), min(cell.end_row_offset_idx, self.num_rows)):
-                row = table_data[i]
-                if row is None:
-                    row = table_data[i] = [None] * num_cols
+            columns = range(
+                min(cell.start_col_offset_idx, self.num_cols),
+                min(cell.end_col_offset_idx, self.num_cols),
+            )
+            for i in range(
+                min(cell.start_row_offset_idx, self.num_rows),
+                min(cell.end_row_offset_idx, self.num_rows),
+            ):
                 for j in columns:
-                    row[j] = cell
+                    table_data[i][j] = cell
         for i, row in enumerate(table_data):
-            if row is None:
-                table_data[i] = [
-                    TableCell(
+            for j, cell in enumerate(row):
+                if cell is None:
+                    row[j] = TableCell(
                         text="",
                         start_row_offset_idx=i,
                         end_row_offset_idx=i + 1,
                         start_col_offset_idx=j,
                         end_col_offset_idx=j + 1,
                     )
-                    for j in column_indices
-                ]
-            else:
-                for j, cell in enumerate(row):
-                    if cell is None:
-                        row[j] = TableCell(
-                            text="",
-                            start_row_offset_idx=i,
-                            end_row_offset_idx=i + 1,
-                            start_col_offset_idx=j,
-                            end_col_offset_idx=j + 1,
-                        )
-        # Both branches fill every missing row and cell before returning.
         return cast(list[list[TableCell]], table_data)
 
     def _count_column_header_rows(self, grid: list[list[TableCell]] | None = None) -> int:
