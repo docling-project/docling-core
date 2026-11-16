@@ -194,11 +194,47 @@ def list_projectors() -> list[tuple[int, int]]:
 # ---------------------------------------------------------------------------
 # Projectors — one per schema minor bump within docling-core v2.x
 # ---------------------------------------------------------------------------
-# These cover every schema version step from the current schema (1.11) down
+# These cover every schema version step from the current schema (1.12) down
 # to the oldest v2.x schema (1.5).  Each projector represents the *minimal*
 # structural downgrade that allows an old client's Pydantic model to parse
 # the serialised dict without error.  Full semantic fidelity is not always
 # possible; the goal is a document that validates rather than crashes.
+
+# --- 1.12 → 1.11 ----------------------------------------------------------
+# Schema 1.12:
+#   • Added GroupLabel.BLOCK_QUOTE and the BlockQuoteGroup subtype with the
+#     optional "cite" (source URL) and "captions" (attribution refs) fields.
+#   Old clients reject the unknown label value and, with extra="forbid",
+#   the unknown fields.
+#
+# Downgrade strategy:
+#   • Relabel "block_quote" groups to "unspecified" and strip "cite" and
+#     "captions". The attribution item stays in place as a plain caption
+#     child, so old clients still read it after the quoted blocks.
+# ---------------------------------------------------------------------------
+
+
+@register_projector(from_minor=12, to_minor=11)
+def _project_1_12_to_1_11(data: dict) -> dict:
+    """Downgrade a schema 1.12 document dict to schema 1.11.
+
+    Handles:
+    - Relabels ``block_quote`` groups to ``unspecified``.
+    - Strips the ``cite`` and ``captions`` fields from group dicts.
+    """
+    data = dict(data)
+
+    new_groups = []
+    for group in data.get("groups", []):
+        group = {k: v for k, v in group.items() if k not in {"cite", "captions"}}
+        if group.get("label") == "block_quote":
+            group["label"] = "unspecified"
+        new_groups.append(group)
+    data["groups"] = new_groups
+
+    data["version"] = "1.11.0"
+    return data
+
 
 # --- 1.11 → 1.10 ----------------------------------------------------------
 # Schema 1.11 (docling-core v2.106.0): InlineGroup runs carry their own
