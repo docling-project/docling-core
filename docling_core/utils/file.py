@@ -142,12 +142,12 @@ def _sanitize_filename(filename: str) -> str | None:
 def resolve_remote_filename(
     http_url: AnyHttpUrl,
     response_headers: dict[str, str],
-    fallback_filename="file",
+    fallback_filename: str = "file",
 ) -> str:
     """Resolves the filename from a remote url and its response headers.
 
     Args:
-        source AnyHttpUrl: The source http url.
+        http_url AnyHttpUrl: The source http url.
         response_headers Dict: Headers received while fetching the remote file.
         fallback_filename str: Filename to use in case none can be determined.
 
