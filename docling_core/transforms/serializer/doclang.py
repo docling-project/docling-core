@@ -2082,16 +2082,63 @@ def _create_timestamp_tokens(*, msecs: int) -> str:
 
 
 @dataclass
+class _TrackTurn:
+    """A transcript turn: its text and its track source."""
+
+    text: str
+    source: TrackSource
+
+
+@dataclass
 class _TrackCueBlock:
     """The cues of a track that share a start and an end time."""
 
     start: int
     end: int
     frame: PictureItem | None = None
-    turns: list[TextItem] = field(default_factory=list)
+    turns: list[_TrackTurn] = field(default_factory=list)
 
 
-def _track_cue_blocks(cues: list[tuple[int, int, TextItem | PictureItem]]) -> list[_TrackCueBlock]:
+def _is_timed_unit(item: NodeItem, doc: DoclingDocument) -> bool:
+    """Whether an item is a cue: a timed text or picture, or an inline group of timed texts."""
+    if isinstance(item, InlineGroup):
+        runs = [ref.resolve(doc) for ref in item.children]
+        return bool(runs) and all(isinstance(run, TextItem) and _track_source(run) for run in runs)
+    return isinstance(item, TextItem | PictureItem) and _track_source(item) is not None
+
+
+def _track_turns(item: NodeItem, doc: DoclingDocument) -> list[_TrackTurn]:
+    """Return the turns of a timed text, or of an inline group split where time or voice changes.
+
+    A text with empty text takes the text of its inline group child (a formatted turn).
+    Formatting is not kept.
+    """
+    if isinstance(item, TextItem) and (source := _track_source(item)):
+        text = item.text or "".join(
+            run.text
+            for ref in item.children
+            if isinstance(group := ref.resolve(doc), InlineGroup)
+            for run_ref in group.children
+            if isinstance(run := run_ref.resolve(doc), TextItem)
+        )
+        return [_TrackTurn(text=text, source=source)]
+    turns: list[_TrackTurn] = []
+    for ref in item.children:
+        run = ref.resolve(doc)
+        if isinstance(run, TextItem) and (source := _track_source(run)):
+            last = turns[-1].source if turns else None
+            if last and (last.start_time, last.end_time, last.voice) == (
+                source.start_time,
+                source.end_time,
+                source.voice,
+            ):
+                turns[-1].text += run.text
+            else:
+                turns.append(_TrackTurn(text=run.text, source=source))
+    return turns
+
+
+def _track_cue_blocks(cues: list[tuple[int, int, _TrackTurn | PictureItem]]) -> list[_TrackCueBlock]:
     """Group cues into blocks, in order of start time.
 
     Consecutive turns with the same start and end time share a block. A frame is the
@@ -2101,7 +2148,7 @@ def _track_cue_blocks(cues: list[tuple[int, int, TextItem | PictureItem]]) -> li
     ordered = sorted(cues, key=lambda cue: cue[0])
     blocks: list[_TrackCueBlock] = []
     for start, end, cue in ordered:
-        if isinstance(cue, TextItem):
+        if isinstance(cue, _TrackTurn):
             if not blocks or (blocks[-1].start, blocks[-1].end) != (start, end):
                 blocks.append(_TrackCueBlock(start=start, end=end))
             blocks[-1].turns.append(cue)
@@ -2113,6 +2160,69 @@ def _track_cue_blocks(cues: list[tuple[int, int, TextItem | PictureItem]]) -> li
                 blocks.append(block)
             block.frame = cue
     return sorted(blocks, key=lambda block: block.start)
+
+
+def _serialize_track_cues(
+    *,
+    items: list[NodeItem],
+    owner: str,
+    doc_serializer: BaseDocSerializer,
+    doc: DoclingDocument,
+    params: DocLangParams,
+    **kwargs: Any,
+) -> str:
+    """Serialize timed items as the cue blocks of a track."""
+    excluded = doc_serializer.get_excluded_refs(**kwargs)
+    visited: set[str] = kwargs.get("visited") or set()
+    cues: list[tuple[int, int, _TrackTurn | PictureItem]] = []
+    for item in items:
+        if item.self_ref in excluded:
+            continue
+        # the track writes its cues itself: the document walk must not write them again
+        visited.update(
+            node.self_ref
+            for node, _ in doc.iterate_items(
+                root=item, with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
+            )
+        )
+        if not _is_timed_unit(item, doc):
+            warnings.warn(
+                f"{item.self_ref} in track {owner} is not a text or picture with a track source, "
+                "so it is not serialized",
+                stacklevel=2,
+            )
+        elif isinstance(item, PictureItem) and (source := _track_source(item)):
+            cues.append((round(source.start_time * 1000), round(source.end_time * 1000), item))
+        else:
+            cues.extend(
+                (round(turn.source.start_time * 1000), round(turn.source.end_time * 1000), turn)
+                for turn in _track_turns(item, doc)
+            )
+
+    body: list[str] = []
+    add_text = ContentType.TEXT_OTHER in params.content_types
+    for block in _track_cue_blocks(cues):
+        body.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.BDIV))
+        body.append(_create_timestamp_tokens(msecs=block.start))
+        if block.end > block.start:
+            body.append(_create_timestamp_tokens(msecs=block.end))
+        if block.frame is not None:
+            frame_caption = _serialize_floating_caption_head(
+                item=block.frame, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
+            )
+            frame_parts = [_element_head_prefix(item=block.frame, doc=doc, params=params, caption_text=frame_caption)]
+            if frame_uri := _image_src_uri(item=block.frame, doc=doc, params=params):
+                frame_parts.append(_create_src_token(uri=frame_uri))
+            body.append(_wrap(text="".join(frame_parts), wrap_tag=DocLangToken.FRAME.value))
+        for index, turn in enumerate(block.turns):
+            if turn.source.voice:
+                body.append(_wrap(text=_escape_text(turn.source.voice, params), wrap_tag=DocLangToken.VOICE.value))
+            elif index > 0:
+                # an empty voice ends the previous turn
+                body.append(_wrap(text="", wrap_tag=DocLangToken.VOICE.value))
+            if add_text:
+                body.append(_escape_text(turn.text, params))
+    return "".join(body)
 
 
 def _serialize_track(
@@ -2132,67 +2242,48 @@ def _serialize_track(
     excluded = doc_serializer.get_excluded_refs(**kwargs)
     if item.self_ref in excluded:
         return create_ser_result()
-    visited: set[str] = kwargs.get("visited") or set()
 
     caption_head = _serialize_floating_caption_head(
         item=item, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
     )
     head = _element_head_prefix(item=item, doc=doc, params=params, caption_text=caption_head or None)
-    body: list[str] = []
+    cover = ""
     if cover_uri := _image_src_uri(item=item, doc=doc, params=params):
-        body.append(_wrap(text=_create_src_token(uri=cover_uri), wrap_tag=DocLangToken.COVER.value))
-
+        cover = _wrap(text=_create_src_token(uri=cover_uri), wrap_tag=DocLangToken.COVER.value)
     caption_refs = {ref.cref for ref in item.captions}
-    cues: list[tuple[int, int, TextItem | PictureItem]] = []
-    for child_ref in item.children:
-        child = child_ref.resolve(doc)
-        if child.self_ref in caption_refs or child.self_ref in excluded:
-            continue
-        # the track writes its cues itself: the document walk must not write them again
-        visited.update(
-            node.self_ref
-            for node, _ in doc.iterate_items(
-                root=child, with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
-            )
-        )
-        source = _track_source(child)
-        if source is None or not isinstance(child, TextItem | PictureItem):
-            warnings.warn(
-                f"{child.self_ref} in track {item.self_ref} is not a text or picture with a track source, "
-                "so it is not serialized",
-                stacklevel=2,
-            )
-            continue
-        cues.append((round(source.start_time * 1000), round(source.end_time * 1000), child))
-
-    add_text = ContentType.TEXT_OTHER in params.content_types
-    for block in _track_cue_blocks(cues):
-        body.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.BDIV))
-        body.append(_create_timestamp_tokens(msecs=block.start))
-        if block.end > block.start:
-            body.append(_create_timestamp_tokens(msecs=block.end))
-        if block.frame is not None:
-            frame_caption = _serialize_floating_caption_head(
-                item=block.frame, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
-            )
-            frame_parts = [_element_head_prefix(item=block.frame, doc=doc, params=params, caption_text=frame_caption)]
-            if frame_uri := _image_src_uri(item=block.frame, doc=doc, params=params):
-                frame_parts.append(_create_src_token(uri=frame_uri))
-            body.append(_wrap(text="".join(frame_parts), wrap_tag=DocLangToken.FRAME.value))
-        for index, turn in enumerate(block.turns):
-            voice = source.voice if (source := _track_source(turn)) else None
-            if voice:
-                body.append(_wrap(text=_escape_text(voice, params), wrap_tag=DocLangToken.VOICE.value))
-            elif index > 0:
-                # an empty voice ends the previous turn
-                body.append(_wrap(text="", wrap_tag=DocLangToken.VOICE.value))
-            if add_text:
-                body.append(_escape_text(turn.text, params))
-
-    inner = head + "".join(body)
+    cues = _serialize_track_cues(
+        items=[child for ref in item.children if (child := ref.resolve(doc)).self_ref not in caption_refs],
+        owner=item.self_ref,
+        doc_serializer=doc_serializer,
+        doc=doc,
+        params=params,
+        **kwargs,
+    )
+    inner = head + cover + cues
     if not inner and params.suppress_empty_elements:
         return create_ser_result()
     return create_ser_result(text=_wrap(text=inner, wrap_tag=DocLangToken.TRACK.value), span_source=item)
+
+
+def _implicit_track(item: NodeItem, doc: DoclingDocument) -> list[NodeItem]:
+    """Return the run of timed sibling items that starts at a timed item outside a ``TrackItem``.
+
+    Consecutive timed items form an implicit track, which any other item ends. A track
+    cannot cross an element boundary, so the run stays within the parent of the item.
+    """
+    if item.parent is None or not _is_timed_unit(item, doc):
+        return []
+    parent = item.parent.resolve(doc)
+    if isinstance(parent, TrackItem):
+        return []
+    siblings = [ref.resolve(doc) for ref in parent.children]
+    start = next(i for i, sibling in enumerate(siblings) if sibling.self_ref == item.self_ref)
+    run: list[NodeItem] = []
+    for sibling in siblings[start:]:
+        if not _is_timed_unit(sibling, doc):
+            break
+        run.append(sibling)
+    return run
 
 
 class DocLangFallbackSerializer(BaseFallbackSerializer):
@@ -2333,6 +2424,27 @@ class DocLangDocSerializer(DocSerializer):
             if key in self._suppressed_page_breaks:
                 self._suppressed_page_breaks.discard(key)
                 return create_ser_result()
+        if item is not None and (run := _implicit_track(item, self.doc)):
+            my_kwargs = {**self.params.model_dump(), **kwargs}
+            my_visited = visited if visited is not None else set()
+            my_visited.add(item.self_ref)
+            cues = _serialize_track_cues(
+                items=run,
+                owner="(implicit)",
+                doc_serializer=self,
+                doc=self.doc,
+                params=DocLangParams(**my_kwargs),
+                **(my_kwargs | {"visited": my_visited}),
+            )
+            if not cues:
+                return create_ser_result()
+            spans = [
+                create_ser_result(span_source=cue)
+                for unit in run
+                for cue in ([unit] if isinstance(unit, DocItem) else [ref.resolve(self.doc) for ref in unit.children])
+                if isinstance(cue, DocItem)
+            ]
+            return create_ser_result(text=_wrap(text=cues, wrap_tag=DocLangToken.TRACK.value), span_source=spans)
         return super().serialize(
             item=item,
             list_level=list_level,

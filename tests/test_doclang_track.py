@@ -11,8 +11,11 @@ from docling_core.transforms.serializer._doclang_utils import DocLangVocabulary
 from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 from docling_core.types.doc import (
     BoundingBox,
+    ContentLayer,
     DocItemLabel,
     DoclingDocument,
+    Formatting,
+    GroupLabel,
     ImageRef,
     PictureItem,
     ProvenanceItem,
@@ -22,6 +25,7 @@ from docling_core.types.doc import (
     TrackSource,
 )
 from docling_core.types.doc.base import ImageRefMode
+from tests.doclang_validation import validate_dclg_xml
 from tests.test_serialization_doclang import verify_doclang
 
 DATA = Path("./tests/data/doc")
@@ -264,3 +268,89 @@ def test_turns_without_text_are_kept():
         ("TextItem", "Hi", 3.0, 3.0, None),
         ("TextItem", "", 3.0, 3.0, None),
     ]
+
+
+def _compact(doc: DoclingDocument) -> str:
+    return DocLangDocSerializer(doc=doc, params=DocLangParams(pretty_indentation=None)).serialize().text
+
+
+def _timed(doc: DoclingDocument, text: str, start: float, end: float, voice: str | None = None, **kwargs) -> TextItem:
+    source = TrackSource(start_time=start, end_time=end, voice=voice)
+    return doc.add_text(label=DocItemLabel.TEXT, text=text, source=source, **kwargs)
+
+
+def test_loose_timed_items_form_implicit_tracks():
+    """Consecutive timed items outside a track are a track, and any other item ends it."""
+    doc = DoclingDocument(name="doc")
+    doc.add_text(label=DocItemLabel.TEXT, text="Intro")
+    _timed(doc, "A", 1, 2, voice="Ann")
+    _timed(doc, "B", 2, 3)
+    doc.add_text(label=DocItemLabel.TEXT, text="Break", content_layer=ContentLayer.FURNITURE)
+    _timed(doc, "C", 1, 2)
+
+    assert _compact(doc) == (
+        '<doclang version="0.9"><text>Intro</text>'
+        '<track><bdiv/><seconds value="1"/><seconds value="2"/><voice>Ann</voice>A'
+        '<bdiv/><seconds value="2"/><seconds value="3"/>B</track>'
+        '<text><layer value="furniture"/>Break</text>'
+        '<track><bdiv/><seconds value="1"/><seconds value="2"/>C</track></doclang>'
+    )
+
+
+def test_implicit_track_ends_at_its_group():
+    """A track cannot cross an element boundary: timed items in and after a group are two tracks."""
+    doc = DoclingDocument(name="doc")
+    section = doc.add_group(label=GroupLabel.SECTION)
+    _timed(doc, "A", 1, 2, parent=section)
+    _timed(doc, "B", 3, 4)
+
+    assert _compact(doc) == (
+        '<doclang version="0.9"><track><bdiv/><seconds value="1"/><seconds value="2"/>A</track>'
+        '<track><bdiv/><seconds value="3"/><seconds value="4"/>B</track></doclang>'
+    )
+
+
+def test_implicit_track_round_trips_into_a_track_item():
+    """Read back, an implicit track is an explicit TrackItem with the same cues."""
+    doc = DoclingDocument(name="doc")
+    _timed(doc, "Hello", 0, 1.5, voice="Ann")
+    doc.add_picture(source=TrackSource(start_time=2, end_time=2))
+    _timed(doc, "World", 2, 3.25)
+
+    back = DocLangDocDeserializer().deserialize_str(_compact(doc))
+
+    assert _cues(back, back.tracks[0]) == [
+        ("TextItem", "Hello", 0.0, 1.5, "Ann"),
+        ("PictureItem", "", 2.0, 2.0, None),
+        ("TextItem", "World", 2.0, 3.25, None),
+    ]
+
+
+def test_inline_runs_of_a_cue_are_one_turn():
+    """Inline runs with the same time and voice are one turn, and a run with timed runs does not end a track."""
+    doc = DoclingDocument(name="doc")
+    _timed(doc, "First", 0, 1)
+    cue = doc.add_inline_group()
+    _timed(doc, "Hee! ", 1, 2, voice="Esme", parent=cue)
+    _timed(doc, "laughter", 1, 2, parent=cue, formatting=Formatting(italic=True))
+    turn = doc.add_text(label=DocItemLabel.TEXT, text="", source=TrackSource(start_time=2, end_time=3, voice="Ann"))
+    runs = doc.add_inline_group(parent=turn)
+    doc.add_text(label=DocItemLabel.TEXT, text="Formatted ", parent=runs)
+    doc.add_text(label=DocItemLabel.TEXT, text="turn", parent=runs, formatting=Formatting(bold=True))
+
+    assert _compact(doc) == (
+        '<doclang version="0.9"><track><bdiv/><seconds value="0"/><seconds value="1"/>First'
+        '<bdiv/><seconds value="1"/><seconds value="2"/><voice>Esme</voice><content>Hee! </content><voice/>laughter'
+        '<bdiv/><seconds value="2"/><seconds value="3"/><voice>Ann</voice>Formatted turn</track></doclang>'
+    )
+
+
+@pytest.mark.parametrize("example", [1, 2, 3, 4, 5])
+def test_webvtt_documents_export_to_one_valid_track(example: int):
+    """Documents converted from WebVTT keep their times and voices in DocLang."""
+    doc = DoclingDocument.load_from_json(DATA / f"webvtt_example_{example:02d}.json")
+    xml = _compact(doc)
+
+    validate_dclg_xml(xml)
+    assert xml.count("<track>") == 1
+    assert xml.count("<bdiv/>") == len({(s.start_time, s.end_time) for t in doc.texts for s in t.source})
