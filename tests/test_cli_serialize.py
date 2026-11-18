@@ -1,9 +1,9 @@
 """Tests for the ``docling-serialize`` CLI."""
 
+import re
 import zipfile
 from pathlib import Path
 
-from click import unstyle
 from typer.testing import CliRunner
 
 from docling_core.cli.serialize import app
@@ -50,4 +50,4 @@ def test_serialize_dclx_requires_output_path() -> None:
     )
 
     assert result.exit_code == 2
-    assert "--output is required when --to dclx" in unstyle(result.output)
+    assert "--output is required when --to dclx" in re.sub(r"\x1b\[[0-9;]*m", "", result.output)

@@ -11,7 +11,8 @@
     <ldiv/>
     <code>
       <label value="Python"/>
-<![CDATA[print('hello')]]>    </code>
+      <![CDATA[print('hello')]]>
+    </code>
     <ldiv/>
     <text>
       <location value="51"/>

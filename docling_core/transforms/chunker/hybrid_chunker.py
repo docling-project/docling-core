@@ -24,6 +24,7 @@ from docling_core.transforms.serializer.base import (
     BaseDocSerializer,
     BaseSerializerProvider,
 )
+from docling_core.transforms.serializer.markdown import MARKDOWN_SEPARATOR_ROW_RE
 from docling_core.types.doc import DoclingDocument, SectionHeaderItem, TableItem, TitleItem
 
 _SEMCHUNK_AVAILABLE: bool = False
@@ -60,7 +61,7 @@ class HybridChunker(BaseChunker):
             respective pretrained model
         max_tokens: The maximum number of tokens per chunk. If not set, limit is
             resolved from the tokenizer
-        repeat_table_headers: Whether to repeat a table header if the table is chunked
+        repeat_table_header: Whether to repeat a table header if the table is chunked
         merge_peers: Whether to merge undersized chunks sharing same relevant metadata
         always_emit_headings: Whether to emit headings even for empty sections
         omit_header_on_overflow: Only used when repeat_table_header is True. When True,
@@ -158,6 +159,31 @@ class HybridChunker(BaseChunker):
             other_len=total - text_length,
         )
 
+    def _estimate_delimiter_tokens(self) -> int:
+        """Calibrate the token contribution of joining two texts."""
+        return (
+            self.tokenizer.count_tokens(text=f"a{self.delim}b")
+            - self.tokenizer.count_tokens(text="a")
+            - self.tokenizer.count_tokens(text="b")
+        )
+
+    def _estimate_meta_tokens(self, doc_chunk: DocChunk, text_tokens: int) -> int:
+        """Estimate the token overhead that contextualize() adds to the chunk text.
+
+        Callers that replace only text and doc_items may reuse this estimate
+        while headings and captions stay unchanged. Tokenization at the context
+        boundary can change with the text, so exact window counts are still needed.
+
+        Args:
+            doc_chunk: The reference chunk used to measure overhead.
+            text_tokens: Pre-computed token count of ``doc_chunk.text``.
+
+        Returns:
+            Estimated token overhead: contextualized tokens minus text tokens.
+            The difference is not guaranteed to be non-negative.
+        """
+        return self._count_chunk_tokens(doc_chunk=doc_chunk) - text_tokens
+
     def _split_by_doc_items(self, doc_chunk: DocChunk, doc_serializer: BaseDocSerializer) -> list[DocChunk]:
         """Split a chunk along doc-item boundaries, keeping each window within max_tokens.
 
@@ -195,11 +221,7 @@ class HybridChunker(BaseChunker):
             item_token_counts.append(self.tokenizer.count_tokens(text=text))
 
         # token cost of the delimiter between two joined items
-        delim_tokens = (
-            self.tokenizer.count_tokens(text=f"a{self.delim}b")
-            - self.tokenizer.count_tokens(text="a")
-            - self.tokenizer.count_tokens(text="b")
-        )
+        delim_tokens = self._estimate_delimiter_tokens()
 
         def build_window(window_start: int, window_end: int) -> DocChunk:
             meta = DocMeta(
@@ -216,7 +238,7 @@ class HybridChunker(BaseChunker):
         # constant across windows: doc_items and origin are excluded from the embed
         # serialization (DocMeta.excluded_embed), so contextualize() only sees
         # headings/captions, which are the same for every window in this chunk
-        meta_overhead = window_count(0, 0) - self.tokenizer.count_tokens(text=build_window(0, 0).text)
+        meta_overhead = self._estimate_meta_tokens(build_window(0, 0), item_token_counts[0])
 
         chunks: list[DocChunk] = []
         window_start = 0
@@ -255,28 +277,60 @@ class HybridChunker(BaseChunker):
         doc_chunk: DocChunk,
         doc_serializer: BaseDocSerializer,
     ) -> list[DocChunk]:
+        """Split an oversized chunk into token-bounded sub-chunks via text segmentation.
+
+        Computes the token budget available for body text by subtracting the cost of
+        headings and captions (``other_len``) from ``max_tokens``, then delegates
+        segmentation to :meth:`segment`. If the first segmentation still produces
+        chunks that exceed ``max_tokens`` after contextualization (due to non-additive
+        tokenization), ``available_length`` is reduced by the observed overflow and
+        :meth:`segment` is called again. This loop converges because ``available_length``
+        strictly decreases on each iteration.
+
+        When the loop exhausts the budget (``available_length <= 0``), headings and
+        captions are stripped and the method recurses once on the stripped chunk, which
+        has ``other_len == 0`` and therefore a full ``max_tokens`` budget. If headings
+        and captions are already absent, :meth:`segment` is called directly with the
+        full budget.
+
+        Args:
+            doc_chunk: The chunk to split. May already fit within ``max_tokens``, in
+                which case it is returned unchanged.
+            doc_serializer: Serializer for the current document, forwarded to
+                :meth:`segment`.
+
+        Returns:
+            A list of :class:`DocChunk` objects whose contextualized token counts
+            respect ``max_tokens``.
+        """
         lengths = self._doc_chunk_length(doc_chunk)
         if lengths.total_len <= self.max_tokens:
             return [DocChunk(**doc_chunk.export_json_dict())]
-        else:
-            # How much room is there for text after subtracting out the headers and
-            # captions:
-            available_length = self.max_tokens - lengths.other_len
 
-            if available_length <= 0:
-                warnings.warn(
-                    "Headers and captions for this chunk are longer than the total "
-                    "available size for the chunk, so they will be ignored: "
-                    f"{doc_chunk.text=}, {doc_chunk.meta=}"
-                )
-                new_chunk = DocChunk(**doc_chunk.export_json_dict())
-                new_chunk.meta.captions = None
-                new_chunk.meta.headings = None
-                return self._split_using_plain_text(doc_chunk=new_chunk, doc_serializer=doc_serializer)
+        available_length = self.max_tokens - lengths.other_len
 
+        while available_length > 0:
             segments = self.segment(doc_chunk, available_length, doc_serializer)
             chunks = [DocChunk(text=s, meta=doc_chunk.meta) for s in segments]
-            return chunks
+            overflow = max(self._count_chunk_tokens(chunk) - self.max_tokens for chunk in chunks)
+            if overflow <= 0:
+                return chunks
+            available_length -= overflow
+
+        if doc_chunk.meta.headings is not None or doc_chunk.meta.captions is not None:
+            warnings.warn(
+                "Headers and captions for this chunk are longer than the total "
+                "available size for the chunk, so they will be ignored: "
+                f"{doc_chunk.text=}, {doc_chunk.meta=}"
+            )
+            new_chunk = DocChunk(**doc_chunk.export_json_dict())
+            new_chunk.meta.captions = None
+            new_chunk.meta.headings = None
+            return self._split_using_plain_text(doc_chunk=new_chunk, doc_serializer=doc_serializer)
+
+        # Headings and captions are already absent; return segmented chunks directly.
+        segments = self.segment(doc_chunk, self.max_tokens, doc_serializer)
+        return [DocChunk(text=s, meta=doc_chunk.meta) for s in segments]
 
     def segment(self, doc_chunk: DocChunk, available_length: int, doc_serializer: BaseDocSerializer) -> list[str]:
         """Split a single doc chunk into a list of text segments.
@@ -289,16 +343,21 @@ class HybridChunker(BaseChunker):
           used as a prefix so they are reproduced at the top of every segment.
           Any preamble text that precedes the first table row (e.g. a caption) is
           included in the prefix to account for its token cost, but is stripped
-          from all segments after the first so it does not repeat.
+          from every later segment that repeats the prefix so it does not repeat.
+
+          When ``omit_header_on_overflow`` is ``False`` and a body row is too
+          wide to fit alongside the full header, the table is partitioned vertically
+          (by columns) and horizontally (by rows for tall tables) so that each
+          resulting sub-table is a complete, valid Markdown table with matching headers.
+          When ``omit_header_on_overflow`` is ``True``, wide rows are emitted without
+          the header instead.
 
         - Semantic splitting: for all other chunks, ``semchunk`` splits the
           text at natural semantic boundaries up to ``available_length`` tokens.
 
         Args:
             doc_chunk: The chunk to segment.
-            available_length: Maximum token budget for the semantic-splitting
-                path (ignored for the table path, which uses ``self.tokenizer``
-                and ``self.max_tokens`` internally).
+            available_length: Maximum token budget available for each segment.
             doc_serializer: Serializer for the current document; must be a
                 ``ChunkingDocSerializer`` for the table path to activate.
 
@@ -324,15 +383,38 @@ class HybridChunker(BaseChunker):
             table_prefix = "".join(header_lines)
             full_prefix = preamble + table_prefix
 
-            line_chunker = LineBasedTokenChunker(
-                tokenizer=self.tokenizer,
-                prefix=full_prefix,
-                omit_prefix_on_overflow=self.omit_header_on_overflow,
-                serializer_provider=self.serializer_provider,
+            # Check whether any body row is too wide to fit alongside the full header.
+            # Uses the concatenated token count (not the sum) to match the same
+            # non-additive tokenization behaviour used by LineBasedTokenChunker.
+            any_row_overflows = body_lines and any(
+                self.tokenizer.count_tokens(table_prefix + line) > available_length for line in body_lines
             )
-            segments = line_chunker.chunk_text(lines=body_lines)
-            if preamble:
-                segments = segments[:1] + [s[len(preamble) :] for s in segments[1:]]
+
+            if any_row_overflows and not self.omit_header_on_overflow:
+                # omit_header_on_overflow=False: the user wants the header present
+                # in every chunk.  Since splitting a Markdown row mid-cell produces
+                # an invalid fragment, split the table vertically (by columns) so
+                # that each sub-table is a complete, valid Markdown table.
+                segments = self._split_table_by_columns(
+                    header_lines=header_lines,
+                    body_lines=body_lines,
+                    preamble=preamble,
+                    available_length=available_length,
+                )
+            else:
+                # fallback for rows that don't fit.
+                line_chunker = LineBasedTokenChunker(
+                    tokenizer=self.tokenizer,
+                    max_tokens_override=available_length,
+                    prefix=full_prefix,
+                    omit_prefix_on_overflow=self.omit_header_on_overflow,
+                    serializer_provider=self.serializer_provider,
+                )
+                segments = line_chunker.chunk_text(lines=body_lines)
+                if preamble:
+                    segments = segments[:1] + [
+                        s[len(preamble) :] if s.startswith(full_prefix) else s for s in segments[1:]
+                    ]
         else:
             if not _SEMCHUNK_AVAILABLE:
                 raise ImportError(_SEMCHUNK_INSTALL_HINT) from _SEMCHUNK_IMPORT_ERROR
@@ -341,51 +423,277 @@ class HybridChunker(BaseChunker):
             segments = cast(list[str], sem_segments)
         return segments
 
-    def _merge_chunks_with_matching_metadata(self, chunks: list[DocChunk]):
-        output_chunks = []
-        window_start = 0
-        window_end = 0  # an inclusive index
+    def _merge_chunks_with_matching_metadata(self, chunks: list[DocChunk]) -> list[DocChunk]:
+        """Merge neighboring chunks with matching headings, keeping windows within max_tokens.
+
+        Chunk texts are counted once and windows are grown with a running token
+        estimate, re-anchored by exact counts at overflow points and shrunk back
+        to the largest fitting window when the estimate under-counts. The merged
+        output matches the previous implementation exactly, since the largest
+        window that fits is unique.
+
+        Args:
+            chunks: The chunks to merge, in document order.
+
+        Returns:
+            The merged list of chunks.
+        """
+        output_chunks: list[DocChunk] = []
         num_chunks = len(chunks)
-        while window_end < num_chunks:
-            chunk = chunks[window_end]
-            headings = chunk.meta.headings
-            ready_to_append = False
-            if window_start == window_end:
-                current_headings = headings
-                window_end += 1
-                first_chunk_of_window = chunk
-            else:
-                chks = chunks[window_start : window_end + 1]
-                doc_items = [it for chk in chks for it in chk.meta.doc_items]
-                candidate = DocChunk(
-                    # TODO: merging should ideally be done by the serializer:
-                    text=self.delim.join([chk.text for chk in chks]),
-                    meta=DocMeta(
-                        doc_items=doc_items,
-                        headings=current_headings,
-                        origin=chunk.meta.origin,
-                    ),
-                )
-                if headings == current_headings and self._count_chunk_tokens(doc_chunk=candidate) <= self.max_tokens:
-                    # there is room to include the new chunk so add it to the window and
-                    # continue
+
+        # token cost of the delimiter between two joined chunk texts
+        delim_tokens = self._estimate_delimiter_tokens()
+        chunk_token_counts = [self.tokenizer.count_tokens(text=chk.text) for chk in chunks]
+
+        def build_candidate(window_start: int, window_end: int) -> DocChunk:
+            """Build a merged chunk from the window (window_end is inclusive)."""
+            doc_items = [it for chk in chunks[window_start : window_end + 1] for it in chk.meta.doc_items]
+            return DocChunk(
+                # TODO: merging should ideally be done by the serializer:
+                text=self.delim.join([chk.text for chk in chunks[window_start : window_end + 1]]),
+                meta=DocMeta(
+                    doc_items=doc_items,
+                    headings=chunks[window_start].meta.headings,
+                    origin=chunks[window_end].meta.origin,
+                ),
+            )
+
+        window_start = 0
+        while window_start < num_chunks:
+            first_chunk = chunks[window_start]
+            headings = first_chunk.meta.headings
+
+            # constant token cost of the merged meta (headings, origin) around
+            # the joined text; all candidates in this window share it
+            meta_overhead = self._estimate_meta_tokens(first_chunk, chunk_token_counts[window_start])
+
+            window_end = window_start + 1
+            fit_end = window_start
+            running = chunk_token_counts[window_start]
+            while window_end < num_chunks and chunks[window_end].meta.headings == headings:
+                running += chunk_token_counts[window_end] + delim_tokens
+                if running + meta_overhead <= self.max_tokens:
+                    fit_end = window_end
                     window_end += 1
-                    new_chunk = candidate
-                else:
-                    ready_to_append = True
-            if ready_to_append or window_end == num_chunks:
-                # no more room OR the start of new metadata.  Either way, end the block
-                # and use the current window_end as the start of a new block
-                if window_start + 1 == window_end:
-                    # just one chunk so use it as is
-                    output_chunks.append(first_chunk_of_window)
-                else:
-                    output_chunks.append(new_chunk)
-                # no need to reset window_text, etc. because that will be reset in the
-                # next iteration in the if window_start == window_end block
-                window_start = window_end
+                    continue
+                candidate = build_candidate(window_start, window_end)
+                exact = self._count_chunk_tokens(doc_chunk=candidate)
+                if exact <= self.max_tokens:
+                    # the estimate overshot; re-anchor it on the exact count
+                    running = exact - meta_overhead
+                    fit_end = window_end
+                    window_end += 1
+                    continue
+                break  # the window overflowed
+
+            # exact-verify the largest accepted window, in case the estimate
+            # under-counted (and shrink back if it did)
+            while (
+                fit_end > window_start
+                and self._count_chunk_tokens(doc_chunk=build_candidate(window_start, fit_end)) > self.max_tokens
+            ):
+                fit_end -= 1
+
+            if fit_end == window_start:
+                output_chunks.append(first_chunk)
+            else:
+                output_chunks.append(build_candidate(window_start, fit_end))
+            window_start = fit_end + 1
 
         return output_chunks
+
+    def _split_table_by_columns(
+        self,
+        header_lines: list[str],
+        body_lines: list[str],
+        preamble: str,
+        available_length: int,
+    ) -> list[str]:
+        """Split a Markdown table into column-wise sub-tables that fit within the token budget.
+
+        When a table row is too wide to fit alongside the repeated header, splitting
+        the row mid-cell would produce an invalid Markdown fragment. This method
+        instead partitions the table columns into groups using a two-tier strategy:
+
+        1. Column-Wise Fit (All Rows): Binary searches for the largest column slice
+           ``[col_start, mid)`` where all body rows fit together with the sub-table
+           header within ``available_length`` tokens. If such a slice exists, it is
+           emitted as a complete, multi-row sub-table chunk.
+        2. 2D Slicing Fallback (Tall Tables): If even a single-column slice with all
+           body rows exceeds the budget, binary searches for the largest column
+           slice where each individual body row fits alongside the sub-table
+           header, and delegates row-wise chunking of that column slice to
+           ``LineBasedTokenChunker``.
+
+        The preamble (caption or other text preceding the header) is prepended only
+        to the first sub-table segment.
+
+        Args:
+            header_lines: The header row(s) and separator row of the original table,
+                each as a newline-terminated string.
+            body_lines: The data rows of the original table, each as a
+                newline-terminated string.
+            preamble: Text preceding the table header (e.g. a caption). Included
+                in the first returned segment only.
+            available_length: Maximum token budget for each segment (text only,
+                before context overhead is added by the caller).
+
+        Returns:
+            A list of text segments, each a complete Markdown sub-table string
+            with matching column headers and separator rows.
+        """
+        # Exclude the separator row from header_lines for cell parsing; rebuild it.
+        data_header_lines = [l for l in header_lines if not MARKDOWN_SEPARATOR_ROW_RE.match(l.rstrip("\n"))]
+
+        def parse_cells(row: str) -> list[str]:
+            """Split a Markdown table row string into a list of cell strings.
+
+            Strips the optional leading and trailing ``|`` delimiters, then splits
+            on unescaped ``|`` characters. A ``|`` is considered escaped when it is
+            preceded by an odd number of backslashes. Each cell value is stripped of
+            surrounding whitespace before being returned.
+
+            Args:
+                row: A single Markdown table row, e.g. ``| a | b\\|c | d |``.
+
+            Returns:
+                A list of cell strings with whitespace stripped. Returns an empty
+                list for blank rows.
+            """
+            line = row.strip()
+            if not line:
+                return []
+            if line.startswith("|"):
+                line = line[1:]
+            if line.endswith("|"):
+                num_bs = len(line[:-1]) - len(line[:-1].rstrip("\\"))
+                if num_bs % 2 == 0:
+                    line = line[:-1]
+
+            cells: list[str] = []
+            current: list[str] = []
+            bs_count = 0
+            for char in line:
+                if char == "\\":
+                    bs_count += 1
+                    current.append(char)
+                elif char == "|":
+                    if bs_count % 2 == 1:
+                        current.append(char)
+                    else:
+                        cells.append("".join(current).strip())
+                        current = []
+                    bs_count = 0
+                else:
+                    bs_count = 0
+                    current.append(char)
+            cells.append("".join(current).strip())
+            return cells
+
+        header_cell_rows: list[list[str]] = [parse_cells(l) for l in data_header_lines]
+        body_cell_rows: list[list[str]] = [parse_cells(l) for l in body_lines if l.strip()]
+
+        # Determine the effective column count (min across all rows for safety).
+        n_cols = min(
+            (len(r) for r in header_cell_rows + body_cell_rows),
+            default=0,
+        )
+        if n_cols == 0:
+            # Malformed table: fall back to emitting body rows without header.
+            return ["".join(body_lines)]
+
+        def build_subtable(col_start: int, col_end: int, include_preamble: bool) -> str:
+            """Construct the text of a sub-table covering columns [col_start, col_end) with all body rows."""
+            lines: list[str] = []
+            if include_preamble and preamble:
+                lines.append(preamble)
+            for hrow in header_cell_rows:
+                lines.append("| " + " | ".join(hrow[col_start:col_end]) + " |\n")
+            lines.append("| " + " | ".join(["-"] * (col_end - col_start)) + " |\n")
+            for brow in body_cell_rows:
+                lines.append("| " + " | ".join(brow[col_start:col_end]) + " |\n")
+            return "".join(lines)
+
+        def build_header(c_start: int, c_end: int, include_preamble: bool) -> str:
+            """Construct the header text (and optional preamble) for columns [c_start, c_end)."""
+            lines: list[str] = []
+            if include_preamble and preamble:
+                lines.append(preamble)
+            for hrow in header_cell_rows:
+                lines.append("| " + " | ".join(hrow[c_start:c_end]) + " |\n")
+            lines.append("| " + " | ".join(["-"] * (c_end - c_start)) + " |\n")
+            return "".join(lines)
+
+        def row_fits_with_header(c_start: int, c_end: int, include_preamble: bool) -> bool:
+            """Return True if all individual body rows can fit alongside the sub-table header."""
+            hdr = build_header(c_start, c_end, include_preamble=include_preamble)
+            if self.tokenizer.count_tokens(hdr) >= available_length:
+                return False
+            for brow in body_cell_rows:
+                row_line = "| " + " | ".join(brow[c_start:c_end]) + " |\n"
+                if self.tokenizer.count_tokens(hdr + row_line) > available_length:
+                    return False
+            return True
+
+        segments: list[str] = []
+        col_start = 0
+        first = True
+
+        while col_start < n_cols:
+            # First, try to find the maximum columns that fit ALL body rows in a single chunk.
+            lo, hi = col_start + 1, n_cols
+            best_all_rows_end: int | None = None
+            while lo <= hi:
+                mid = (lo + hi) // 2
+                candidate = build_subtable(col_start, mid, include_preamble=first)
+                if self.tokenizer.count_tokens(candidate) <= available_length:
+                    best_all_rows_end = mid
+                    lo = mid + 1
+                else:
+                    hi = mid - 1
+
+            if best_all_rows_end is not None:
+                # All body rows fit within the token budget for columns [col_start, best_all_rows_end).
+                segments.append(build_subtable(col_start, best_all_rows_end, include_preamble=first))
+                col_start = best_all_rows_end
+            else:
+                # Table is tall: even a single column with all body rows exceeds available_length.
+                # Find the maximum columns where individual rows fit alongside the sub-header,
+                # then chunk rows using LineBasedTokenChunker.
+                lo, hi = col_start + 1, n_cols
+                best_row_end: int | None = None
+                while lo <= hi:
+                    mid = (lo + hi) // 2
+                    if row_fits_with_header(col_start, mid, include_preamble=first):
+                        best_row_end = mid
+                        lo = mid + 1
+                    else:
+                        hi = mid - 1
+
+                if best_row_end is None:
+                    best_row_end = col_start + 1
+
+                sub_header = build_header(col_start, best_row_end, include_preamble=first)
+                sub_body_lines = ["| " + " | ".join(brow[col_start:best_row_end]) + " |\n" for brow in body_cell_rows]
+
+                line_chunker = LineBasedTokenChunker(
+                    tokenizer=self.tokenizer,
+                    max_tokens_override=available_length,
+                    prefix=sub_header,
+                    omit_prefix_on_overflow=self.omit_header_on_overflow,
+                    serializer_provider=self.serializer_provider,
+                )
+                slice_segments = line_chunker.chunk_text(lines=sub_body_lines)
+                if preamble and first:
+                    slice_segments = slice_segments[:1] + [
+                        s[len(preamble) :] if s.startswith(sub_header) else s for s in slice_segments[1:]
+                    ]
+                segments.extend(slice_segments)
+                col_start = best_row_end
+
+            first = False
+
+        return segments
 
     def chunk(
         self,

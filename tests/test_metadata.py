@@ -119,7 +119,8 @@ def test_metadata_usage(dummy_doc_with_meta: DoclingDocument) -> None:
 
 def test_metadata_relaxed_migration() -> None:
     src = Path("tests/data/doc/dummy_doc_with_meta_2.yaml")
-    doc = DoclingDocument.load_from_yaml(filename=src)
+    with pytest.warns(UserWarning, match=r"outside page bounds.*clamping to"):
+        doc = DoclingDocument.load_from_yaml(filename=src)
 
     first_pic = doc.pictures[0]
     assert first_pic.meta
@@ -239,7 +240,7 @@ def test_md_ser_include_picture_classification_meta_path():
 def test_md_ser_include_picture_classification_legacy_path():
     doc = DoclingDocument(name="test")
     pic = doc.add_picture()
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning, match=r"Field `annotations` is deprecated"):
         pic.annotations.append(
             PictureClassificationData(
                 provenance="test",
@@ -247,10 +248,12 @@ def test_md_ser_include_picture_classification_legacy_path():
             )
         )
 
-    default_text = doc.export_to_markdown()
+    with pytest.warns(DeprecationWarning):
+        default_text = doc.export_to_markdown()
     assert "chart" in default_text
 
-    suppressed_text = doc.export_to_markdown(include_picture_classification=False)
+    with pytest.warns(DeprecationWarning):
+        suppressed_text = doc.export_to_markdown(include_picture_classification=False)
     assert "chart" not in suppressed_text
     assert "<!-- image -->" in suppressed_text
 

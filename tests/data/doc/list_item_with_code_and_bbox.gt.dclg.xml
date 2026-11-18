@@ -11,6 +11,7 @@
       <location value="51"/>
       <location value="205"/>
       <location value="154"/>
-<![CDATA[print('hello')]]>    </code>
+      <![CDATA[print('hello')]]>
+    </code>
   </list>
 </doclang>

@@ -9,9 +9,7 @@
     <fcel/>
     cell 1,0
     <fcel/>
-    <text>
-      <italic>text in italic</italic>
-    </text>
+    <text><italic>text in italic</italic></text>
     <nl/>
     <fcel/>
     <list>

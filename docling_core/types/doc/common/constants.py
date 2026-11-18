@@ -5,7 +5,7 @@ from typing import Final
 
 from docling_core.types.doc.labels import DocItemLabel
 
-CURRENT_VERSION: Final = "1.10.0"
+CURRENT_VERSION: Final = "1.11.0"
 """Current DoclingDocument schema version.
 
 Bump this (minor) whenever a change to the serialised format would cause an
@@ -20,6 +20,11 @@ SCHEMA_VERSION_HISTORY: Final[list[dict]] = [
     {"schema": "1.8.0", "library_version": "v2.49.0", "note": "BasePrediction, BaseMeta, meta field"},
     {"schema": "1.9.0", "library_version": "v2.57.0", "note": "FineRef, DocItem.comments"},
     {"schema": "1.10.0", "library_version": "v2.69.0", "note": "FieldItem types, 7 new DocItemLabel values"},
+    {
+        "schema": "1.11.0",
+        "library_version": "v2.106.0",
+        "note": "InlineGroup runs carry their own significant whitespace",
+    },
 ]
 """Ordered history of DoclingDocument schema versions in docling-core v2.x.
 
@@ -47,6 +52,11 @@ This is the minor component of the first entry in ``SCHEMA_VERSION_HISTORY``
 every step from ``_CURRENT_MINOR`` down to ``FIRST_SUPPORTED_MINOR + 1``.
 """
 
+# First schema version in which InlineGroup runs carry their own significant whitespace and
+# serializers concatenate them faithfully. Documents stamped below this are normalized on load
+# (see `DoclingDocument._migrate_legacy_inline_separators`).
+INLINE_WHITESPACE_CONTRACT_VERSION: Final = "1.11.0"
+
 
 DEFAULT_EXPORT_LABELS = {
     DocItemLabel.TITLE,
@@ -66,6 +76,8 @@ DEFAULT_EXPORT_LABELS = {
     DocItemLabel.PAGE_FOOTER,
     DocItemLabel.KEY_VALUE_REGION,
     DocItemLabel.EMPTY_VALUE,
+    DocItemLabel.FIELD_REGION,
+    DocItemLabel.FIELD_ITEM,
     DocItemLabel.FIELD_KEY,
     DocItemLabel.FIELD_VALUE,
     DocItemLabel.FIELD_HEADING,

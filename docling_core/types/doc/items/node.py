@@ -215,7 +215,7 @@ class FloatingItem(DocItem):
         """Computes the caption as a single text."""
         text = ""
         for cap in self.captions:
-            text += cap.resolve(doc).text
+            text += cap.resolve(doc)._get_plain_text(doc)
         return text
 
     def get_image(self, doc: "DoclingDocument", prov_index: int = 0) -> PILImage.Image | None:

@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "name": "",
   "furniture": {
     "self_ref": "#/furniture",
@@ -284,7 +284,7 @@
       "label": "text",
       "prov": [],
       "orig": "Clark ",
-      "text": "Clark "
+      "text": "Clark  "
     },
     {
       "self_ref": "#/texts/12",
@@ -296,7 +296,7 @@
       "label": "text",
       "prov": [],
       "orig": "Kent",
-      "text": "Kent",
+      "text": "Kent ",
       "formatting": {
         "bold": true,
         "italic": false,
@@ -340,7 +340,7 @@
       "label": "text",
       "prov": [],
       "orig": "My first input ",
-      "text": "My first input "
+      "text": "My first input  "
     },
     {
       "self_ref": "#/texts/16",
@@ -365,7 +365,7 @@
       "label": "text",
       "prov": [],
       "orig": " and my second input ",
-      "text": " and my second input "
+      "text": " and my second input  "
     },
     {
       "self_ref": "#/texts/18",

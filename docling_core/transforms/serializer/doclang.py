@@ -1,6 +1,7 @@
 """Define classes for DocLang serialization.
 
-Aligned to the DocLang specification version ``_DOCLANG_VERSION``.
+Aligned to the DocLang specification version ``_DOCLANG_VERSION``, partially:
+``<track>`` is not supported yet.
 """
 
 import copy
@@ -9,9 +10,11 @@ import warnings
 import xml.etree.ElementTree as ET
 from collections.abc import Callable
 from enum import Enum
+from functools import cached_property
 from itertools import groupby
 from pathlib import Path, PurePath
 from typing import Annotated, Any, Optional, Union, cast
+from xml.dom.minidom import Element, Node, Text
 
 from defusedxml.ElementTree import fromstring
 from defusedxml.minidom import parseString
@@ -20,9 +23,12 @@ from pydantic.networks import AnyUrl
 from typing_extensions import override
 
 from docling_core.transforms.serializer._doclang_utils import (
+    _COLLAPSIBLE_WHITESPACE_RE,
     _DOCLANG_LABEL_UNDEFINED,
     _DOCLANG_META_TAG_SMILES,
     _DOCLANG_VERSION,
+    _ELEMENT_HEAD_TAGS,
+    _RAW_TEXT_TAGS,
     DOCLANG_DFLT_RESOLUTION,
     DOCLANG_NAMESPACE,
     DocLangAttributeKey,
@@ -34,11 +40,15 @@ from docling_core.transforms.serializer._doclang_utils import (
     _code_language_label_to_doclang,
     _create_location_tokens_for_bbox,
     _create_location_tokens_for_item,
+    _escape_xml_attr,
+    _is_virtual_text,
+    _is_virtual_text_part,
     _merge_table_data,
     _picture_classification_label_from_doclang,
     _picture_classification_label_to_doclang,
     _provenance_with_charspan,
     _thread_table_merge_offset,
+    _unwrap_redundant_content,
     _wrap,
     _wrap_field_kv_markup_if_needed,
     _wrap_in_field_item_if_needed,
@@ -237,7 +247,12 @@ class DocLangParams(CommonParams):
         set[ContentType],
         _advanced_field(detail="Types of content to serialize (only relevant if add_content is True)."),
     ] = _DEFAULT_CONTENT_TYPES
-    layer_mode: Annotated[LayerMode, _advanced_field()] = LayerMode.AUTO
+    layer_mode: Annotated[
+        LayerMode,
+        _advanced_field(
+            detail="Docling-only layers use the closest layer supported by DocLang.",
+        ),
+    ] = LayerMode.AUTO
     # DocLang formatting
     pretty_indentation: Annotated[
         str | None,
@@ -293,37 +308,40 @@ def _create_layer_token(
     if params.layer_mode == LayerMode.ALWAYS or (
         params.layer_mode == LayerMode.AUTO and item.content_layer != ContentLayer.BODY
     ):
+        layer = item.content_layer
+        # DocLang has no notes or invisible layer values; map them to the closest ones (lossy).
+        if layer == ContentLayer.NOTES:
+            layer = ContentLayer.FURNITURE
+        elif layer == ContentLayer.INVISIBLE:
+            layer = ContentLayer.BACKGROUND
         return DocLangVocabulary._create_selfclosing_token(
             token=DocLangToken.LAYER,
-            attrs={DocLangAttributeKey.VALUE: item.content_layer.value},
+            attrs={DocLangAttributeKey.VALUE: layer.value},
         )
     return ""
 
 
 def _create_label_token(*, value: str) -> str:
     """Emit `<label value="..."/>` for element head (e.g. code language)."""
-    safe = value.replace("&", "&amp;").replace('"', "&quot;")
     return DocLangVocabulary._create_selfclosing_token(
         token=DocLangToken.LABEL,
-        attrs={DocLangAttributeKey.VALUE: safe},
+        attrs={DocLangAttributeKey.VALUE: _escape_xml_attr(value)},
     )
 
 
 def _create_src_token(*, uri: str) -> str:
     """Emit `<src uri="..."/>` in the picture-specific body sequence (v0.6)."""
-    safe = uri.replace("&", "&amp;").replace('"', "&quot;")
     return DocLangVocabulary._create_selfclosing_token(
         token=DocLangToken.SRC,
-        attrs={DocLangAttributeKey.URI: safe},
+        attrs={DocLangAttributeKey.URI: _escape_xml_attr(uri)},
     )
 
 
 def _create_href_token(*, uri: str) -> str:
     """Emit `<href uri="..."/>` in element head."""
-    safe = uri.replace("&", "&amp;").replace('"', "&quot;")
     return DocLangVocabulary._create_selfclosing_token(
         token=DocLangToken.HREF,
-        attrs={DocLangAttributeKey.URI: safe},
+        attrs={DocLangAttributeKey.URI: _escape_xml_attr(uri)},
     )
 
 
@@ -331,6 +349,25 @@ def _text_item_hyperlink_uri(item: DocItem) -> str | None:
     if isinstance(item, TextItem) and item.hyperlink is not None:
         return hyperlink_uri(item.hyperlink)
     return None
+
+
+def _shared_href(*, group: InlineGroup, doc: DoclingDocument) -> str | None:
+    """Return the link shared by all runs of ``group``, if its enclosing element can carry it.
+
+    An href applies to all content of its element, so it can move up to the
+    element head only when every run, and the host's own text, has that link.
+    """
+    parent = group.parent.resolve(doc) if group.parent else None
+    # A heading reads formatted-only content as flat text, so its runs must keep their links.
+    # A host's own link covers only its own text: with none, there is nothing to write it on.
+    if isinstance(parent, ListItem | InlineGroup | TitleItem | SectionHeaderItem):
+        return None
+    uris = {_text_item_hyperlink_uri(child.resolve(doc)) for child in group.children}
+    if len(uris) != 1 or (uri := uris.pop()) is None:
+        return None
+    if isinstance(parent, TextItem) and parent.text and _text_item_hyperlink_uri(parent) != uri:
+        return None
+    return uri
 
 
 def _meta_field_serialization_allowed(name: str, params: DocLangParams) -> bool:
@@ -348,6 +385,7 @@ def _element_head_prefix(
     caption_text: str | None = None,
     custom_text: str | None = None,
     include_href: bool = True,
+    href_uri: str | None = None,
     include_layer: bool = True,
     include_item_meta_head: bool = True,
     thread_id: str | None = None,
@@ -358,7 +396,7 @@ def _element_head_prefix(
         parts.append(_create_label_token(value=label_value))
     if thread_id:
         parts.append(DocLangVocabulary._create_threading_token(thread_id=thread_id))
-    if include_href and (href_uri := _text_item_hyperlink_uri(item)):
+    if include_href and (href_uri := href_uri or _text_item_hyperlink_uri(item)):
         parts.append(_create_href_token(uri=href_uri))
     if include_layer and (layer_token := _create_layer_token(item=item, params=params)):
         parts.append(layer_token)
@@ -400,18 +438,10 @@ def _serialize_floating_caption_head(
     params: DocLangParams,
     **kwargs: Any,
 ) -> str:
-    """Serialize the first referenced caption for inclusion in the host element head.
-
-    The element head holds at most one ``<caption>``; any further captions are emitted
-    next to the host by ``_serialize_floating_satellites``.
-    """
+    """Serialize the referenced captions for inclusion in the host element head."""
     if not params.add_referenced_caption:
         return ""
-    captions = _resolve_satellites(refs=item.captions, doc_serializer=doc_serializer, doc=doc, **kwargs)
-    if not captions:
-        return ""
-    head_item = item.model_copy(update={"captions": [captions[0].get_ref()]})
-    cap_res = doc_serializer.serialize_captions(item=head_item, **kwargs)
+    cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
     return cap_res.text or ""
 
 
@@ -488,7 +518,7 @@ def _satellite_placement(
     host: FloatingItem,
     doc: DoclingDocument,
 ) -> tuple[bool, tuple[int, float, float]] | None:
-    """Place a satellite (extra caption or footnote) relative to its host by layout.
+    """Place a satellite (footnote) relative to its host by layout.
 
     The satellite goes after the host if it sits on a later page, entirely below the
     host, or (when overlapping it vertically) entirely to its right; if it overlaps
@@ -534,64 +564,41 @@ def _serialize_floating_satellites(
     params: DocLangParams,
     **kwargs: Any,
 ) -> tuple[list[SerializationResult], list[SerializationResult]]:
-    """Serialize the extra captions and the footnotes of a floating item.
+    """Serialize the footnotes of a floating item.
 
-    Captions beyond the first one (which goes in the host element head) become
-    ``<text>`` elements, footnotes become ``<footnote>`` elements. Each is placed
-    before or after the host by layout (see ``_satellite_placement``), and sorted in
-    reading order (page, top, left) on either side. Satellites without a determinable
-    position fall back to extra captions before and footnotes after the host.
+    Footnotes become ``<footnote>`` elements. Each is placed before or after the host
+    by layout (see ``_satellite_placement``), and sorted in reading order (page, top,
+    left) on either side. Footnotes without a determinable position go after the host.
 
     Returns the ``(before, after)`` serialization results.
     """
-    sats: list[tuple[TextItem, str, bool]] = []
-    if params.add_referenced_caption:
-        captions = _resolve_satellites(refs=item.captions, doc_serializer=doc_serializer, doc=doc, **kwargs)
-        for cap in captions[1:]:
-            text = _serialize_satellite(
-                item=cap,
-                tag=DocLangToken.TEXT,
-                content_type=ContentType.REF_CAPTION,
-                doc=doc,
-                params=params,
-                doc_serializer=doc_serializer,
-                **kwargs,
-            )
-            sats.append((cap, text, False))
-    if params.add_referenced_footnote:
-        footnotes = _resolve_satellites(refs=item.footnotes, doc_serializer=doc_serializer, doc=doc, **kwargs)
-        for ftn in footnotes:
-            text = _serialize_satellite(
-                item=ftn,
-                tag=DocLangToken.FOOTNOTE,
-                content_type=ContentType.REF_FOOTNOTE,
-                doc=doc,
-                params=params,
-                doc_serializer=doc_serializer,
-                **kwargs,
-            )
-            sats.append((ftn, text, True))
-
-    before_unplaced: list[SerializationResult] = []
-    after_unplaced: list[SerializationResult] = []
+    if not params.add_referenced_footnote:
+        return [], []
+    unplaced: list[SerializationResult] = []
     before: list[tuple[tuple[int, float, float], SerializationResult]] = []
     after: list[tuple[tuple[int, float, float], SerializationResult]] = []
-    for sat, text, default_after in sats:
+    for ftn in _resolve_satellites(refs=item.footnotes, doc_serializer=doc_serializer, doc=doc, **kwargs):
+        text = _serialize_satellite(
+            item=ftn,
+            tag=DocLangToken.FOOTNOTE,
+            content_type=ContentType.REF_FOOTNOTE,
+            doc=doc,
+            params=params,
+            doc_serializer=doc_serializer,
+            **kwargs,
+        )
         if not text:
             continue
-        res = create_ser_result(text=text, span_source=sat)
-        if (placement := _satellite_placement(sat=sat, host=item, doc=doc)) is None:
-            (after_unplaced if default_after else before_unplaced).append(res)
+        res = create_ser_result(text=text, span_source=ftn)
+        if (placement := _satellite_placement(sat=ftn, host=item, doc=doc)) is None:
+            unplaced.append(res)
         else:
             goes_after, key = placement
             (after if goes_after else before).append((key, res))
 
     before.sort(key=lambda x: x[0])
     after.sort(key=lambda x: x[0])
-    return (
-        before_unplaced + [res for _, res in before],
-        [res for _, res in after] + after_unplaced,
-    )
+    return [res for _, res in before], [res for _, res in after] + unplaced
 
 
 def _element_label_for_serialization(
@@ -643,15 +650,20 @@ def _replace_xml_illegal_character(match: re.Match[str]) -> str:
     return f"[U+{ord(match.group()):04X}]"
 
 
+_XML_WHITESPACE_RUN_RE = re.compile(r"[ \t\r\n]+")
+
+
 def _escape_text(text: str, params: DocLangParams, *, wrap_multiline: bool = True) -> str:
     """Escape text for DocLang while preserving XML 1.0 validity.
 
-    With ``wrap_multiline=False``, text is only put in a content wrapper if its edge whitespace needs
-    preserving, not merely because it spans several lines.
+    In ``WrapMode.AUTO``, text goes in ``<content>`` where DocLang's whitespace rules would change
+    its reading: edge whitespace, or whitespace other than single spaces. With
+    ``wrap_multiline=False``, only edge whitespace triggers the wrapper (for foreign markup).
     """
     text = _XML_10_ILLEGAL_CHARACTER_RE.sub(_replace_xml_illegal_character, text)
     do_wrap = params.content_wrapping_mode == WrapMode.ALWAYS or (
-        params.content_wrapping_mode == WrapMode.AUTO and (text != text.strip() or (wrap_multiline and "\n" in text))
+        params.content_wrapping_mode == WrapMode.AUTO
+        and (text != text.strip() or (wrap_multiline and _COLLAPSIBLE_WHITESPACE_RE.search(text) is not None))
     )
     if params.escape_mode == EscapeMode.ALWAYS or (
         params.escape_mode == EscapeMode.AUTO and any(c in text for c in ['"', "'", "&", "<", ">"])
@@ -663,6 +675,86 @@ def _escape_text(text: str, params: DocLangParams, *, wrap_multiline: bool = Tru
         # text = f'<{el_str} xml:space="preserve">{text}</{el_str}>'
         text = _wrap(text=text, wrap_tag=DocLangToken.CONTENT.value)
     return text
+
+
+def _collapse_whitespace(node: Node) -> None:
+    """Collapse whitespace runs outside ``<content>`` to one space, which reads the same."""
+    for child in node.childNodes:
+        if isinstance(child, Text):
+            child.data = _XML_WHITESPACE_RUN_RE.sub(" ", child.data)
+        elif isinstance(child, Element) and child.tagName not in {
+            DocLangToken.CONTENT.value,
+            DocLangToken.CUSTOM.value,
+        }:
+            _collapse_whitespace(child)
+
+
+def _pretty_print(root: Element, indent: str) -> str:
+    """Indent the element structure of ``root``, keeping each text block body on one line.
+
+    Unlike ``toprettyxml``, this never breaks a line inside a text block, where DocLang reads
+    a line break as a space (e.g. ``2<superscript>nd</superscript>`` must not become ``2 nd``).
+    """
+    _collapse_whitespace(root)
+    lines: list[str] = []
+
+    def inline(nodes: list[Node]) -> str:
+        # Edge whitespace of a text block is ignored, so trimming it is lossless.
+        return "".join(node.toxml() for node in nodes).strip(" ")
+
+    def write(el: Element, depth: int) -> None:
+        pad = indent * depth
+        attrs = "".join(f' {key}="{_escape_xml_attr(val)}"' for key, val in el.attributes.items())
+        if not el.childNodes:
+            lines.append(f"{pad}<{el.tagName}{attrs}/>")
+            return
+        open_tag, close_tag = f"<{el.tagName}{attrs}>", f"</{el.tagName}>"
+        nodes = list(el.childNodes)
+        if el.tagName not in _RAW_TEXT_TAGS and not any(isinstance(node, Element) for node in nodes):
+            # Text only, e.g. a custom field value: written as is.
+            lines.append(f"{pad}{open_tag}{''.join(node.toxml() for node in nodes)}{close_tag}")
+            return
+        if el.tagName in _RAW_TEXT_TAGS:
+            head: list[Element] = []
+            while nodes and (
+                (isinstance(nodes[0], Text) and not nodes[0].data.strip(" "))
+                or (isinstance(nodes[0], Element) and nodes[0].tagName in _ELEMENT_HEAD_TAGS)
+            ):
+                if isinstance(first := nodes.pop(0), Element):
+                    head.append(first)
+            if not head:
+                lines.append(f"{pad}{open_tag}{inline(nodes)}{close_tag}")
+                return
+            lines.append(f"{pad}{open_tag}")
+            for head_el in head:
+                write(head_el, depth + 1)
+            if body := inline(nodes):
+                lines.append(f"{pad}{indent}{body}")
+            lines.append(f"{pad}{close_tag}")
+            return
+        lines.append(f"{pad}{open_tag}")
+        # Unwrapped text in a container (a virtual <text>) is a text block of its own.
+        # Inline <code> and <formula> belong to it too, written flat (see _is_virtual_text).
+        segment: list[Node] = []
+        for node in [*nodes, None]:
+            if node is not None and _is_virtual_text_part(node):
+                segment.append(node)
+                continue
+            if _is_virtual_text(segment):
+                lines.append(f"{pad}{indent}{inline(segment)}")
+            else:
+                for block in segment:
+                    if isinstance(block, Element):
+                        write(block, depth + 1)
+            segment = []
+            if isinstance(node, Element):
+                write(node, depth + 1)
+            elif node is not None:
+                lines.append(f"{pad}{indent}{node.toxml()}")
+        lines.append(f"{pad}{close_tag}")
+
+    write(root, 0)
+    return "\n".join(lines)
 
 
 def _list_item_segment_sibling(child: NodeItem) -> bool:
@@ -900,7 +992,10 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
             res: list[SerializationResult] = []
             for idp, prov_ in enumerate(item.prov):
                 item_ = copy.deepcopy(item)
-                item_.prov = [prov_]
+                # Use a copy of the fragment's provenance: rebasing `charspan`
+                # below must not write through to the document being serialized,
+                # or a second serialization emits the first fragment everywhere.
+                item_.prov = [copy.deepcopy(prov_)]
                 item_.text = item.orig[prov_.charspan[0] : prov_.charspan[1]]  # it must be `orig`, not `text` here!
                 item_.orig = item.orig[prov_.charspan[0] : prov_.charspan[1]]
 
@@ -981,7 +1076,11 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
             string or None, and tok is the DocLangToken or None.
         """
         if item.text:
-            if use_virtual_text and not self._list_item_has_segment_siblings(item=item, doc=doc):
+            if (
+                use_virtual_text
+                and _text_item_hyperlink_uri(item) is None
+                and not self._list_item_has_segment_siblings(item=item, doc=doc)
+            ):
                 return None, None
             tok = DocLangToken.TEXT
             return f"<{tok.value}>", tok
@@ -1016,8 +1115,8 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
 
         Depending on parameters, emits meta blocks, location tokens, and the
         item's textual content (prefixing code language for ``CodeItem``). For
-        floating items, the first caption goes in the element head and further
-        captions and footnotes are emitted around it (see
+        floating items, the captions go in the element head and the footnotes
+        are emitted around it (see
         ``_serialize_floating_satellites``). The result can be wrapped in a tag
         derived from the item's label when applicable.
 
@@ -1139,17 +1238,31 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 item=item, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
             )
 
-        include_href = not is_inline_scope
+        # An href applies to all content of its element. A linked run needs its own
+        # element head, unless the enclosing element carries the link (_shared_href).
+        href_uri = _text_item_hyperlink_uri(item)
+        parent_group = item.parent.resolve(doc) if is_inline_scope and item.parent else None
+        if isinstance(parent_group, InlineGroup) and href_uri == _shared_href(group=parent_group, doc=doc):
+            href_uri = None
+        first_child = item.children[0].resolve(doc) if item.children else None
+        # A host of runs carries a link only if all its content shares it.
+        runs_href = _shared_href(group=first_child, doc=doc) if isinstance(first_child, InlineGroup) else None
+        head_href = runs_href if isinstance(first_child, InlineGroup) else href_uri
+        include_href = head_href is not None
         if not skip_location:
+            # An inline run is located through its host.
+            head_params = params.model_copy()
+            head_params.add_location = params.add_location and not is_inline_scope
             parts.append(
                 _element_head_prefix(
                     item=item,
                     doc=doc,
-                    params=params,
+                    params=head_params,
                     label_value=code_label,
                     caption_text=caption_head or None,
                     custom_text=custom_head or None,
                     include_href=include_href,
+                    href_uri=head_href,
                     # An inline run inherits its host's layer; a head token here is invalid mid-content.
                     include_layer=not is_inline_scope,
                     thread_id=thread_id,
@@ -1160,8 +1273,8 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 parts.append(_create_label_token(value=code_label))
             if thread_id:
                 parts.append(DocLangVocabulary._create_threading_token(thread_id=thread_id))
-            if include_href and (href_uri := _text_item_hyperlink_uri(item)):
-                parts.append(_create_href_token(uri=href_uri))
+            if head_href:
+                parts.append(_create_href_token(uri=head_href))
             if layer_token := _create_layer_token(item=item, params=params):
                 parts.append(layer_token)
             if custom_head:
@@ -1173,7 +1286,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
             or (isinstance(item, FormulaItem) and ContentType.TEXT_FORMULA in params.content_types)
             or (not isinstance(item, CodeItem | FormulaItem) and ContentType.TEXT_OTHER in params.content_types)
         ):
-            first_child_item = item.children[0].resolve(doc) if item.children else None
+            first_child_item = first_child
             if isinstance(first_child_item, InlineGroup):
                 # Only serialize the first child (InlineGroup) as the text content
                 # Other children are hierarchical subordinates and will be serialized separately.
@@ -1198,6 +1311,10 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                             selected=(item.label == DocItemLabel.CHECKBOX_SELECTED)
                         )
                         own_part = checkbox_token + own_part
+                    if href_uri and runs_href is None:
+                        own_part = _wrap(
+                            text=_create_href_token(uri=href_uri) + own_part, wrap_tag=DocLangToken.TEXT.value
+                        )
                     # Join with a plain space rather than the pretty-printing delimiter:
                     # own_part and inline_part are two runs of the same inline flow, so
                     # they need a real word boundary even in minimized (non-pretty) output.
@@ -1212,7 +1329,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                     if isinstance(item, ListItem) and _list_item_segment_sibling(child_item):
                         continue
                     sub_parts.append(doc_serializer.serialize(item=child_item, visited=my_visited, **kwargs).text)
-                text_part = _get_delim(params=params).join(sub_parts)
+                text_part = ("" if is_inline_scope else _get_delim(params=params)).join(sub_parts)
             else:
                 text_part = _escape_text(item.text, params)
                 text_part = doc_serializer.post_process(
@@ -1243,8 +1360,13 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
             # This allows the list serializer to detect all-empty lists and suppress them
             return create_ser_result(text="", span_source=item)
 
+        if is_inline_scope and href_uri and not text_part:
+            # A linked run whose content is excluded leaves nothing to link.
+            return create_ser_result(text="", span_source=item)
+
         if wrap_open_token is not None and not (
             is_inline_scope
+            and href_uri is None
             and item.label
             in {
                 DocItemLabel.TEXT,
@@ -1619,13 +1741,26 @@ class DocLangTableSerializer(BaseTableSerializer):
                         need_cell_loc = True
 
         parts: list[str] = []
+        grid = item.data.grid  # computed on every access, so build it only once
         for i in range(row_start, row_end):
             for j in range(col_start, col_end):
-                cell = item.data.grid[i][j]
-                content = cell._get_text(doc=doc, doc_serializer=doc_serializer, **kwargs).strip()
+                cell = grid[i][j]
 
                 rowstart = cell.start_row_offset_idx
                 colstart = cell.start_col_offset_idx
+
+                if rowstart != i or colstart != j:
+                    # Continuation slot of a spanning cell: its content was emitted at the origin slot.
+                    # Rendering it again here would repeat the work (and the nested rich content) per slot.
+                    if rowstart != i and colstart != j:
+                        parts.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.XCEL))
+                    elif rowstart != i:
+                        parts.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.UCEL))
+                    else:
+                        parts.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.LCEL))
+                    continue
+
+                content = cell._get_text(doc=doc, doc_serializer=doc_serializer, **kwargs).strip()
 
                 # Optional per-cell location
                 cell_loc = ""
@@ -1639,33 +1774,26 @@ class DocLangTableSerializer(BaseTableSerializer):
                         yres=params.ysize,
                     )
 
-                if rowstart == i and colstart == j:
-                    origin = self._otsl_origin_token_for_slice(
-                        cell=cell,
-                        row_idx=i,
-                        col_idx=j,
-                        rowstart=rowstart,
-                        colstart=colstart,
-                        row_start=row_start,
-                        col_start=col_start,
-                        has_content=bool(content),
-                    )
-                    parts.append(DocLangVocabulary._create_selfclosing_token(token=origin))
-                    if content and origin != DocLangToken.ECEL:
-                        if cell_loc:
-                            parts.append(cell_loc)
-                        if ContentType.TABLE_CELL in params.content_types:
-                            if not isinstance(cell, RichTableCell):
-                                content = _escape_text(content, params)
-                                if not params.use_virtual_text:
-                                    content = _wrap(text=content, wrap_tag=DocLangToken.TEXT.value)
-                            parts.append(content)
-                elif rowstart != i and colstart != j:
-                    parts.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.XCEL))
-                elif rowstart != i:
-                    parts.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.UCEL))
-                elif colstart != j:
-                    parts.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.LCEL))
+                origin = self._otsl_origin_token_for_slice(
+                    cell=cell,
+                    row_idx=i,
+                    col_idx=j,
+                    rowstart=rowstart,
+                    colstart=colstart,
+                    row_start=row_start,
+                    col_start=col_start,
+                    has_content=bool(content),
+                )
+                parts.append(DocLangVocabulary._create_selfclosing_token(token=origin))
+                if content and origin != DocLangToken.ECEL:
+                    if cell_loc:
+                        parts.append(cell_loc)
+                    if ContentType.TABLE_CELL in params.content_types:
+                        if not isinstance(cell, RichTableCell):
+                            content = _escape_text(content, params)
+                            if not params.use_virtual_text:
+                                content = _wrap(text=content, wrap_tag=DocLangToken.TEXT.value)
+                        parts.append(content)
 
             parts.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.NL))
 
@@ -1844,6 +1972,9 @@ class DocLangInlineSerializer(BaseInlineSerializer):
             should_wrap = False
         else:
             should_wrap = True
+        # A link shared by all runs moves to the <text> wrapper (see _shared_href).
+        if should_wrap and (href_uri := _shared_href(group=item, doc=doc)):
+            parts.append(create_ser_result(text=_create_href_token(uri=href_uri)))
         # The runs emit no layer of their own, so the <text> wrapper carries the group's.
         if should_wrap and (layer_token := _create_layer_token(item=item, params=params)):
             parts.append(create_ser_result(text=layer_token))
@@ -1887,20 +2018,25 @@ class DocLangInlineSerializer(BaseInlineSerializer):
                         yres=params.ysize,
                     )
                     parts.append(create_ser_result(text=loc_str))
-            params.add_location = False
-        parts.extend(
-            doc_serializer.get_parts(
-                item=item,
-                list_level=list_level,
-                is_inline_scope=True,
-                visited=my_visited,
-                **{**kwargs, **params.model_dump()},
-            )
+        head_parts = list(parts)
+        # Runs nested in a group read as part of its flow: only a head needs an element of its own.
+        if isinstance(parent_item, InlineGroup):
+            should_wrap = bool(head_parts)
+        inline_parts = doc_serializer.get_parts(
+            item=item,
+            list_level=list_level,
+            is_inline_scope=True,
+            visited=my_visited,
+            **{**kwargs, **params.model_dump()},
         )
-        delim = _get_delim(params=params)
-        text_res = delim.join([p.text for p in parts if p.text])
-        if text_res:
-            text_res = f"{text_res}{delim}"
+        parts.extend(inline_parts)
+        # Inline runs carry their own significant whitespace; concatenate them faithfully.
+        # No delimiter here: a line break reads as a space, `_pretty_print` lays out the element,
+        # and `<content>` is the whitespace channel (see `_escape_text`).
+        segments = [p.text for p in head_parts if p.text]
+        if inline_text := "".join([p.text for p in inline_parts if p.text]):
+            segments.append(inline_text)
+        text_res = "".join(segments)
 
         if should_wrap:
             # if "unwrapped", wrap in <text>...</text>
@@ -2014,44 +2150,11 @@ class DocLangDocSerializer(DocSerializer):
     _suppressed_page_breaks: set[tuple[int, int]] = PrivateAttr(default_factory=set)
     _next_thread_id: int = PrivateAttr(default=1)
     _thread_id_by_ref: dict[str, str] = PrivateAttr(default_factory=dict)
-    _satellite_refs_cache: tuple[set[str], set[str]] | None = PrivateAttr(default=None)
 
-    def _satellite_refs(self) -> tuple[set[str], set[str]]:
-        """The refs of the satellites serialized by their floating item, and those nested in them.
-
-        Satellites are the footnotes and the extra captions (the first caption goes in the host's head).
-        """
-        if self._satellite_refs_cache is None:
-            satellites: set[str] = set()
-            nested: set[str] = set()
-            for host, _ in self.doc.iterate_items(
-                with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
-            ):
-                if not isinstance(host, FloatingItem):
-                    continue
-                for ref in [*host.captions[1:], *host.footnotes]:
-                    if isinstance(sat := ref.resolve(self.doc), TextItem):
-                        satellites.add(sat.self_ref)
-                        nested.update(
-                            n.self_ref
-                            for n, _ in self.doc.iterate_items(
-                                root=sat,
-                                with_groups=True,
-                                traverse_pictures=True,
-                                included_content_layers=set(ContentLayer),
-                            )
-                            if n.self_ref != sat.self_ref
-                        )
-            self._satellite_refs_cache = (satellites, nested)
-        return self._satellite_refs_cache
-
-    @override
-    def _skip_in_walk(self, *, node: NodeItem, root: NodeItem | None) -> bool:
-        """Skip the content nested in a satellite unless walking from within it: its floating item emits it."""
-        satellites, nested = self._satellite_refs()
-        if node.self_ref not in nested:
-            return False
-        return root is None or (root.self_ref not in nested and root.self_ref not in satellites)
+    @cached_property
+    def _satellites_of_some_item(self) -> set[str]:
+        """DocLang emits both captions and footnotes inside their floating item."""
+        return self._captions_of_some_item | self._footnotes_of_some_item
 
     def allocate_thread_id(self, node: NodeItem) -> str:
         """Return a spec-unique positive ``thread_id`` for a fragmented component."""
@@ -2124,21 +2227,19 @@ class DocLangDocSerializer(DocSerializer):
         """Serialize the item's captions with DocLang location tokens."""
         params = DocLangParams(**kwargs)
         results: list[SerializationResult] = []
-        if item.captions:
-            cap_res = super().serialize_captions(item, **kwargs)
-            if cap_res.text:
-                for caption in item.captions:
-                    if caption.cref not in self.get_excluded_refs(**kwargs):
-                        if isinstance(cap := caption.resolve(self.doc), DocItem):
-                            if head_txt := _element_head_prefix(item=cap, doc=self.doc, params=params):
-                                results.append(create_ser_result(text=head_txt))
-            if cap_res.text and ContentType.REF_CAPTION in params.content_types:
-                cap_res.text = _escape_text(cap_res.text, params)
-                results.append(cap_res)
-        text_res = "".join([r.text for r in results])
-        if text_res:
-            text_res = _wrap(text=text_res, wrap_tag=DocLangToken.CAPTION.value)
-        return create_ser_result(text=text_res, span_source=results)
+        for caption in _resolve_satellites(refs=item.captions, doc_serializer=self, doc=self.doc, **kwargs):
+            text = _serialize_satellite(
+                item=caption,
+                tag=DocLangToken.CAPTION,
+                content_type=ContentType.REF_CAPTION,
+                doc=self.doc,
+                params=params,
+                doc_serializer=self,
+                **kwargs,
+            )
+            if text:
+                results.append(create_ser_result(text=text, span_source=caption))
+        return create_ser_result(text="".join(r.text for r in results), span_source=results)
 
     @override
     def serialize_footnotes(
@@ -2334,37 +2435,22 @@ class DocLangDocSerializer(DocSerializer):
             # do XML-based post-filtering
             text_res = self._filter_out_all_content(text_res)
 
-        if self.params.pretty_indentation is not None:
+        unwrap_content = self.params.content_wrapping_mode == WrapMode.AUTO
+        if unwrap_content or self.params.pretty_indentation is not None:
             try:
                 my_root = parseString(text_res).documentElement
             except Exception as e:
-                # print(text_res)
-
                 ctx = _xml_error_context(text_res, e)
-                raise ValueError(f"XML pretty-print failed: {e}\n--- XML context ---\n{ctx}") from e
+                raise ValueError(f"XML post-processing failed: {e}\n--- XML context ---\n{ctx}") from e
             if my_root is None:
-                raise ValueError("XML pretty-print failed: documentElement is None")
-            text_res = my_root.toprettyxml(indent=self.params.pretty_indentation)
+                raise ValueError("XML post-processing failed: documentElement is None")
+            if unwrap_content:
+                _unwrap_redundant_content(cast(Element, my_root))
+            if self.params.pretty_indentation is None:
+                text_res = my_root.toxml()
 
-            # Filter out empty lines, but preserve them inside <content> tags
-            lines = text_res.split("\n")
-            filtered_lines = []
-            inside_content = False
-            for line in lines:
-                # Check if we're entering or exiting a content tag
-                if "<content>" in line or "<content " in line:
-                    inside_content = True
-                if "</content>" in line:
-                    # Add the line first, then mark as outside content
-                    filtered_lines.append(line)
-                    inside_content = False
-                    continue
-
-                # Keep all lines inside content tags, filter empty lines outside
-                if inside_content or line.strip():
-                    filtered_lines.append(line)
-
-            text_res = "\n".join(filtered_lines)
+        if self.params.pretty_indentation is not None:
+            text_res = _pretty_print(cast(Element, my_root), self.params.pretty_indentation)
 
             if self.params.preserve_empty_non_selfclosing:
                 # Expand self-closing forms for tokens that are not allowed
