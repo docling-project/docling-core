@@ -1,6 +1,8 @@
 """Base document-tree node items: NodeItem, DocItem, FloatingItem."""
 
+import base64
 from collections.abc import Sequence
+from io import BytesIO
 from typing import TYPE_CHECKING, Annotated, Optional
 
 from PIL import Image as PILImage
@@ -14,6 +16,7 @@ from docling_core.types.doc.common.reference import FineRef, ImageRef, Provenanc
 from docling_core.types.doc.common.source import SourceType
 from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.tokens import DocumentToken
+from docling_core.types.doc.utils import _normalize_image_for_png
 
 if TYPE_CHECKING:
     from docling_core.types.doc.document import DoclingDocument
@@ -231,3 +234,14 @@ class FloatingItem(DocItem):
         if self.image is not None:
             return self.image.pil_image
         return super().get_image(doc=doc, prov_index=prov_index)
+
+    # Convert the image to Base64
+    def _image_to_base64(self, pil_image, format="PNG"):
+        """Base64 representation of the image."""
+        buffered = BytesIO()
+        if format == "PNG":
+            pil_image = _normalize_image_for_png(pil_image)
+        pil_image.save(buffered, format=format)  # Save the image to the byte stream
+        img_bytes = buffered.getvalue()  # Get the byte data
+        img_base64 = base64.b64encode(img_bytes).decode("utf-8")  # Encode to Base64 and decode to string
+        return img_base64
