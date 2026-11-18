@@ -251,7 +251,7 @@ def _project_1_12_to_1_11(data: dict) -> dict:
     Handles:
     - Converts each ``TrackItem`` in ``tracks`` to a ``PictureItem`` appended to
       ``pictures``, keeping its image (the cover), location, captions and children
-      (the cues), and rewrites all references to it.
+      (the cues), and rewrites all references to it. Its audio and video are dropped.
     - Removes the top-level ``tracks`` list (unknown to 1.11 clients).
     - Gives each instant ``TrackSource`` a duration of 1 ms, since 1.11 requires the end
       time to be after the start time.
@@ -264,7 +264,9 @@ def _project_1_12_to_1_11(data: dict) -> dict:
 
     first = len(data.get("pictures", []))
     mapping = {f"#/tracks/{i}": f"#/pictures/{first + i}" for i in range(len(tracks))}
-    pictures = [{**track, "label": "picture"} for track in tracks]
+    pictures = [
+        {**{k: v for k, v in track.items() if k not in ("audio", "video")}, "label": "picture"} for track in tracks
+    ]
     data["pictures"] = [*data.get("pictures", []), *pictures]
     data = _rewrite_refs(data, mapping)
 

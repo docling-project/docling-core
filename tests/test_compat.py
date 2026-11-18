@@ -339,6 +339,20 @@ class TestProjector_1_12_to_1_11:
         assert result["texts"][0]["parent"]["cref"] == "#/pictures/1"
         assert DoclingDocument.model_validate(result).pictures[1].children[0].cref == "#/texts/0"
 
+    def test_track_media_is_dropped(self):
+        from docling_core.types.doc import MediaRef
+
+        doc = DoclingDocument(name="doc")
+        doc.add_track(
+            audio=MediaRef(mimetype="audio/mpeg", uri=Path("a.mp3")),
+            video=MediaRef(mimetype="video/mp4", uri=Path("v.mp4")),
+        )
+
+        picture = self._apply(doc.model_dump(mode="python"))["pictures"][0]
+
+        assert "audio" not in picture
+        assert "video" not in picture
+
 
 class TestProjector_1_11_to_1_10:
     """Tests for the 1.11 → 1.10 downgrade projector."""

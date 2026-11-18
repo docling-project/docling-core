@@ -2243,6 +2243,7 @@ def _serialize_track(
     if item.self_ref in excluded:
         return create_ser_result()
 
+    _claim_track(doc_serializer, item.self_ref)
     caption_head = _serialize_floating_caption_head(
         item=item, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
     )
@@ -2261,8 +2262,24 @@ def _serialize_track(
     )
     inner = head + cover + cues
     if not inner and params.suppress_empty_elements:
+        _release_track(doc_serializer, item.self_ref)
         return create_ser_result()
     return create_ser_result(text=_wrap(text=inner, wrap_tag=DocLangToken.TRACK.value), span_source=item)
+
+
+def _claim_track(doc_serializer: BaseDocSerializer, key: str) -> None:
+    """Record a ``<track>`` in document order, before its content may add nested ones."""
+    if isinstance(doc_serializer, DocLangDocSerializer) and key not in doc_serializer._track_order:
+        doc_serializer._track_order.append(key)
+
+
+def _release_track(doc_serializer: BaseDocSerializer, key: str) -> None:
+    """Forget a ``<track>`` that turned out empty and is not written."""
+    if isinstance(doc_serializer, DocLangDocSerializer) and key in doc_serializer._track_order:
+        doc_serializer._track_order.remove(key)
+
+
+_IMPLICIT_TRACK = "(implicit)"
 
 
 def _implicit_track(item: NodeItem, doc: DoclingDocument) -> list[NodeItem]:
@@ -2393,6 +2410,15 @@ class DocLangDocSerializer(DocSerializer):
     _suppressed_page_breaks: set[tuple[int, int]] = PrivateAttr(default_factory=set)
     _next_thread_id: int = PrivateAttr(default=1)
     _thread_id_by_ref: dict[str, str] = PrivateAttr(default_factory=dict)
+    _track_order: list[str] = PrivateAttr(default_factory=list)
+
+    @property
+    def track_numbers(self) -> dict[str, int]:
+        """The 1-based position of each written ``<track>``, by the ``self_ref`` of its ``TrackItem``.
+
+        Available after ``serialize``. Implicit tracks count, but have no entry.
+        """
+        return {key: i + 1 for i, key in enumerate(self._track_order) if not key.startswith(_IMPLICIT_TRACK)}
 
     @cached_property
     def _satellites_of_some_item(self) -> set[str]:
@@ -2428,6 +2454,8 @@ class DocLangDocSerializer(DocSerializer):
             my_kwargs = {**self.params.model_dump(), **kwargs}
             my_visited = visited if visited is not None else set()
             my_visited.add(item.self_ref)
+            track_key = f"{_IMPLICIT_TRACK}{item.self_ref}"
+            _claim_track(self, track_key)
             cues = _serialize_track_cues(
                 items=run,
                 owner="(implicit)",
@@ -2437,6 +2465,7 @@ class DocLangDocSerializer(DocSerializer):
                 **(my_kwargs | {"visited": my_visited}),
             )
             if not cues:
+                _release_track(self, track_key)
                 return create_ser_result()
             spans = [
                 create_ser_result(span_source=cue)

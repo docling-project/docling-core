@@ -40,6 +40,7 @@ from docling_core.types.doc.common.origin import (
 from docling_core.types.doc.common.reference import (
     FineRef,
     ImageRef,
+    MediaRef,
     PageItem,
     ProvenanceItem,
     RefItem,

@@ -2613,6 +2613,35 @@
       "title": "ListItem",
       "type": "object"
     },
+    "MediaRef": {
+      "description": "A reference to an audio or video recording.\n\nThe ``uri`` is document content: a local path is read only for a ``MediaRef`` made\nwith ``from_file``, or after an explicit opt-in (``settings.allow_media_file_uri``).\nRemote URIs are never fetched, and the media is never decoded.",
+      "properties": {
+        "mimetype": {
+          "title": "Mimetype",
+          "type": "string"
+        },
+        "uri": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "format": "path",
+              "type": "string"
+            }
+          ],
+          "title": "Uri"
+        }
+      },
+      "required": [
+        "mimetype",
+        "uri"
+      ],
+      "title": "MediaRef",
+      "type": "object"
+    },
     "MiscAnnotation": {
       "description": "MiscAnnotation.",
       "properties": {
@@ -4412,7 +4441,7 @@
     },
     "TrackItem": {
       "additionalProperties": false,
-      "description": "A time-aligned media transcript, e.g. the speech of an audio or video recording.\n\nA track maps to the DocLang ``<track>`` element. Its children are the cues: items\nwhose ``source`` is a ``TrackSource`` with the start and end time and an optional\nvoice, such as the ``TextItem`` of each transcript turn or the ``PictureItem`` of a\nsampled video frame. The ``image`` is the cover, one picture for the whole track\n(e.g. the poster frame of a video). Like other floating items, a track can carry a\nlocation (``prov``) and captions. A formatted turn is a ``TextItem`` with empty text\nand an ``InlineGroup`` child.",
+      "description": "A time-aligned media transcript, e.g. the speech of an audio or video recording.\n\nA track maps to the DocLang ``<track>`` element. Its children are the cues: items\nwhose ``source`` is a ``TrackSource`` with the start and end time and an optional\nvoice, such as the ``TextItem`` of each transcript turn or the ``PictureItem`` of a\nsampled video frame. The ``image`` is the cover, one picture for the whole track\n(e.g. the poster frame of a video). Like other floating items, a track can carry a\nlocation (``prov``) and captions. A formatted turn is a ``TextItem`` with empty text\nand an ``InlineGroup`` child.\n\nThe ``audio`` or ``video`` is the recording the times refer to, measured from its\nstart. A video covers its own sound; both are set only for separate files.",
       "properties": {
         "self_ref": {
           "pattern": "^#(?:/([\\w-]+)(?:/(\\d+))?)?$",
@@ -4522,6 +4551,28 @@
           "anyOf": [
             {
               "$ref": "#/$defs/ImageRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "audio": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MediaRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "video": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MediaRef"
             },
             {
               "type": "null"

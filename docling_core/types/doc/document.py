@@ -8,6 +8,7 @@ import json
 import logging
 import mimetypes
 import re
+import shutil
 import sys
 import tempfile
 import typing
@@ -26,6 +27,7 @@ from typing import (
     Union,
 )
 from urllib.parse import unquote
+from xml.etree import ElementTree
 
 import numpy as np
 import pandas as pd
@@ -96,9 +98,11 @@ from docling_core.types.doc.common.reference import (
     CV2_INSTALLED,
     FineRef,
     ImageRef,
+    MediaRef,
     PageItem,
     ProvenanceItem,
     RefItem,
+    media_type_of,
 )
 from docling_core.types.doc.common.scalars import CharSpan, LevelNumber, Uint64
 from docling_core.types.doc.common.source import BaseSource, SourceType, TrackSource
@@ -1978,6 +1982,8 @@ class DoclingDocument(BaseModel):
         prov: ProvenanceItem | None = None,
         parent: NodeItem | None = None,
         content_layer: ContentLayer | None = None,
+        audio: MediaRef | None = None,
+        video: MediaRef | None = None,
     ) -> TrackItem:
         """Add a track: a time-aligned media transcript.
 
@@ -1989,6 +1995,8 @@ class DoclingDocument(BaseModel):
         :param prov: Optional[ProvenanceItem]: The location of the track. (Default value = None)
         :param parent: Optional[NodeItem]: (Default value = None)
         :param content_layer: Optional[ContentLayer]: (Default value = None)
+        :param audio: Optional[MediaRef]: The audio recording. (Default value = None)
+        :param video: Optional[MediaRef]: The video recording. (Default value = None)
 
         :returns: TrackItem: The newly created TrackItem.
         """
@@ -1997,7 +2005,7 @@ class DoclingDocument(BaseModel):
 
         cref = f"#/tracks/{len(self.tracks)}"
 
-        track_item = TrackItem(image=image, self_ref=cref, parent=parent.get_ref())
+        track_item = TrackItem(image=image, audio=audio, video=video, self_ref=cref, parent=parent.get_ref())
         if prov:
             track_item.prov.append(prov)
         if content_layer:
@@ -3003,6 +3011,8 @@ class DoclingDocument(BaseModel):
         prov: ProvenanceItem | None = None,
         content_layer: ContentLayer | None = None,
         after: bool = True,
+        audio: MediaRef | None = None,
+        video: MediaRef | None = None,
     ) -> TrackItem:
         """Creates a new TrackItem item and inserts it into the document.
 
@@ -3012,12 +3022,14 @@ class DoclingDocument(BaseModel):
         :param prov: Optional[ProvenanceItem]: The location of the track. (Default value = None)
         :param content_layer: Optional[ContentLayer]: (Default value = None)
         :param after: bool: (Default value = True)
+        :param audio: Optional[MediaRef]: The audio recording. (Default value = None)
+        :param video: Optional[MediaRef]: The video recording. (Default value = None)
 
         :returns: TrackItem: The newly created TrackItem.
         """
         stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
 
-        track_item = TrackItem(image=image, self_ref="#", parent=parent_ref)
+        track_item = TrackItem(image=image, audio=audio, video=video, self_ref="#", parent=parent_ref)
         if prov:
             track_item.prov.append(prov)
         if content_layer:
@@ -5428,6 +5440,7 @@ class DoclingDocument(BaseModel):
         image_mode: ImageRefMode = ImageRefMode.REFERENCED,
         xsize: int | None = None,
         ysize: int | None = None,
+        allow_local_media: bool = False,
     ) -> None:
         """Save the document as a DocLang OPC archive (``.dclx``).
 
@@ -5444,6 +5457,13 @@ class DoclingDocument(BaseModel):
         elements so the grouping survives a round trip.
 
         ``xsize`` / ``ysize`` set the location coordinate grid (default: DocLang default resolution).
+
+        The ``audio`` and ``video`` of each track are stored as ``audio/{N}.*`` and
+        ``video/{N}.*``, where ``N`` is the position of its ``<track>``. A media file is
+        read if its ``MediaRef`` was made with ``from_file`` or comes from a loaded archive.
+        Other local paths are document content, and are read only with ``allow_local_media``
+        (for trusted documents) or ``settings.allow_media_file_uri``. Media that cannot be
+        read is left out, with a warning.
 
         ``include_namespace`` declares the DocLang namespace on the root element. It is
         required for ``validate`` to pass, as the schema only declares the namespaced root.
@@ -5505,6 +5525,13 @@ class DoclingDocument(BaseModel):
             if assets_dir.is_dir() and any(assets_dir.iterdir()):
                 pack_kwargs["assets"] = assets_dir
 
+            pack_kwargs |= self._doclang_archive_media(
+                serializer=serializer,
+                markup=document_path,
+                staging_root=staging_root,
+                allow_local_media=allow_local_media,
+            )
+
             pack(**pack_kwargs)
 
         if artifacts_dir is None:
@@ -5513,6 +5540,49 @@ class DoclingDocument(BaseModel):
         else:
             artifacts_dir.mkdir(parents=True, exist_ok=True)
             _write_archive(artifacts_dir)
+
+    def _doclang_archive_media(
+        self,
+        *,
+        serializer: Any,
+        markup: Path,
+        staging_root: Path,
+        allow_local_media: bool,
+    ) -> dict[str, dict[int, Path]]:
+        """Map each track's audio and video to its ``<track>`` position, for ``pack``."""
+        media: dict[str, dict[int, Path]] = {"audio": {}, "video": {}}
+        tracks = [track for track in self.tracks if track.audio is not None or track.video is not None]
+        if not tracks:
+            return {}
+        numbers: dict[str, int] = serializer.track_numbers
+        written = sum(
+            1 for el in ElementTree.parse(markup).iter() if isinstance(el.tag, str) and el.tag.endswith("track")
+        )
+        if written != len(serializer._track_order):
+            raise RuntimeError("Cannot match the written tracks to their media")
+        for track in tracks:
+            if (number := numbers.get(track.self_ref)) is None:
+                _logger.warning(f"Media of {track.self_ref} not stored: the track is not written")
+                continue
+            for kind, ref in (("audio", track.audio), ("video", track.video)):
+                if ref is None:
+                    continue
+                path = ref._local_file(allow_local=allow_local_media)
+                if path is None:
+                    _logger.warning(
+                        f"{kind.capitalize()} of {track.self_ref} not stored: it is not a readable local file, "
+                        "or reading local media is not enabled (allow_local_media)"
+                    )
+                    continue
+                path = path.resolve()
+                if path.suffix.lower() != f".{ref.extension}":
+                    # the archive takes the file extension from the media type, not from the path
+                    staged = staging_root / "media" / kind / f"{number}.{ref.extension}"
+                    staged.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(path, staged)
+                    path = staged
+                media[kind][number] = path
+        return {kind: files for kind, files in media.items() if files}
 
     @classmethod
     def load_from_doclang_archive(
@@ -5585,7 +5655,37 @@ class DoclingDocument(BaseModel):
         )
         doc.name = filename.stem
         cls._restore_doclang_archive_page_images(doc=doc, archive_root=artifacts_dir)
+        cls._restore_doclang_archive_track_media(doc=doc, archive_root=artifacts_dir)
         return doc
+
+    @staticmethod
+    def _restore_doclang_archive_track_media(*, doc: "DoclingDocument", archive_root: Path) -> None:
+        """Set the audio and video of the N-th track from ``audio/{N}.*`` and ``video/{N}.*``."""
+        archive_root = archive_root.resolve()
+        for kind in ("audio", "video"):
+            media_dir = archive_root / kind
+            if not media_dir.is_dir():
+                continue
+            for media_file in sorted(media_dir.iterdir()):
+                if media_file.is_symlink() or not media_file.is_file():
+                    continue
+                resolved = resolve_archive_path(archive_root, f"{kind}/{media_file.name}")
+                stem = media_file.stem
+                mimetype = media_type_of(media_file.name)
+                if not stem.isdigit() or not 1 <= int(stem) <= len(doc.tracks):
+                    _logger.warning(f"Ignoring {kind}/{media_file.name}: no track with this number")
+                    continue
+                if mimetype is None or not mimetype.startswith(f"{kind}/"):
+                    _logger.warning(f"Ignoring {kind}/{media_file.name}: unsupported media type")
+                    continue
+                track = doc.tracks[int(stem) - 1]
+                if getattr(track, kind) is not None:
+                    _logger.warning(f"Ignoring {kind}/{media_file.name}: the track has {kind} already")
+                    continue
+                ref = MediaRef(mimetype=mimetype, uri=resolved)
+                # extracted from the archive by us, so saving may read it again
+                ref._file = resolved
+                setattr(track, kind, ref)
 
     @staticmethod
     def _restore_doclang_archive_page_images(*, doc: "DoclingDocument", archive_root: Path) -> None:

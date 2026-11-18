@@ -28,7 +28,7 @@ SCHEMA_VERSION_HISTORY: Final[list[dict]] = [
     {
         "schema": "1.12.0",
         "library_version": "v2.108.0",
-        "note": "TrackItem, tracks list, DocItemLabel.TRACK, TrackSource instants",
+        "note": "TrackItem with audio and video, tracks list, DocItemLabel.TRACK, TrackSource instants",
     },
 ]
 """Ordered history of DoclingDocument schema versions in docling-core v2.x.
