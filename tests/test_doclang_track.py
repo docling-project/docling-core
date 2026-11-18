@@ -400,3 +400,15 @@ def test_page_filter_keeps_the_cues_of_a_track_on_the_page():
     assert doc.export_to_markdown(page_no=2) == ""
     assert [item.text for item, _ in doc.iterate_items(page_no=1) if isinstance(item, TextItem)] == ["cue"]
     assert "cue" in DocLangDocSerializer(doc=doc, params=DocLangParams(pages={1})).serialize().text
+
+
+def test_track_captions_in_markdown_html_and_latex():
+    from docling_core.transforms.serializer.latex import LaTeXDocSerializer
+
+    doc = DoclingDocument(name="doc")
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text="Talk title")
+    _track_with_cue(doc, caption=caption)
+    assert doc.export_to_markdown() == "Talk title\n\ncue"
+    html = doc.export_to_html()
+    assert html.index("<figure>") < html.index("Talk title") < html.index("cue") < html.index("</figure>")
+    assert "Talk title\n\ncue" in LaTeXDocSerializer(doc=doc).serialize().text

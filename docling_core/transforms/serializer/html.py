@@ -965,10 +965,14 @@ class HTMLFallbackSerializer(BaseFallbackSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Fallback serializer for items not handled by other serializers."""
-        # a track has no content of its own: it is serialized as its cues
+        # a track has no content of its own: it is serialized as its captions and cues
         if isinstance(item, GroupItem | TrackItem):
             parts = doc_serializer.get_parts(item=item, **kwargs)
             text_res = "\n".join([p.text for p in parts if p.text])
+            if isinstance(item, TrackItem) and (cap_res := doc_serializer.serialize_captions(item=item, **kwargs)).text:
+                # a <figcaption> needs a <figure>
+                parts = [cap_res, *parts]
+                text_res = f"<figure>\n{cap_res.text}\n{text_res}\n</figure>"
             return create_ser_result(text=text_res, span_source=parts)
         else:
             return create_ser_result(
