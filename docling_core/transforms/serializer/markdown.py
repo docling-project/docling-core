@@ -935,7 +935,9 @@ class MarkdownTableSerializer(BaseTableSerializer):
                 res_parts.append(create_ser_result(text=table_text, span_source=item))
 
             # Emit the table image alongside the text grid when one was generated.
-            # Tables without an image (the common case) stay a strict no-op.
+            # Tables without an image (the common case) stay a strict no-op, and
+            # so does a table whose image cannot be referenced (e.g. a data: URI
+            # in REFERENCED mode, since only picture images are saved to files).
             if item.image is not None and params.image_mode != ImageRefMode.PLACEHOLDER:
                 img_res = _serialize_image_part(
                     item=item,
@@ -943,7 +945,7 @@ class MarkdownTableSerializer(BaseTableSerializer):
                     image_mode=params.image_mode,
                     image_placeholder=params.image_placeholder,
                 )
-                if img_res.text:
+                if img_res.text and img_res.text != params.image_placeholder:
                     res_parts.append(img_res)
 
         ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)

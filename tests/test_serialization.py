@@ -845,6 +845,29 @@ def test_md_table_with_image_referenced():
     assert actual == "| foo   |\n|-------|\n\n![Image](table_0.png)"
 
 
+def test_md_table_with_data_uri_image_referenced_via_save_as_markdown(tmp_path):
+    """save_as_markdown only externalizes picture images, so a table's data: URI
+    reaches the serializer as-is in REFERENCED mode; it must not leave a stray
+    placeholder after the table."""
+    doc = DoclingDocument(name="")
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
+    doc.add_table_cell(
+        table_item=table,
+        cell=TableCell(
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+            text="foo",
+        ),
+    )
+    table.image = ImageRef.from_pil(image=Image.new("RGB", (2, 2)), dpi=72)
+
+    out = tmp_path / "doc.md"
+    doc.save_as_markdown(out, image_mode=ImageRefMode.REFERENCED)
+    assert out.read_text().strip() == "| foo   |\n|-------|"
+
+
 def test_md_table_without_image_unaffected_by_image_mode():
     """A table with no generated image must not gain an image line, even if
     image_mode is set — this must remain a strict no-op for the common case."""
