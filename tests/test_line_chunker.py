@@ -866,3 +866,16 @@ def test_import_does_not_load_transformers():
         check=True,
     )
     assert result.stdout.strip() == "False"
+
+
+def test_default_tokenizer_is_huggingface():
+    chunker = LineBasedTokenChunker()
+
+    assert isinstance(chunker.tokenizer, HuggingFaceTokenizer)
+
+
+def test_default_tokenizer_without_transformers_raises_import_error(monkeypatch):
+    monkeypatch.setattr("docling_core.transforms.chunker.tokenizer.huggingface._TRANSFORMERS_AVAILABLE", False)
+
+    with pytest.raises(ImportError, match="transformers"):
+        LineBasedTokenChunker()
