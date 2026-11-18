@@ -380,6 +380,33 @@ def test_orientation():
     assert bbox1_.is_strictly_above(bbox4_) is True
 
 
+def test_is_strictly_above_is_origin_independent():
+    """is_strictly_above must not depend on the coordinate origin.
+
+    The eps tolerance was applied in opposite directions in the two
+    CoordOrigin branches: BOTTOMLEFT allowed up to eps of overlap to count as
+    strictly above, while TOPLEFT required a gap of at least eps. A pair of
+    boxes whose vertical gap fell inside the eps band was therefore reported
+    as strictly above in BOTTOMLEFT but not in TOPLEFT.
+    """
+    page_height = 100.0
+    upper = BoundingBox(l=0, b=10.0, r=10, t=20.0, coord_origin=CoordOrigin.BOTTOMLEFT)
+
+    # Sweep gaps across the eps band (eps defaults to 1.0e-3).
+    for gap in (-0.002, -0.0005, 0.0, 0.0005, 0.002):
+        lower = BoundingBox(l=0, b=5.0, r=10, t=10.0 - gap, coord_origin=CoordOrigin.BOTTOMLEFT)
+        assert upper.is_strictly_above(lower) == upper.to_top_left_origin(page_height).is_strictly_above(
+            lower.to_top_left_origin(page_height)
+        ), f"coord_origin changed the result for gap={gap}"
+
+    # Only a gap wider than eps counts as strictly above, which matches the
+    # convention already used by is_strictly_left_of.
+    touching = BoundingBox(l=0, b=5.0, r=10, t=10.0, coord_origin=CoordOrigin.BOTTOMLEFT)
+    separated = BoundingBox(l=0, b=5.0, r=10, t=9.0, coord_origin=CoordOrigin.BOTTOMLEFT)
+    assert upper.is_strictly_above(touching) is False
+    assert upper.is_strictly_above(separated) is True
+
+
 def test_docitems():
     # Iterative function to find all subclasses
     def find_all_subclasses_iterative(base_class):

@@ -348,7 +348,7 @@ class BoundingBox(BaseModel):
     def is_strictly_above(self, other: "BoundingBox", eps: float = 1.0e-3) -> bool:
         """is_strictly_above."""
         if self.coord_origin == CoordOrigin.BOTTOMLEFT and other.coord_origin == CoordOrigin.BOTTOMLEFT:
-            return (self.b + eps) > other.t
+            return (self.b - eps) > other.t
 
         elif self.coord_origin == CoordOrigin.TOPLEFT and other.coord_origin == CoordOrigin.TOPLEFT:
             return (self.b + eps) < other.t
