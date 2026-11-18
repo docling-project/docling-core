@@ -184,8 +184,7 @@
       <location value="345"/>
       <location value="227"/>
       <location value="355"/>
-      <checkbox class="unselected"/>
-      Further documents are listed in the continuation of Box O.
+      <checkbox class="unselected"/>Further documents are listed in the continuation of Box O.
     </text>
     <text>
       <location value="53"/>
@@ -199,31 +198,36 @@
       <location value="369"/>
       <location value="248"/>
       <location value="378"/>
-<![CDATA["A" document defining the general state of the art which is not considered to be of particular relevance]]>    </text>
+      <![CDATA["A" document defining the general state of the art which is not considered to be of particular relevance]]>
+    </text>
     <text>
       <location value="53"/>
       <location value="380"/>
       <location value="247"/>
       <location value="389"/>
-<![CDATA[E " earlier application or patent but published on or after the international filing date]]>    </text>
+      <![CDATA[E " earlier application or patent but published on or after the international filing date]]>
+    </text>
     <text>
       <location value="54"/>
       <location value="390"/>
       <location value="239"/>
       <location value="403"/>
-<![CDATA["L" document which may throw doubts on priority claim(s) or which is cited to establish the publication date of another citation or other special reason (as specified)]]>    </text>
+      <![CDATA["L" document which may throw doubts on priority claim(s) or which is cited to establish the publication date of another citation or other special reason (as specified)]]>
+    </text>
     <text>
       <location value="54"/>
       <location value="404"/>
       <location value="236"/>
       <location value="412"/>
-<![CDATA["O" document referring to an oral disclosure , use , exhibition or other means]]>    </text>
+      <![CDATA["O" document referring to an oral disclosure , use , exhibition or other means]]>
+    </text>
     <text>
       <location value="53"/>
       <location value="415"/>
       <location value="246"/>
       <location value="424"/>
-<![CDATA["P"ocument published prior to the international filing date but later than the priority date claimed]]>    </text>
+      <![CDATA["P"ocument published prior to the international filing date but later than the priority date claimed]]>
+    </text>
     <field_item>
       <key>
         <location value="54"/>
@@ -309,33 +313,36 @@
       <location value="345"/>
       <location value="358"/>
       <location value="354"/>
-      <checkbox class="selected"/>
-      X See patent family annex.
+      <checkbox class="selected"/>X See patent family annex.
     </text>
     <text>
       <location value="269"/>
       <location value="363"/>
       <location value="458"/>
       <location value="376"/>
-<![CDATA["T" later document published after the international filing date or priority]]>    </text>
+      <![CDATA["T" later document published after the international filing date or priority]]>
+    </text>
     <text>
       <location value="269"/>
       <location value="382"/>
       <location value="455"/>
       <location value="395"/>
-<![CDATA["X" document of particular relevance; the claimed invention cannot be considered novel or cannot be considered to involve an inventive step when the document is taken alone]]>    </text>
+      <![CDATA["X" document of particular relevance; the claimed invention cannot be considered novel or cannot be considered to involve an inventive step when the document is taken alone]]>
+    </text>
     <text>
       <location value="268"/>
       <location value="396"/>
       <location value="465"/>
       <location value="413"/>
-<![CDATA["Y" doocument of particular relevance; the claimed invention cannot be considered to involve an inventive step when the doocument is combined with one or more other such documents, such combination being obvious to a person skilled in the art]]>    </text>
+      <![CDATA["Y" doocument of particular relevance; the claimed invention cannot be considered to involve an inventive step when the doocument is combined with one or more other such documents, such combination being obvious to a person skilled in the art]]>
+    </text>
     <text>
       <location value="268"/>
       <location value="419"/>
       <location value="398"/>
       <location value="424"/>
-<![CDATA["&" document member of the same patent family]]>    </text>
+      <![CDATA["&" document member of the same patent family]]>
+    </text>
     <field_item>
       <key>
         <location value="281"/>

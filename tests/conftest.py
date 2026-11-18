@@ -208,7 +208,7 @@ def _construct_doc_impl() -> DoclingDocument:
     inline1 = doc.add_inline_group(parent=g2_subgroup_li_1)
     doc.add_text(
         label=DocItemLabel.TEXT,
-        text="Here a code snippet:",
+        text="Here a code snippet: ",
         parent=inline1,
     )
     doc.add_code(
@@ -216,17 +216,17 @@ def _construct_doc_impl() -> DoclingDocument:
         parent=inline1,
         code_language=CodeLanguageLabel.PYTHON,
     )
-    doc.add_text(label=DocItemLabel.TEXT, text="(to be displayed inline)", parent=inline1)
+    doc.add_text(label=DocItemLabel.TEXT, text=" (to be displayed inline)", parent=inline1)
 
     g2_subgroup_li_2 = doc.add_list_item(text="", parent=g2_subgroup, marker="□")
     inline2 = doc.add_inline_group(parent=g2_subgroup_li_2)
     doc.add_text(
         label=DocItemLabel.TEXT,
-        text="Here a formula:",
+        text="Here a formula: ",
         parent=inline2,
     )
     doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=inline2)
-    doc.add_text(label=DocItemLabel.TEXT, text="(to be displayed inline)", parent=inline2)
+    doc.add_text(label=DocItemLabel.TEXT, text=" (to be displayed inline)", parent=inline2)
 
     doc.add_text(label=DocItemLabel.TEXT, text="Here a code block:", parent=None)
     doc.add_code(text='print("Hello world")', parent=None, code_language=CodeLanguageLabel.PYTHON)
@@ -264,52 +264,52 @@ def _construct_doc_impl() -> DoclingDocument:
     doc.add_form(graph=graph)
 
     inline_fmt = doc.add_inline_group()
-    doc.add_text(label=DocItemLabel.TEXT, text="Some formatting chops:", parent=inline_fmt)
+    doc.add_text(label=DocItemLabel.TEXT, text="Some formatting chops: ", parent=inline_fmt)
     doc.add_text(
         label=DocItemLabel.TEXT,
-        text="bold",
+        text="bold ",
         parent=inline_fmt,
         formatting=Formatting(bold=True),
     )
     doc.add_text(
         label=DocItemLabel.TEXT,
-        text="italic",
+        text="italic ",
         parent=inline_fmt,
         formatting=Formatting(italic=True),
     )
     doc.add_text(
         label=DocItemLabel.TEXT,
-        text="underline",
+        text="underline ",
         parent=inline_fmt,
         formatting=Formatting(underline=True),
     )
     doc.add_text(
         label=DocItemLabel.TEXT,
-        text="strikethrough",
+        text="strikethrough ",
         parent=inline_fmt,
         formatting=Formatting(strikethrough=True),
     )
     doc.add_text(
         label=DocItemLabel.TEXT,
-        text="subscript",
-        orig="subscript",
+        text="subscript ",
+        orig="subscript ",
         formatting=Formatting(script=Script.SUB),
         parent=inline_fmt,
     )
     doc.add_text(
         label=DocItemLabel.TEXT,
-        text="superscript",
-        orig="superscript",
+        text="superscript ",
+        orig="superscript ",
         formatting=Formatting(script=Script.SUPER),
         parent=inline_fmt,
     )
     doc.add_text(
         label=DocItemLabel.TEXT,
-        text="hyperlink",
+        text="hyperlink ",
         parent=inline_fmt,
         hyperlink=Path("."),
     )
-    doc.add_text(label=DocItemLabel.TEXT, text="&", parent=inline_fmt)
+    doc.add_text(label=DocItemLabel.TEXT, text="& ", parent=inline_fmt)
     doc.add_text(
         label=DocItemLabel.TEXT,
         text="everything at the same time.",
@@ -465,6 +465,36 @@ def _rich_table_doc() -> DoclingDocument:
 def rich_table_doc(_rich_table_doc: DoclingDocument) -> DoclingDocument:
     """Copy of a rich table document for each test function."""
     return _rich_table_doc.model_copy(deep=True)
+
+
+@pytest.fixture(scope="function")
+def col_span_rich_table_doc() -> DoclingDocument:
+    """Table whose header cell "Partner" is a RichTableCell spanning columns 1 and 2."""
+    doc = DoclingDocument(name="")
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=3))
+    group = doc.add_group(parent=table, label=GroupLabel.UNSPECIFIED)
+    doc.add_text(parent=group, label=DocItemLabel.TEXT, text="Partner")
+
+    def cell(text: str, row: int, col: int, col_span: int = 1, **kwargs) -> dict:
+        return dict(
+            text=text,
+            start_row_offset_idx=row,
+            end_row_offset_idx=row + 1,
+            start_col_offset_idx=col,
+            end_col_offset_idx=col + col_span,
+            col_span=col_span,
+            **kwargs,
+        )
+
+    doc.add_table_cell(table_item=table, cell=TableCell(**cell("", 0, 0, column_header=True)))
+    doc.add_table_cell(
+        table_item=table,
+        cell=RichTableCell(**cell("", 0, 1, col_span=2, column_header=True), ref=group.get_ref()),
+    )
+    doc.add_table_cell(table_item=table, cell=TableCell(**cell("Status", 1, 0)))
+    doc.add_table_cell(table_item=table, cell=TableCell(**cell("Done", 1, 1)))
+    doc.add_table_cell(table_item=table, cell=TableCell(**cell("Open", 1, 2)))
+    return doc
 
 
 def _mixed_hierarchy_doc_impl() -> DoclingDocument:

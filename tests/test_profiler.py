@@ -336,9 +336,10 @@ def test_label_specific_counts():
 
     # Add various types of text items
     doc.add_text(label=DocItemLabel.SECTION_HEADER, text="Section", orig="Section")
-    doc.add_text(label=DocItemLabel.LIST_ITEM, text="Item 1", orig="Item 1")
-    doc.add_text(label=DocItemLabel.LIST_ITEM, text="Item 2", orig="Item 2")
-    doc.add_text(label=DocItemLabel.LIST_ITEM, text="Item 3", orig="Item 3")
+    list_group = doc.add_list_group()
+    doc.add_list_item(text="Item 1", orig="Item 1", parent=list_group)
+    doc.add_list_item(text="Item 2", orig="Item 2", parent=list_group)
+    doc.add_list_item(text="Item 3", orig="Item 3", parent=list_group)
     doc.add_text(label=DocItemLabel.CODE, text="code", orig="code")
     doc.add_text(label=DocItemLabel.FORMULA, text="x=y", orig="x=y")
     doc.add_text(label=DocItemLabel.TEXT, text="Text", orig="Text")

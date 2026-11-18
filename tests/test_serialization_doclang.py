@@ -1713,6 +1713,66 @@ def test_layer_filter_body_only(doc_with_layers):
     verify_doclang(exp_file=exp_file, actual=ser_txt)
 
 
+@pytest.mark.parametrize(
+    ("layer", "expected"),
+    [
+        (ContentLayer.BODY, "body"),
+        (ContentLayer.BACKGROUND, "background"),
+        (ContentLayer.FURNITURE, "furniture"),
+        (ContentLayer.NOTES, "furniture"),
+        (ContentLayer.INVISIBLE, "background"),
+    ],
+)
+def test_doclang_layers_use_xsd_values(layer, expected):
+    """Docling-only layers use the closest layer supported by DocLang."""
+    doc = DoclingDocument(name="layers")
+    doc.add_text(label=DocItemLabel.TEXT, text="content", content_layer=layer)
+
+    xml = DocLangDocSerializer(doc=doc, params=DocLangParams(layer_mode=LayerMode.ALWAYS)).serialize().text
+
+    assert f'<layer value="{expected}"/>' in xml
+
+
+@doclang_validator
+def test_doclang_notes_and_invisible_layers_validate_against_xsd(tmp_path):
+    """DocLang rejects notes and invisible layer values in XML."""
+    from doclang import validate
+
+    doc = DoclingDocument(name="layers")
+    doc.add_text(label=DocItemLabel.TEXT, text="note", content_layer=ContentLayer.NOTES)
+    doc.add_text(label=DocItemLabel.TEXT, text="hidden", content_layer=ContentLayer.INVISIBLE)
+    xml = DocLangDocSerializer(doc=doc, params=DocLangParams(include_namespace=True)).serialize().text
+    path = tmp_path / "layers.dclg.xml"
+    path.write_text(xml, encoding="utf-8")
+
+    validate(path, xsd_only=True)
+
+
+@pytest.mark.parametrize("layer_mode", [LayerMode.AUTO, LayerMode.ALWAYS])
+def test_doclang_invisible_layer_stays_out_of_furniture_export(layer_mode):
+    """Hidden text must not become furniture after a DocLang round trip."""
+    doc = DoclingDocument(name="layers")
+    doc.add_text(label=DocItemLabel.TEXT, text="visible body")
+    doc.add_text(label=DocItemLabel.PAGE_HEADER, text="page header", content_layer=ContentLayer.FURNITURE)
+    doc.add_text(label=DocItemLabel.TEXT, text="speaker note", content_layer=ContentLayer.NOTES)
+    doc.add_text(label=DocItemLabel.TEXT, text="hidden text", content_layer=ContentLayer.INVISIBLE)
+    original = doc.model_dump()
+
+    xml = DocLangDocSerializer(doc=doc, params=DocLangParams(layer_mode=layer_mode)).serialize().text
+    restored = DocLangDocDeserializer().deserialize_str(xml)
+
+    assert doc.model_dump() == original
+    assert [item.content_layer for item in restored.texts] == [
+        ContentLayer.BODY,
+        ContentLayer.FURNITURE,
+        ContentLayer.FURNITURE,
+        ContentLayer.BACKGROUND,
+    ]
+    assert restored.export_to_markdown(included_content_layers={ContentLayer.BODY, ContentLayer.FURNITURE}) == (
+        "visible body\n\npage header\n\nspeaker note"
+    )
+
+
 def _doc_with_labeled_code_and_pictures() -> DoclingDocument:
     doc = DoclingDocument(name="t")
     doc.add_code(text="x = 1", code_language=CodeLanguageLabel.PYTHON)
@@ -2224,6 +2284,25 @@ def test_multi_prov_text_emits_thread():
     if not GEN_TEST_DATA:
         assert ser_txt.count("<thread thread_id=") == 2
         assert "<page_break" not in ser_txt
+
+
+def test_multi_prov_text_serialization_leaves_document_unchanged():
+    """Serializing a multi-prov item must not rewrite the document's provenance.
+
+    The per-fragment rebasing of ``charspan`` happens on the copy built for each
+    fragment; mutating the provenance held by the document makes a second
+    serialization of the same document emit the first fragment's text for every
+    fragment.
+    """
+    doc = _doc_multi_prov_text()
+    item = doc.texts[0]
+    spans_before = [p.charspan for p in item.prov]
+
+    serializer = DocLangDocSerializer(doc=doc, params=DocLangParams(include_version=False))
+    first = serializer.serialize().text
+
+    assert [p.charspan for p in item.prov] == spans_before
+    assert serializer.serialize().text == first
 
 
 @doclang_validator
@@ -2753,7 +2832,7 @@ def test_inline_group_nested_when_parent_text_item_has_text():
     root = ET.fromstring(txt)
     assert [child.tag for child in root] == ["heading"]
     heading_el = root[0]
-    assert [child.tag for child in heading_el] == ["bold", "content", "italic"]
+    assert [child.tag for child in heading_el] == ["bold", "italic"]
     assert "".join(heading_el.itertext()).replace("\n", " ").split() == [
         "Heading",
         "text",
@@ -2810,4 +2889,112 @@ def test_inline_group_nested_word_boundary_when_minimized():
 
     root = ET.fromstring(txt)
     heading_el = root[0]
-    assert "".join(heading_el.itertext()).split() == ["Heading", "text", "bold"]
+    assert "".join(heading_el.itertext()) == "Heading text bold"
+
+
+def _prov(l: float, t: float, r: float, b: float) -> ProvenanceItem:
+    return ProvenanceItem(
+        page_no=1,
+        bbox=BoundingBox(l=l, t=t, r=r, b=b, coord_origin=CoordOrigin.BOTTOMLEFT),
+        charspan=(0, 0),
+    )
+
+
+def test_table_footnote_with_nested_field_region():
+    """A table footnote serializes its nested content, once, and is placed by its first nested item.
+
+    The footnote is a satellite of the table (it is emitted in the table's group) and has neither
+    text nor location of its own: its field region must come out inside the ``<footnote>``, not
+    again as a sibling, and the footnote sorts by the location of its first key.
+    """
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100))
+    table = doc.add_table(data=TableData(num_rows=0, num_cols=0), prov=_prov(10, 90, 90, 50))
+
+    # a regular footnote, below the field region footnote
+    plain = doc.add_text(label=DocItemLabel.FOOTNOTE, text="Plain note.", prov=_prov(10, 30, 50, 25))
+    nested = doc.add_text(label=DocItemLabel.FOOTNOTE, text="")
+    region = doc.add_field_region(parent=nested)
+    item = doc.add_field_item(parent=region)
+    doc.add_field_key(text="K:", parent=item, prov=_prov(10, 45, 20, 40))
+    doc.add_field_value(text="V", parent=item, prov=_prov(22, 45, 30, 40))
+    table.footnotes = [plain.get_ref(), nested.get_ref()]
+
+    root = ET.fromstring(serialize_doclang(doc))
+
+    group = root.find("group")
+    assert group is not None
+    assert [c.tag for c in group] == ["table", "footnote", "footnote"]  # nested one first: it is higher
+    nested_ftn, plain_ftn = group.findall("footnote")
+    assert nested_ftn.find("field_region/field_item/key") is not None
+    assert "".join(plain_ftn.itertext()).strip().endswith("Plain note.")
+    assert len(list(root.iter("field_region"))) == 1  # not emitted a second time next to the group
+
+    # the nested content survives a round trip, under its footnote
+    ser_txt = serialize_doclang(doc)
+    doc2 = DocLangDocDeserializer().deserialize_str(ser_txt)
+    (table2,) = doc2.tables
+    nested2 = [ftn.resolve(doc2) for ftn in table2.footnotes if not ftn.resolve(doc2).text]
+    assert len(nested2) == 1
+    regions2 = [
+        it for it, _ in doc2.iterate_items(root=nested2[0], with_groups=True) if it.label == DocItemLabel.FIELD_REGION
+    ]
+    assert len(regions2) == 1
+    assert [t.text for t in doc2.texts if t.label in (DocItemLabel.FIELD_KEY, DocItemLabel.FIELD_VALUE)] == ["K:", "V"]
+    assert serialize_doclang(doc2) == ser_txt
+
+
+def _doc_field_region_in_inline_group() -> DoclingDocument:
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100))
+    group = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="(", parent=group, prov=_prov(5, 90, 10, 80))
+    item = doc.add_field_item(parent=doc.add_field_region(parent=group))
+    doc.add_field_key(text="K:", parent=item, prov=_prov(10, 90, 30, 80))
+    doc.add_field_value(text="V", parent=item, prov=_prov(40, 90, 90, 80))
+    doc.add_text(label=DocItemLabel.TEXT, text=")", parent=group, prov=_prov(90, 90, 95, 80))
+    return doc
+
+
+def test_field_region_in_inline_group_keeps_key_value_locations():
+    """Keys and values are elements with their own location, also when the region sits in an inline group."""
+    doc = _doc_field_region_in_inline_group()
+
+    root = ET.fromstring(serialize_doclang(doc))
+
+    item = root.find("text/field_region/field_item")
+    assert item is not None
+    for tag in ("key", "value"):
+        assert len(item.findall(f"{tag}/location")) == 4
+    # the runs of the group are still located by the group alone
+    assert len(root.findall("text/location")) == 4
+
+    # the locations survive a round trip
+    doc2 = DocLangDocDeserializer().deserialize_str(serialize_doclang(doc))
+    kv = [t for t in doc2.texts if t.label in (DocItemLabel.FIELD_KEY, DocItemLabel.FIELD_VALUE)]
+    assert [t.text for t in kv] == ["K:", "V"]
+    assert all(t.prov for t in kv)
+
+
+def test_field_region_in_inline_group_respects_add_location_off():
+    doc = _doc_field_region_in_inline_group()
+
+    root = ET.fromstring(serialize_doclang(doc, DocLangParams(include_version=False, add_location=False)))
+
+    assert not list(root.iter("location"))
+
+
+def test_picture_with_nested_field_region():
+    """A field region that is a child of a picture is serialized inside the picture."""
+    doc = DoclingDocument(name="")
+    doc.add_page(page_no=1, size=Size(width=100, height=100))
+    picture = doc.add_picture(prov=_prov(0, 100, 100, 0))
+    item = doc.add_field_item(parent=doc.add_field_region(parent=picture))
+    doc.add_field_key(text="K:", parent=item, prov=_prov(10, 90, 30, 80))
+    doc.add_field_value(text="V", parent=item, prov=_prov(40, 90, 90, 80))
+
+    root = ET.fromstring(serialize_doclang(doc))
+
+    assert len(list(root.iter("field_region"))) == 1
+    assert root.find("picture/field_region/field_item/key") is not None
+    assert root.find("picture/field_region/field_item/value") is not None

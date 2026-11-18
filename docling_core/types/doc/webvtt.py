@@ -1,34 +1,32 @@
 """Models for the Docling's adoption of Web Video Text Tracks format."""
 
+import html
 import re
 import warnings
 from collections.abc import Iterator
 from enum import Enum
 from functools import total_ordering
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, ClassVar, Literal, get_args
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic.types import StringConstraints
 from typing_extensions import Self, override
 
-# WebVTT cue text escapes and the characters they denote (W3C WebVTT 1, 6.3).
-# The names double as the validation whitelist so the two cannot drift apart.
-_ENTITY_CHARS: dict[str, str] = {
-    "amp": "&",
-    "lt": "<",
-    "gt": ">",
-    "lrm": "\u200e",
-    "rlm": "\u200f",
-    "nbsp": "\u00a0",
-}
-_ESCAPE_NAMES: dict[str, str] = {char: name for name, char in _ENTITY_CHARS.items()}
-_VALID_ENTITIES: set = set(_ENTITY_CHARS)
-_ENTITY_PATTERN: re.Pattern = re.compile(r"&([a-zA-Z0-9]+);")
+# The named escapes written back out (W3C WebVTT 1, 6.3): only the character that
+# would end the construct. Reading accepts every HTML character reference (6.4).
+_ESCAPE_NAMES: dict[str, str] = {"<": "lt", ">": "gt"}
 
 
-def _unescape(value: str) -> str:
-    """Replace WebVTT escape sequences with the characters they denote."""
-    return _ENTITY_PATTERN.sub(lambda m: _ENTITY_CHARS.get(m.group(1), m.group(0)), value)
+def _unescape(value: str, what: str) -> str:
+    """Resolve the HTML character references in cue text or an annotation.
+
+    A reference to a line terminator is rejected, since the value would be
+    written back across two lines.
+    """
+    value = html.unescape(value)
+    if any(ch in value for ch in {"\n", "\r"}):
+        raise ValueError(f"{what} contains a character reference for a line terminator")
+    return value
 
 
 def _escape(value: str, terminator: str) -> str:
@@ -46,7 +44,7 @@ def _escape(value: str, terminator: str) -> str:
 
 
 _TIMESTAMP_PATTERN_STR: str = r"(?:(\d{2,}):)?([0-5]\d):([0-5]\d)\.(\d{3})"
-START_TAG_NAMES = Literal["c", "b", "i", "u", "v", "lang"]
+START_TAG_NAMES = Literal["c", "b", "i", "u", "v", "lang", "ruby", "rt"]
 
 
 class WebVTTLineTerminator(str, Enum):
@@ -123,10 +121,10 @@ class WebVTTTimestamp(BaseModel):
         Returns:
             A WebVTT timestamp instance.
         """
-        hours = int(seconds // 3600)
-        minutes = int((seconds % 3600) // 60)
-        secs = int(seconds % 60)
-        millis: int = round((seconds % 1) * 1000)
+        total_millis = round(seconds * 1000)
+        hours, rest = divmod(total_millis, 3_600_000)
+        minutes, rest = divmod(rest, 60_000)
+        secs, millis = divmod(rest, 1_000)
 
         return cls(raw=f"{hours:02d}:{minutes:02d}:{secs:02d}.{millis:03d}")
 
@@ -213,19 +211,13 @@ class WebVTTCueTextSpan(BaseModel):
     @field_validator("text", mode="after")
     @classmethod
     def is_valid_text(cls, value: str) -> str:
-        """Ensure cue text contains only permitted characters and HTML entities."""
-        for match in _ENTITY_PATTERN.finditer(value):
-            entity = match.group(1)
-            if entity not in _VALID_ENTITIES:
-                raise ValueError(f"Cue text contains an invalid HTML entity: &{entity};")
-        if "&" in re.sub(_ENTITY_PATTERN, "", value):
-            raise ValueError("Found '&' not part of a valid entity in the cue text")
+        """Validate cue text characters and resolve HTML character references, returning the decoded string."""
         if any(ch in value for ch in {"\n", "\r", "<"}):
             raise ValueError("Cue text contains invalid characters")
         if len(value) == 0:
             raise ValueError("Cue text cannot be empty")
 
-        return _unescape(value)
+        return _unescape(value, "Cue text")
 
     @override
     def __str__(self) -> str:
@@ -299,19 +291,13 @@ class WebVTTCueSpanStartTagAnnotated(WebVTTCueSpanStartTag):
     @field_validator("annotation", mode="after")
     @classmethod
     def is_valid_annotation(cls, value: str) -> str:
-        """Ensure annotation contains only permitted characters and HTML entities."""
-        for match in _ENTITY_PATTERN.finditer(value):
-            entity = match.group(1)
-            if entity not in _VALID_ENTITIES:
-                raise ValueError(f"Annotation contains an invalid HTML entity: &{entity};")
-        if "&" in re.sub(_ENTITY_PATTERN, "", value):
-            raise ValueError("Found '&' not part of a valid entity in annotation")
+        """Ensure annotation contains only permitted characters and resolve its character references."""
         if any(ch in value for ch in {"\n", "\r", ">"}):
             raise ValueError("Annotation contains invalid characters")
         if len(value) == 0:
             raise ValueError("Annotation cannot be empty")
 
-        return _unescape(value)
+        return _unescape(value, "Annotation")
 
     @override
     def __str__(self) -> str:
@@ -344,7 +330,7 @@ class WebVTTCueComponentBase(BaseModel):
     except the WebVTT cue text span, which requires different definitions.
     """
 
-    kind: Literal["c", "b", "i", "u", "v", "lang"]
+    kind: START_TAG_NAMES
     start_tag: WebVTTCueSpanStartTag
     internal_text: WebVTTCueInternalText
 
@@ -412,6 +398,24 @@ class WebVTTCueLanguageSpan(WebVTTCueComponentBase):
     start_tag: WebVTTCueLanguageSpanStartTag
 
 
+class WebVTTCueRubySpan(WebVTTCueComponentBase):
+    """WebVTT cue ruby span representing a ruby annotation.
+
+    Its internal text holds the ruby base components, with each annotation
+    represented as a WebVTT cue ruby text span.
+    """
+
+    kind: Literal["ruby"] = "ruby"
+    start_tag: WebVTTCueSpanStartTag = WebVTTCueSpanStartTag(name="ruby")
+
+
+class WebVTTCueRubyTextSpan(WebVTTCueComponentBase):
+    """WebVTT cue ruby text span representing the annotation of a ruby base."""
+
+    kind: Literal["rt"] = "rt"
+    start_tag: WebVTTCueSpanStartTag = WebVTTCueSpanStartTag(name="rt")
+
+
 WebVTTCueComponent = Annotated[
     WebVTTCueTextSpan
     | WebVTTCueClassSpan
@@ -419,7 +423,9 @@ WebVTTCueComponent = Annotated[
     | WebVTTCueBoldSpan
     | WebVTTCueUnderlineSpan
     | WebVTTCueVoiceSpan
-    | WebVTTCueLanguageSpan,
+    | WebVTTCueLanguageSpan
+    | WebVTTCueRubySpan
+    | WebVTTCueRubyTextSpan,
     Field(
         discriminator="kind",
         description="The type of WebVTT caption or subtitle cue component.",
@@ -432,7 +438,12 @@ class WebVTTCueBlock(BaseModel):
 
     The optional WebVTT cue settings list is not supported.
     The cue payload is limited to the following spans: text, class, italic, bold,
-    underline, and voice.
+    underline, voice, language, ruby, and ruby text. Other tags found in real-world
+    files, such as `<font>` or an upper-case `<B>`, are removed and their text is
+    kept.
+    An end tag that does not match the innermost open span, such as the `</ruby>` in
+    `<ruby>a<rt>b<i>c</ruby>`, makes `parse` raise a `ValueError`. Spans left open at
+    the end of the cue are closed implicitly.
     """
 
     model_config = ConfigDict(regex_engine="python-re")
@@ -447,13 +458,18 @@ class WebVTTCueBlock(BaseModel):
     # pattern of a WebVTT cue span start/end tag
     _pattern_tag: ClassVar[re.Pattern] = re.compile(
         r"<(?P<end>/?)"
-        r"(?P<tag>i|b|c|u|v|lang)"
+        rf"(?P<tag>{'|'.join(get_args(START_TAG_NAMES))})"
         r"(?P<class>(?:\.[^\t\n\r &<>.]+)*)"
         r"(?:[ \t](?P<annotation>[^\n\r>]*))?>"
     )
 
     # pattern of a WebVTT cue timestamp tag (e.g. <00:00:01.500> or <00:01.500>)
     _pattern_cue_timestamp: ClassVar[re.Pattern] = re.compile(r"<" + _TIMESTAMP_PATTERN_STR + r">")
+
+    # pattern of any start or end tag (e.g. <font color="yellow"> or </B>)
+    _pattern_any_tag: ClassVar[re.Pattern] = re.compile(
+        r"</?(?P<name>[a-zA-Z][^\t\n\r .&/<>]*)(?:[\t .&/][^\n\r<>]*)?>"
+    )
 
     @field_validator("payload", mode="after")
     @classmethod
@@ -476,6 +492,63 @@ class WebVTTCueBlock(BaseModel):
                     component=WebVTTCueTextSpan(text=line),
                     terminator=terminator,
                 )
+
+    @staticmethod
+    def _create_span(
+        start: dict[str, str | None], children: list[WebVTTCueComponentWithTerminator]
+    ) -> WebVTTCueComponent:
+        """Create a WebVTT cue span component from parsed start tag metadata and child components.
+
+        Args:
+            start: Dictionary containing parsed tag groups ('tag', 'class', 'annotation').
+            children: Child cue components contained within this span.
+
+        Returns:
+            The instantiated WebVTT cue span component.
+        """
+        tag = start["tag"]
+        annotation = start["annotation"]
+        classes: list[str] | None = None
+        if start["class"]:
+            classes = [c for c in start["class"].split(".") if c]
+        st: WebVTTCueSpanStartTag
+        if annotation and tag == "lang":
+            st = WebVTTCueLanguageSpanStartTag(name=tag, classes=classes, annotation=annotation.strip())
+        elif annotation:
+            st = WebVTTCueSpanStartTagAnnotated(name=tag, classes=classes, annotation=annotation.strip())
+        else:
+            st = WebVTTCueSpanStartTag(name=tag, classes=classes)
+        it = WebVTTCueInternalText(components=children)
+        if tag == "c":
+            return WebVTTCueClassSpan(start_tag=st, internal_text=it)
+        if tag == "b":
+            return WebVTTCueBoldSpan(start_tag=st, internal_text=it)
+        if tag == "i":
+            return WebVTTCueItalicSpan(start_tag=st, internal_text=it)
+        if tag == "u":
+            return WebVTTCueUnderlineSpan(start_tag=st, internal_text=it)
+        if tag == "lang":
+            return WebVTTCueLanguageSpan(start_tag=st, internal_text=it)
+        if tag == "ruby":
+            return WebVTTCueRubySpan(start_tag=st, internal_text=it)
+        if tag == "rt":
+            return WebVTTCueRubyTextSpan(start_tag=st, internal_text=it)
+        return WebVTTCueVoiceSpan(start_tag=st, internal_text=it)
+
+    @classmethod
+    def _strip_unknown_tag(cls, match: re.Match) -> str:
+        """Return a matched tag if it is a WebVTT cue span tag, otherwise an empty string.
+
+        Args:
+            match: A match of `_pattern_any_tag`.
+
+        Returns:
+            The original tag if it should be kept, or an empty string if it should be removed.
+        """
+        tag = match.group()
+        if cls._pattern_tag.fullmatch(tag):
+            return tag
+        return ""
 
     @classmethod
     def parse(cls, raw: str) -> Self:
@@ -506,17 +579,20 @@ class WebVTTCueBlock(BaseModel):
         end = re.split(" |\t", end)[0]  # ignore the cue settings list
         timings: WebVTTCueTimings = WebVTTCueTimings(start=WebVTTTimestamp(raw=start), end=WebVTTTimestamp(raw=end))
         cue_text = "\n".join(cue_lines).strip()
-        # adding close tag for cue spans without end tag
-        for omm in {"v"}:
-            if cue_text.startswith(f"<{omm}") and f"</{omm}>" not in cue_text:
-                cue_text += f"</{omm}>"
-                break
 
         # Strip cue timestamp tags (e.g. <00:00:01.500>) — they carry no text content.
         cue_text = cls._pattern_cue_timestamp.sub("", cue_text)
 
+        # Strip tags that are not WebVTT cue spans (e.g. <font>, <B>) and keep their text.
+        cue_text = cls._pattern_any_tag.sub(cls._strip_unknown_tag, cue_text)
+
         stack: list[list[WebVTTCueComponentWithTerminator]] = [[]]
         tag_stack: list[dict] = []
+
+        def _close_top_span() -> None:
+            children = stack.pop()
+            closed = tag_stack.pop()
+            stack[-1].append(WebVTTCueComponentWithTerminator(component=cls._create_span(closed, children)))
 
         pos = 0
         matches = list(cls._pattern_tag.finditer(cue_text))
@@ -528,43 +604,21 @@ class WebVTTCueBlock(BaseModel):
                 stack[-1].extend(cls._create_text_components(text))
             gps = {k: (v if v else None) for k, v in match.groupdict().items()}
 
-            if gps["tag"] in {"c", "b", "i", "u", "v", "lang"}:
-                if not gps["end"]:
+            # Following WebVTT 1, 6.4, <rt> only applies directly inside <ruby>; otherwise its
+            # start tag, and its end tag when no <rt> is open, are ignored. Any other end tag
+            # without an open span is ignored as well.
+            if not gps["end"]:
+                if gps["tag"] != "rt" or (tag_stack and tag_stack[-1]["tag"] == "ruby"):
                     tag_stack.append(gps)
                     stack.append([])
-                else:
-                    children = stack.pop() if stack else []
-                    if tag_stack:
-                        closed = tag_stack.pop()
-                        if (ct := closed["tag"]) != gps["tag"]:
-                            raise ValueError(f"Incorrect end tag: {ct}")
-                        class_string = closed["class"]
-                        annotation = closed["annotation"]
-                        classes: list[str] | None = None
-                        if class_string:
-                            classes = [c for c in class_string.split(".") if c]
-                        st: WebVTTCueSpanStartTag
-                        if annotation and ct == "lang":
-                            st = WebVTTCueLanguageSpanStartTag(name=ct, classes=classes, annotation=annotation.strip())
-                        elif annotation:
-                            st = WebVTTCueSpanStartTagAnnotated(name=ct, classes=classes, annotation=annotation.strip())
-                        else:
-                            st = WebVTTCueSpanStartTag(name=ct, classes=classes)
-                        it = WebVTTCueInternalText(components=children)
-                        cp: WebVTTCueComponent
-                        if ct == "c":
-                            cp = WebVTTCueClassSpan(start_tag=st, internal_text=it)
-                        elif ct == "b":
-                            cp = WebVTTCueBoldSpan(start_tag=st, internal_text=it)
-                        elif ct == "i":
-                            cp = WebVTTCueItalicSpan(start_tag=st, internal_text=it)
-                        elif ct == "u":
-                            cp = WebVTTCueUnderlineSpan(start_tag=st, internal_text=it)
-                        elif ct == "lang":
-                            cp = WebVTTCueLanguageSpan(start_tag=st, internal_text=it)
-                        elif ct == "v":
-                            cp = WebVTTCueVoiceSpan(start_tag=st, internal_text=it)
-                        stack[-1].append(WebVTTCueComponentWithTerminator(component=cp))
+            elif tag_stack and (gps["tag"] != "rt" or tag_stack[-1]["tag"] == "rt"):
+                # The end tag of the last ruby text span may be omitted, so
+                # </ruby> implicitly closes an open <rt> (WebVTT 1, 4.2.2).
+                if gps["tag"] == "ruby" and tag_stack[-1]["tag"] == "rt":
+                    _close_top_span()
+                if tag_stack[-1]["tag"] != gps["tag"]:
+                    raise ValueError(f"Incorrect end tag: {tag_stack[-1]['tag']}")
+                _close_top_span()
 
             pos = match.end()
             i += 1
@@ -572,6 +626,10 @@ class WebVTTCueBlock(BaseModel):
         if pos < len(cue_text):
             text = cue_text[pos:]
             stack[-1].extend(cls._create_text_components(text))
+
+        # Close any remaining unclosed spans at the end of the cue.
+        while tag_stack:
+            _close_top_span()
 
         return cls(
             identifier=identifier,
@@ -685,7 +743,7 @@ class WebVTTFile(BaseModel):
         body = re.sub(cls._pattern, "", body)
 
         # Split into cue blocks
-        raw_blocks = re.split(r"\n\s*\n", body.strip())
+        raw_blocks = cls._split_blocks(body.strip())
         cues: list[WebVTTCueBlock] = []
         for block in raw_blocks:
             if not block.strip():
@@ -696,6 +754,24 @@ class WebVTTFile(BaseModel):
                 warnings.warn(f"Failed to parse cue block:\n{block}\n{e}", RuntimeWarning)
 
         return cls(title=title, cue_blocks=cues)
+
+    @staticmethod
+    def _split_blocks(body: str) -> list[str]:
+        """Split the file body into blocks at empty lines.
+
+        A line holding only whitespace is cue text, like the " " line that starts every
+        cue of a YouTube caption file. It still separates two cues when the next cue
+        starts right after it: its timings are on the next line, or on the one after an
+        identifier.
+        """
+        lines = body.split("\n")
+        blocks: list[list[str]] = [[]]
+        for index, line in enumerate(lines):
+            if not line or (not line.strip() and any("-->" in following for following in lines[index + 1 : index + 3])):
+                blocks.append([])
+            else:
+                blocks[-1].append(line)
+        return ["\n".join(block) for block in blocks if block]
 
     def __iter__(self) -> Iterator[WebVTTCueBlock]:  # type: ignore[override]
         """Return an iterator over the cue blocks."""

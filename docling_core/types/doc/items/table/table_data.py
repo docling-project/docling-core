@@ -10,6 +10,7 @@ from typing_extensions import Self, override
 
 from docling_core.types.doc.base import BoundingBox, CoordOrigin
 from docling_core.types.doc.common.reference import RefItem
+from docling_core.utils.settings import settings
 
 if TYPE_CHECKING:
     from docling_core.types.doc.document import DoclingDocument
@@ -110,6 +111,19 @@ class TableData(BaseModel):  # TBD
     num_cols: int = 0
     orientation: Orientation = Orientation.ROT_0
 
+    @model_validator(mode="after")
+    def _validate_grid_size(self) -> Self:
+        """Reject dimensions whose grid would be too large to materialize.
+
+        The rows and columns are bounded on their own too, because a table with many rows
+        and no columns still allocates one (empty) list per row.
+        """
+        limit = settings.max_table_cells
+        rows, cols = max(self.num_rows, 0), max(self.num_cols, 0)
+        if rows > limit or cols > limit or rows * cols > limit:
+            raise ValueError(f"Table of {self.num_rows}x{self.num_cols} cells exceeds the limit of {limit} cells")
+        return self
+
     @computed_field  # type: ignore
     @property
     def grid(
@@ -145,17 +159,67 @@ class TableData(BaseModel):  # TBD
 
         return table_data
 
+    def _count_column_header_rows(self, grid: list[list[TableCell]] | None = None) -> int:
+        """Count the leading grid rows that form the column header block.
+
+        A row is counted when a column header cell starts on it. A header cell
+        spanning several rows is repeated into each row it covers by ``grid``, so
+        rows that merely hold such a cell are not counted. A row after the first
+        is also not counted when an unflagged, non-empty cell starts on it
+        outside the leading column, which holds row labels that stay unmarked
+        even on header rows. A partially flagged row 0 is always kept as the
+        header unless a flagged cell also starts in the leading column on a
+        later row, which indicates a column of row headers rather than a
+        genuine stacked header.
+
+        Args:
+            grid: The precomputed ``grid`` of this table, to avoid rebuilding it.
+
+        Returns:
+            The number of leading rows that form the column header block.
+        """
+        if grid is None:
+            grid = self.grid
+        first_col = min((cell.start_col_offset_idx for cell in self.table_cells), default=0)
+        # Apply the body-text check to row 0 only when a flagged cell starts in
+        # the leading column on a later row, which signals a column of row headers.
+        leading_col_flagged_below = any(
+            cell.column_header and cell.start_col_offset_idx == first_col and cell.start_row_offset_idx == row_idx
+            for row_idx, row in enumerate(grid)
+            if row_idx > 0
+            for cell in row
+        )
+        num_headers = 0
+        for row_idx, row in enumerate(grid):
+            starting_cells = [cell for cell in row if cell.start_row_offset_idx == row_idx]
+            carries_body_text = (row_idx > 0 or leading_col_flagged_below) and any(
+                not cell.column_header and cell.text.strip() and cell.start_col_offset_idx != first_col
+                for cell in starting_cells
+            )
+            if not any(cell.column_header for cell in starting_cells) or carries_body_text:
+                break
+            num_headers += 1
+        return num_headers
+
     def remove_rows(self, indices: list[int], doc: Optional["DoclingDocument"] = None) -> list[list[TableCell]]:
         """Remove rows from the table by their indices.
 
-        :param indices: list[int]: A list of indices of the rows to remove. (Starting from 0)
+        Args:
+            indices: Zero-based indices of the rows to remove. Duplicate indices are ignored.
+            doc: The document that owns the table. Required to also delete the content of
+                rich cells in the removed rows; otherwise that content is left dangling
+                and a warning is logged.
 
-        :return: list[list[TableCell]]: A list representation of the removed rows as lists of TableCell objects.
+        Returns:
+            The removed rows, each as a list of cells, ordered by descending row index.
+
+        Raises:
+            IndexError: If any index is negative or not smaller than the number of rows.
         """
         if not indices:
             return []
 
-        indices = sorted(indices, reverse=True)
+        indices = sorted(set(indices), reverse=True)
 
         refs_to_remove = []
         all_removed_cells = []

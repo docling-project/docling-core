@@ -1,0 +1,19 @@
+WEBVTT Ruby annotations
+
+NOTE Cue ruby spans, WebVTT 1, section 4.2.2. The end tag of the last ruby text span may be omitted.
+
+00:01.000 --> 00:04.000
+<ruby>漢字<rt>かんじ</rt></ruby> is the Japanese word for kanji.
+
+00:04.000 --> 00:07.000
+<ruby>東京<rt>とうきょう</ruby> is the capital of Japan.
+
+00:07.000 --> 00:10.000
+<ruby>日<rt>に</rt>本<rt>ほん</rt></ruby>語 is the Japanese language.
+
+00:10.000 --> 00:13.000
+<v Aiko><ruby>振り仮名<rt>ふりがな</rt>
+</ruby> helps readers.</v>
+
+00:13.000 --> 00:16.000
+Plain cue between ruby cues.

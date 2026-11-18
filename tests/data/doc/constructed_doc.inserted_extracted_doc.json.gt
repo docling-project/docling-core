@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "name": "Untitled 1",
   "furniture": {
     "self_ref": "#/furniture",
@@ -808,8 +808,8 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
-      "orig": "Here a code snippet:",
-      "text": "Here a code snippet:"
+      "orig": "Here a code snippet: ",
+      "text": "Here a code snippet: "
     },
     {
       "self_ref": "#/texts/15",
@@ -836,8 +836,8 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
-      "orig": "(to be displayed inline)",
-      "text": "(to be displayed inline)"
+      "orig": " (to be displayed inline)",
+      "text": " (to be displayed inline)"
     },
     {
       "self_ref": "#/texts/17",
@@ -866,8 +866,8 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
-      "orig": "Here a formula:",
-      "text": "Here a formula:"
+      "orig": "Here a formula: ",
+      "text": "Here a formula: "
     },
     {
       "self_ref": "#/texts/19",
@@ -890,8 +890,8 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
-      "orig": "(to be displayed inline)",
-      "text": "(to be displayed inline)"
+      "orig": " (to be displayed inline)",
+      "text": " (to be displayed inline)"
     },
     {
       "self_ref": "#/texts/21",
@@ -954,8 +954,8 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
-      "orig": "Some formatting chops:",
-      "text": "Some formatting chops:"
+      "orig": "Some formatting chops: ",
+      "text": "Some formatting chops: "
     },
     {
       "self_ref": "#/texts/26",
@@ -966,8 +966,8 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
-      "orig": "bold",
-      "text": "bold",
+      "orig": "bold ",
+      "text": "bold ",
       "formatting": {
         "bold": true,
         "italic": false,
@@ -985,8 +985,8 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
-      "orig": "italic",
-      "text": "italic",
+      "orig": "italic ",
+      "text": "italic ",
       "formatting": {
         "bold": false,
         "italic": true,
@@ -1004,8 +1004,8 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
-      "orig": "underline",
-      "text": "underline",
+      "orig": "underline ",
+      "text": "underline ",
       "formatting": {
         "bold": false,
         "italic": false,
@@ -1023,8 +1023,8 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
-      "orig": "strikethrough",
-      "text": "strikethrough",
+      "orig": "strikethrough ",
+      "text": "strikethrough ",
       "formatting": {
         "bold": false,
         "italic": false,
@@ -1042,8 +1042,8 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
-      "orig": "subscript",
-      "text": "subscript",
+      "orig": "subscript ",
+      "text": "subscript ",
       "formatting": {
         "bold": false,
         "italic": false,
@@ -1061,8 +1061,8 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
-      "orig": "superscript",
-      "text": "superscript",
+      "orig": "superscript ",
+      "text": "superscript ",
       "formatting": {
         "bold": false,
         "italic": false,
@@ -1080,8 +1080,8 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
-      "orig": "hyperlink",
-      "text": "hyperlink",
+      "orig": "hyperlink ",
+      "text": "hyperlink ",
       "hyperlink": "."
     },
     {
@@ -1093,8 +1093,8 @@
       "content_layer": "body",
       "label": "text",
       "prov": [],
-      "orig": "&",
-      "text": "&"
+      "orig": "& ",
+      "text": "& "
     },
     {
       "self_ref": "#/texts/34",

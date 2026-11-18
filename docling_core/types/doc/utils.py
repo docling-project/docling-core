@@ -8,10 +8,17 @@ import zipfile
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any
 
+from PIL import Image as PILImage
+
 from docling_core.types.doc.tokens import _LOC_PREFIX, DocumentToken, TableToken
 
 if TYPE_CHECKING:
     from docling_core.types.doc.document import TableCell, TableData
+
+
+def _normalize_image_for_png(image: PILImage.Image) -> PILImage.Image:
+    """Keep the PNG 16-bit clipping behavior removed in Pillow 13."""
+    return image.convert("I;16") if image.mode == "I" else image
 
 
 def is_remote_path(p: Any) -> bool:
@@ -209,6 +216,11 @@ def safe_extract_zip_archive(
             total_uncompressed += written
 
 
+def _escape_attr_value(value: str) -> str:
+    """Escape a double-quoted HTML attribute value, including embedded quotes."""
+    return html.escape(value, quote=False).replace('"', "&quot;")
+
+
 def get_html_tag_with_text_direction(html_tag: str, text: str, attrs: dict | None = None) -> str:
     """Form the HTML element with tag, text, and optional dir attribute."""
     my_attrs = attrs or {}
@@ -216,9 +228,7 @@ def get_html_tag_with_text_direction(html_tag: str, text: str, attrs: dict | Non
         my_attrs["dir"] = get_text_direction(text)
     pieces: list[str] = [html_tag]
     if my_attrs:
-        attrs_str = " ".join(
-            [f'{html.escape(k, quote=False)}="{html.escape(my_attrs[k], quote=False)}"' for k in my_attrs]
-        )
+        attrs_str = " ".join([f'{html.escape(k, quote=False)}="{_escape_attr_value(my_attrs[k])}"' for k in my_attrs])
         pieces.append(attrs_str)
     return f"<{' '.join(pieces)}>{text}</{html_tag}>"
 

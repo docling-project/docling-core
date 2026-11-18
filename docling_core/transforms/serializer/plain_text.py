@@ -1,6 +1,6 @@
 """Define classes for plain-text serialization."""
 
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, Union
 
 from pydantic import AnyUrl
@@ -63,8 +63,9 @@ class PlainTextDocSerializer(MarkdownDocSerializer):
     """Document serializer that produces clean plain text.
 
     Strips all Markdown decoration — heading markers, bold/italic/strikethrough
-    markers, and hyperlink syntax — while keeping list bullets (``-``), ordered
-    list numbers, and table-cell separators (``|``) intact.
+    markers, underline and sub/superscript tags, and hyperlink syntax — while
+    keeping list bullets (``-``), ordered list numbers, and table-cell
+    separators (``|``) intact.
     """
 
     text_serializer: BaseTextSerializer = PlainTextTextSerializer()
@@ -86,10 +87,25 @@ class PlainTextDocSerializer(MarkdownDocSerializer):
         return text
 
     @override
+    def serialize_underline(self, text: str, **kwargs: Any) -> str:
+        """Apply plain-text underline serialization."""
+        return text
+
+    @override
+    def serialize_subscript(self, text: str, **kwargs: Any) -> str:
+        """Apply plain-text subscript serialization."""
+        return text
+
+    @override
+    def serialize_superscript(self, text: str, **kwargs: Any) -> str:
+        """Apply plain-text superscript serialization."""
+        return text
+
+    @override
     def serialize_hyperlink(
         self,
         text: str,
-        hyperlink: AnyUrl | Path,
+        hyperlink: AnyUrl | PurePath,
         **kwargs: Any,
     ) -> str:
         """Return the link label only, discarding the URL."""

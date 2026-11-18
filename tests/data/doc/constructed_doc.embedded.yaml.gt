@@ -752,12 +752,12 @@ texts:
 - children: []
   content_layer: body
   label: text
-  orig: 'Here a code snippet:'
+  orig: 'Here a code snippet: '
   parent:
     $ref: '#/groups/10'
   prov: []
   self_ref: '#/texts/24'
-  text: 'Here a code snippet:'
+  text: 'Here a code snippet: '
 - captions: []
   children: []
   code_language: Python
@@ -774,12 +774,12 @@ texts:
 - children: []
   content_layer: body
   label: text
-  orig: (to be displayed inline)
+  orig: ' (to be displayed inline)'
   parent:
     $ref: '#/groups/10'
   prov: []
   self_ref: '#/texts/26'
-  text: (to be displayed inline)
+  text: ' (to be displayed inline)'
 - children:
   - $ref: '#/groups/11'
   content_layer: body
@@ -795,12 +795,12 @@ texts:
 - children: []
   content_layer: body
   label: text
-  orig: 'Here a formula:'
+  orig: 'Here a formula: '
   parent:
     $ref: '#/groups/11'
   prov: []
   self_ref: '#/texts/28'
-  text: 'Here a formula:'
+  text: 'Here a formula: '
 - children: []
   content_layer: body
   label: formula
@@ -813,12 +813,12 @@ texts:
 - children: []
   content_layer: body
   label: text
-  orig: (to be displayed inline)
+  orig: ' (to be displayed inline)'
   parent:
     $ref: '#/groups/11'
   prov: []
   self_ref: '#/texts/30'
-  text: (to be displayed inline)
+  text: ' (to be displayed inline)'
 - children: []
   content_layer: body
   label: text
@@ -862,12 +862,12 @@ texts:
 - children: []
   content_layer: body
   label: text
-  orig: 'Some formatting chops:'
+  orig: 'Some formatting chops: '
   parent:
     $ref: '#/groups/12'
   prov: []
   self_ref: '#/texts/35'
-  text: 'Some formatting chops:'
+  text: 'Some formatting chops: '
 - children: []
   content_layer: body
   formatting:
@@ -877,12 +877,12 @@ texts:
     strikethrough: false
     underline: false
   label: text
-  orig: bold
+  orig: 'bold '
   parent:
     $ref: '#/groups/12'
   prov: []
   self_ref: '#/texts/36'
-  text: bold
+  text: 'bold '
 - children: []
   content_layer: body
   formatting:
@@ -892,12 +892,12 @@ texts:
     strikethrough: false
     underline: false
   label: text
-  orig: italic
+  orig: 'italic '
   parent:
     $ref: '#/groups/12'
   prov: []
   self_ref: '#/texts/37'
-  text: italic
+  text: 'italic '
 - children: []
   content_layer: body
   formatting:
@@ -907,12 +907,12 @@ texts:
     strikethrough: false
     underline: true
   label: text
-  orig: underline
+  orig: 'underline '
   parent:
     $ref: '#/groups/12'
   prov: []
   self_ref: '#/texts/38'
-  text: underline
+  text: 'underline '
 - children: []
   content_layer: body
   formatting:
@@ -922,12 +922,12 @@ texts:
     strikethrough: true
     underline: false
   label: text
-  orig: strikethrough
+  orig: 'strikethrough '
   parent:
     $ref: '#/groups/12'
   prov: []
   self_ref: '#/texts/39'
-  text: strikethrough
+  text: 'strikethrough '
 - children: []
   content_layer: body
   formatting:
@@ -937,12 +937,12 @@ texts:
     strikethrough: false
     underline: false
   label: text
-  orig: subscript
+  orig: 'subscript '
   parent:
     $ref: '#/groups/12'
   prov: []
   self_ref: '#/texts/40'
-  text: subscript
+  text: 'subscript '
 - children: []
   content_layer: body
   formatting:
@@ -952,31 +952,31 @@ texts:
     strikethrough: false
     underline: false
   label: text
-  orig: superscript
+  orig: 'superscript '
   parent:
     $ref: '#/groups/12'
   prov: []
   self_ref: '#/texts/41'
-  text: superscript
+  text: 'superscript '
 - children: []
   content_layer: body
   hyperlink: .
   label: text
-  orig: hyperlink
+  orig: 'hyperlink '
   parent:
     $ref: '#/groups/12'
   prov: []
   self_ref: '#/texts/42'
-  text: hyperlink
+  text: 'hyperlink '
 - children: []
   content_layer: body
   label: text
-  orig: '&'
+  orig: '& '
   parent:
     $ref: '#/groups/12'
   prov: []
   self_ref: '#/texts/43'
-  text: '&'
+  text: '& '
 - children: []
   content_layer: body
   formatting:
@@ -1114,4 +1114,4 @@ texts:
   prov: []
   self_ref: '#/texts/55'
   text: The end.
-version: 1.10.0
+version: 1.11.0

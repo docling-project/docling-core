@@ -3,6 +3,7 @@
 import base64
 import copy
 import hashlib
+import itertools
 import json
 import logging
 import mimetypes
@@ -11,7 +12,7 @@ import sys
 import tempfile
 import typing
 import warnings
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO, StringIO
@@ -54,6 +55,7 @@ from docling_core.types.doc import BoundingBox, Size
 from docling_core.types.doc.base import (
     CaptionPlacement,
     CoordOrigin,
+    FormattingFallbackMode,
     ImageRefMode,
     PydanticSerCtxKey,
     round_pydantic_float,
@@ -69,6 +71,7 @@ from docling_core.types.doc.common.constants import (
     CURRENT_VERSION,
     DEFAULT_EXPORT_LABELS,
     DOCUMENT_TOKENS_EXPORT_LABELS,
+    INLINE_WHITESPACE_CONTRACT_VERSION,
 )
 from docling_core.types.doc.common.content_layer import DEFAULT_CONTENT_LAYERS, ContentLayer
 from docling_core.types.doc.common.formatting import Formatting, Script
@@ -157,6 +160,7 @@ from docling_core.types.doc.labels import (
 from docling_core.types.doc.tokens import DocumentToken, TableToken
 from docling_core.types.doc.utils import (
     _ensure_within_size_limit,
+    _normalize_image_for_png,
     is_remote_path,
     parse_otsl_table_content,
     relative_path,
@@ -170,6 +174,34 @@ from docling_core.utils.settings import settings
 
 
 _logger = logging.getLogger(__name__)
+
+_warned_legacy_inline_separators = False
+
+
+def _predates_inline_whitespace_contract(version: str) -> bool:
+    """Return True when ``version`` is older than the inline whitespace contract."""
+    doc = re.match(VERSION_PATTERN, version)
+    contract = re.match(VERSION_PATTERN, INLINE_WHITESPACE_CONTRACT_VERSION)
+    if doc is None or contract is None:
+        return False
+    return (int(doc["major"]), int(doc["minor"])) < (int(contract["major"]), int(contract["minor"]))
+
+
+def _warn_legacy_inline_separators(version: str) -> None:
+    """Warn once per process that legacy inline separators were injected on load."""
+    global _warned_legacy_inline_separators
+    if _warned_legacy_inline_separators:
+        return
+    _warned_legacy_inline_separators = True
+    warnings.warn(
+        f"Document uses schema version {version}, predating the inline whitespace contract "
+        f"({INLINE_WHITESPACE_CONTRACT_VERSION}). Legacy inline separators were injected to "
+        "preserve the previous rendering; re-convert the source for faithful whitespace. "
+        "Note that inline text differs from a fresh conversion, which affects chunking and "
+        "any persisted embeddings.",
+        UserWarning,
+        stacklevel=2,
+    )
 
 
 class DoclingDocument(BaseModel):
@@ -297,40 +329,12 @@ class DoclingDocument(BaseModel):
             }
         )
 
-    @classmethod
-    def _clamp_provenance_bbox_to_page(cls, *, prov: ProvenanceItem, page_size: Size) -> None:
-        prov.bbox = cls._clamp_bbox_to_page(
-            bbox=prov.bbox,
-            page_size=page_size,
-            page_no=prov.page_no,
-            bbox_label="Provenance bbox",
-        )
+    def _doc_item_lists(self) -> tuple[Iterable[NodeItem], ...]:
+        """All item lists that can hold items with provenance (everything but `groups`).
 
-    def _clamp_provenance_bboxes_to_pages(self) -> None:
-        def clamp_prov(prov: ProvenanceItem) -> None:
-            page = self.pages.get(prov.page_no)
-            if page is not None:
-                self._clamp_provenance_bbox_to_page(prov=prov, page_size=page.size)
-
-        def clamp_table_cell_bboxes(table: TableItem) -> None:
-            page_nos = {prov.page_no for prov in table.prov}
-            if len(page_nos) != 1:
-                return
-            page_no = next(iter(page_nos))
-            page = self.pages.get(page_no)
-            if page is None:
-                return
-
-            for cell in table.data.table_cells:
-                if cell.bbox is not None:
-                    cell.bbox = self._clamp_bbox_to_page(
-                        bbox=cell.bbox,
-                        page_size=page.size,
-                        page_no=page_no,
-                        bbox_label="Table cell bbox",
-                    )
-
-        item_lists: tuple[Iterable[NodeItem], ...] = (
+        A new item list field must be added here (guarded by a test).
+        """
+        return (
             self.texts,
             self.pictures,
             self.tables,
@@ -339,17 +343,43 @@ class DoclingDocument(BaseModel):
             self.field_regions,
             self.field_items,
         )
-        for item_list in item_lists:
+
+    def _iter_page_bboxes(self) -> Iterator[tuple[int, BoundingBox, ProvenanceItem | TableCell]]:
+        """Yield `(page_no, bbox, holder)` for every bbox anchored on a page.
+
+        Single source of truth for code that must visit every page bbox of the
+        document: item provenances, table cell bboxes of single-page tables and
+        key-value/form graph cell provenances. `holder` is the object whose
+        `bbox` attribute holds the yielded bbox.
+        """
+        for item_list in self._doc_item_lists():
             for item in item_list:
                 if isinstance(item, DocItem):
                     for prov in item.prov:
-                        clamp_prov(prov)
+                        yield prov.page_no, prov.bbox, prov
                 if isinstance(item, TableItem):
-                    clamp_table_cell_bboxes(item)
+                    # cell bboxes belong to a page only for single-page tables
+                    page_nos = {prov.page_no for prov in item.prov}
+                    if len(page_nos) == 1:
+                        page_no = next(iter(page_nos))
+                        for cell in item.data.table_cells:
+                            if cell.bbox is not None:
+                                yield page_no, cell.bbox, cell
                 if isinstance(item, KeyValueItem | FormItem):
-                    for cell in item.graph.cells:
-                        if cell.prov is not None:
-                            clamp_prov(cell.prov)
+                    for graph_cell in item.graph.cells:
+                        if graph_cell.prov is not None:
+                            yield graph_cell.prov.page_no, graph_cell.prov.bbox, graph_cell.prov
+
+    def _clamp_provenance_bboxes_to_pages(self) -> None:
+        for page_no, bbox, holder in self._iter_page_bboxes():
+            page = self.pages.get(page_no)
+            if page is not None:
+                holder.bbox = self._clamp_bbox_to_page(
+                    bbox=bbox,
+                    page_size=page.size,
+                    page_no=page_no,
+                    bbox_label="Table cell bbox" if isinstance(holder, TableCell) else "Provenance bbox",
+                )
 
     @model_validator(mode="before")
     @classmethod
@@ -1529,7 +1559,19 @@ class DoclingDocument(BaseModel):
         parent: NodeItem | None = None,
         content_layer: ContentLayer | None = None,
     ) -> InlineGroup:
-        """add_inline_group."""
+        """Add an inline group, whose children are runs of one visual line of text.
+
+        Whitespace contract: each run carries its own significant whitespace and serializers
+        concatenate the runs faithfully, with no separator of their own. A producer that omits
+        the boundary whitespace gets merged words (``["H", "2", "O"]`` renders as ``H2O``), so
+        put the boundary in the run text: ``["Advanced Topics", " in ", "Machine Learning"]``.
+        Whitespace at the edge of a formatted run is fine -- the serializers move it outside the
+        emphasis markers and hyperlink.
+
+        Children of a text item are block structure: serializers keep a parent text item's own
+        text apart from this group (by a space or a block break). To put text flush against the
+        runs, make it a run of the group.
+        """
         _parent = parent or self.body
         cref = f"#/groups/{len(self.groups)}"
         group = InlineGroup(self_ref=cref, parent=_parent.get_ref())
@@ -3425,12 +3467,45 @@ class DoclingDocument(BaseModel):
         """num_pages."""
         return len(self.pages.values())
 
-    def validate_tree(self, root: NodeItem, raise_on_error: bool = False) -> bool:
-        """validate_tree."""
+    def validate_tree(
+        self,
+        root: NodeItem,
+        raise_on_error: bool = False,
+        _visited: set[str] | None = None,
+    ) -> bool:
+        """Validate that the subtree under `root` is a consistent tree.
+
+        Every child must point back to its parent and be reachable through exactly one
+        reference. The latter keeps the traversal linear, since a node listed more than
+        once would otherwise be walked once per reference (exponential for nested repeats).
+
+        Args:
+            root: The node whose subtree is validated.
+            raise_on_error: Raise a `ValueError` instead of returning `False`.
+            _visited: Internal. Refs of the nodes already reached in this traversal.
+
+        Returns:
+            True if the subtree is a valid tree, False otherwise.
+
+        Raises:
+            ValueError: If the subtree is invalid and `raise_on_error` is set.
+        """
         # TODO add check if heading levels conflict with hierarchy (e.g. level-1 heading with level-2 parent)
+        visited = _visited if _visited is not None else {root.self_ref}
         for child_ref in root.children:
+            if child_ref.cref in visited:
+                if raise_on_error:
+                    raise ValueError(
+                        f"Document hierarchy is inconsistent. {root.self_ref} references {child_ref.cref}, "
+                        "which is already reachable through another reference"
+                    )
+                return False
+            visited.add(child_ref.cref)
+
             child = child_ref.resolve(self)
-            if child.parent.resolve(self) != root or not self.validate_tree(child, raise_on_error=raise_on_error):
+            if child.parent.resolve(self) != root or not self.validate_tree(
+                child, raise_on_error=raise_on_error, _visited=visited
+            ):
                 if raise_on_error:
                     raise ValueError(
                         f"Document hierarchy is inconsistent. {root.self_ref} has child {child.self_ref} "
@@ -3440,9 +3515,16 @@ class DoclingDocument(BaseModel):
 
         if isinstance(root, TableItem):
             root_children_crefs = {child.cref for child in root.children}
+            seen_cell_crefs: set[str] = set()
             for cell in root.data.table_cells:
-                if isinstance(cell, RichTableCell) and (
-                    (par_ref := cell.ref.resolve(self).parent) is None
+                if not isinstance(cell, RichTableCell):
+                    continue
+                # a rich cell owns its subtree: sharing it between cells would multiply serialization work
+                is_shared = cell.ref.cref in seen_cell_crefs
+                seen_cell_crefs.add(cell.ref.cref)
+                if (
+                    is_shared
+                    or (par_ref := cell.ref.resolve(self).parent) is None
                     or par_ref.resolve(self) != root
                     or cell.ref.cref not in root_children_crefs
                 ):
@@ -3542,6 +3624,30 @@ class DoclingDocument(BaseModel):
                 if item.image is not None and item.image._pil is not None:
                     item.image._pil.close()
 
+    def load_local_images(self, base_dir: Path | None = None) -> None:
+        """Read all images referenced by a local path into memory.
+
+        Images of items and pages may reference a local file, either as a
+        ``file://`` URI or as a filesystem path. Since these paths come from the
+        document content, reading them is disabled by default (see
+        ``settings.allow_image_file_uri``). Calling this method is an explicit
+        opt-in for a trusted document: the images are read now and kept in memory,
+        so later exports do not access these paths again.
+
+        Args:
+            base_dir: Directory to resolve relative paths against; defaults to the
+                current working directory. Absolute paths are used as they are.
+
+        Raises:
+            ValueError: If a referenced path is not a regular file or exceeds
+                ``settings.max_image_decoded_size``.
+        """
+        items: list[FloatingItem] = [*self.pictures, *self.tables, *self.key_value_items, *self.form_items]
+        image_refs = [item.image for item in items if item.image is not None]
+        image_refs += [page.image for page in self.pages.values() if page.image is not None]
+        for image_ref in image_refs:
+            image_ref._load_local_image(base_dir=base_dir)
+
     def _list_images_on_disk(self) -> list[Path]:
         """List all images on disk."""
         result: list[Path] = []
@@ -3571,14 +3677,10 @@ class DoclingDocument(BaseModel):
 
         for ix, (item, level) in enumerate(result.iterate_items(with_groups=True)):
             if isinstance(item, PictureItem):
-                if item.image is not None:
-                    if isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "file":
-                        assert isinstance(item.image.uri.path, str)
-                        tmp_image = PILImage.open(str(unquote(item.image.uri.path)))
-                        item.image = ImageRef.from_pil(tmp_image, dpi=item.image.dpi)
-
-                    elif isinstance(item.image.uri, Path):
-                        tmp_image = PILImage.open(str(item.image.uri))
+                if item.image is not None and item.image._local_path() is not None:
+                    # go through pil_image so local reads honor the same settings gate
+                    tmp_image = item.image.pil_image
+                    if tmp_image is not None:
                         item.image = ImageRef.from_pil(tmp_image, dpi=item.image.dpi)
 
         return result
@@ -3614,7 +3716,7 @@ class DoclingDocument(BaseModel):
             (relative or absolute) for local paths.
         """
         buf = BytesIO()
-        img.save(buf, format="PNG")
+        _normalize_image_for_png(img).save(buf, format="PNG")
         loc_path.write_bytes(buf.getvalue())
 
         if uri_prefix is not None:
@@ -3781,11 +3883,15 @@ class DoclingDocument(BaseModel):
         )
 
     @classmethod
-    def load_from_json(cls, filename: str | Path) -> "DoclingDocument":
+    def load_from_json(cls, filename: str | Path, allow_local_images: bool = False) -> "DoclingDocument":
         """load_from_json.
 
         :param filename: The filename to load a saved DoclingDocument from a .json.
         :type filename: Path
+        :param allow_local_images: For trusted documents only: read images referenced
+            by a local path (relative to the file's directory) into memory, see
+            ``load_local_images``.
+        :type allow_local_images: bool
 
         :returns: The loaded DoclingDocument.
         :rtype: DoclingDocument
@@ -3793,7 +3899,10 @@ class DoclingDocument(BaseModel):
         """
         if isinstance(filename, str):
             filename = Path(filename)
-        return cls.model_validate_json(filename.read_text(encoding="utf-8"))
+        doc = cls.model_validate_json(filename.read_text(encoding="utf-8"))
+        if allow_local_images:
+            doc.load_local_images(base_dir=filename.parent)
+        return doc
 
     def save_as_yaml(
         self,
@@ -3826,11 +3935,14 @@ class DoclingDocument(BaseModel):
         filename.write_text(stream.getvalue(), encoding="utf-8")
 
     @classmethod
-    def load_from_yaml(cls, filename: str | Path) -> "DoclingDocument":
+    def load_from_yaml(cls, filename: str | Path, allow_local_images: bool = False) -> "DoclingDocument":
         """load_from_yaml.
 
         Args:
             filename: The filename to load a YAML-serialized DoclingDocument from.
+            allow_local_images: For trusted documents only: read images referenced
+                by a local path (relative to the file's directory) into memory, see
+                ``load_local_images``.
 
         Returns:
             DoclingDocument: the loaded DoclingDocument
@@ -3838,7 +3950,10 @@ class DoclingDocument(BaseModel):
         if isinstance(filename, str):
             filename = Path(filename)
         data = yaml.load(filename.read_text(encoding="utf-8"), Loader=yaml.SafeLoader)
-        return DoclingDocument.model_validate(data)
+        doc = DoclingDocument.model_validate(data)
+        if allow_local_images:
+            doc.load_local_images(base_dir=filename.parent)
+        return doc
 
     def export_to_dict(
         self,
@@ -3885,6 +4000,7 @@ class DoclingDocument(BaseModel):
         use_legacy_annotations: bool | None = None,  # deprecated
         include_picture_classification: bool = True,
         caption_placement: CaptionPlacement = CaptionPlacement.STANDARD,
+        formatting_fallback_mode: FormattingFallbackMode = FormattingFallbackMode.NONE,
     ):
         """Save to markdown."""
         if isinstance(filename, str):
@@ -3919,6 +4035,7 @@ class DoclingDocument(BaseModel):
             mark_meta=mark_meta,
             include_picture_classification=include_picture_classification,
             caption_placement=caption_placement,
+            formatting_fallback_mode=formatting_fallback_mode,
         )
 
         filename.write_text(md_out, encoding="utf-8")
@@ -3953,6 +4070,7 @@ class DoclingDocument(BaseModel):
         mark_meta: bool = False,
         include_picture_classification: bool = True,
         caption_placement: CaptionPlacement = CaptionPlacement.STANDARD,
+        formatting_fallback_mode: FormattingFallbackMode = FormattingFallbackMode.NONE,
     ) -> str:
         r"""Serialize to Markdown.
 
@@ -4034,6 +4152,10 @@ class DoclingDocument(BaseModel):
             else before, falling back to "standard" when positions are unavailable.
             (Default value = CaptionPlacement.STANDARD).
         :type caption_placement: CaptionPlacement = CaptionPlacement.STANDARD
+        :param formatting_fallback_mode: How to render formatting that has no Markdown
+            syntax (underline, subscript, superscript): drop it (NONE) or use HTML tags
+            (HTML). (Default value = FormattingFallbackMode.NONE).
+        :type formatting_fallback_mode: FormattingFallbackMode = FormattingFallbackMode.NONE
         """
         from docling_core.transforms.serializer.markdown import (
             MarkdownDocSerializer,
@@ -4087,6 +4209,7 @@ class DoclingDocument(BaseModel):
                 traverse_pictures=traverse_pictures,
                 include_picture_classification=include_picture_classification,
                 caption_placement=caption_placement,
+                formatting_fallback_mode=formatting_fallback_mode,
             ),
         )
         ser_res = serializer.serialize()
@@ -4405,7 +4528,12 @@ class DoclingDocument(BaseModel):
     def load_from_doctags(  # noqa: C901
         doctag_document: DocTagsDocument, document_name: str = "Document"
     ) -> "DoclingDocument":
-        r"""Load Docling document from lists of DocTags and Images."""
+        r"""Load Docling document from lists of DocTags and Images.
+
+        Limitation: DocTags stores each ``<inline>`` run trimmed, so the boundary whitespace that
+        the inline whitespace contract expects in the runs (see ``add_inline_group``) is not in the
+        source and is not restored. Serializing such an inline group joins its runs without spaces.
+        """
         # Maps the recognized tag to a Docling label.
         # Code items will be given DocItemLabel.CODE
         tag_to_doclabel = {
@@ -4471,6 +4599,39 @@ class DoclingDocument(BaseModel):
                 caption_item = None
                 bbox = None
             return caption_item, bbox
+
+        def extract_footnotes(text_chunk: str) -> tuple[str, list[str]]:
+            """Separate nested notes before parsing their owner's text and location."""
+            pattern = r"<footnote>(.*?)</footnote>"
+            notes = re.findall(pattern, text_chunk, flags=re.DOTALL)
+            return re.sub(pattern, "", text_chunk, flags=re.DOTALL), notes
+
+        def add_footnotes(
+            item: FloatingItem,
+            notes: list[str],
+            pg_width: float,
+            pg_height: float,
+            page_no: int,
+        ) -> None:
+            """Attach parsed notes in order, retaining their own provenance."""
+            for content in notes:
+                text = extract_inner_text(content)
+                bbox = extract_bounding_box(content)
+                note = doc.add_text(
+                    label=DocItemLabel.FOOTNOTE,
+                    text=text,
+                    parent=item,
+                    prov=(
+                        ProvenanceItem(
+                            bbox=bbox.resize_by_scale(pg_width, pg_height),
+                            charspan=(0, len(text)),
+                            page_no=page_no,
+                        )
+                        if bbox
+                        else None
+                    ),
+                )
+                item.footnotes.append(note.get_ref())
 
         def extract_picture_classification(text_chunk: str):
             """Extract any picture classification label from the chunk."""
@@ -4649,6 +4810,11 @@ class DoclingDocument(BaseModel):
             doc: DoclingDocument,
             parent: NodeItem | None,
         ):
+            code_footnotes: list[str] = []
+            if doc_label == DocItemLabel.CODE:
+                full_chunk, code_footnotes = extract_footnotes(full_chunk)
+                if code_footnotes and parent is None:
+                    bbox = extract_bounding_box(full_chunk)
             # For everything else, treat as text
             text_content = extract_inner_text(full_chunk)
             element_prov = (
@@ -4684,13 +4850,14 @@ class DoclingDocument(BaseModel):
                         code_language = CodeLanguageLabel(m.group(1))
                     except ValueError:
                         pass
-                doc.add_code(
+                code_item = doc.add_code(
                     text=text_content,
                     code_language=code_language,
                     prov=element_prov,
                     parent=parent,
                     content_layer=content_layer,
                 )
+                add_footnotes(code_item, code_footnotes, pg_width, pg_height, page_no)
 
             else:
                 doc.add_text(
@@ -4755,10 +4922,16 @@ class DoclingDocument(BaseModel):
                 full_chunk = match.group(0)
                 tag_name = match.group("tag")
 
+                footnotes: list[str] = []
+                floating_item: FloatingItem | None = None
+                if tag_name in (DocumentToken.OTSL.value, DocItemLabel.PICTURE, DocItemLabel.CHART):
+                    full_chunk, footnotes = extract_footnotes(full_chunk)
+
                 bbox = extract_bounding_box(full_chunk)  # Extracts first bbox
                 if not match.group("closed"):
                     # no closing tag; only the existence of the item is recovered
                     full_chunk = f"<{tag_name}></{tag_name}>"
+                    footnotes = []
 
                 doc_label = tag_to_doclabel.get(tag_name, DocItemLabel.TEXT)
 
@@ -4779,11 +4952,13 @@ class DoclingDocument(BaseModel):
                             charspan=(0, 0),
                             page_no=page_no,
                         )
-                        doc.add_table(data=table_data, prov=prov, caption=caption)
+                        floating_item = doc.add_table(data=table_data, prov=prov, caption=caption)
                     else:
-                        doc.add_table(data=table_data, caption=caption)
+                        floating_item = doc.add_table(data=table_data, caption=caption)
 
                 elif tag_name == GroupLabel.INLINE:
+                    # DocTags runs are trimmed (by the serializer and by extract_inner_text), so the
+                    # source has lost their boundary whitespace; it is not guessed back here.
                     inline_group = doc.add_inline_group()
                     content = match.group("content")
                     common_bbox = extract_bounding_box(content)
@@ -4830,6 +5005,7 @@ class DoclingDocument(BaseModel):
                                     )
                                 ),
                             )
+                            floating_item = pic
                             # If there is a caption to an image, add it as well
                             if caption is not None and caption_bbox is not None:
                                 caption.prov.append(
@@ -4871,6 +5047,7 @@ class DoclingDocument(BaseModel):
                                 parent=None,
                                 prov=ProvenanceItem(bbox=bbox, charspan=(0, 0), page_no=page_no),
                             )
+                            floating_item = pic
                             # If there is a caption to an image, add it as well
                             if caption is not None and caption_bbox is not None:
                                 caption.prov.append(
@@ -4894,15 +5071,19 @@ class DoclingDocument(BaseModel):
                                     ]
                                 )
                                 # legacy annotations:
-                                pic.annotations.append(
-                                    PictureClassificationData(
-                                        provenance="load_from_doctags",
-                                        predicted_classes=[
-                                            # chart_type
-                                            PictureClassificationClass(class_name=image_classification, confidence=1.0)
-                                        ],
+                                with warnings.catch_warnings():
+                                    warnings.simplefilter("ignore", category=DeprecationWarning)
+                                    pic.annotations.append(
+                                        PictureClassificationData(
+                                            provenance="load_from_doctags",
+                                            predicted_classes=[
+                                                # chart_type
+                                                PictureClassificationClass(
+                                                    class_name=image_classification, confidence=1.0
+                                                )
+                                            ],
+                                        )
                                     )
-                                )
                             if table_data is not None:
                                 if pic.meta is None:
                                     pic.meta = PictureMeta()
@@ -4910,7 +5091,12 @@ class DoclingDocument(BaseModel):
                                 # legacy annotations:
                                 # Add chart data as PictureTabularChartData
                                 pd = PictureTabularChartData(chart_data=table_data, title=pic_title)
-                                pic.annotations.append(pd)
+                                with warnings.catch_warnings():
+                                    warnings.simplefilter("ignore", category=DeprecationWarning)
+                                    pic.annotations.append(pd)
+
+                    if floating_item is None and footnotes:
+                        floating_item = doc.add_picture()
 
                 elif tag_name == DocItemLabel.KEY_VALUE_REGION:
                     key_value_data, kv_item_prov = parse_key_value_item(full_chunk, image)
@@ -4967,6 +5153,8 @@ class DoclingDocument(BaseModel):
                         doc=doc,
                         parent=None,
                     )
+                if floating_item is not None:
+                    add_footnotes(floating_item, footnotes, pg_width, pg_height, page_no)
         return doc
 
     @deprecated("Use save_as_doctags instead.")
@@ -5088,6 +5276,8 @@ class DoclingDocument(BaseModel):
         *,
         add_named_groups: bool = False,
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        xsize: int | None = None,
+        ysize: int | None = None,
     ) -> str:
         """Export to DocLang.
 
@@ -5098,14 +5288,24 @@ class DoclingDocument(BaseModel):
             image_mode: How picture images are included: ``PLACEHOLDER`` emits no
                 picture source, ``REFERENCED`` the pictures' existing image URIs and
                 ``EMBEDDED`` the images as data URIs.
+            xsize: Width of the location coordinate grid (default: DocLang default resolution).
+            ysize: Height of the location coordinate grid (default: DocLang default resolution).
         """
         from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 
         serializer = DocLangDocSerializer(
             doc=self,
-            params=DocLangParams(add_named_groups=add_named_groups, image_mode=image_mode),
+            params=DocLangParams(
+                add_named_groups=add_named_groups,
+                image_mode=image_mode,
+                **self._doclang_resolution_kwargs(xsize=xsize, ysize=ysize),
+            ),
         )
         return serializer.serialize().text
+
+    @staticmethod
+    def _doclang_resolution_kwargs(*, xsize: int | None, ysize: int | None) -> dict[str, int]:
+        return {k: v for k, v in (("xsize", xsize), ("ysize", ysize)) if v is not None}
 
     def save_as_doclang(
         self,
@@ -5113,11 +5313,13 @@ class DoclingDocument(BaseModel):
         *,
         add_named_groups: bool = False,
         image_mode: ImageRefMode = ImageRefMode.PLACEHOLDER,
+        xsize: int | None = None,
+        ysize: int | None = None,
     ) -> None:
         """Save the document as DocLang (see ``export_to_doclang`` for the options)."""
         if isinstance(filename, str):
             filename = Path(filename)
-        out = self.export_to_doclang(add_named_groups=add_named_groups, image_mode=image_mode)
+        out = self.export_to_doclang(add_named_groups=add_named_groups, image_mode=image_mode, xsize=xsize, ysize=ysize)
         filename.write_text(f"{out}\n", encoding="utf-8")
 
     def save_as_doclang_archive(
@@ -5129,6 +5331,8 @@ class DoclingDocument(BaseModel):
         add_named_groups: bool = False,
         include_namespace: bool = False,
         image_mode: ImageRefMode = ImageRefMode.REFERENCED,
+        xsize: int | None = None,
+        ysize: int | None = None,
     ) -> None:
         """Save the document as a DocLang OPC archive (``.dclx``).
 
@@ -5143,6 +5347,8 @@ class DoclingDocument(BaseModel):
 
         ``add_named_groups`` emits plain ``GroupItem``s as ``<group name="...">``
         elements so the grouping survives a round trip.
+
+        ``xsize`` / ``ysize`` set the location coordinate grid (default: DocLang default resolution).
 
         ``include_namespace`` declares the DocLang namespace on the root element. It is
         required for ``validate`` to pass, as the schema only declares the namespaced root.
@@ -5175,6 +5381,7 @@ class DoclingDocument(BaseModel):
                     image_mode=image_mode,
                     add_named_groups=add_named_groups,
                     include_namespace=include_namespace,
+                    **self._doclang_resolution_kwargs(xsize=xsize, ysize=ysize),
                 ),
             )
             document_path = staging_root / "document.dclg.xml"
@@ -5195,7 +5402,7 @@ class DoclingDocument(BaseModel):
                     continue
                 page_path = pages_dir / f"{p_no}.png"
                 page_path.parent.mkdir(parents=True, exist_ok=True)
-                img.save(page_path)
+                _normalize_image_for_png(img).save(page_path)
                 pages[p_no] = page_path
             if pages:
                 pack_kwargs["pages"] = pages
@@ -5241,6 +5448,11 @@ class DoclingDocument(BaseModel):
             ``document.xml`` is additionally capped by ``settings.max_doclang_xml_bytes`` before
             parsing. Archive ``assets/`` and ``pages/`` images are capped by
             ``settings.max_image_decoded_size`` before Pillow opens them.
+
+            Unlike JSON, DocLang carries no schema version, so archives written by docling-core
+            before schema 1.11.0 (the inline whitespace contract) are loaded as current: their
+            inline runs were stored without boundary whitespace and now join without a separator
+            (``Normal**bold**tail``). Re-convert the source, or keep JSON for long-term storage.
         """
         from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 
@@ -5310,12 +5522,15 @@ class DoclingDocument(BaseModel):
             with PILImage.open(resolved) as pil:
                 pil_copy = pil.copy()
             mimetype = mimetypes.guess_type(page_file.name)[0] or "image/png"
-            doc.pages[page_no].image = ImageRef(
+            page_image = ImageRef(
                 mimetype=mimetype,
                 dpi=72,
                 size=Size(width=pil_copy.width, height=pil_copy.height),
                 uri=resolved,
             )
+            # cache the validated image: re-reading the local path later is gated by settings
+            page_image._pil = pil_copy
+            doc.pages[page_no].image = page_image
 
     def _export_to_indented_text(
         self,
@@ -5418,6 +5633,42 @@ class DoclingDocument(BaseModel):
         self.pages[page_no] = pitem
         return pitem
 
+    def get_min_page_sizes(self) -> dict[int, Size]:
+        """Get the smallest page size that contains all content, for every page with content.
+
+        The size of a page is the largest horizontal and vertical coordinate
+        over all bounding boxes anchored on it: item provenances, table cell
+        bboxes and key-value/form graph cell provenances, in every content
+        layer. Coordinates are measured from ``0``, as the page-bounds
+        validation does, so with these sizes validation does not clamp any
+        content bbox from above. Negative coordinates are not accounted for and
+        are still clamped to ``0``.
+
+        Returns:
+            A mapping from 1-based page number to minimum page size, for each
+            page that has at least one bounding box.
+        """
+        sizes: dict[int, Size] = {}
+        for page_no, bbox, _ in self._iter_page_bboxes():
+            size = sizes.setdefault(page_no, Size(width=0.0, height=0.0))
+            size.width = max(size.width, bbox.l, bbox.r)
+            size.height = max(size.height, bbox.t, bbox.b)
+        return sizes
+
+    def get_min_page_size(self, page_no: int) -> Size:
+        """Get the smallest page size that contains all content of a page.
+
+        See `get_min_page_sizes`, which computes all pages in one pass.
+
+        Args:
+            page_no: 1-based page number to measure.
+
+        Returns:
+            The minimum page size, ``Size(width=0, height=0)`` if the page has
+            no bounding boxes.
+        """
+        return self.get_min_page_sizes().get(page_no, Size(width=0.0, height=0.0))
+
     def get_visualization(
         self,
         show_label: bool = True,
@@ -5480,6 +5731,141 @@ class DoclingDocument(BaseModel):
         images = visualizer_obj.get_visualization(doc=self)
         return images
 
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_legacy_inline_separators(cls, data: Any) -> Any:
+        """Reproduce the legacy inline separator for documents written before the contract.
+
+        Serializers used to join inline runs with a hard ``" "``, so producers of that era did
+        not put boundary whitespace in the run text. Now that the join is faithful, those saved
+        documents would render ``Normalitalicbold``. Re-inject one separator at each boundary
+        the old serializer inserted, preserving the previous *visible* output -- including its
+        extra-space bugs (``["H", "2", "O"]`` stays ``H 2 O``).
+
+        This is compatibility normalization, not semantic repair: the old document does not
+        contain enough information to recover the real whitespace. It must run in ``mode="before"``
+        because ``check_version_is_compatible`` rewrites ``version`` to ``CURRENT_VERSION`` and
+        destroys the evidence. Versionless input is left alone rather than guessed at.
+        """
+        if not isinstance(data, dict):
+            return data
+        raw_version = data.get("version")
+        if not isinstance(raw_version, str) or not _predates_inline_whitespace_contract(raw_version):
+            return data
+
+        # Work on a copy: the caller owns the dict it passed in, and mutating it in place would
+        # make a second `model_validate` of the same value migrate again, compounding separators.
+        data = copy.deepcopy(data)
+        texts = data.get("texts")
+        groups = data.get("groups")
+        if not isinstance(texts, list) or not isinstance(groups, list):
+            return data
+
+        def resolve(child: Any) -> dict | None:
+            """Return the text or group dict an inline child reference points to, else None."""
+            ref = (child.get("$ref") or child.get("cref")) if isinstance(child, dict) else None
+            for prefix, items in (("#/texts/", texts), ("#/groups/", groups)):
+                if isinstance(ref, str) and ref.startswith(prefix):
+                    try:
+                        item = items[int(ref.removeprefix(prefix))]
+                    except (ValueError, IndexError):
+                        return None
+                    return item if isinstance(item, dict) else None
+            return None
+
+        def renders_text(item: dict, seen: set[int]) -> bool:
+            """Whether the item has text, or is an empty host or nested group whose subtree has text."""
+            if id(item) in seen:  # a reference cycle in malformed input
+                return False
+            seen.add(id(item))
+            if isinstance(item.get("text"), str) and item["text"]:
+                return True
+            children = item.get("children")
+            return isinstance(children, list) and any(
+                (sub := resolve(child)) is not None and renders_text(sub, seen) for child in children
+            )
+
+        # Code and formula runs are wrapped in delimiters (`` ` ``, ``$``) by the serializers, so a
+        # separator appended to their text would land *inside* the delimiter -- the same defect as
+        # `**bold **`. Put it on the neighbouring plain run instead.
+        delimited = {DocItemLabel.CODE.value, DocItemLabel.FORMULA.value}
+
+        def carries_separator(run: dict) -> bool:
+            """Only a plain run with its own text: an empty host's text must stay empty to render its group."""
+            return isinstance(run.get("text"), str) and bool(run["text"]) and run.get("label") not in delimited
+
+        migrated = False
+        for group in groups:
+            if not isinstance(group, dict) or group.get("label") != GroupLabel.INLINE.value:
+                continue
+            children = group.get("children")
+            if not isinstance(children, list):
+                continue
+            # shortcut: a child is a run when it or its subtree has text (an empty formula host
+            # holding an inline group, a nested inline group). A picture, table or empty formula also
+            # got the old separator, and HTML renders the empty formula, but whether such a child
+            # rendered text depends on the serializer. Widen this if such a document shows up.
+            runs = [
+                (idx, run) for idx, child in enumerate(children) if (run := resolve(child)) and renders_text(run, set())
+            ]
+            # Boundaries where the separator fits in neither neighbour; filled in afterwards so
+            # the indices collected here stay valid.
+            standalone: list[tuple[int, list]] = []
+            for (idx, run), (nxt_idx, nxt) in itertools.pairwise(runs):
+                # An empty plain run between them is the separator the 1.11 -> 1.10 projector
+                # stripped; refilling it keeps repeated projection and migration from adding runs.
+                empty = next(
+                    (
+                        between
+                        for child in children[idx + 1 : nxt_idx]
+                        if (between := resolve(child)) is not None
+                        and between.get("text") == ""
+                        and between.get("label") == DocItemLabel.TEXT.value
+                        and not between.get("children")
+                    ),
+                    None,
+                )
+                if carries_separator(run):
+                    run["text"] += " "
+                elif carries_separator(nxt):
+                    nxt["text"] = " " + nxt["text"]
+                elif empty is not None:
+                    empty["text"] = " "
+                else:
+                    # Neither side can carry it: the separator would corrupt `` `a``b` `` or
+                    # ``$a$$b$``, so it becomes a plain run of its own between them. Page filters
+                    # keep only located items, so it takes the left run's location when both
+                    # runs are on one page: it then survives exactly when both of them do.
+                    left = (run.get("prov") or [None])[-1]
+                    right = (nxt.get("prov") or [None])[0]
+                    same_page = (
+                        isinstance(left, dict)
+                        and isinstance(right, dict)
+                        and left.get("page_no") == right.get("page_no")
+                    )
+                    standalone.append((nxt_idx, [{**left, "charspan": [0, 1]}] if same_page else []))
+                migrated = True
+
+            for shift, (insert_at, prov) in enumerate(standalone):
+                ref = f"#/texts/{len(texts)}"
+                texts.append(
+                    {
+                        "self_ref": ref,
+                        "parent": {"$ref": group.get("self_ref")},
+                        "label": DocItemLabel.TEXT.value,
+                        "prov": prov,
+                        "orig": " ",
+                        "text": " ",
+                        "children": [],
+                        "content_layer": group.get("content_layer", ContentLayer.BODY.value),
+                    }
+                )
+                children.insert(insert_at + shift, {"$ref": ref})
+
+        if migrated:
+            _warn_legacy_inline_separators(raw_version)
+        return data
+
     @field_validator("version")
     @classmethod
     def check_version_is_compatible(cls, v: str) -> str:
@@ -5519,6 +5905,15 @@ class DoclingDocument(BaseModel):
                     raise ValueError(f"Unknown element encountered: {item}")
         return self
 
+    @model_validator(mode="after")
+    def _validate_total_table_cells(self) -> Self:
+        # all tables are counted, not only those in the tree: serialization dumps every grid in `tables`
+        limit = settings.max_total_table_cells
+        total = sum(max(t.data.num_rows, 0) * max(t.data.num_cols, 0) for t in self.tables)
+        if total > limit:
+            raise ValueError(f"Document tables declare {total} cells in total, exceeding the limit of {limit}")
+        return self
+
     def _normalize_table_children_from_rich_cells(self):
         """Repair missing table child links for already-parented rich table cells."""
         for table in self.tables:
@@ -5544,6 +5939,15 @@ class DoclingDocument(BaseModel):
 
         self._clamp_provenance_bboxes_to_pages()
 
+        return self
+
+    @model_validator(mode="after")
+    def _validate_field_items(self) -> Self:
+        """A field item has at most one key (it can have several values)."""
+        for item in self.field_items:
+            num_keys = sum(1 for ref in item.children if ref.resolve(self).label == DocItemLabel.FIELD_KEY)
+            if num_keys > 1:
+                raise ValueError(f"Field item {item.self_ref} has {num_keys} keys, at most one is allowed")
         return self
 
     @model_validator(mode="after")

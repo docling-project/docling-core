@@ -42,6 +42,14 @@ class TextItem(DocItem):
     formatting: Formatting | None = None
     hyperlink: AnyUrl | Path | None = Field(union_mode="left_to_right", default=None)
 
+    def _get_plain_text(self, doc: "DoclingDocument") -> str:
+        """Read the item's own text and its descendant text without document-wide scans."""
+        if not self.children:
+            return self.text
+        from docling_core.transforms.serializer.markdown import _collect_subtree_text
+
+        return _collect_subtree_text(item=self, doc=doc, excluded_refs=set())
+
     @deprecated("Use export_to_doctags() instead.")
     def export_to_document_tokens(self, *args, **kwargs):
         r"""Export to DocTags format."""

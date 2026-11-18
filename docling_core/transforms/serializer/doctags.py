@@ -102,6 +102,7 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
         item: TextItem,
         doc_serializer: BaseDocSerializer,
         doc: DoclingDocument,
+        is_inline_scope: bool = False,
         visited: set[str] | None = None,
         **kwargs: Any,
     ) -> SerializationResult:
@@ -163,10 +164,16 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
             if cap_text:
                 parts.append(cap_text)
 
+        footnote_res = create_ser_result()
+        if isinstance(item, FloatingItem):
+            footnote_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+            if footnote_res.text:
+                parts.append(footnote_res.text)
+
         text_res = "".join(parts)
         if wrap_tag is not None:
             text_res = _wrap(text=text_res, wrap_tag=wrap_tag)
-        return create_ser_result(text=text_res, span_source=item)
+        return create_ser_result(text=text_res, span_source=[create_ser_result(span_source=item), footnote_res])
 
 
 class DocTagsTableSerializer(BaseTableSerializer):
@@ -216,6 +223,10 @@ class DocTagsTableSerializer(BaseTableSerializer):
             cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
             if cap_res.text:
                 res_parts.append(cap_res)
+
+        footnote_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+        if footnote_res.text:
+            res_parts.append(footnote_res)
 
         text_res = "".join([r.text for r in res_parts])
         if text_res:
@@ -317,6 +328,10 @@ class DocTagsPictureSerializer(BasePictureSerializer):
             cap_res = doc_serializer.serialize_captions(item=item, **kwargs)
             if cap_res.text:
                 res_parts.append(cap_res)
+
+        footnote_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
+        if footnote_res.text:
+            res_parts.append(footnote_res)
 
         text_res = "".join([r.text for r in res_parts])
         if text_res:
@@ -633,6 +648,42 @@ class DocTagsDocSerializer(DocSerializer):
         if text_res:
             text_res = _wrap(text=text_res, wrap_tag=DocumentToken.CAPTION.value)
         return create_ser_result(text=text_res, span_source=results)
+
+    @override
+    def serialize_footnotes(self, item: FloatingItem, **kwargs: Any) -> SerializationResult:
+        """Serialize each note with its own footnote tag and optional location."""
+        params = self.params.merge_with_patch(patch=kwargs)
+        results: list[SerializationResult] = []
+        if DocItemLabel.FOOTNOTE in params.labels:
+            excluded_refs = self.get_excluded_refs(**kwargs)
+            for ref in item.footnotes:
+                footnote = ref.resolve(self.doc)
+                if (
+                    not isinstance(footnote, TextItem)
+                    or footnote.content_layer not in params.layers
+                    or footnote.self_ref in excluded_refs
+                ):
+                    continue
+                parts: list[str] = []
+                if params.add_location:
+                    parts.append(
+                        footnote.get_location_tokens(
+                            doc=self.doc,
+                            xsize=params.xsize,
+                            ysize=params.ysize,
+                            self_closing=params.do_self_closing,
+                        )
+                    )
+                if params.add_content:
+                    parts.append(self.post_process(text=footnote.text, **kwargs))
+                text = "".join(parts)
+                if text:
+                    results.append(
+                        create_ser_result(
+                            text=_wrap(text=text, wrap_tag=DocumentToken.FOOTNOTE.value), span_source=footnote
+                        )
+                    )
+        return create_ser_result(text="".join(r.text for r in results), span_source=results)
 
     @override
     def requires_page_break(self):
