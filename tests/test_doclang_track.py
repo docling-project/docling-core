@@ -389,3 +389,14 @@ def test_voice_is_not_written_without_its_text():
     text = DocLangDocSerializer(doc=doc, params=DocLangParams(content_types=set())).serialize().text
     assert "<voice>" not in text
     assert "<seconds" not in text
+
+
+def test_page_filter_keeps_the_cues_of_a_track_on_the_page():
+    doc = DoclingDocument(name="doc")
+    for page_no in (1, 2):
+        doc.add_page(page_no=page_no, size=Size(width=10, height=10))
+    _track_with_cue(doc, prov=ProvenanceItem(page_no=1, bbox=BoundingBox(l=0, t=0, r=1, b=1), charspan=(0, 0)))
+    assert doc.export_to_markdown(page_no=1) == "cue"
+    assert doc.export_to_markdown(page_no=2) == ""
+    assert [item.text for item, _ in doc.iterate_items(page_no=1) if isinstance(item, TextItem)] == ["cue"]
+    assert "cue" in DocLangDocSerializer(doc=doc, params=DocLangParams(pages={1})).serialize().text

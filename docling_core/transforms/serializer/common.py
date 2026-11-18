@@ -452,6 +452,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         params_json = params.model_dump_json()
         refs = self._excluded_refs_cache.get(params_json)
         if refs is None:
+            track_pages = self._track_pages() if params.pages is not None else {}
             refs = {
                 item.self_ref
                 for ix, (item, _) in enumerate(
@@ -470,7 +471,8 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                             or item.content_layer not in params.layers
                             or (
                                 params.pages is not None
-                                and ((not item.prov) or item.prov[0].page_no not in params.pages)
+                                and (item.prov[0].page_no if item.prov else track_pages.get(item.self_ref))
+                                not in params.pages
                             )
                         )
                     )
@@ -494,6 +496,19 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                             )
             self._excluded_refs_cache[params_json] = refs
         return refs
+
+    def _track_pages(self) -> dict[str, int]:
+        """The page of each item inside a located track: cues have no location of their own."""
+        pages: dict[str, int] = {}
+        for track in self.doc.tracks:
+            if not track.prov:
+                continue
+            for node, _ in self.doc.iterate_items(
+                root=track, with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
+            ):
+                if node is not track:
+                    pages.setdefault(node.self_ref, track.prov[0].page_no)
+        return pages
 
     @abstractmethod
     def serialize_doc(

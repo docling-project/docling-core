@@ -3675,14 +3675,12 @@ class DoclingDocument(BaseModel):
         # Yield non-group items or group items when with_groups=True
 
         # Combine conditions to have a single yield point
-        should_yield = (
-            (not isinstance(root, GroupItem) or with_groups)
-            and (
-                not isinstance(root, DocItem)
-                or (page_nrs is None or any(prov.page_no in page_nrs for prov in root.prov))
-            )
-            and root.content_layer in my_layers
+        on_page = (
+            not isinstance(root, DocItem) or page_nrs is None or any(prov.page_no in page_nrs for prov in root.prov)
         )
+        should_yield = (not isinstance(root, GroupItem) or with_groups) and on_page and root.content_layer in my_layers
+        # the cues of a track have no location of their own: they are on the pages of the track
+        child_page_nrs = None if isinstance(root, TrackItem) and on_page else page_nrs
 
         if should_yield:
             yield root, my_stack
@@ -3710,7 +3708,7 @@ class DoclingDocument(BaseModel):
                     child,
                     with_groups=with_groups,
                     traverse_pictures=traverse_pictures,
-                    page_nrs=page_nrs,
+                    page_nrs=child_page_nrs,
                     _stack=my_stack,
                     included_content_layers=my_layers,
                 )
