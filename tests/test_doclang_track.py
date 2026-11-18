@@ -354,3 +354,12 @@ def test_webvtt_documents_export_to_one_valid_track(example: int):
     validate_dclg_xml(xml)
     assert xml.count("<track>") == 1
     assert xml.count("<bdiv/>") == len({(s.start_time, s.end_time) for t in doc.texts for s in t.source})
+
+
+def test_cues_take_the_layer_of_their_track():
+    doc = DocLangDocDeserializer().deserialize_str(
+        '<doclang version="0.9"><track><layer value="furniture"/><bdiv/><seconds value="0"/>hi</track></doclang>'
+    )
+    assert doc.tracks[0].content_layer == ContentLayer.FURNITURE
+    assert doc.texts[0].content_layer == ContentLayer.FURNITURE
+    assert doc.export_to_markdown() == ""

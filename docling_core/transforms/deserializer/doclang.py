@@ -1922,6 +1922,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     label=DocItemLabel.TEXT,
                     text=text,
                     parent=track,
+                    content_layer=track.content_layer,
                     source=TrackSource(start_time=start / 1000, end_time=end / 1000, voice=voice),
                 )
                 self._source_recorder.bind_item(bound, item)
@@ -1937,7 +1938,7 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                     parent=track,
                     image=self._track_media_image(frame_el),
                     prov=(prov_list[0] if prov_list else None),
-                    content_layer=self._extract_layer(el=frame_el),
+                    content_layer=self._extract_layer(el=frame_el) or track.content_layer,
                     # a frame is the still at the start of its block
                     source=TrackSource(start_time=start / 1000, end_time=start / 1000),
                 )
