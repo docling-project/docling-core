@@ -3718,7 +3718,7 @@ class DoclingDocument(BaseModel):
     def _clear_picture_pil_cache(self):
         """Clear cache storage of all images."""
         for item, level in self.iterate_items(with_groups=False):
-            if isinstance(item, PictureItem):
+            if isinstance(item, PictureItem | TrackItem):
                 if item.image is not None and item.image._pil is not None:
                     item.image._pil.close()
 
@@ -3757,7 +3757,7 @@ class DoclingDocument(BaseModel):
         result: list[Path] = []
 
         for item, level in self.iterate_items(with_groups=False):
-            if isinstance(item, PictureItem):
+            if isinstance(item, PictureItem | TrackItem):
                 if item.image is not None:
                     if (
                         isinstance(item.image.uri, AnyUrl)
