@@ -2175,6 +2175,7 @@ def _serialize_track_cues(
     excluded = doc_serializer.get_excluded_refs(**kwargs)
     visited: set[str] = kwargs.get("visited") or set()
     cues: list[tuple[int, int, _TrackTurn | PictureItem]] = []
+    add_text = ContentType.TEXT_OTHER in params.content_types
     for item in items:
         if item.self_ref in excluded:
             continue
@@ -2193,14 +2194,13 @@ def _serialize_track_cues(
             )
         elif isinstance(item, PictureItem) and (source := _track_source(item)):
             cues.append((round(source.start_time * 1000), round(source.end_time * 1000), item))
-        else:
+        elif add_text:  # without text, a turn and its voice are left out
             cues.extend(
                 (round(turn.source.start_time * 1000), round(turn.source.end_time * 1000), turn)
                 for turn in _track_turns(item, doc)
             )
 
     body: list[str] = []
-    add_text = ContentType.TEXT_OTHER in params.content_types
     for block in _track_cue_blocks(cues):
         body.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.BDIV))
         body.append(_create_timestamp_tokens(msecs=block.start))
@@ -2220,8 +2220,7 @@ def _serialize_track_cues(
             elif index > 0:
                 # an empty voice ends the previous turn
                 body.append(_wrap(text="", wrap_tag=DocLangToken.VOICE.value))
-            if add_text:
-                body.append(_escape_text(turn.text, params))
+            body.append(_escape_text(turn.text, params))
     return "".join(body)
 
 

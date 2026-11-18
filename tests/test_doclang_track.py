@@ -356,6 +356,14 @@ def test_webvtt_documents_export_to_one_valid_track(example: int):
     assert xml.count("<bdiv/>") == len({(s.start_time, s.end_time) for t in doc.texts for s in t.source})
 
 
+def _track_with_cue(doc: DoclingDocument, **track_kwargs) -> TrackItem:
+    track = doc.add_track(**track_kwargs)
+    doc.add_text(
+        label=DocItemLabel.TEXT, text="cue", parent=track, source=TrackSource(start_time=1, end_time=2, voice="A")
+    )
+    return track
+
+
 def test_cues_take_the_layer_of_their_track():
     doc = DocLangDocDeserializer().deserialize_str(
         '<doclang version="0.9"><track><layer value="furniture"/><bdiv/><seconds value="0"/>hi</track></doclang>'
@@ -373,3 +381,11 @@ def test_invalid_timestamp_skips_only_its_cue_block(value):
             '<bdiv/><seconds value="2"/>good</track></doclang>'
         )
     assert [text.text for text in doc.texts] == ["good"]
+
+
+def test_voice_is_not_written_without_its_text():
+    doc = DoclingDocument(name="doc")
+    _track_with_cue(doc)
+    text = DocLangDocSerializer(doc=doc, params=DocLangParams(content_types=set())).serialize().text
+    assert "<voice>" not in text
+    assert "<seconds" not in text
