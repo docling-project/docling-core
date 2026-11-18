@@ -249,9 +249,10 @@ def _project_1_12_to_1_11(data: dict) -> dict:
     """Downgrade a schema 1.12 document dict to schema 1.11.
 
     Handles:
-    - Converts each ``TrackItem`` in ``tracks`` to a ``PictureItem`` appended to
-      ``pictures``, keeping its image (the cover), location, captions and children
-      (the cues), and rewrites all references to it. Its audio and video are dropped.
+    - Replaces each ``TrackItem`` by its children (the cues), so that the transcript stays
+      in the reading order. A track with a cover (``image``), location or captions also
+      leaves a ``PictureItem`` without children before its cues. Its audio and video are
+      dropped.
     - Removes the top-level ``tracks`` list (unknown to 1.11 clients).
     - Gives each instant ``TrackSource`` a duration of 1 ms, since 1.11 requires the end
       time to be after the start time.
@@ -262,13 +263,51 @@ def _project_1_12_to_1_11(data: dict) -> dict:
         data["version"] = "1.11.0"
         return data
 
-    first = len(data.get("pictures", []))
-    mapping = {f"#/tracks/{i}": f"#/pictures/{first + i}" for i in range(len(tracks))}
-    pictures = [
-        {**{k: v for k, v in track.items() if k not in ("audio", "video")}, "label": "picture"} for track in tracks
-    ]
-    data["pictures"] = [*data.get("pictures", []), *pictures]
-    data = _rewrite_refs(data, mapping)
+    pictures = list(data.get("pictures", []))
+    parents = {f"#/tracks/{i}": track["parent"] for i, track in enumerate(tracks) if track.get("parent")}
+    mapping: dict[str, str] = {}
+    replacement: dict[str, list[dict]] = {}
+
+    def owner(ref: dict) -> dict:
+        # the cues of a track move to the first ancestor that is not a track
+        while ref.get("cref") in parents:
+            ref = parents[ref["cref"]]
+        return ref
+
+    for i, track in enumerate(tracks):
+        track_ref = f"#/tracks/{i}"
+        refs: list[dict] = []
+        if track.get("image") or track.get("prov") or track.get("captions"):
+            picture_ref = f"#/pictures/{len(pictures)}"
+            mapping[track_ref] = picture_ref
+            refs.append({"cref": picture_ref})
+            picture = {k: v for k, v in track.items() if k not in ("audio", "video")}
+            parent = owner(track["parent"]) if track.get("parent") else None
+            pictures.append({**picture, "label": "picture", "children": [], "parent": parent})
+        replacement[track_ref] = [*refs, *track.get("children", [])]
+    data["pictures"] = pictures
+
+    def splice(node: Any) -> Any:
+        if isinstance(node, dict):
+            node = {key: splice(value) for key, value in node.items()}
+            if isinstance(node.get("parent"), dict) and node["parent"].get("cref") in replacement:
+                node["parent"] = owner(node["parent"])
+            if isinstance(node.get("children"), list):
+                children: list = []
+                pending = list(node["children"])
+                while pending:
+                    child = pending.pop(0)
+                    if isinstance(child, dict) and child.get("cref") in replacement:
+                        pending[:0] = replacement[child["cref"]]
+                    else:
+                        children.append(child)
+                node["children"] = children
+            return node
+        if isinstance(node, list):
+            return [splice(value) for value in node]
+        return node
+
+    data = _rewrite_refs(splice(data), mapping)
 
     data["version"] = "1.11.0"
     return data

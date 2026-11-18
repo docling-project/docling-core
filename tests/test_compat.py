@@ -316,42 +316,46 @@ class TestProjector_1_12_to_1_11:
         )
         DoclingDocument.model_validate(result)
 
-    def test_track_becomes_a_picture_with_its_references(self):
-        """The track keeps its cover, location and cues, as a picture after the existing ones."""
-        from docling_core.types.doc import ImageRef, Size, TrackSource
+    def test_track_is_replaced_by_its_cues(self):
+        """The transcript stays in the reading order, so old clients still export it."""
+        from docling_core.types.doc import TrackSource
 
         doc = DoclingDocument(name="doc")
-        doc.add_picture()
-        track = doc.add_track(
-            image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=1, height=1), uri=Path("x.png"))
-        )
+        doc.add_text(label=DocItemLabel.TEXT, text="before")
+        track = doc.add_track()
         doc.add_text(label=DocItemLabel.TEXT, text="cue", parent=track, source=TrackSource(start_time=0, end_time=1))
 
         result = self._apply(doc.model_dump(mode="python"))
 
         assert "tracks" not in result
+        assert result["pictures"] == []
+        assert [ref["cref"] for ref in result["body"]["children"]] == ["#/texts/0", "#/texts/1"]
+        assert result["texts"][1]["parent"]["cref"] == "#/body"
+        assert DoclingDocument.model_validate(result).export_to_markdown() == "before\n\ncue"
+
+    def test_track_cover_becomes_a_picture_before_its_cues(self):
+        """The cover, location and captions of a track are kept as a picture."""
+        from docling_core.types.doc import ImageRef, MediaRef, Size, TrackSource
+
+        doc = DoclingDocument(name="doc")
+        doc.add_picture()
+        track = doc.add_track(
+            image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=1, height=1), uri=Path("x.png")),
+            audio=MediaRef(mimetype="audio/mpeg", uri=Path("a.mp3")),
+        )
+        doc.add_text(label=DocItemLabel.TEXT, text="cue", parent=track, source=TrackSource(start_time=0, end_time=1))
+
+        result = self._apply(doc.model_dump(mode="python"))
+
         picture = result["pictures"][1]
         assert picture["label"] == "picture"
         assert picture["self_ref"] == "#/pictures/1"
         assert str(picture["image"]["uri"]) == "x.png"
-        assert [ref["cref"] for ref in picture["children"]] == ["#/texts/0"]
-        assert [ref["cref"] for ref in result["body"]["children"]] == ["#/pictures/0", "#/pictures/1"]
-        assert result["texts"][0]["parent"]["cref"] == "#/pictures/1"
-        assert DoclingDocument.model_validate(result).pictures[1].children[0].cref == "#/texts/0"
-
-    def test_track_media_is_dropped(self):
-        from docling_core.types.doc import MediaRef
-
-        doc = DoclingDocument(name="doc")
-        doc.add_track(
-            audio=MediaRef(mimetype="audio/mpeg", uri=Path("a.mp3")),
-            video=MediaRef(mimetype="video/mp4", uri=Path("v.mp4")),
-        )
-
-        picture = self._apply(doc.model_dump(mode="python"))["pictures"][0]
-
+        assert picture["children"] == []
         assert "audio" not in picture
-        assert "video" not in picture
+        assert [ref["cref"] for ref in result["body"]["children"]] == ["#/pictures/0", "#/pictures/1", "#/texts/0"]
+        assert result["texts"][0]["parent"]["cref"] == "#/body"
+        DoclingDocument.model_validate(result)
 
 
 class TestProjector_1_11_to_1_10:
