@@ -363,3 +363,13 @@ def test_cues_take_the_layer_of_their_track():
     assert doc.tracks[0].content_layer == ContentLayer.FURNITURE
     assert doc.texts[0].content_layer == ContentLayer.FURNITURE
     assert doc.export_to_markdown() == ""
+
+
+@pytest.mark.parametrize("value", ["x", "-5", "1.5"])
+def test_invalid_timestamp_skips_only_its_cue_block(value):
+    with pytest.warns(UserWarning, match="invalid <seconds> value"):
+        doc = DocLangDocDeserializer().deserialize_str(
+            f'<doclang version="0.9"><track><bdiv/><seconds value="{value}"/>bad'
+            '<bdiv/><seconds value="2"/>good</track></doclang>'
+        )
+    assert [text.text for text in doc.texts] == ["good"]

@@ -1880,6 +1880,13 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         runs: list[int] = []
         run: dict[str, int] = {}
         content: list[Node] = []
+
+        def end_run() -> None:
+            nonlocal run
+            if run:
+                runs.append(sum(self._TIMESTAMP_UNIT_MSECS[k] * v for k, v in run.items()))
+                run = {}
+
         for node in nodes[1:]:
             if not isinstance(node, Element | Text):
                 continue  # comments and processing instructions do not count
@@ -1887,18 +1894,18 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
             if not content and name in self._TIMESTAMP_UNIT_MSECS:
                 # <seconds> anchors a run: a later unit than it, or a new <seconds>, starts the next one
                 if DocLangToken.SECONDS.value in run and name != DocLangToken.MSECS.value:
-                    runs.append(sum(self._TIMESTAMP_UNIT_MSECS[k] * v for k, v in run.items()))
-                    run = {}
-                run[name] = int(cast(Element, node).getAttribute(DocLangAttributeKey.VALUE.value) or 0)
+                    end_run()
+                value = cast(Element, node).getAttribute(DocLangAttributeKey.VALUE.value) or "0"
+                if not value.isdecimal():
+                    warnings.warn(f"<track> cue block with an invalid <{name}> value {value!r}; skipped", stacklevel=2)
+                    return
+                run[name] = int(value)
             elif not content and not (isinstance(node, Text) and not node.data.strip()):
-                if run:
-                    runs.append(sum(self._TIMESTAMP_UNIT_MSECS[k] * v for k, v in run.items()))
-                    run = {}
+                end_run()
                 content.append(node)
             elif content:
                 content.append(node)
-        if run:
-            runs.append(sum(self._TIMESTAMP_UNIT_MSECS[k] * v for k, v in run.items()))
+        end_run()
         if not runs:
             warnings.warn("<track> cue block without a start time; skipped", stacklevel=2)
             return
