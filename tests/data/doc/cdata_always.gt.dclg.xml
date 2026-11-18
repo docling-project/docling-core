@@ -116,7 +116,7 @@ Affiliation 2]]></content></text>
   </code>
   <text><![CDATA[Here a formula block:]]></text>
   <formula><![CDATA[E=mc^2]]></formula>
-  <text><![CDATA[Some formatting chops: ]]><bold><![CDATA[bold ]]></bold><italic><![CDATA[italic ]]></italic><underline><![CDATA[underline ]]></underline><strikethrough><![CDATA[strikethrough ]]></strikethrough><subscript><![CDATA[subscript ]]></subscript><superscript><![CDATA[superscript ]]></superscript><![CDATA[hyperlink ]]><![CDATA[& ]]><strikethrough><underline><italic><bold><![CDATA[everything at the same time.]]></bold></italic></underline></strikethrough></text>
+  <text><![CDATA[Some formatting chops: ]]><bold><![CDATA[bold ]]></bold><italic><![CDATA[italic ]]></italic><underline><![CDATA[underline ]]></underline><strikethrough><![CDATA[strikethrough ]]></strikethrough><subscript><![CDATA[subscript ]]></subscript><superscript><![CDATA[superscript ]]></superscript><text><href uri="."/><content><![CDATA[hyperlink ]]></content></text><![CDATA[& ]]><text><href uri="https://github.com/DS4SD/docling"/><strikethrough><underline><italic><bold><![CDATA[everything at the same time.]]></bold></italic></underline></strikethrough></text></text>
   <list class="ordered">
     <ldiv>
       <marker><![CDATA[(i)]]></marker>

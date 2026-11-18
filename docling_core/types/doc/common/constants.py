@@ -27,7 +27,7 @@ SCHEMA_VERSION_HISTORY: Final[list[dict]] = [
     },
     {
         "schema": "1.12.0",
-        "library_version": "v2.107.0",
+        "library_version": "v2.108.0",
         "note": "TrackItem, tracks list, DocItemLabel.TRACK, TrackSource instants",
     },
 ]

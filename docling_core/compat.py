@@ -201,7 +201,7 @@ def list_projectors() -> list[tuple[int, int]]:
 # possible; the goal is a document that validates rather than crashes.
 
 # --- 1.12 → 1.11 ----------------------------------------------------------
-# Schema 1.12 (docling-core v2.107.0):
+# Schema 1.12 (docling-core v2.108.0):
 #   • Added TrackItem (a time-aligned media transcript, DocLang ``<track>``)
 #     with the new DocItemLabel value TRACK.
 #   • Added tracks as a new top-level list.

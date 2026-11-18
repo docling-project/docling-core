@@ -79,6 +79,7 @@ jobs:
       pr: ${{ steps.resolve.outputs.pr }}
       run: ${{ steps.resolve.outputs.run }}
       force_review: ${{ steps.resolve.outputs.force_review }}
+      maintainer_requested: ${{ steps.resolve.outputs.maintainer_requested }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         continue-on-error: true
@@ -121,26 +122,6 @@ jobs:
           gh api --method POST "repos/${REPO}/issues/comments/${COMMENT_ID}/reactions" \
             -f content=eyes > /dev/null
 
-  reset-labels:
-    # A new push makes the previous verdict stale.
-    if: github.event_name == 'pull_request_target' && github.event.action == 'synchronize'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    continue-on-error: true
-    permissions:
-      pull-requests: write
-    steps:
-      - name: Remove stale AI labels
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          for label in ai:ci-safe ai:ci-needs-care ai:possible-duplicate ai:review-lgtm ai:review-changes; do
-            gh pr edit "${PR_NUMBER}" --remove-label "${label}" || true
-          done
-
   prepare:
     needs: context
     if: needs.context.outputs.run == 'true'
@@ -171,10 +152,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ needs.context.outputs.pr }}
+          MAINTAINER_REQUESTED: ${{ needs.context.outputs.maintainer_requested == 'true' && '--maintainer-requested' || '' }}
         run: |
           python3 .github/scripts/ai_pr_triage.py prepare \
             --repo "${REPO}" --pr "${PR_NUMBER}" \
-            --out "${RUNNER_TEMP}/ai-triage" --git-dir "${GITHUB_WORKSPACE}"
+            --out "${RUNNER_TEMP}/ai-triage" --git-dir "${GITHUB_WORKSPACE}" \
+            ${MAINTAINER_REQUESTED}
 
       - name: Collect review data
         continue-on-error: true
@@ -207,6 +190,8 @@ jobs:
     # the publish job.
     permissions:
       contents: read
+    outputs:
+      skip_review: ${{ steps.validate.outputs.skip_review }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         continue-on-error: true
@@ -219,7 +204,11 @@ jobs:
         continue-on-error: true
         with:
           name: ai-triage-context
-          path: .ai-triage
+          path: ${{ runner.temp }}/ai-triage
+
+      - name: Link triage context
+        continue-on-error: true
+        run: ln -s "${RUNNER_TEMP}/ai-triage" .ai-triage
 
       - name: Run Bob Shell (read-only mode)
         id: bob
@@ -236,6 +225,7 @@ jobs:
           output: ${{ runner.temp }}/bob-output.json
 
       - name: Validate the answer
+        id: validate
         continue-on-error: true
         if: steps.bob.outcome == 'success'
         env:
@@ -245,12 +235,18 @@ jobs:
           result="${RUNNER_TEMP}/ai-triage-result/result.json"
           python3 .github/scripts/ai_pr_triage.py extract \
             --bob-output "${RUNNER_TEMP}/bob-output.json" \
-            --context .ai-triage/context.json \
+            --context "${RUNNER_TEMP}/ai-triage/context.json" \
             --out "${result}" || exit 0
-          # Defense in depth: never publish text that contains the API key.
-          if grep -qF -- "${BOB_API_KEY}" "${result}"; then
-            echo "::error::The answer contains the API key. It is discarded."
-            rm -f "${result}"
+          # Defense in depth: never publish text that contains the API key,
+          # also as base64, hex, reversed, or split into parts.
+          python3 .github/scripts/ai_pr_leak_check.py --file "${result}" || rm -f "${result}"
+          if python3 .github/scripts/ai_pr_review.py gate \
+              --triage-result "${result}" \
+              --context "${RUNNER_TEMP}/ai-triage/context.json"; then
+            echo "skip_review=false" >> "${GITHUB_OUTPUT}"
+          else
+            echo "The triage rated this PR as a duplicate. Skip review."
+            echo "skip_review=true" >> "${GITHUB_OUTPUT}"
           fi
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -263,8 +259,9 @@ jobs:
 
   publish:
     needs: [context, prepare, analyze]
-    # run_llm is set only when the prepare step succeeded.
-    if: always() && needs.prepare.outputs.run_llm != ''
+    # Also runs after a failure of prepare. The script then posts a notice that
+    # the triage did not run, so a failure is not mistaken for a clean PR.
+    if: always() && needs.context.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     continue-on-error: true
@@ -311,7 +308,8 @@ jobs:
     if: >-
       always() &&
       needs.prepare.result == 'success' &&
-      needs.prepare.outputs.run_review == 'true'
+      needs.prepare.outputs.run_review == 'true' &&
+      (needs.context.outputs.force_review == 'true' || needs.analyze.outputs.skip_review != 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     continue-on-error: true
@@ -330,31 +328,11 @@ jobs:
         continue-on-error: true
         with:
           name: ai-triage-context
-          path: .ai-triage
+          path: ${{ runner.temp }}/ai-triage
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - name: Link review context
         continue-on-error: true
-        with:
-          name: ai-triage-result
-          path: ${{ runner.temp }}/ai-triage-result
-
-      - name: Skip duplicates
-        continue-on-error: true
-        id: gate
-        env:
-          FORCE_REVIEW: ${{ needs.context.outputs.force_review }}
-        run: |
-          if [ "${FORCE_REVIEW}" = "true" ]; then
-            echo "A maintainer asked for this review with /ai review."
-            echo "run=true" >> "${GITHUB_OUTPUT}"
-          elif python3 .github/scripts/ai_pr_review.py gate \
-              --triage-result "${RUNNER_TEMP}/ai-triage-result/result.json" \
-              --context .ai-triage/context.json; then
-            echo "run=true" >> "${GITHUB_OUTPUT}"
-          else
-            echo "The triage rated this PR as a duplicate. No AI review."
-            echo "run=false" >> "${GITHUB_OUTPUT}"
-          fi
+        run: ln -s "${RUNNER_TEMP}/ai-triage" .ai-triage
 
       # The model reads the source of the dependencies instead of guessing
       # their behavior. The versions come from the lock file of the trusted
@@ -363,14 +341,12 @@ jobs:
       # no torch today; the filter keeps it and the CUDA packages out if an
       # extra ever adds them.
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
-        if: steps.gate.outputs.run == 'true'
         continue-on-error: true
         with:
           python-version: "3.12"
           enable-cache: false
 
       - name: Install the dependencies for reading
-        if: steps.gate.outputs.run == 'true'
         continue-on-error: true
         timeout-minutes: 8
         run: |
@@ -384,7 +360,6 @@ jobs:
 
       - name: Run Bob Shell (read-only review mode)
         id: bob
-        if: steps.gate.outputs.run == 'true'
         continue-on-error: true
         timeout-minutes: 25
         uses: ./.github/actions/run-bobshell
@@ -407,12 +382,9 @@ jobs:
           result="${RUNNER_TEMP}/ai-review-result/review.json"
           python3 .github/scripts/ai_pr_review.py extract \
             --bob-output "${RUNNER_TEMP}/bob-review-output.json" \
-            --context-dir .ai-triage \
+            --context-dir "${RUNNER_TEMP}/ai-triage" \
             --out "${result}" || exit 0
-          if grep -qF -- "${BOB_API_KEY}" "${result}"; then
-            echo "::error::The review contains the API key. It is discarded."
-            rm -f "${result}"
-          fi
+          python3 .github/scripts/ai_pr_leak_check.py --file "${result}" || rm -f "${result}"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         continue-on-error: true

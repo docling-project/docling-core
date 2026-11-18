@@ -115,7 +115,19 @@ PATH_LABELS: tuple[tuple[str, str], ...] = (
     (".github/*", "ci"),
     (".pre-commit-config.yaml", "ci"),
 )
-DOC_PATHS = ("docs/*", "*.md")
+DOC_PATHS = ("docs/*",)
+
+
+def _is_doc_path(path: str) -> bool:
+    """True for files under docs/ and for Markdown files in the repository root.
+
+    `fnmatch` lets `*` match `/`, so `*.md` alone would also match a README
+    inside `packages/` or agent instruction files, which is not a
+    documentation-only change.
+    """
+    return any(fnmatch.fnmatchcase(path, pattern) for pattern in DOC_PATHS) or (
+        "/" not in path and path.endswith(".md")
+    )
 
 
 def deterministic_topics(title: str, paths: list[str]) -> list[str]:
@@ -138,7 +150,7 @@ def deterministic_topics(title: str, paths: list[str]) -> list[str]:
             if fnmatch.fnmatchcase(path, pattern):
                 add(label)
     source = [path for path in paths if not path.startswith("tests/data/")]
-    if source and all(any(fnmatch.fnmatchcase(path, pattern) for pattern in DOC_PATHS) for path in source):
+    if source and all(_is_doc_path(path) for path in source):
         add("documentation")
     return labels
 
