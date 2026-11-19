@@ -23,7 +23,7 @@ from docling_core.types.doc.document import FieldItem, FieldRegionItem
 from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
 
 DOCLANG_NAMESPACE: Final = "https://www.doclang.ai/ns/v0"
-_DOCLANG_VERSION: Final = "0.9"
+_DOCLANG_VERSION: Final = "0.10"
 DOCLANG_DFLT_RESOLUTION: int = 512
 
 ET.register_namespace("", DOCLANG_NAMESPACE)  # prevent prefix from ET.tostring()

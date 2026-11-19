@@ -289,7 +289,7 @@ def test_loose_timed_items_form_implicit_tracks():
     _timed(doc, "C", 1, 2)
 
     assert _compact(doc) == (
-        '<doclang version="0.9"><text>Intro</text>'
+        '<doclang version="0.10"><text>Intro</text>'
         '<track><bdiv/><seconds value="1"/><seconds value="2"/><voice>Ann</voice>A'
         '<bdiv/><seconds value="2"/><seconds value="3"/>B</track>'
         '<text><layer value="furniture"/>Break</text>'
@@ -305,7 +305,7 @@ def test_implicit_track_ends_at_its_group():
     _timed(doc, "B", 3, 4)
 
     assert _compact(doc) == (
-        '<doclang version="0.9"><track><bdiv/><seconds value="1"/><seconds value="2"/>A</track>'
+        '<doclang version="0.10"><track><bdiv/><seconds value="1"/><seconds value="2"/>A</track>'
         '<track><bdiv/><seconds value="3"/><seconds value="4"/>B</track></doclang>'
     )
 
@@ -339,7 +339,7 @@ def test_inline_runs_of_a_cue_are_one_turn():
     doc.add_text(label=DocItemLabel.TEXT, text="turn", parent=runs, formatting=Formatting(bold=True))
 
     assert _compact(doc) == (
-        '<doclang version="0.9"><track><bdiv/><seconds value="0"/><seconds value="1"/>First'
+        '<doclang version="0.10"><track><bdiv/><seconds value="0"/><seconds value="1"/>First'
         '<bdiv/><seconds value="1"/><seconds value="2"/><voice>Esme</voice><content>Hee! </content><voice/>laughter'
         '<bdiv/><seconds value="2"/><seconds value="3"/><voice>Ann</voice>Formatted turn</track></doclang>'
     )
@@ -366,7 +366,7 @@ def _track_with_cue(doc: DoclingDocument, **track_kwargs) -> TrackItem:
 
 def test_cues_take_the_layer_of_their_track():
     doc = DocLangDocDeserializer().deserialize_str(
-        '<doclang version="0.9"><track><layer value="furniture"/><bdiv/><seconds value="0"/>hi</track></doclang>'
+        '<doclang version="0.10"><track><layer value="furniture"/><bdiv/><seconds value="0"/>hi</track></doclang>'
     )
     assert doc.tracks[0].content_layer == ContentLayer.FURNITURE
     assert doc.texts[0].content_layer == ContentLayer.FURNITURE
@@ -377,7 +377,7 @@ def test_cues_take_the_layer_of_their_track():
 def test_invalid_timestamp_skips_only_its_cue_block(value):
     with pytest.warns(UserWarning, match="invalid <seconds> value"):
         doc = DocLangDocDeserializer().deserialize_str(
-            f'<doclang version="0.9"><track><bdiv/><seconds value="{value}"/>bad'
+            f'<doclang version="0.10"><track><bdiv/><seconds value="{value}"/>bad'
             '<bdiv/><seconds value="2"/>good</track></doclang>'
         )
     assert [text.text for text in doc.texts] == ["good"]
