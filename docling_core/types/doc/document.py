@@ -5439,6 +5439,7 @@ class DoclingDocument(BaseModel):
         xsize: int | None = None,
         ysize: int | None = None,
         allow_local_media: bool = False,
+        source: Path | bytes | None = None,
     ) -> None:
         """Save the document as a DocLang OPC archive (``.dclx``).
 
@@ -5462,6 +5463,12 @@ class DoclingDocument(BaseModel):
         Other local paths are document content, and are read only with ``allow_local_media``
         (for trusted documents) or ``settings.allow_media_file_uri``. Media that cannot be
         read is left out, with a warning.
+
+        ``source`` is the original document the content was converted from, as a file path
+        or as bytes. It is stored unchanged in the archive, which records its file name and
+        media type from ``origin`` (for a path without ``origin``, its own name and the media
+        type guessed from it). A source that is also stored as the media of a track is not
+        stored twice.
 
         ``include_namespace`` declares the DocLang namespace on the root element. It is
         required for ``validate`` to pass, as the schema only declares the namespaced root.
@@ -5530,6 +5537,9 @@ class DoclingDocument(BaseModel):
                 allow_local_media=allow_local_media,
             )
 
+            if source is not None:
+                pack_kwargs |= self._doclang_archive_source(source)
+
             pack(**pack_kwargs)
 
         if artifacts_dir is None:
@@ -5538,6 +5548,20 @@ class DoclingDocument(BaseModel):
         else:
             artifacts_dir.mkdir(parents=True, exist_ok=True)
             _write_archive(artifacts_dir)
+
+    def _doclang_archive_source(self, source: Path | bytes) -> dict[str, Any]:
+        """The ``pack`` arguments for the original source, named and typed after ``origin``."""
+        if not isinstance(source, (bytes, Path)):
+            raise TypeError(f"source must be a Path or bytes, not {type(source).__name__}")
+        kwargs: dict[str, Any] = {"source": source}
+        if self.origin is not None:
+            kwargs["source_name"] = self.origin.filename
+            kwargs["source_mimetype"] = self.origin.mimetype
+        elif isinstance(source, Path):
+            kwargs["source_name"] = source.name
+            if (guessed := mimetypes.guess_type(source.name)[0]) is not None:
+                kwargs["source_mimetype"] = guessed
+        return kwargs
 
     def _doclang_archive_media(
         self,
