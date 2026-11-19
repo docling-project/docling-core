@@ -2614,7 +2614,7 @@
       "type": "object"
     },
     "MediaRef": {
-      "description": "A reference to an audio or video recording.\n\nThe ``uri`` is document content: a local path is read only for a ``MediaRef`` made\nwith ``from_file``, or after an explicit opt-in (``settings.allow_media_file_uri``).\nRemote URIs are never fetched, and the media is never decoded.",
+      "description": "A reference to an audio or video recording.\n\nThe ``uri`` is document content: a local path is read only for a ``MediaRef`` made\nwith ``from_file``, or after an explicit opt-in (``settings.allow_media_file_uri``).\nRemote URIs are never fetched, and the media is never decoded. A ``MediaRef`` made\nwith ``from_bytes`` holds its media in memory instead.",
       "properties": {
         "mimetype": {
           "title": "Mimetype",

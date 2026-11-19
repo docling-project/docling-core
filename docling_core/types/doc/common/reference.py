@@ -107,12 +107,14 @@ class MediaRef(BaseModel):
 
     The ``uri`` is document content: a local path is read only for a ``MediaRef`` made
     with ``from_file``, or after an explicit opt-in (``settings.allow_media_file_uri``).
-    Remote URIs are never fetched, and the media is never decoded.
+    Remote URIs are never fetched, and the media is never decoded. A ``MediaRef`` made
+    with ``from_bytes`` holds its media in memory instead.
     """
 
     mimetype: str
     uri: AnyUrl | Path = Field(union_mode="left_to_right")
-    _file: Path | None = None
+    # The media itself, as a file or as bytes
+    _content: Path | bytes | None = None
 
     @field_validator("mimetype")
     @classmethod
@@ -139,7 +141,21 @@ class MediaRef(BaseModel):
             if mimetype is None:
                 raise ValueError(f"Cannot tell the media type of {path.name!r}")
         ref = cls(mimetype=mimetype, uri=path)
-        ref._file = path
+        ref._content = path
+        return ref
+
+    @classmethod
+    def from_bytes(cls, data: bytes, mimetype: str, uri: AnyUrl | Path | str) -> Self:
+        """Hold media in memory, e.g. a recording embedded in another file.
+
+        ``uri`` tells where the media comes from, such as its path inside a package. It is
+        kept as document content, and never read. The bytes are not part of the document's
+        JSON, but saving as a DocLang archive stores them.
+        """
+        if not isinstance(data, bytes):
+            raise TypeError(f"data must be bytes, not {type(data).__name__}")
+        ref = cls(mimetype=mimetype, uri=uri)
+        ref._content = data
         return ref
 
     @property
@@ -147,10 +163,10 @@ class MediaRef(BaseModel):
         """The file extension for the media type, e.g. ``mp3``."""
         return MEDIA_EXTENSIONS[self.mimetype]
 
-    def _local_file(self, allow_local: bool = False) -> Path | None:
-        """Return the local file to read, or None if there is none or it may not be read."""
-        if self._file is not None:
-            return self._file
+    def _readable_content(self, allow_local: bool = False) -> Path | bytes | None:
+        """Return the media as a file to read or as bytes, or None if there is none or it may not be read."""
+        if self._content is not None:
+            return self._content
         if isinstance(self.uri, Path):
             path = self.uri
         elif isinstance(self.uri, AnyUrl) and self.uri.scheme == "file":

@@ -5459,7 +5459,8 @@ class DoclingDocument(BaseModel):
 
         The ``audio`` and ``video`` of each track are stored as ``audio/{N}.*`` and
         ``video/{N}.*``, where ``N`` is the position of its ``<track>``. A media file is
-        read if its ``MediaRef`` was made with ``from_file`` or comes from a loaded archive.
+        read if its ``MediaRef`` was made with ``from_file`` or comes from a loaded archive,
+        and media made with ``from_bytes`` is written as is.
         Other local paths are document content, and are read only with ``allow_local_media``
         (for trusted documents) or ``settings.allow_media_file_uri``. Media that cannot be
         read is left out, with a warning.
@@ -5589,17 +5590,22 @@ class DoclingDocument(BaseModel):
             for kind, ref in (("audio", track.audio), ("video", track.video)):
                 if ref is None:
                     continue
-                path = ref._local_file(allow_local=allow_local_media)
-                if path is None:
+                content = ref._readable_content(allow_local=allow_local_media)
+                if content is None:
                     _logger.warning(
                         f"{kind.capitalize()} of {track.self_ref} not stored: it is not a readable local file, "
                         "or reading local media is not enabled (allow_local_media)"
                     )
                     continue
-                path = path.resolve()
+                staged = staging_root / "media" / kind / f"{number}.{ref.extension}"
+                if isinstance(content, bytes):
+                    staged.parent.mkdir(parents=True, exist_ok=True)
+                    staged.write_bytes(content)
+                    media[kind][number] = staged
+                    continue
+                path = content.resolve()
                 if path.suffix.lower() != f".{ref.extension}":
                     # the archive takes the file extension from the media type, not from the path
-                    staged = staging_root / "media" / kind / f"{number}.{ref.extension}"
                     staged.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copyfile(path, staged)
                     path = staged
@@ -5706,7 +5712,7 @@ class DoclingDocument(BaseModel):
                     continue
                 ref = MediaRef(mimetype=mimetype, uri=resolved)
                 # extracted from the archive by us, so saving may read it again
-                ref._file = resolved
+                ref._content = resolved
                 setattr(track, kind, ref)
 
     @staticmethod

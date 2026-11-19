@@ -119,3 +119,27 @@ def test_archive_media_that_does_not_fit_is_ignored(tmp_path, caplog):
     assert back.tracks[0].audio is None
     assert back.tracks[0].video is None
     assert caplog.text.count("Ignoring") == 4
+
+
+def test_media_from_bytes(tmp_path):
+    doc = DoclingDocument(name="slides")
+    # a recording embedded in a package: its uri is where it comes from, never read
+    ref = MediaRef.from_bytes(b"embedded video", mimetype="video/mp4", uri="ppt/media/media1.mp4")
+    assert ref.uri == Path("ppt/media/media1.mp4")
+    _add_track(doc, video=ref)
+    with pytest.raises(TypeError, match="bytes"):
+        MediaRef.from_bytes("not bytes", mimetype="video/mp4", uri="a.mp4")
+    with pytest.raises(ValidationError, match="Unsupported media type"):
+        MediaRef.from_bytes(b"", mimetype="video/x-ms-wmv", uri="a.wmv")
+
+    archive = tmp_path / "out.dclx"
+    # copies keep the bytes
+    doc.model_copy(deep=True).save_as_doclang_archive(archive)
+    with zipfile.ZipFile(archive) as zf:
+        assert zf.read("video/1.mp4") == b"embedded video"
+
+    # JSON keeps the reference only, and the path is not read without an opt-in
+    loaded = DoclingDocument.model_validate_json(doc.model_dump_json())
+    assert loaded.tracks[0].video.uri == Path("ppt/media/media1.mp4")
+    loaded.save_as_doclang_archive(tmp_path / "loaded.dclx")
+    assert _members(tmp_path / "loaded.dclx") == []
