@@ -284,6 +284,80 @@ class TestSchemaSnapshotRendering:
         assert set(schema["$defs"]["FieldItem"]["properties"]) == set(FieldItem.model_fields)
 
 
+class TestProjector_1_12_to_1_11:
+    """Tests for the 1.12 → 1.11 downgrade projector."""
+
+    def _apply(self, data: dict) -> dict:
+        from docling_core.compat import _project_1_12_to_1_11
+
+        return _project_1_12_to_1_11(data)
+
+    def test_version_set_to_1_11(self):
+        result = self._apply(_minimal_doc_dict("1.12.0"))
+        assert result["version"] == "1.11.0"
+        assert "tracks" not in result
+
+    def test_instants_get_a_duration(self):
+        """A 1.11 client requires the end time to be after the start time."""
+        from docling_core.types.doc import TrackSource
+
+        doc = DoclingDocument(name="doc")
+        track = doc.add_track()
+        doc.add_text(label=DocItemLabel.TEXT, text="a", parent=track, source=TrackSource(start_time=2, end_time=2))
+        doc.add_text(label=DocItemLabel.TEXT, text="b", source=TrackSource(start_time=3, end_time=5))
+
+        result = self._apply(doc.model_dump(mode="python"))
+
+        assert [(s["start_time"], s["end_time"]) for t in result["texts"] for s in t["source"]] == pytest.approx(
+            [
+                (2, 2.001),
+                (3, 5),
+            ]
+        )
+        DoclingDocument.model_validate(result)
+
+    def test_track_is_replaced_by_its_cues(self):
+        """The transcript stays in the reading order, so old clients still export it."""
+        from docling_core.types.doc import TrackSource
+
+        doc = DoclingDocument(name="doc")
+        doc.add_text(label=DocItemLabel.TEXT, text="before")
+        track = doc.add_track()
+        doc.add_text(label=DocItemLabel.TEXT, text="cue", parent=track, source=TrackSource(start_time=0, end_time=1))
+
+        result = self._apply(doc.model_dump(mode="python"))
+
+        assert "tracks" not in result
+        assert result["pictures"] == []
+        assert [ref["cref"] for ref in result["body"]["children"]] == ["#/texts/0", "#/texts/1"]
+        assert result["texts"][1]["parent"]["cref"] == "#/body"
+        assert DoclingDocument.model_validate(result).export_to_markdown() == "before\n\ncue"
+
+    def test_track_cover_becomes_a_picture_before_its_cues(self):
+        """The cover, location and captions of a track are kept as a picture."""
+        from docling_core.types.doc import ImageRef, MediaRef, Size, TrackSource
+
+        doc = DoclingDocument(name="doc")
+        doc.add_picture()
+        track = doc.add_track(
+            image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=1, height=1), uri=Path("x.png")),
+            audio=MediaRef(mimetype="audio/mpeg", uri=Path("a.mp3")),
+        )
+        doc.add_text(label=DocItemLabel.TEXT, text="cue", parent=track, source=TrackSource(start_time=0, end_time=1))
+
+        result = self._apply(doc.model_dump(mode="python"))
+
+        picture = result["pictures"][1]
+        assert picture["label"] == "picture"
+        assert picture["self_ref"] == "#/pictures/1"
+        assert str(picture["image"]["uri"]) == "x.png"
+        assert picture["children"] == []
+        assert "audio" not in picture
+        assert [ref["cref"] for ref in result["body"]["children"]] == ["#/pictures/0", "#/pictures/1", "#/texts/0"]
+        assert result["texts"][0]["parent"]["cref"] == "#/body"
+        DoclingDocument.model_validate(result)
+
+
 class TestProjector_1_11_to_1_10:
     """Tests for the 1.11 → 1.10 downgrade projector."""
 

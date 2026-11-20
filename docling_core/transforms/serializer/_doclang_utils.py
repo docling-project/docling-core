@@ -23,7 +23,7 @@ from docling_core.types.doc.document import FieldItem, FieldRegionItem
 from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
 
 DOCLANG_NAMESPACE: Final = "https://www.doclang.ai/ns/v0"
-_DOCLANG_VERSION: Final = "0.9"
+_DOCLANG_VERSION: Final = "0.10"
 DOCLANG_DFLT_RESOLUTION: int = 512
 
 ET.register_namespace("", DOCLANG_NAMESPACE)  # prevent prefix from ET.tostring()
@@ -296,10 +296,10 @@ class DocLangToken(str, Enum):
     # Geometric and temporal
     LOCATION = "location"
     LAYER = "layer"
-    HOUR = "hour"
-    MINUTE = "minute"
-    SECOND = "second"
-    CENTISECOND = "centisecond"
+    HOURS = "hours"
+    MINUTES = "minutes"
+    SECONDS = "seconds"
+    MSECS = "msecs"
 
     # Semantic
     HEADING = "heading"
@@ -323,6 +323,12 @@ class DocLangToken(str, Enum):
     FIELD_VALUE = "value"
     FIELD_HEADING = "field_heading"
     FIELD_HINT = "hint"
+    TRACK = "track"
+    COVER = "cover"
+    FRAME = "frame"
+    AUDIO = "audio"
+    VOICE = "voice"
+    CHAPTER = "chapter"
 
     # Grouping
     LIST = "list"
@@ -353,6 +359,8 @@ class DocLangToken(str, Enum):
     UCEL = "ucel"
     XCEL = "xcel"
     NL = "nl"
+    # -- Tracks
+    BDIV = "bdiv"
 
     # Continuation
     THREAD = "thread"
@@ -421,10 +429,10 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.LABEL: {DocLangAttributeKey.VALUE},
         DocLangToken.SRC: {DocLangAttributeKey.URI},
         DocLangToken.HREF: {DocLangAttributeKey.URI},
-        DocLangToken.HOUR: {DocLangAttributeKey.VALUE},
-        DocLangToken.MINUTE: {DocLangAttributeKey.VALUE},
-        DocLangToken.SECOND: {DocLangAttributeKey.VALUE},
-        DocLangToken.CENTISECOND: {DocLangAttributeKey.VALUE},
+        DocLangToken.HOURS: {DocLangAttributeKey.VALUE},
+        DocLangToken.MINUTES: {DocLangAttributeKey.VALUE},
+        DocLangToken.SECONDS: {DocLangAttributeKey.VALUE},
+        DocLangToken.MSECS: {DocLangAttributeKey.VALUE},
         DocLangToken.HEADING: {DocLangAttributeKey.LEVEL},
         DocLangToken.FIELD_HEADING: {DocLangAttributeKey.LEVEL},
         DocLangToken.CHECKBOX: {DocLangAttributeKey.CLASS},
@@ -468,11 +476,11 @@ class DocLangVocabulary(BaseModel):
                 DOCLANG_DFLT_RESOLUTION,
             ),  # TODO: review
         },
-        # Temporal components
-        DocLangToken.HOUR: {DocLangAttributeKey.VALUE: (0, 99)},
-        DocLangToken.MINUTE: {DocLangAttributeKey.VALUE: (0, 59)},
-        DocLangToken.SECOND: {DocLangAttributeKey.VALUE: (0, 59)},
-        DocLangToken.CENTISECOND: {DocLangAttributeKey.VALUE: (0, 99)},
+        # Temporal components (the schema does not bound the hours)
+        DocLangToken.HOURS: {DocLangAttributeKey.VALUE: (0, 9999)},
+        DocLangToken.MINUTES: {DocLangAttributeKey.VALUE: (0, 59)},
+        DocLangToken.SECONDS: {DocLangAttributeKey.VALUE: (0, 59)},
+        DocLangToken.MSECS: {DocLangAttributeKey.VALUE: (0, 999)},
         # Levels (N ≥ 1)
         DocLangToken.HEADING: {DocLangAttributeKey.LEVEL: (1, 6)},
         DocLangToken.FIELD_HEADING: {DocLangAttributeKey.LEVEL: (1, 6)},
@@ -489,10 +497,10 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.LABEL,
         DocLangToken.SRC,
         DocLangToken.HREF,
-        DocLangToken.HOUR,
-        DocLangToken.MINUTE,
-        DocLangToken.SECOND,
-        DocLangToken.CENTISECOND,
+        DocLangToken.HOURS,
+        DocLangToken.MINUTES,
+        DocLangToken.SECONDS,
+        DocLangToken.MSECS,
         DocLangToken.BR,
         DocLangToken.CHECKBOX,
         DocLangToken.LDIV,
@@ -507,6 +515,7 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.UCEL,
         DocLangToken.XCEL,
         DocLangToken.NL,
+        DocLangToken.BDIV,
         # Continuation markers
         DocLangToken.THREAD,
     }
@@ -523,10 +532,10 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.LOCATION: DocLangCategory.GEOMETRIC,
         DocLangToken.LAYER: DocLangCategory.GEOMETRIC,
         # Temporal
-        DocLangToken.HOUR: DocLangCategory.TEMPORAL,
-        DocLangToken.MINUTE: DocLangCategory.TEMPORAL,
-        DocLangToken.SECOND: DocLangCategory.TEMPORAL,
-        DocLangToken.CENTISECOND: DocLangCategory.TEMPORAL,
+        DocLangToken.HOURS: DocLangCategory.TEMPORAL,
+        DocLangToken.MINUTES: DocLangCategory.TEMPORAL,
+        DocLangToken.SECONDS: DocLangCategory.TEMPORAL,
+        DocLangToken.MSECS: DocLangCategory.TEMPORAL,
         # Semantic
         DocLangToken.HEADING: DocLangCategory.SEMANTIC,
         DocLangToken.TEXT: DocLangCategory.SEMANTIC,
@@ -545,6 +554,12 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.LIST: DocLangCategory.SEMANTIC,
         DocLangToken.TABLE: DocLangCategory.SEMANTIC,
         DocLangToken.TABULAR: DocLangCategory.SEMANTIC,
+        DocLangToken.TRACK: DocLangCategory.SEMANTIC,
+        DocLangToken.COVER: DocLangCategory.SEMANTIC,
+        DocLangToken.FRAME: DocLangCategory.SEMANTIC,
+        DocLangToken.AUDIO: DocLangCategory.SEMANTIC,
+        DocLangToken.VOICE: DocLangCategory.SEMANTIC,
+        DocLangToken.CHAPTER: DocLangCategory.SEMANTIC,
         # Grouping
         DocLangToken.GROUP: DocLangCategory.GROUPING,
         # Formatting
@@ -568,6 +583,7 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.UCEL: DocLangCategory.STRUCTURAL,
         DocLangToken.XCEL: DocLangCategory.STRUCTURAL,
         DocLangToken.NL: DocLangCategory.STRUCTURAL,
+        DocLangToken.BDIV: DocLangCategory.STRUCTURAL,
         DocLangToken.FIELD_KEY: DocLangCategory.STRUCTURAL,
         DocLangToken.FIELD_VALUE: DocLangCategory.STRUCTURAL,
         # Continuation
@@ -776,18 +792,25 @@ class DocLangVocabulary(BaseModel):
         """
         special_tokens: list[str] = []
 
-        temporal_tokens = {
-            DocLangToken.HOUR,
-            DocLangToken.MINUTE,
-            DocLangToken.SECOND,
-            DocLangToken.CENTISECOND,
+        # Values of the temporal tokens, as in the DocLang token vocabulary (Annex C):
+        # their attribute ranges are wider, to validate any timestamp.
+        temporal_token_values = {
+            DocLangToken.HOURS: range(24),
+            DocLangToken.MINUTES: range(60),
+            DocLangToken.SECONDS: range(60),
+            DocLangToken.MSECS: range(0, 1000, 10),
         }
 
         for token in DocLangToken:
             # Optional gating for location/temporal tokens
             if not include_location_tokens and token is DocLangToken.LOCATION:
                 continue
-            if not include_temporal_tokens and token in temporal_tokens:
+            if token in temporal_token_values:
+                if include_temporal_tokens:
+                    special_tokens.extend(
+                        f'<{token.value} {DocLangAttributeKey.VALUE.value}="{n}"/>'
+                        for n in temporal_token_values[token]
+                    )
                 continue
 
             name = token.value
@@ -1050,7 +1073,7 @@ _DOCLANG_META_TAG_DESCRIPTION: Final = f"{_DOCLANG_META_NAMESPACE}__description"
 _DOCLANG_META_TAG_SMILES: Final = f"{_DOCLANG_META_NAMESPACE}__smiles"
 
 # Tokens allowed in an element head (before body content). Mirrors
-# ``_element_head_prefix`` serialization order plus continuation/temporal tokens.
+# ``_element_head_prefix`` serialization order plus continuation tokens.
 _ELEMENT_HEAD_TAGS: Final[frozenset[str]] = frozenset(
     {
         DocLangToken.LABEL.value,
@@ -1063,10 +1086,6 @@ _ELEMENT_HEAD_TAGS: Final[frozenset[str]] = frozenset(
         DocLangToken.CUSTOM.value,
         DocLangToken.THREAD.value,
         DocLangToken.XREF.value,
-        DocLangToken.HOUR.value,
-        DocLangToken.MINUTE.value,
-        DocLangToken.SECOND.value,
-        DocLangToken.CENTISECOND.value,
     }
 )
 

@@ -1896,6 +1896,19 @@ def test_webvtt(example_num):
     verify(exp_file=src.with_suffix(".gt.vtt"), actual=actual)
 
 
+def test_webvtt_instant_lasts_one_msec():
+    """WebVTT needs a cue to end after it starts, so an instant gets a duration of 1 ms."""
+    from docling_core.types.doc import TrackSource
+
+    doc = DoclingDocument(name="doc")
+    doc.add_text(label=DocItemLabel.TEXT, text="Hello", source=TrackSource(start_time=2, end_time=2))
+    doc.add_text(label=DocItemLabel.TEXT, text="World", source=TrackSource(start_time=2, end_time=2))
+
+    actual = WebVTTDocSerializer(doc=doc).serialize().text
+
+    assert actual == "WEBVTT\n\n00:00:02.000 --> 00:00:02.001\nHello\nWorld"
+
+
 def test_webvtt_params():
     """Test WebVTT serialization with WebVTTParams."""
     src = Path("./tests/data/doc/webvtt_example_01.json")

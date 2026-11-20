@@ -82,6 +82,7 @@ from docling_core.types.doc.document import (
     TextItem,
     TitleItem,
     TopicsMetaField,
+    TrackItem,
 )
 from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.utils import (
@@ -584,6 +585,25 @@ class HTMLTableSerializer(BaseTableSerializer):
         return headings_list, data_list
 
 
+def _image_html(item: FloatingItem, doc: DoclingDocument, image_mode: ImageRefMode) -> str:
+    """The ``<img>`` of the image of a picture, or of the cover of a track, by the image mode ("" if none)."""
+    if image_mode == ImageRefMode.EMBEDDED:
+        # short-cut: we already have the image in base64
+        if isinstance(item.image, ImageRef) and isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "data":
+            return f'<img src="{html.escape(str(item.image.uri))}">'
+        # get the item.image._pil or crop it out of the page-image
+        img = item.get_image(doc)
+        if img is not None:
+            return f'<img src="data:image/png;base64,{item._image_to_base64(img)}">'
+        _logger.warning("Could not get image")
+    elif image_mode == ImageRefMode.REFERENCED:
+        if isinstance(item.image, ImageRef) and not (
+            isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "data"
+        ):
+            return f'<img src="{html.escape(_escape_uri_path(item.image.uri))}">'
+    return ""
+
+
 class HTMLPictureSerializer(BasePictureSerializer):
     """HTML-specific picture item serializer."""
 
@@ -618,42 +638,28 @@ class HTMLPictureSerializer(BasePictureSerializer):
 
         img_text = ""
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-            if params.image_mode == ImageRefMode.EMBEDDED:
-                # short-cut: we already have the image in base64
-                if (
+            if (
+                params.image_mode == ImageRefMode.EMBEDDED
+                and not (
                     isinstance(item.image, ImageRef)
                     and isinstance(item.image.uri, AnyUrl)
                     and item.image.uri.scheme == "data"
-                ):
-                    img_text = f'<img src="{html.escape(str(item.image.uri))}">'
-                elif len(item.prov) > 1:  # more than 1 provenance
-                    img_text = '<table style="border-collapse: collapse; width: 100%;">\n'
-                    for ind, prov in enumerate(item.prov):
-                        img = item.get_image(doc, prov_index=ind)
-
-                        if img is not None:
-                            imgb64 = item._image_to_base64(img)
-                            img_text += get_img_row(imgb64=imgb64, ind=ind)
-                        else:
-                            _logger.warning("Could not get image")
-
-                    img_text += "</table>\n"
-
-                else:
-                    # get the item.image._pil or crop it out of the page-image
-                    img = item.get_image(doc)
+                )
+                and len(item.prov) > 1  # more than 1 provenance
+            ):
+                img_text = '<table style="border-collapse: collapse; width: 100%;">\n'
+                for ind, prov in enumerate(item.prov):
+                    img = item.get_image(doc, prov_index=ind)
 
                     if img is not None:
                         imgb64 = item._image_to_base64(img)
-                        img_text = f'<img src="data:image/png;base64,{imgb64}">'
+                        img_text += get_img_row(imgb64=imgb64, ind=ind)
                     else:
                         _logger.warning("Could not get image")
 
-            elif params.image_mode == ImageRefMode.REFERENCED:
-                if isinstance(item.image, ImageRef) and not (
-                    isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "data"
-                ):
-                    img_text = f'<img src="{html.escape(_escape_uri_path(item.image.uri))}">'
+                img_text += "</table>\n"
+            else:
+                img_text = _image_html(item=item, doc=doc, image_mode=params.image_mode)
 
         if img_text:
             res_parts.append(create_ser_result(text=img_text, span_source=item))
@@ -964,9 +970,23 @@ class HTMLFallbackSerializer(BaseFallbackSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Fallback serializer for items not handled by other serializers."""
-        if isinstance(item, GroupItem):
+        # a track is serialized as its captions, its cover (like the image of a picture) and its cues
+        if isinstance(item, GroupItem | TrackItem):
             parts = doc_serializer.get_parts(item=item, **kwargs)
             text_res = "\n".join([p.text for p in parts if p.text])
+            if isinstance(item, TrackItem):
+                head: list[SerializationResult] = []
+                if (cap_res := doc_serializer.serialize_captions(item=item, **kwargs)).text:
+                    head.append(cap_res)
+                if item.image is not None and item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+                    params = HTMLParams(**kwargs)
+                    if cover := _image_html(item=item, doc=doc, image_mode=params.image_mode):
+                        head.append(create_ser_result(text=cover, span_source=item))
+                if head:
+                    # a <figcaption> needs a <figure>, which also holds the cover
+                    parts = [*head, *parts]
+                    head_text = "\n".join(r.text for r in head)
+                    text_res = f"<figure>\n{head_text}\n{text_res}\n</figure>"
             return create_ser_result(text=text_res, span_source=parts)
         else:
             return create_ser_result(

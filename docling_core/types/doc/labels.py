@@ -42,6 +42,8 @@ class DocItemLabel(str, Enum):
     FIELD_HINT = "field_hint"
     MARKER = "marker"
 
+    TRACK = "track"  # time-aligned media transcript, e.g. of an audio or video recording
+
     def __str__(self):
         """Get string value."""
         return str(self.value)
@@ -80,6 +82,7 @@ class DocItemLabel(str, Enum):
             DocItemLabel.FIELD_VALUE: (135, 80, 20),
             DocItemLabel.FIELD_HINT: (190, 120, 90),
             DocItemLabel.MARKER: (205, 85, 120),
+            DocItemLabel.TRACK: (150, 200, 250),
         }
         return color_map.get(label, (0, 0, 0))
 

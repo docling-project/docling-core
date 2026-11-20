@@ -79,6 +79,7 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
     TopicsMetaField,
+    TrackItem,
 )
 
 _logger = logging.getLogger(__name__)
@@ -975,12 +976,13 @@ class MarkdownPictureSerializer(BasePictureSerializer):
 
     def _serialize_image_part(
         self,
-        item: PictureItem,
+        item: FloatingItem,
         doc: DoclingDocument,
         image_mode: ImageRefMode,
         image_placeholder: str,
         **kwargs: Any,
     ) -> SerializationResult:
+        """Serialize the image of a picture, or the cover of a track, by the image mode."""
         error_response = (
             "<!-- 🖼️❌ Image not available. Please use `PdfPipelineOptions(generate_picture_images=True)` -->"
         )
@@ -1175,8 +1177,21 @@ class MarkdownFallbackSerializer(BaseFallbackSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        if isinstance(item, GroupItem):
+        # a track is serialized as its captions, its cover (like the image of a picture) and its cues
+        if isinstance(item, GroupItem | TrackItem):
             parts = doc_serializer.get_parts(item=item, **kwargs)
+            if isinstance(item, TrackItem):
+                if item.image is not None and item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+                    params = MarkdownParams(**kwargs)
+                    cover_res = MarkdownPictureSerializer()._serialize_image_part(
+                        item=item,
+                        doc=doc,
+                        image_mode=params.image_mode,
+                        image_placeholder=params.image_placeholder,
+                    )
+                    parts = [cover_res, *parts]
+                if (cap_res := doc_serializer.serialize_captions(item=item, **kwargs)).text:
+                    parts = [cap_res, *parts]
             text_res = "\n\n".join([p.text for p in parts if p.text])
             return create_ser_result(text=text_res, span_source=parts)
         elif isinstance(item, (FieldRegionItem, FieldItem)):
