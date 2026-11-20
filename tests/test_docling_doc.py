@@ -1098,6 +1098,33 @@ def _save_referenced_doc(out_dir: Path, filename: str) -> Path:
 
 
 @pytest.mark.parametrize("filename", ["doc.json", "doc.yaml"])
+def test_save_placeholder_writes_no_images(tmp_path: Path, filename: str):
+    """PLACEHOLDER keeps the items but writes no image data, also for page images."""
+    doc = DoclingDocument(name="placeholder")
+    page_image = ImageRef.from_pil(PILImage.new("RGB", (10, 10)), dpi=72)
+    doc.add_page(page_no=1, size=Size(width=10, height=10), image=page_image)
+    doc.add_picture(image=ImageRef.from_pil(PILImage.new("RGB", (4, 4)), dpi=72))
+    table = doc.add_table(data=TableData(num_rows=1, num_cols=1))
+    table.image = ImageRef.from_pil(PILImage.new("RGB", (4, 4)), dpi=72)
+    path = tmp_path / filename
+
+    if path.suffix == ".json":
+        doc.save_as_json(path, image_mode=ImageRefMode.PLACEHOLDER)
+        loaded = DoclingDocument.load_from_json(path)
+    else:
+        doc.save_as_yaml(path, image_mode=ImageRefMode.PLACEHOLDER)
+        loaded = DoclingDocument.load_from_yaml(path)
+
+    assert "data:image" not in path.read_text(encoding="utf-8")
+    assert list(tmp_path.iterdir()) == [path]
+    assert len(loaded.pictures) == 1 and len(loaded.tables) == 1
+    assert loaded.pages[1].image is None
+    assert loaded.pictures[0].image is None
+    assert loaded.tables[0].image is None
+    assert doc.pages[1].image is not None and doc.pictures[0].image is not None
+
+
+@pytest.mark.parametrize("filename", ["doc.json", "doc.yaml"])
 def test_load_with_allow_local_images(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, filename: str):
     """Loaders read local images on explicit opt-in, relative to the file's directory."""
     path = _save_referenced_doc(tmp_path, filename)
