@@ -207,6 +207,22 @@ def test_inline_group_no_duplication():
     assert "\\item \\textbf{Term}: definition" in body
 
 
+def test_latex_deep_section_headers():
+    """Headings deeper than level 3 map to paragraph and subparagraph instead of raising."""
+    doc = DoclingDocument(name="t")
+    for level in (1, 2, 3, 4, 5, 9):
+        doc.add_heading(text=f"Level {level}", level=level)
+
+    body = LaTeXDocSerializer(doc=doc).serialize().text.split("\\begin{document}")[1]
+
+    assert "\\section{Level 1}" in body
+    assert "\\subsection{Level 2}" in body
+    assert "\\subsubsection{Level 3}" in body
+    assert "\\paragraph{Level 4}" in body
+    assert "\\subparagraph{Level 5}" in body
+    assert "\\subparagraph{Level 9}" in body
+
+
 def test_latex_inline_code_escapes_hash_with_a_single_backslash():
     r"""Regression test: a `#` in inline code must become `\#`, not `\\#`.
 
