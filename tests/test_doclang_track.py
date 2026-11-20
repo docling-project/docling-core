@@ -189,8 +189,25 @@ def test_track_other_formats_show_the_cues():
 
     markdown = doc.export_to_markdown()
     assert "missing-text" not in markdown
-    assert markdown.startswith("Quarterly review\n\n<!-- image -->\n\nWelcome to the quarterly review.")
+    # the cover, then the frame and the transcript
+    assert markdown.startswith(
+        "Quarterly review\n\n<!-- image -->\n\n<!-- image -->\n\nWelcome to the quarterly review."
+    )
     assert "Unhandled item type" not in doc.export_to_html()
+
+
+def test_track_cover_is_shown_like_a_picture():
+    """Markdown and HTML show the cover of a track the way they show the image of a picture."""
+    doc = DoclingDocument(name="slide")
+    doc.add_track(image=_image("poster"))  # e.g. a slide video that is not transcribed
+    doc.add_track()  # e.g. a recording: no cover, nothing to show
+
+    assert doc.export_to_markdown() == "<!-- image -->"
+    assert doc.export_to_markdown(image_mode=ImageRefMode.REFERENCED) == "![Image](https://example.com/poster.png)"
+    assert '<figure>\n<img src="https://example.com/poster.png">\n\n</figure>' in doc.export_to_html(
+        image_mode=ImageRefMode.REFERENCED
+    )
+    assert "<figure>" not in doc.export_to_html()  # no image in placeholder mode, as for a picture
 
 
 def test_add_and_insert_track():
