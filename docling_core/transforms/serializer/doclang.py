@@ -1022,6 +1022,21 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 if idp > 0 and isinstance(item_, ListItem):
                     item_.marker = ""
 
+                inline_group = None
+                if isinstance(item, TitleItem | SectionHeaderItem) and item.children:
+                    first_child = item.children[0].resolve(doc)
+                    if isinstance(first_child, InlineGroup):
+                        # The empty heading host has no text offsets to slice. Select
+                        # its runs by location so later pages do not become empty.
+                        inline_group = first_child.model_copy(update={"children": []})
+                        for ref in first_child.children:
+                            child = ref.resolve(doc)
+                            if isinstance(child, DocItem) and child.prov:
+                                if any(p.page_no == prov_.page_no and p.bbox == prov_.bbox for p in child.prov):
+                                    inline_group.children.append(ref)
+                            elif idp == 0:
+                                inline_group.children.append(ref)
+
                 tres: SerializationResult = self._serialize_single_item(
                     item=item_,
                     doc_serializer=doc_serializer,
@@ -1030,6 +1045,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                     is_inline_scope=is_inline_scope,
                     thread_id=thread_id,
                     include_caption_head=idp == 0,
+                    inline_group=inline_group,
                     **kwargs,
                 )
                 res.append(tres)
@@ -1126,6 +1142,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
         visited: set[str] | None = None,
         thread_id: str | None = None,
         include_caption_head: bool = True,
+        inline_group: InlineGroup | None = None,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a ``TextItem`` into DocLang markup.
@@ -1261,7 +1278,9 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
         parent_group = item.parent.resolve(doc) if is_inline_scope and item.parent else None
         if isinstance(parent_group, InlineGroup) and href_uri == _shared_href(group=parent_group, doc=doc):
             href_uri = None
-        first_child = item.children[0].resolve(doc) if item.children else None
+        first_child = (
+            inline_group if inline_group is not None else (item.children[0].resolve(doc) if item.children else None)
+        )
         # A host of runs carries a link only if all its content shares it.
         runs_href = _shared_href(group=first_child, doc=doc) if isinstance(first_child, InlineGroup) else None
         head_href = runs_href if isinstance(first_child, InlineGroup) else href_uri
@@ -1309,7 +1328,11 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 # Other children are hierarchical subordinates and will be serialized separately.
                 # The item's own text, when present, precedes the runs within the same element:
                 # emitting the runs as siblings instead yields invalid DocLang and loses content.
-                inline_part = doc_serializer.serialize(item=first_child_item, visited=my_visited, **kwargs).text
+                # A heading already emitted its location in the element head.
+                inline_kwargs = (
+                    {**kwargs, "add_location": False} if isinstance(item, TitleItem | SectionHeaderItem) else kwargs
+                )
+                inline_part = doc_serializer.serialize(item=first_child_item, visited=my_visited, **inline_kwargs).text
                 if item.text:
                     own_part = _escape_text(item.text, params)
                     own_part = doc_serializer.post_process(
