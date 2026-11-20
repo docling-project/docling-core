@@ -18,6 +18,53 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 
 
+def _cell_text_from_text_cells(text_cells: list[dict[str, Any]]) -> str:
+    """Assemble the cell text from its matched token entries.
+
+    docling-ibm-models matches PDF/OCR tokens into each table cell, and the
+    entries may be word-level (native text) or line-level (OCR), so they do
+    not carry a line structure by themselves. Rebuild it from the entry
+    geometry: entries whose boxes overlap vertically share one visual line
+    (joined with spaces), lines stack top to bottom (joined with newlines).
+    If any entry lacks a box, fall back to a single space-separated line in
+    the original entry order.
+    """
+    if not text_cells:
+        return ""
+    if len(text_cells) == 1:
+        return text_cells[0].get("token", "")
+
+    def _entry(el: dict[str, Any]) -> dict[str, Any]:
+        box = el.get("bbox") or el
+        top, bottom = box.get("t", 0.0), box.get("b", 0.0)
+        return {
+            "l": box.get("l", 0.0),
+            "t": min(top, bottom),
+            "b": max(top, bottom),
+            "token": el.get("token", ""),
+        }
+
+    entries = [_entry(el) for el in text_cells]
+    if any(e["b"] <= e["t"] for e in entries):
+        return " ".join(e["token"] for e in entries)
+    entries.sort(key=lambda e: ((e["t"] + e["b"]) / 2.0, e["l"]))
+
+    lines: list[list[dict[str, Any]]] = []
+    for entry in entries:
+        height = entry["b"] - entry["t"]
+        if lines:
+            line_top = min(e["t"] for e in lines[-1])
+            line_bottom = max(e["b"] for e in lines[-1])
+            overlap = min(line_bottom, entry["b"]) - max(line_top, entry["t"])
+            min_height = min([e["b"] - e["t"] for e in lines[-1]] + [height])
+            if overlap > 0.5 * min_height:
+                lines[-1].append(entry)
+                continue
+        lines.append([entry])
+
+    return "\n".join(" ".join(e["token"] for e in sorted(line, key=lambda e: e["l"])) for line in lines)
+
+
 class TableCell(BaseModel):
     """TableCell."""
 
@@ -51,7 +98,11 @@ class TableCell(BaseModel):
             if not len(text):
                 text_cells = data.pop("text_cell_bboxes", None)
                 if text_cells:
-                    text = " ".join(el["token"] for el in text_cells)
+                    # docling-ibm-models matches word- or line-level PDF/OCR
+                    # tokens into the cell; recover the line structure from
+                    # the entry geometry instead of flattening the entries
+                    # into one space-separated string.
+                    text = _cell_text_from_text_cells(text_cells)
 
             data["text"] = text
 
