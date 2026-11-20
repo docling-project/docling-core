@@ -630,3 +630,18 @@ def test_webvtt_file_ruby_spans_example() -> None:
     assert isinstance(voice, WebVTTCueVoiceSpan)
     assert isinstance(voice.internal_text.components[0].component, WebVTTCueRubySpan)
     assert str(vtt[4]).endswith("\nPlain cue between ruby cues.\n")
+
+
+@pytest.mark.parametrize(
+    "cue_text",
+    [
+        "<i>Previously on the show</i>\nwe met the team.",
+        "<v Ann>Hello there</v>\n<v Bob>Hi Ann</v>",
+        "Text <b>bold</b>\n<i>italic</i> text",
+    ],
+)
+def test_webvtt_parse_line_break_after_end_tag(cue_text: str) -> None:
+    """A line that ends with an end tag keeps its line terminator."""
+    timings = "00:01.000 --> 00:02.000\n"
+    block = WebVTTCueBlock.parse(timings + cue_text)
+    assert str(block) == timings + cue_text + "\n"
