@@ -1,3 +1,9 @@
+## [v2.108.0](https://github.com/docling-project/docling-core/releases/tag/v2.108.0) - 2026-11-20
+
+### Feature
+
+* Add TrackItem and DocLang `<track>` support ([#940](https://github.com/docling-project/docling-core/issues/940)) ([`6cb1101`](https://github.com/docling-project/docling-core/commit/6cb11010e58c97c65ef05ed90ccb0c68e761b20d))
+
 ## [v2.107.1](https://github.com/docling-project/docling-core/releases/tag/v2.107.1) - 2026-11-16
 
 ### Fix
