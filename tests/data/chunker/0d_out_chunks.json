@@ -245,12 +245,11 @@
         }
     },
     {
-        "text": "Establishing GPU acceleration support for the AI models is currently work-in-progress and largely untested, but may work implicitly when CUDA is available and discovered by the onnxruntime and\ntorch runtimes backing the Docling pipeline. We will deliver updates on this topic at in a future version of this report.\n",
+        "text": "Establishing GPU acceleration support for the AI models is currently work-in-progress and largely untested, but may work implicitly when CUDA is available and discovered by the onnxruntime and\ntorch runtimes backing the Docling pipeline. We will deliver updates on this topic at in a future version of this report.",
         "meta": {
             "doc_items": [
                 "#/texts/69",
-                "#/texts/71",
-                "#/texts/72"
+                "#/texts/71"
             ],
             "headings": [
                 "Docling Technical Report",
@@ -262,6 +261,7 @@
         "text": "Table 1: Runtime characteristics of Docling with the standard model pipeline and settings, on our test dataset of 225 pages, on two different systems. OCR is disabled. We show the time-to-solution (TTS), computed throughput in pages per second, and the peak memory used (resident set size) for both the Docling-native PDF backend and for the pypdfium backend, using 4 and 16 threads.\n\n| CPU | Thread budget | native backend - TTS | native backend - Pages/s | native backend - Mem | pypdfium backend - TTS | pypdfium backend - Pages/s | pypdfium backend - Mem |\n| - | - | - | - | - | - | - | - |\n| Apple M3 Max | 4 | 177 s 167 s | 1.27 1.34 | 6.20 GB | 103 s 92 s | 2.18 2.45 | 2.56 GB |\n",
         "meta": {
             "doc_items": [
+                "#/texts/72",
                 "#/tables/0"
             ],
             "headings": [
@@ -274,6 +274,7 @@
         "text": "| CPU | Thread budget | native backend - TTS | native backend - Pages/s | native backend - Mem | pypdfium backend - TTS | pypdfium backend - Pages/s | pypdfium backend - Mem |\n| - | - | - | - | - | - | - | - |\n| (16 cores) Intel(R) Xeon E5-2690 | 16 4 16 | 375 s 244 s | 0.60 0.92 | 6.16 GB | 239 s 143 s | 0.94 1.57 | 2.42 GB |",
         "meta": {
             "doc_items": [
+                "#/texts/72",
                 "#/tables/0"
             ],
             "headings": [
