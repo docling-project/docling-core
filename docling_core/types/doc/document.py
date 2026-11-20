@@ -3685,6 +3685,23 @@ class DoclingDocument(BaseModel):
 
         return result
 
+    def _without_images(self) -> "DoclingDocument":
+        """Document without images.
+
+        Creates a copy of this document where the page images and the images of
+        all items are removed. The items and their provenance still mark where
+        each image was.
+        """
+        result: DoclingDocument = copy.deepcopy(self)
+
+        for item in [*result.texts, *result.pictures, *result.tables, *result.key_value_items, *result.form_items]:
+            if isinstance(item, FloatingItem):
+                item.image = None
+        for page in result.pages.values():
+            page.image = None
+
+        return result
+
     @staticmethod
     def _save_image_and_resolve_uri(
         img: PILImage.Image,
@@ -3875,6 +3892,9 @@ class DoclingDocument(BaseModel):
             reference_path=reference_path,
             include_page_images=True,
         )
+        if image_mode == ImageRefMode.PLACEHOLDER:
+            # Unlike the Markdown and HTML serializers, the dict dump has no placeholder.
+            new_doc = new_doc._without_images()
 
         out = new_doc.export_to_dict(coord_precision=coord_precision, confid_precision=confid_precision)
         filename.write_text(
@@ -3928,6 +3948,8 @@ class DoclingDocument(BaseModel):
             reference_path=reference_path,
             include_page_images=True,
         )
+        if image_mode == ImageRefMode.PLACEHOLDER:
+            new_doc = new_doc._without_images()
 
         out = new_doc.export_to_dict(coord_precision=coord_precision, confid_precision=confid_precision)
         stream = StringIO()
