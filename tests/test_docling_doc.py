@@ -3730,3 +3730,64 @@ def test_validate_rejects_total_table_cells_over_limit(monkeypatch, body, furnit
     DoclingDocument.model_validate(_tables_doc_dict(body=2))
     with pytest.raises(ValidationError, match="exceeding the limit of 8"):
         DoclingDocument.model_validate(_tables_doc_dict(body=body, furniture=furniture, orphans=orphans))
+
+
+def _make_grid_cell(row_start, row_end, col_start, col_end, text="value"):
+    return TableCell(
+        text=text,
+        start_row_offset_idx=row_start,
+        end_row_offset_idx=row_end,
+        start_col_offset_idx=col_start,
+        end_col_offset_idx=col_end,
+        row_span=row_end - row_start,
+        col_span=col_end - col_start,
+    )
+
+
+@pytest.mark.parametrize(
+    ("coordinates", "holes"),
+    [([(0, 3, 0, 3)], 0), ([(0, 2, 0, 2), (1, 3, 1, 3)], 2)],
+    ids=["full-span", "partial-overlap"],
+)
+def test_table_grid_constructs_only_uncovered_cells(monkeypatch, coordinates, holes):
+    table = TableData(num_rows=3, num_cols=3, table_cells=[_make_grid_cell(*values) for values in coordinates])
+    original_init = TableCell.__init__
+    constructed = 0
+
+    def counted_init(self, *args, **kwargs):
+        nonlocal constructed
+        constructed += 1
+        original_init(self, *args, **kwargs)
+
+    monkeypatch.setattr(TableCell, "__init__", counted_init)
+    _ = table.grid
+    assert constructed == holes
+
+
+def test_table_grid_preserves_spanning_and_overlapping_source_identity():
+    rich = RichTableCell(**_make_grid_cell(0, 2, 0, 2).model_dump(), ref=RefItem.model_validate({"$ref": "#/texts/0"}))
+    explicit_empty = _make_grid_cell(1, 2, 1, 2, text="")
+    table = TableData(num_rows=2, num_cols=2, table_cells=[rich, explicit_empty])
+    grid = table.grid
+    assert grid[0][0] is rich
+    assert grid[0][1] is rich
+    assert grid[1][0] is rich
+    assert grid[1][1] is explicit_empty
+
+
+def test_table_grid_fills_gaps_with_fresh_independent_cells():
+    source = _make_grid_cell(0, 1, 0, 1)
+    table = TableData(num_rows=2, num_cols=3, table_cells=[source])
+    first, second = table.grid, table.grid
+    gaps = [cell for row in first for cell in row if cell is not source]
+    assert len(gaps) == len({id(cell) for cell in gaps}) == 5
+    assert first is not second
+    assert all(a is not b for a, b in zip(first, second))
+    for i, row in enumerate(first):
+        for j, cell in enumerate(row):
+            if cell is not source:
+                assert cell is not second[i][j]
+                assert cell.model_dump() == _make_grid_cell(i, i + 1, j, j + 1, text="").model_dump()
+    first[0][1].text = "local gap edit"
+    assert all(cell.text == "" for cell in gaps if cell is not first[0][1])
+    assert second[0][1].text == table.grid[0][1].text == ""
