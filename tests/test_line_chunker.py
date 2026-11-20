@@ -239,6 +239,62 @@ def test_chunk_text_rejects_character_larger_than_budget():
         chunker.chunk_text(["🙂"])
 
 
+def _prefix_leaves_no_room_chunker(**kwargs) -> LineBasedTokenChunker:
+    # "a" costs 1 token, "🙂" costs 2 and "a🙂" costs 3: with a budget of 2 the
+    # prefix fits on its own, but no character of the body fits after it.
+    return LineBasedTokenChunker(
+        tokenizer=OpenAITokenizer(
+            tokenizer=tiktoken.get_encoding("cl100k_base"),
+            max_tokens=2,
+        ),
+        prefix="a",
+        **kwargs,
+    )
+
+
+def test_chunk_text_rejects_content_that_cannot_fit_after_mandatory_prefix():
+    # Regression test for https://github.com/docling-project/docling-core/issues/987:
+    # this used to loop forever, appending prefix-only chunks.
+    chunker = _prefix_leaves_no_room_chunker()
+
+    with pytest.raises(ValueError, match="together with the prefix"):
+        chunker.chunk_text(["🙂"])
+
+
+def test_chunk_text_rejects_unfittable_content_after_flushing_previous_chunk():
+    chunker = _prefix_leaves_no_room_chunker()
+
+    with pytest.raises(ValueError, match="together with the prefix"):
+        chunker.chunk_text(["b", "🙂"])
+
+
+def test_chunk_document_rejects_content_that_cannot_fit_after_mandatory_prefix():
+    # Same failure as above, reached through chunk(DoclingDocument).
+    doc = DLDocument(name="prefix_no_room")
+    doc.add_text(label=DocItemLabel.PARAGRAPH, text="🙂")
+    chunker = _prefix_leaves_no_room_chunker()
+
+    with pytest.raises(ValueError, match="together with the prefix"):
+        list(chunker.chunk(doc))
+
+
+def test_chunk_text_omits_prefix_when_it_leaves_no_room_for_content():
+    chunker = _prefix_leaves_no_room_chunker(omit_prefix_on_overflow=True)
+
+    assert chunker.chunk_text(["🙂"]) == ["a", "🙂"]
+
+
+def test_chunk_text_without_prefix_fits_content_that_fails_with_prefix():
+    chunker = LineBasedTokenChunker(
+        tokenizer=OpenAITokenizer(
+            tokenizer=tiktoken.get_encoding("cl100k_base"),
+            max_tokens=2,
+        ),
+    )
+
+    assert chunker.chunk_text(["🙂"]) == ["🙂"]
+
+
 def test_chunk_text_makes_progress_after_standalone_prefix():
     tokenizer = OpenAITokenizer(
         tokenizer=tiktoken.get_encoding("cl100k_base"),
