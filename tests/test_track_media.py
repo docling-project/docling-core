@@ -130,7 +130,7 @@ def test_media_from_bytes(tmp_path):
     with pytest.raises(TypeError, match="bytes"):
         MediaRef.from_bytes("not bytes", mimetype="video/mp4", uri="a.mp4")
     with pytest.raises(ValidationError, match="Unsupported media type"):
-        MediaRef.from_bytes(b"", mimetype="video/x-ms-wmv", uri="a.wmv")
+        MediaRef.from_bytes(b"", mimetype="video/3gpp", uri="a.3gp")
 
     archive = tmp_path / "out.dclx"
     # copies keep the bytes
@@ -143,3 +143,28 @@ def test_media_from_bytes(tmp_path):
     assert loaded.tracks[0].video.uri == Path("ppt/media/media1.mp4")
     loaded.save_as_doclang_archive(tmp_path / "loaded.dclx")
     assert _members(tmp_path / "loaded.dclx") == []
+
+
+@pytest.mark.parametrize(
+    ("name", "mimetype", "member"),
+    [
+        ("clip.wmv", "video/x-ms-wmv", "video/1.wmv"),
+        ("clip.mpeg", "video/mpeg", "video/1.mpg"),
+        ("note.wma", "audio/x-ms-wma", "audio/1.wma"),
+        ("note.aif", "audio/x-aiff", "audio/1.aiff"),
+    ],
+)
+def test_legacy_media_containers(tmp_path, name, mimetype, member):
+    """The containers of older presentations are track media, like those of the input formats."""
+    doc = DoclingDocument(name="slides")
+    ref = MediaRef.from_bytes(b"legacy media", mimetype=mimetype, uri=f"ppt/media/{name}")
+    _add_track(doc, **{mimetype.split("/")[0]: ref})
+
+    archive = tmp_path / "out.dclx"
+    doc.save_as_doclang_archive(archive, include_namespace=True, validate=True)
+    with zipfile.ZipFile(archive) as zf:
+        assert zf.read(member) == b"legacy media"
+
+    loaded = DoclingDocument.load_from_doclang_archive(archive, artifacts_dir=tmp_path / "loaded")
+    loaded_ref = loaded.tracks[0].video or loaded.tracks[0].audio
+    assert loaded_ref is not None and loaded_ref.mimetype == mimetype

@@ -89,12 +89,24 @@ MEDIA_EXTENSIONS: dict[str, str] = {
     "audio/ogg": "ogg",
     "audio/wav": "wav",
     "audio/flac": "flac",
+    "audio/x-ms-wma": "wma",
+    "audio/x-aiff": "aiff",
     "video/mp4": "mp4",
     "video/webm": "webm",
     "video/x-matroska": "mkv",
     "video/quicktime": "mov",
+    "video/x-m4v": "m4v",
+    "video/x-ms-wmv": "wmv",
+    "video/x-ms-asf": "asf",
+    "video/x-msvideo": "avi",
+    "video/mpeg": "mpg",
+    "video/x-flv": "flv",
 }
-_MEDIA_TYPES_BY_EXTENSION = {ext: mimetype for mimetype, ext in MEDIA_EXTENSIONS.items()} | {"opus": "audio/ogg"}
+_MEDIA_TYPES_BY_EXTENSION = {ext: mimetype for mimetype, ext in MEDIA_EXTENSIONS.items()} | {
+    "opus": "audio/ogg",
+    "aif": "audio/x-aiff",
+    "mpeg": "video/mpeg",
+}
 
 
 def media_type_of(name: str) -> str | None:
