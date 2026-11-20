@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from docling_core.types.doc import DocItemLabel, DoclingDocument, MediaRef, TrackItem, TrackSource
 from docling_core.utils.settings import settings
+from tests.doclang_validation import SCHEMATRON_BACKEND_AVAILABLE
 
 
 def _add_track(doc: DoclingDocument, audio: MediaRef | None = None, video: MediaRef | None = None) -> TrackItem:
@@ -161,7 +162,8 @@ def test_legacy_media_containers(tmp_path, name, mimetype, member):
     _add_track(doc, **{mimetype.split("/")[0]: ref})
 
     archive = tmp_path / "out.dclx"
-    doc.save_as_doclang_archive(archive, include_namespace=True, validate=True)
+    # validation needs a Schematron backend, which not every Python version has
+    doc.save_as_doclang_archive(archive, include_namespace=True, validate=SCHEMATRON_BACKEND_AVAILABLE)
     with zipfile.ZipFile(archive) as zf:
         assert zf.read(member) == b"legacy media"
 
