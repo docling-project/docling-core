@@ -560,7 +560,7 @@ class WebVTTCueBlock(BaseModel):
         Returns:
             The parsed WebVTT cue block.
         """
-        lines = raw.strip().splitlines()
+        lines = raw.lstrip().rstrip("\r\n").splitlines()
         if not lines:
             raise ValueError("Cue block must have at least one line")
         identifier: WebVTTCueIdentifier | None = None
@@ -578,7 +578,7 @@ class WebVTTCueBlock(BaseModel):
         start, end = [t.strip() for t in timing_line.split("-->")]
         end = re.split(" |\t", end)[0]  # ignore the cue settings list
         timings: WebVTTCueTimings = WebVTTCueTimings(start=WebVTTTimestamp(raw=start), end=WebVTTTimestamp(raw=end))
-        cue_text = "\n".join(cue_lines).strip()
+        cue_text = "\n".join(cue_lines)
 
         # Strip cue timestamp tags (e.g. <00:00:01.500>) — they carry no text content.
         cue_text = cls._pattern_cue_timestamp.sub("", cue_text)
@@ -742,8 +742,9 @@ class WebVTTFile(BaseModel):
         # Remove NOTE/STYLE/REGION blocks
         body = re.sub(cls._pattern, "", body)
 
-        # Split into cue blocks
-        raw_blocks = cls._split_blocks(body.strip())
+        # Split into cue blocks. Whitespace-only lines at the end of the file are dropped, as
+        # between cues, but the whitespace at the end of the last cue line is kept.
+        raw_blocks = cls._split_blocks(re.sub(r"(?:\n[^\S\n]*)+\Z", "", body.lstrip()))
         cues: list[WebVTTCueBlock] = []
         for block in raw_blocks:
             if not block.strip():
