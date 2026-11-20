@@ -52,6 +52,7 @@ class _PictureClassificationToken(str, Enum):
     PIE_CHART = "<pie_chart>"
     SCATTER_PLOT = "<scatter_plot>"
     TABLE = "<table>"
+    OTHER_CHART = "<other_chart>"
 
     # Images
     FULL_PAGE_IMAGE = "<full_page_image>"

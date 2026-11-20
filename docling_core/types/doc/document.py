@@ -4770,6 +4770,7 @@ class DoclingDocument(BaseModel):
                 PictureClassificationLabel.TOPOGRAPHICAL_MAP,
                 PictureClassificationLabel.CROSSWORD_PUZZLE,
                 PictureClassificationLabel.BOX_PLOT,
+                PictureClassificationLabel.OTHER_CHART,
             ]
 
             # Legacy v1 model labels
