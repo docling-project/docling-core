@@ -1,3 +1,5 @@
+import subprocess
+import sys
 from collections import Counter
 from dataclasses import dataclass
 
@@ -925,6 +927,22 @@ def test_chunk_raises_on_missing_semchunk(monkeypatch):
 
     with pytest.raises(ImportError, match="semchunk"):
         list(chunker.chunk(dl_doc=dl_doc))
+
+
+def test_chunkers_import_without_huggingface_hub():
+    """The chunkers import without huggingface_hub, as installed by the chunking-openai extra.
+
+    huggingface_hub comes with transformers (the chunking extra), so a module-level import of
+    it made every chunker import fail for users of OpenAITokenizer.
+    """
+    code = (
+        "import sys\n"
+        "sys.modules['huggingface_hub'] = None\n"
+        "from docling_core.transforms.chunker import HierarchicalChunker, HybridChunker\n"
+        "from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer\n"
+    )
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=False)
+    assert result.returncode == 0, result.stderr
 
 
 class _CountingSerializerProxy:

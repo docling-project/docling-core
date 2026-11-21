@@ -4,7 +4,6 @@ import json
 from os import PathLike
 from typing import Any, Optional, Union
 
-from huggingface_hub import hf_hub_download
 from pydantic import ConfigDict, model_validator
 from typing_extensions import Self
 
@@ -44,6 +43,10 @@ class HuggingFaceTokenizer(BaseTokenizer):
     def _patch(self) -> Self:
         if self.max_tokens is None:
             try:
+                # huggingface_hub comes with transformers, which this tokenizer needs. It is
+                # imported here so that the chunkers load with the chunking-openai extra.
+                from huggingface_hub import hf_hub_download
+
                 # try to use SentenceTransformers-specific config as that seems to be
                 # reliable (whenever available)
                 config_name = "sentence_bert_config.json"
