@@ -461,6 +461,16 @@ class AzureDocSerializer(DocSerializer):
     _azure: _AzureOutput = PrivateAttr(default_factory=_AzureOutput)
 
     @override
+    def _serialize_body(self, **kwargs: Any) -> SerializationResult:
+        """Serialize the document body, starting from an empty accumulator.
+
+        This is the single entry point of a whole-document pass, so discarding
+        the accumulator here keeps each pass independent of earlier ones.
+        """
+        self._azure = _AzureOutput()
+        return super()._serialize_body(**kwargs)
+
+    @override
     def serialize_doc(
         self,
         *,
