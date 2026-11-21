@@ -47,6 +47,31 @@ class SerializationResult(BaseModel):
         return doc_items
 
 
+class BaseMetadataSerializer(ABC):
+    """Base class for document-level YAML front-matter serializers.
+
+    This hook is separate from ``BaseMetaSerializer``, which renders item metadata.
+    """
+
+    @abstractmethod
+    def serialize(
+        self,
+        *,
+        doc: DoclingDocument,
+        doc_serializer: "BaseDocSerializer",
+        parts: list[SerializationResult],
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Return front matter, including delimiters and a trailing blank line.
+
+        ``parts`` contain the finalized Markdown body, including page-break
+        replacements, and are joined with two newlines. Empty source parts are
+        omitted; parts made empty by substitution still contribute separators.
+        Any positions must account for the returned front matter's size.
+        """
+        ...
+
+
 class BaseTextSerializer(ABC):
     """Base class for text item serializers."""
 
