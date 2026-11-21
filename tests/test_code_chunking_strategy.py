@@ -8,6 +8,7 @@ from docling_core.transforms.chunker import (
     HybridChunker,
     StandardCodeChunkingStrategy,
 )
+from docling_core.transforms.chunker.code_chunking._language_code_chunkers import _PythonFunctionChunker
 from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
 from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
@@ -167,6 +168,71 @@ def test_unsupported_language_fallback(test_data_dir):
         all_text = " ".join(chunk.text for chunk in chunks)
         assert "Sample Markdown File" in all_text
         assert "def hello()" in all_text
+
+
+@pytest.mark.parametrize(
+    ("language", "code"),
+    [
+        (
+            CodeLanguageLabel.PYTHON,
+            "# {c}\nimport os\n\nX = 1\n\ndef foo():\n    # {c}\n    return os.getcwd()\n\nY = 2\n",
+        ),
+        (
+            CodeLanguageLabel.JAVASCRIPT,
+            "// {c}\nconst x = 1;\n\nfunction foo() {{\n  // {c}\n  return 1;\n}}\n\nconsole.log(x);\n",
+        ),
+        (
+            CodeLanguageLabel.TYPESCRIPT,
+            "// {c}\nconst x: number = 1;\n\nfunction foo(): number {{\n  // {c}\n  return 1;\n}}\n\nconsole.log(x);\n",
+        ),
+        (
+            CodeLanguageLabel.C,
+            "// {c}\n#define X 1\n\nint foo(void) {{\n  // {c}\n  return 1;\n}}\n\ntypedef int y_t;\n",
+        ),
+        (
+            CodeLanguageLabel.JAVA,
+            "// {c}\nimport java.util.List;\n\n/** {c} */\ninterface Foo {{\n}}\n\n"
+            "class Bar {{\n  int foo() {{\n    // {c}\n    return 1;\n  }}\n}}\n",
+        ),
+    ],
+)
+def test_non_ascii_code_chunks_like_ascii_code(language, code):
+    """Tree-sitter offsets count bytes, so multi-byte comments must not change the chunks."""
+
+    def chunks_for(comment):
+        doc = DoclingDocument(name="sample")
+        item = doc.add_code(text=code.format(c=comment), code_language=language)
+        return [
+            (chunk.meta.chunk_type, chunk.meta.start_line, chunk.meta.end_line, chunk.text.replace(comment, "<c>"))
+            for chunk in StandardCodeChunkingStrategy().chunk_code_item(item=item, doc=doc)
+        ]
+
+    # 2, 3 and 4 bytes per character in UTF-8
+    assert chunks_for("é中😀") == chunks_for("abc")
+
+
+def test_non_ascii_code_keeps_preamble():
+    """Module-level code around a function survives a multi-byte comment before it."""
+    code = "# 中文注释\nimport os\n\nX = 1\n\ndef foo():\n    return os.getcwd()\n\nY = 2\n"
+    doc = DoclingDocument(name="sample")
+    item = doc.add_code(text=code, code_language=CodeLanguageLabel.PYTHON)
+
+    chunks = list(StandardCodeChunkingStrategy().chunk_code_item(item=item, doc=doc))
+    preamble = next(chunk for chunk in chunks if chunk.meta.chunk_type.value == "preamble")
+
+    assert preamble.text == "X = 1\n\nY = 2"
+
+
+def test_preamble_comes_from_the_item_being_chunked():
+    """Each code item in a document gets a preamble from its own text."""
+    doc = DoclingDocument(name="sample")
+    doc.add_code(text="# " + "中" * 40 + "\nA = 1\n", code_language=CodeLanguageLabel.PYTHON)
+    doc.add_code(text="def foo():\n    return 1\n\nB = 2\n", code_language=CodeLanguageLabel.PYTHON)
+
+    chunks = list(_PythonFunctionChunker().chunk(doc))
+    preambles = [chunk.text for chunk in chunks if chunk.meta.chunk_type.value == "preamble"]
+
+    assert preambles == ["# " + "中" * 40 + "\nA = 1", "B = 2"]
 
 
 def test_repository_processing(test_data_dir):

@@ -161,12 +161,12 @@ class _ChunkMetadataBuilder:
             chunk_type=CodeChunkType.PREAMBLE,
         )
 
-    def calculate_line_numbers(self, code: str, start_byte: int, end_byte: int) -> tuple[int, int]:
+    def calculate_line_numbers(self, code: bytes, start_byte: int, end_byte: int) -> tuple[int, int]:
         """Calculate line numbers from byte positions."""
-        start_line = code[:start_byte].count("\n") + 1
+        start_line = code[:start_byte].count(b"\n") + 1
         if end_byte > 0 and end_byte <= len(code):
-            end_line = code[:end_byte].count("\n") + 1
-            if end_byte < len(code) and code[end_byte - 1] == "\n":
+            end_line = code[:end_byte].count(b"\n") + 1
+            if end_byte < len(code) and code[end_byte - 1 : end_byte] == b"\n":
                 end_line -= 1
         else:
             end_line = start_line
@@ -231,21 +231,20 @@ class _ChunkBuilder:
         )
         return CodeChunk(text=content, meta=metadata, doc_items=[self.item])
 
-    def process_orphan_chunks(self, used_ranges: list[tuple[int, int]], dl_doc) -> Iterator[CodeChunk]:
+    def process_orphan_chunks(self, used_ranges: list[tuple[int, int]]) -> Iterator[CodeChunk]:
         """Process orphan chunks (preamble) from unused code ranges."""
-        from docling_core.types.doc.labels import DocItemLabel
-
-        code = next((t.text for t in dl_doc.texts if t.label == DocItemLabel.CODE), None)
+        code = self.item.text
         if not code:
             return
 
         range_tracker = _RangeTracker()
         range_tracker.extend(used_ranges)
 
-        gaps = range_tracker.find_gaps(len(code))
+        code_bytes = code.encode()
+        gaps = range_tracker.find_gaps(len(code_bytes))
         orphan_pieces = []
         for start_byte, end_byte in gaps:
-            orphan_text = code[start_byte:end_byte].strip()
+            orphan_text = code_bytes[start_byte:end_byte].decode().strip()
             if orphan_text:
                 orphan_pieces.append((orphan_text, start_byte, end_byte))
 
@@ -254,7 +253,9 @@ class _ChunkBuilder:
             first_start_byte = orphan_pieces[0][1]
             last_end_byte = orphan_pieces[-1][2]
 
-            start_line, end_line = self.metadata_builder.calculate_line_numbers(code, first_start_byte, last_end_byte)
+            start_line, end_line = self.metadata_builder.calculate_line_numbers(
+                code_bytes, first_start_byte, last_end_byte
+            )
             yield self.build_preamble_chunk(merged_content, start_line, end_line)
 
 
@@ -499,7 +500,7 @@ class _CodeChunker(BaseChunker):
                         range_tracker.extend(chunk_used_ranges)
                         all_chunks.append((chunk, chunk_used_ranges))
 
-                for chunk in chunk_builder.process_orphan_chunks(range_tracker.get_used_ranges(), dl_doc):
+                for chunk in chunk_builder.process_orphan_chunks(range_tracker.get_used_ranges()):
                     all_chunks.append((chunk, []))
 
                 for chunk, _ in size_processor.process_chunks(all_chunks):
