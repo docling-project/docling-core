@@ -48,6 +48,7 @@ from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     BaseMeta,
     CodeItem,
+    CodeLanguageLabel,
     CodeMetaField,
     ContentLayer,
     DescriptionAnnotation,
@@ -200,7 +201,9 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             )
 
         elif isinstance(item, CodeItem):
-            text = f"<code>{text}</code>" if is_inline_scope else f"<pre><code>{text}</code></pre>"
+            lang = item.code_language.value.lower() if item.code_language != CodeLanguageLabel.UNKNOWN else ""
+            code_class = f' class="language-{html.escape(lang)}"' if lang and not is_inline_scope else ""
+            text = f"<code>{text}</code>" if is_inline_scope else f"<pre><code{code_class}>{text}</code></pre>"
 
         elif isinstance(item, ListItem):
             # List items are handled by list serializer
