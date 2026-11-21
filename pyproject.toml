@@ -122,6 +122,7 @@ dev = [
     { include-group = "typecheck" },
     "prek>=0.3.10",
     "jsondiff~=2.0",
+    "markdown-it-py>=3.0",
     "ipykernel~=6.29",
     "coverage~=7.6",
     "pytest~=9.0.3",
