@@ -5,6 +5,7 @@ from PIL import Image as PILImage
 
 from docling_core.types.doc import DoclingDocument
 from docling_core.types.doc.document import DocTagsDocument
+from docling_core.types.doc.utils import parse_otsl_table_content
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -168,3 +169,30 @@ def test_doctags_inline():
         exp_file=exp,
         actual=deser_doc.export_to_dict(),
     )
+
+
+def _cells(otsl: str) -> list[tuple[str, int, int, int, int]]:
+    td = parse_otsl_table_content(otsl)
+    return [(c.text, c.start_row_offset_idx, c.start_col_offset_idx, c.row_span, c.col_span) for c in td.table_cells]
+
+
+def test_parse_otsl_ucel_span_into_shorter_row():
+    # Regression for docling-project/docling#2467: VLM output can have rows of
+    # different length, and a vertical span that reached a shorter row raised
+    # IndexError.
+    cells = _cells("<otsl><fcel>a<fcel>b<nl><fcel>c<ucel><nl><fcel>d<nl></otsl>")
+
+    assert cells == [
+        ("a", 0, 0, 1, 1),
+        ("b", 0, 1, 2, 1),
+        ("c", 1, 0, 1, 1),
+        ("d", 2, 0, 1, 1),
+    ]
+
+
+def test_parse_otsl_lcel_after_row_end():
+    # An empty cell at the end of a row makes the look-ahead see the lcel of the
+    # next row, and the horizontal span count read past the row end.
+    cells = _cells("<otsl><ched><nl><lcel><fcel>x<nl></otsl>")
+
+    assert ("x", 1, 1, 1, 1) in cells
