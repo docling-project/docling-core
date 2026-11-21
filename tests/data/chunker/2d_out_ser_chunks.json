@@ -146,14 +146,19 @@
             "num_tokens": 39
         },
         {
-            "text": "These are the trends####2014, Revenue  (US$ bn) = 92.7. 2014, Net income  (US$ bn) = 12.0. 2014, Employees = 379,592. 2015, Revenue  (US$ bn) = 81.7. 2015, Net income",
-            "ser_text": "These are the trends####2014, Revenue  (US$ bn) = 92.7. 2014, Net income  (US$ bn) = 12.0. 2014, Employees = 379,592. 2015, Revenue  (US$ bn) = 81.7. 2015, Net income",
-            "num_tokens": 62
+            "text": "These are the trends",
+            "ser_text": "These are the trends",
+            "num_tokens": 4
         },
         {
-            "text": "(US$ bn) = 13.1. 2015, Employees = 377,757####A last paragraph is down here, after the results table.",
-            "ser_text": "(US$ bn) = 13.1. 2015, Employees = 377,757####A last paragraph is down here, after the results table.",
-            "num_tokens": 35
+            "text": "row_0, Year = 2014. row_0, Revenue  (US$ bn) = 92.7. row_0, Net income  (US$ bn) = 12.0. row_0, Employees = 379,592. row_1, Year = 2015. row_1, Revenue",
+            "ser_text": "row_0, Year = 2014. row_0, Revenue  (US$ bn) = 92.7. row_0, Net income  (US$ bn) = 12.0. row_0, Employees = 379,592. row_1, Year = 2015. row_1, Revenue",
+            "num_tokens": 64
+        },
+        {
+            "text": "(US$ bn) = 81.7. row_1, Net income  (US$ bn) = 13.1. row_1, Employees = 377,757####A last paragraph is down here, after the results table.",
+            "ser_text": "(US$ bn) = 81.7. row_1, Net income  (US$ bn) = 13.1. row_1, Employees = 377,757####A last paragraph is down here, after the results table.",
+            "num_tokens": 53
         }
     ]
 }
