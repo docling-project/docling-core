@@ -1,3 +1,6 @@
+# Copyright © Docling a Series of LF Projects, LLC
+# For web site terms of use, trademark policy and other project policies please see https://lfprojects.org.
+
 import warnings
 from collections.abc import Iterator
 from functools import cached_property
@@ -193,13 +196,13 @@ class LineBasedTokenChunker(BaseChunker):
             remaining = line
 
             while True:
-                line_tokens = self.tokenizer.count_tokens(remaining)
                 available = self.max_tokens - current_len
 
                 # If the remaining part fits entirely into current chunk → append and stop
-                if self.tokenizer.count_tokens(current + remaining) <= self.max_tokens:
+                combined_tokens = self.tokenizer.count_tokens(current + remaining)
+                if combined_tokens <= self.max_tokens:
                     current += remaining
-                    current_len = self.tokenizer.count_tokens(current)
+                    current_len = combined_tokens
                     break
 
                 # Remaining does NOT fit into current chunk.
@@ -216,7 +219,11 @@ class LineBasedTokenChunker(BaseChunker):
 
                 # Check if omitting prefix would allow the line to fit
                 # (only if line itself is not larger than max_tokens)
-                if self.omit_prefix_on_overflow and line_tokens <= self.max_tokens and self.prefix_len > 0:
+                if (
+                    self.omit_prefix_on_overflow
+                    and self.prefix_len > 0
+                    and self.tokenizer.count_tokens(remaining) <= self.max_tokens
+                ):
                     # Warn once when prefix is actually omitted
                     if not self._prefix_omitted_warned:
                         warnings.warn(
