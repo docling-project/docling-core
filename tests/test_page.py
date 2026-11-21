@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+
 import math
 
 import numpy as np
@@ -291,6 +293,7 @@ def _dest(
     point: Coord2D | None = Coord2D(x=72.0, y=690.0),
     coord_origin: CoordOrigin = CoordOrigin.BOTTOMLEFT,
     height: float = 800.0,
+    structure_element_id: str | None = None,
 ) -> PdfDestination:
     return PdfDestination(
         page_no=page_no,
@@ -298,6 +301,7 @@ def _dest(
         point=point,
         coord_origin=coord_origin,
         page_size=Size(width=600.0, height=height),
+        structure_element_id=structure_element_id,
     )
 
 
@@ -328,9 +332,13 @@ class TestPdfTableOfContentsCompatibility:
         assert toc.children[0].text == "Introduction"
         assert toc.children[0].destination is None
 
-    def test_destination_round_trips(self):
-        toc = _toc("<root>", _toc("Introduction", destination=_dest(3)))
-        restored = PdfTableOfContents.model_validate(toc.export_to_dict())
+    @pytest.mark.parametrize("structure_element_id", [None, "42 7"])
+    def test_destination_round_trips(self, structure_element_id: str | None):
+        destination = _dest(3, structure_element_id=structure_element_id)
+        toc = _toc("<root>", _toc("Introduction", destination=destination))
+        payload = toc.export_to_dict()
+        assert ("structure_element_id" in payload["children"][0]["destination"]) == (structure_element_id is not None)
+        restored = PdfTableOfContents.model_validate(payload)
         assert restored.children[0].destination == toc.children[0].destination
 
 
@@ -393,8 +401,9 @@ class TestPdfDestinationOrigin:
         assert dest == source
         assert dest is not source
 
-    def test_round_trip(self):
-        source = _dest()
+    @pytest.mark.parametrize("structure_element_id", [None, "42 7"])
+    def test_round_trip(self, structure_element_id: str | None):
+        source = _dest(structure_element_id=structure_element_id)
         assert source.to_top_left_origin().to_bottom_left_origin() == source
 
     def test_missing_point_survives_conversion(self):
