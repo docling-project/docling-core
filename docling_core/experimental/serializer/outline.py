@@ -231,11 +231,12 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
     # Extract title/heading text once if needed
     title_text: str | None = None
     if params.include_non_meta and isinstance(item, TitleItem | SectionHeaderItem):
-        title_text = (
-            item.text
-            if params.format in (OutlineFormat.JSON, OutlineFormat.ITXT)
-            else _serialize_text_item(item, doc, **kwargs)
-        )
+        if params.format in (OutlineFormat.JSON, OutlineFormat.ITXT):
+            title_text = item.text
+            if not title_text and item.children and isinstance((child := item.children[0].resolve(doc)), InlineGroup):
+                title_text = MarkdownDocSerializer(doc=doc).serialize(item=child).text
+        else:
+            title_text = _serialize_text_item(item, doc, **kwargs)
 
     # For JSON and ITXT formats, return structured data as JSON string
     # (ITXT will be assembled at document level in serialize_doc)
