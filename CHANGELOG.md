@@ -1,3 +1,19 @@
+## [v2.108.0](https://github.com/docling-project/docling-core/releases/tag/v2.108.0) - 2026-11-20
+
+### Feature
+
+* Add TrackItem and DocLang `<track>` support ([#940](https://github.com/docling-project/docling-core/issues/940)) ([`6cb1101`](https://github.com/docling-project/docling-core/commit/6cb11010e58c97c65ef05ed90ccb0c68e761b20d))
+
+## [v2.107.1](https://github.com/docling-project/docling-core/releases/tag/v2.107.1) - 2026-11-16
+
+### Fix
+
+* **webvtt:** Keep a sub-millisecond cue serializable ([#1014](https://github.com/docling-project/docling-core/issues/1014)) ([`3faf821`](https://github.com/docling-project/docling-core/commit/3faf82187053f646a5711f2ebae3be9f7bb1a0e0))
+* **webvtt:** Escape cue text and voice names when exporting to WebVTT ([#972](https://github.com/docling-project/docling-core/issues/972)) ([`b11a140`](https://github.com/docling-project/docling-core/commit/b11a1400a2012f40db357d83342b3c183fa098a2))
+* **webvtt:** Keep whitespace-only lines inside a cue ([#975](https://github.com/docling-project/docling-core/issues/975)) ([`eb54920`](https://github.com/docling-project/docling-core/commit/eb54920b13569d4cffa9ab4db4d002593c6b5176))
+* **webvtt:** Parse cue ruby spans instead of dropping their cues ([#935](https://github.com/docling-project/docling-core/issues/935)) ([`18e6be7`](https://github.com/docling-project/docling-core/commit/18e6be77e005af3b3a66357b3c92d73a42e6ab84))
+* **webvtt:** Resolve every HTML character reference in cue text ([#926](https://github.com/docling-project/docling-core/issues/926)) ([`876ca93`](https://github.com/docling-project/docling-core/commit/876ca93c703fc2fdf928be96b08b15dce0f1da2e))
+
 ## [v2.107.0](https://github.com/docling-project/docling-core/releases/tag/v2.107.0) - 2026-11-13
 
 ### Feature

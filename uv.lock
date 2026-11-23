@@ -1096,7 +1096,7 @@ wheels = [
 
 [[package]]
 name = "dclq"
-version = "2.107.0"
+version = "2.108.0"
 source = { editable = "packages/dclq" }
 dependencies = [
     { name = "docling-core", extra = ["dclq"] },
@@ -1167,15 +1167,15 @@ wheels = [
 
 [[package]]
 name = "doclang"
-version = "0.9.0"
+version = "0.10.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "lxml" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9d/f9/89048f861a1930db31309b25edd77462c7cefa9336b3fc9f8721369d3153/doclang-0.9.0.tar.gz", hash = "sha256:732c1d8b9e14945836df6bf8ae16e8d4603d77fc160363ce2c5e2aeb3ec4d9cf", size = 87408, upload-time = "2026-10-30T13:19:54.655Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/48/09/e2b79f631d5799804fd06402b7d8aa5d6c54da455298fecdca3398d7b3de/doclang-0.10.1.tar.gz", hash = "sha256:c0efb5be0986b89c4f0f7f1472f3d310f78e7f0e29717c0477b64f7e622372e8", size = 105184, upload-time = "2026-11-20T12:56:43.667Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/14/ec/d5270f059d99ce20c83736ba4bb1d7ae21f19c2e988355c603df381c87f6/doclang-0.9.0-py3-none-any.whl", hash = "sha256:86e8fafa09946389e16218d9b4fb40e161fa02dc965d72be1b9785e2eeea1f4a", size = 94831, upload-time = "2026-10-30T13:19:53.272Z" },
+    { url = "https://files.pythonhosted.org/packages/34/3c/82c655c0d9d2034745083492c6c798cc1977f7bc2595acde7e92213ab1f1/doclang-0.10.1-py3-none-any.whl", hash = "sha256:8c5c0b2d892fd01bb05dc9e1158720cc5a652b56592681523c590ceff94faeee", size = 114110, upload-time = "2026-11-20T12:56:42.593Z" },
 ]
 
 [package.optional-dependencies]
@@ -1185,7 +1185,7 @@ schematron-saxon = [
 
 [[package]]
 name = "docling-core"
-version = "2.107.0"
+version = "2.108.0"
 source = { editable = "." }
 dependencies = [
     { name = "defusedxml" },
@@ -1281,8 +1281,8 @@ typecheck = [
 requires-dist = [
     { name = "datasets", marker = "extra == 'examples'", specifier = ">=4.0.0" },
     { name = "defusedxml", specifier = ">=0.7.1,<0.8.0" },
-    { name = "doclang", specifier = ">=0.9,<0.10" },
-    { name = "doclang", marker = "extra == 'dclq'", specifier = ">=0.9,<0.10" },
+    { name = "doclang", specifier = ">=0.10.1,<0.11" },
+    { name = "doclang", marker = "extra == 'dclq'", specifier = ">=0.10.1,<0.11" },
     { name = "jsonref", specifier = ">=1.1.0,<2.0.0" },
     { name = "jsonschema", specifier = ">=4.16.0,<5.0.0" },
     { name = "latex2mathml", specifier = ">=3.77.0,<4.0.0" },
@@ -1324,7 +1324,7 @@ constraints = [
 dev = [
     { name = "coverage", specifier = "~=7.6" },
     { name = "dclq", editable = "packages/dclq" },
-    { name = "doclang", extras = ["schematron-saxon"], marker = "python_full_version < '3.15'", specifier = ">=0.9,<0.10" },
+    { name = "doclang", extras = ["schematron-saxon"], marker = "python_full_version < '3.15'", specifier = ">=0.10.1,<0.11" },
     { name = "ipykernel", specifier = "~=6.29" },
     { name = "jsondiff", specifier = "~=2.0" },
     { name = "opencv-python-headless", specifier = ">=4.6.0.66,<5.0.0.0" },

@@ -8,6 +8,7 @@ import json
 import logging
 import mimetypes
 import re
+import shutil
 import sys
 import tempfile
 import typing
@@ -26,6 +27,7 @@ from typing import (
     Union,
 )
 from urllib.parse import unquote
+from xml.etree import ElementTree
 
 import numpy as np
 import pandas as pd
@@ -96,9 +98,11 @@ from docling_core.types.doc.common.reference import (
     CV2_INSTALLED,
     FineRef,
     ImageRef,
+    MediaRef,
     PageItem,
     ProvenanceItem,
     RefItem,
+    media_type_of,
 )
 from docling_core.types.doc.common.scalars import CharSpan, LevelNumber, Uint64
 from docling_core.types.doc.common.source import BaseSource, SourceType, TrackSource
@@ -148,6 +152,7 @@ from docling_core.types.doc.items.table.table_data import (
     TableData,
 )
 from docling_core.types.doc.items.text import FormulaItem, ListItem, SectionHeaderItem, TextItem, TitleItem
+from docling_core.types.doc.items.track import TrackItem
 from docling_core.types.doc.labels import (
     CodeLanguageLabel,
     DocItemLabel,
@@ -233,6 +238,7 @@ class DoclingDocument(BaseModel):
     form_items: list[FormItem] = []
     field_regions: list[FieldRegionItem] = []
     field_items: list[FieldItem] = []
+    tracks: list[TrackItem] = []
 
     pages: dict[int, PageItem] = {}  # empty as default
 
@@ -241,7 +247,7 @@ class DoclingDocument(BaseModel):
         dumped = handler(self)
 
         # suppress serializing certain fields when empty:
-        for field in {"field_regions", "field_items"}:
+        for field in {"field_regions", "field_items", "tracks"}:
             if dumped.get(field) == []:
                 del dumped[field]
 
@@ -342,6 +348,7 @@ class DoclingDocument(BaseModel):
             self.form_items,
             self.field_regions,
             self.field_items,
+            self.tracks,
         )
 
     def _iter_page_bboxes(self) -> Iterator[tuple[int, BoundingBox, ProvenanceItem | TableCell]]:
@@ -1086,6 +1093,17 @@ class DoclingDocument(BaseModel):
 
             self.field_items.append(item)
 
+        elif isinstance(item, TrackItem):
+            item_label = "tracks"
+            item_index = len(self.tracks)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.tracks.append(item)
+
         elif isinstance(item, ListGroup | InlineGroup):
             item_label = "groups"
             item_index = len(self.groups)
@@ -1260,6 +1278,7 @@ class DoclingDocument(BaseModel):
             self.form_items,
             self.field_regions,
             self.field_items,
+            self.tracks,
         ):
             yield from item_list
 
@@ -1955,6 +1974,49 @@ class DoclingDocument(BaseModel):
         parent.children.append(RefItem(cref=cref))
 
         return fig_item
+
+    def add_track(
+        self,
+        image: ImageRef | None = None,
+        caption: TextItem | RefItem | None = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
+        audio: MediaRef | None = None,
+        video: MediaRef | None = None,
+    ) -> TrackItem:
+        """Add a track: a time-aligned media transcript.
+
+        Add the cues of the track as its children, e.g. with ``add_text(...,
+        parent=track, source=TrackSource(...))``.
+
+        :param image: Optional[ImageRef]: The cover of the track. (Default value = None)
+        :param caption: Optional[Union[TextItem, RefItem]]: (Default value = None)
+        :param prov: Optional[ProvenanceItem]: The location of the track. (Default value = None)
+        :param parent: Optional[NodeItem]: (Default value = None)
+        :param content_layer: Optional[ContentLayer]: (Default value = None)
+        :param audio: Optional[MediaRef]: The audio recording. (Default value = None)
+        :param video: Optional[MediaRef]: The video recording. (Default value = None)
+
+        :returns: TrackItem: The newly created TrackItem.
+        """
+        if not parent:
+            parent = self.body
+
+        cref = f"#/tracks/{len(self.tracks)}"
+
+        track_item = TrackItem(image=image, audio=audio, video=video, self_ref=cref, parent=parent.get_ref())
+        if prov:
+            track_item.prov.append(prov)
+        if content_layer:
+            track_item.content_layer = content_layer
+        if caption:
+            track_item.captions.append(caption.get_ref())
+
+        self.tracks.append(track_item)
+        parent.children.append(RefItem(cref=cref))
+
+        return track_item
 
     def add_title(
         self,
@@ -2941,6 +3003,44 @@ class DoclingDocument(BaseModel):
 
         return picture_item
 
+    def insert_track(
+        self,
+        sibling: NodeItem,
+        image: ImageRef | None = None,
+        caption: TextItem | RefItem | None = None,
+        prov: ProvenanceItem | None = None,
+        content_layer: ContentLayer | None = None,
+        after: bool = True,
+        audio: MediaRef | None = None,
+        video: MediaRef | None = None,
+    ) -> TrackItem:
+        """Creates a new TrackItem item and inserts it into the document.
+
+        :param sibling: NodeItem:
+        :param image: Optional[ImageRef]: The cover of the track. (Default value = None)
+        :param caption: Optional[Union[TextItem, RefItem]]: (Default value = None)
+        :param prov: Optional[ProvenanceItem]: The location of the track. (Default value = None)
+        :param content_layer: Optional[ContentLayer]: (Default value = None)
+        :param after: bool: (Default value = True)
+        :param audio: Optional[MediaRef]: The audio recording. (Default value = None)
+        :param video: Optional[MediaRef]: The video recording. (Default value = None)
+
+        :returns: TrackItem: The newly created TrackItem.
+        """
+        stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
+
+        track_item = TrackItem(image=image, audio=audio, video=video, self_ref="#", parent=parent_ref)
+        if prov:
+            track_item.prov.append(prov)
+        if content_layer:
+            track_item.content_layer = content_layer
+        if caption:
+            track_item.captions.append(caption.get_ref())
+
+        self._insert_in_structure(item=track_item, stack=stack, after=after)
+
+        return track_item
+
     def insert_title(
         self,
         sibling: NodeItem,
@@ -3575,14 +3675,12 @@ class DoclingDocument(BaseModel):
         # Yield non-group items or group items when with_groups=True
 
         # Combine conditions to have a single yield point
-        should_yield = (
-            (not isinstance(root, GroupItem) or with_groups)
-            and (
-                not isinstance(root, DocItem)
-                or (page_nrs is None or any(prov.page_no in page_nrs for prov in root.prov))
-            )
-            and root.content_layer in my_layers
+        on_page = (
+            not isinstance(root, DocItem) or page_nrs is None or any(prov.page_no in page_nrs for prov in root.prov)
         )
+        should_yield = (not isinstance(root, GroupItem) or with_groups) and on_page and root.content_layer in my_layers
+        # the cues of a track have no location of their own: they are on the pages of the track
+        child_page_nrs = None if isinstance(root, TrackItem) and on_page else page_nrs
 
         if should_yield:
             yield root, my_stack
@@ -3610,7 +3708,7 @@ class DoclingDocument(BaseModel):
                     child,
                     with_groups=with_groups,
                     traverse_pictures=traverse_pictures,
-                    page_nrs=page_nrs,
+                    page_nrs=child_page_nrs,
                     _stack=my_stack,
                     included_content_layers=my_layers,
                 )
@@ -3620,7 +3718,7 @@ class DoclingDocument(BaseModel):
     def _clear_picture_pil_cache(self):
         """Clear cache storage of all images."""
         for item, level in self.iterate_items(with_groups=False):
-            if isinstance(item, PictureItem):
+            if isinstance(item, PictureItem | TrackItem):
                 if item.image is not None and item.image._pil is not None:
                     item.image._pil.close()
 
@@ -3642,7 +3740,13 @@ class DoclingDocument(BaseModel):
             ValueError: If a referenced path is not a regular file or exceeds
                 ``settings.max_image_decoded_size``.
         """
-        items: list[FloatingItem] = [*self.pictures, *self.tables, *self.key_value_items, *self.form_items]
+        items: list[FloatingItem] = [
+            *self.pictures,
+            *self.tables,
+            *self.key_value_items,
+            *self.form_items,
+            *self.tracks,
+        ]
         image_refs = [item.image for item in items if item.image is not None]
         image_refs += [page.image for page in self.pages.values() if page.image is not None]
         for image_ref in image_refs:
@@ -3653,7 +3757,7 @@ class DoclingDocument(BaseModel):
         result: list[Path] = []
 
         for item, level in self.iterate_items(with_groups=False):
-            if isinstance(item, PictureItem):
+            if isinstance(item, PictureItem | TrackItem):
                 if item.image is not None:
                     if (
                         isinstance(item.image.uri, AnyUrl)
@@ -3676,7 +3780,7 @@ class DoclingDocument(BaseModel):
         result: DoclingDocument = copy.deepcopy(self)
 
         for ix, (item, level) in enumerate(result.iterate_items(with_groups=True)):
-            if isinstance(item, PictureItem):
+            if isinstance(item, PictureItem | TrackItem):
                 if item.image is not None and item.image._local_path() is not None:
                     # go through pil_image so local reads honor the same settings gate
                     tmp_image = item.image.pil_image
@@ -3757,7 +3861,8 @@ class DoclingDocument(BaseModel):
 
         img_count = 0
         for item, _ in result.iterate_items(page_no=page_no, with_groups=False):
-            if isinstance(item, PictureItem):
+            # a track's image is its cover
+            if isinstance(item, PictureItem | TrackItem):
                 img = item.get_image(doc=self)
                 if img is not None:
                     hexhash = PictureItem._image_to_hexhash(img)
@@ -5333,6 +5438,8 @@ class DoclingDocument(BaseModel):
         image_mode: ImageRefMode = ImageRefMode.REFERENCED,
         xsize: int | None = None,
         ysize: int | None = None,
+        allow_local_media: bool = False,
+        source: Path | bytes | None = None,
     ) -> None:
         """Save the document as a DocLang OPC archive (``.dclx``).
 
@@ -5349,6 +5456,20 @@ class DoclingDocument(BaseModel):
         elements so the grouping survives a round trip.
 
         ``xsize`` / ``ysize`` set the location coordinate grid (default: DocLang default resolution).
+
+        The ``audio`` and ``video`` of each track are stored as ``audio/{N}.*`` and
+        ``video/{N}.*``, where ``N`` is the position of its ``<track>``. A media file is
+        read if its ``MediaRef`` was made with ``from_file`` or comes from a loaded archive,
+        and media made with ``from_bytes`` is written as is.
+        Other local paths are document content, and are read only with ``allow_local_media``
+        (for trusted documents) or ``settings.allow_media_file_uri``. Media that cannot be
+        read is left out, with a warning.
+
+        ``source`` is the original document the content was converted from, as a file path
+        or as bytes. It is stored unchanged in the archive, which records its file name and
+        media type from ``origin`` (for a path without ``origin``, its own name and the media
+        type guessed from it). A source that is also stored as the media of a track is not
+        stored twice.
 
         ``include_namespace`` declares the DocLang namespace on the root element. It is
         required for ``validate`` to pass, as the schema only declares the namespaced root.
@@ -5410,6 +5531,16 @@ class DoclingDocument(BaseModel):
             if assets_dir.is_dir() and any(assets_dir.iterdir()):
                 pack_kwargs["assets"] = assets_dir
 
+            pack_kwargs |= self._doclang_archive_media(
+                serializer=serializer,
+                markup=document_path,
+                staging_root=staging_root,
+                allow_local_media=allow_local_media,
+            )
+
+            if source is not None:
+                pack_kwargs |= self._doclang_archive_source(source)
+
             pack(**pack_kwargs)
 
         if artifacts_dir is None:
@@ -5418,6 +5549,68 @@ class DoclingDocument(BaseModel):
         else:
             artifacts_dir.mkdir(parents=True, exist_ok=True)
             _write_archive(artifacts_dir)
+
+    def _doclang_archive_source(self, source: Path | bytes) -> dict[str, Any]:
+        """The ``pack`` arguments for the original source, named and typed after ``origin``."""
+        if not isinstance(source, (bytes, Path)):
+            raise TypeError(f"source must be a Path or bytes, not {type(source).__name__}")
+        kwargs: dict[str, Any] = {"source": source}
+        if self.origin is not None:
+            kwargs["source_name"] = self.origin.filename
+            kwargs["source_mimetype"] = self.origin.mimetype
+        elif isinstance(source, Path):
+            kwargs["source_name"] = source.name
+            if (guessed := mimetypes.guess_type(source.name)[0]) is not None:
+                kwargs["source_mimetype"] = guessed
+        return kwargs
+
+    def _doclang_archive_media(
+        self,
+        *,
+        serializer: Any,
+        markup: Path,
+        staging_root: Path,
+        allow_local_media: bool,
+    ) -> dict[str, dict[int, Path]]:
+        """Map each track's audio and video to its ``<track>`` position, for ``pack``."""
+        media: dict[str, dict[int, Path]] = {"audio": {}, "video": {}}
+        tracks = [track for track in self.tracks if track.audio is not None or track.video is not None]
+        if not tracks:
+            return {}
+        numbers: dict[str, int] = serializer.track_numbers
+        written = sum(
+            1 for el in ElementTree.parse(markup).iter() if isinstance(el.tag, str) and el.tag.endswith("track")
+        )
+        if written != len(serializer._track_order):
+            raise RuntimeError("Cannot match the written tracks to their media")
+        for track in tracks:
+            if (number := numbers.get(track.self_ref)) is None:
+                _logger.warning(f"Media of {track.self_ref} not stored: the track is not written")
+                continue
+            for kind, ref in (("audio", track.audio), ("video", track.video)):
+                if ref is None:
+                    continue
+                content = ref._readable_content(allow_local=allow_local_media)
+                if content is None:
+                    _logger.warning(
+                        f"{kind.capitalize()} of {track.self_ref} not stored: it is not a readable local file, "
+                        "or reading local media is not enabled (allow_local_media)"
+                    )
+                    continue
+                staged = staging_root / "media" / kind / f"{number}.{ref.extension}"
+                if isinstance(content, bytes):
+                    staged.parent.mkdir(parents=True, exist_ok=True)
+                    staged.write_bytes(content)
+                    media[kind][number] = staged
+                    continue
+                path = content.resolve()
+                if path.suffix.lower() != f".{ref.extension}":
+                    # the archive takes the file extension from the media type, not from the path
+                    staged.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(path, staged)
+                    path = staged
+                media[kind][number] = path
+        return {kind: files for kind, files in media.items() if files}
 
     @classmethod
     def load_from_doclang_archive(
@@ -5490,7 +5683,37 @@ class DoclingDocument(BaseModel):
         )
         doc.name = filename.stem
         cls._restore_doclang_archive_page_images(doc=doc, archive_root=artifacts_dir)
+        cls._restore_doclang_archive_track_media(doc=doc, archive_root=artifacts_dir)
         return doc
+
+    @staticmethod
+    def _restore_doclang_archive_track_media(*, doc: "DoclingDocument", archive_root: Path) -> None:
+        """Set the audio and video of the N-th track from ``audio/{N}.*`` and ``video/{N}.*``."""
+        archive_root = archive_root.resolve()
+        for kind in ("audio", "video"):
+            media_dir = archive_root / kind
+            if not media_dir.is_dir():
+                continue
+            for media_file in sorted(media_dir.iterdir()):
+                if media_file.is_symlink() or not media_file.is_file():
+                    continue
+                resolved = resolve_archive_path(archive_root, f"{kind}/{media_file.name}")
+                stem = media_file.stem
+                mimetype = media_type_of(media_file.name)
+                if not stem.isdigit() or not 1 <= int(stem) <= len(doc.tracks):
+                    _logger.warning(f"Ignoring {kind}/{media_file.name}: no track with this number")
+                    continue
+                if mimetype is None or not mimetype.startswith(f"{kind}/"):
+                    _logger.warning(f"Ignoring {kind}/{media_file.name}: unsupported media type")
+                    continue
+                track = doc.tracks[int(stem) - 1]
+                if getattr(track, kind) is not None:
+                    _logger.warning(f"Ignoring {kind}/{media_file.name}: the track has {kind} already")
+                    continue
+                ref = MediaRef(mimetype=mimetype, uri=resolved)
+                # extracted from the archive by us, so saving may read it again
+                ref._content = resolved
+                setattr(track, kind, ref)
 
     @staticmethod
     def _restore_doclang_archive_page_images(*, doc: "DoclingDocument", archive_root: Path) -> None:
@@ -5894,6 +6117,7 @@ class DoclingDocument(BaseModel):
             self.form_items,
             self.field_regions,
             self.field_items,
+            self.tracks,
         ]
         for item_list in item_lists:
             for item in item_list:
@@ -5997,6 +6221,7 @@ class DoclingDocument(BaseModel):
         form_items: list[FormItem] = []
         field_regions: list[FieldRegionItem] = []
         field_items: list[FieldItem] = []
+        tracks: list[TrackItem] = []
 
         pages: dict[int, PageItem] = {}
 
@@ -6029,6 +6254,7 @@ class DoclingDocument(BaseModel):
                 "form_items",
                 "field_regions",
                 "field_items",
+                "tracks",
             ]
             start_indices = {k: len(self.get_item_list(k)) for k in post_processing_keys}
 
@@ -6163,6 +6389,7 @@ class DoclingDocument(BaseModel):
         self.form_items = doc_index.form_items
         self.field_regions = doc_index.field_regions
         self.field_items = doc_index.field_items
+        self.tracks = doc_index.tracks
         self.pages = doc_index.pages
         self.name = doc_index.get_name()
 

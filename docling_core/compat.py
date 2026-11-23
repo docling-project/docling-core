@@ -58,7 +58,7 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from docling_core.types.doc.document import DoclingDocument
@@ -194,11 +194,124 @@ def list_projectors() -> list[tuple[int, int]]:
 # ---------------------------------------------------------------------------
 # Projectors — one per schema minor bump within docling-core v2.x
 # ---------------------------------------------------------------------------
-# These cover every schema version step from the current schema (1.11) down
+# These cover every schema version step from the current schema (1.12) down
 # to the oldest v2.x schema (1.5).  Each projector represents the *minimal*
 # structural downgrade that allows an old client's Pydantic model to parse
 # the serialised dict without error.  Full semantic fidelity is not always
 # possible; the goal is a document that validates rather than crashes.
+
+# --- 1.12 → 1.11 ----------------------------------------------------------
+# Schema 1.12 (docling-core v2.108.0):
+#   • Added TrackItem (a time-aligned media transcript, DocLang ``<track>``)
+#     with the new DocItemLabel value TRACK.
+#   • Added tracks as a new top-level list.
+#   • TrackSource allows instants: end_time equal to start_time.
+#
+# Downgrade strategy:
+#   • Turn each track into a PictureItem (the nearest existing type: a
+#     floating item that keeps the cover image, location, captions and the
+#     cues as its children), appended to "pictures".
+#   • Rewrite every "#/tracks/N" reference to the new picture reference.
+#   • Drop the top-level "tracks" key.
+#   • Give each instant a duration of 1 ms.
+# ---------------------------------------------------------------------------
+
+
+def _rewrite_refs(node: Any, mapping: dict[str, str]) -> Any:
+    """Return *node* with every reference string in *mapping* replaced, at any depth."""
+    if isinstance(node, dict):
+        return {
+            key: (
+                mapping.get(value, value)
+                if key in {"cref", "$ref", "self_ref"} and isinstance(value, str)
+                else _rewrite_refs(value, mapping)
+            )
+            for key, value in node.items()
+        }
+    if isinstance(node, list):
+        return [_rewrite_refs(value, mapping) for value in node]
+    return node
+
+
+def _pad_track_instants(node: Any) -> Any:
+    """Return *node* with every instant ``TrackSource`` made 1 ms long, at any depth."""
+    if isinstance(node, dict):
+        if node.get("kind") == "track" and node.get("end_time", 1) <= node.get("start_time", 0):
+            return {**node, "end_time": node["start_time"] + 0.001}
+        return {key: _pad_track_instants(value) for key, value in node.items()}
+    if isinstance(node, list):
+        return [_pad_track_instants(value) for value in node]
+    return node
+
+
+@register_projector(from_minor=12, to_minor=11)
+def _project_1_12_to_1_11(data: dict) -> dict:
+    """Downgrade a schema 1.12 document dict to schema 1.11.
+
+    Handles:
+    - Replaces each ``TrackItem`` by its children (the cues), so that the transcript stays
+      in the reading order. A track with a cover (``image``), location or captions also
+      leaves a ``PictureItem`` without children before its cues. Its audio and video are
+      dropped.
+    - Removes the top-level ``tracks`` list (unknown to 1.11 clients).
+    - Gives each instant ``TrackSource`` a duration of 1 ms, since 1.11 requires the end
+      time to be after the start time.
+    """
+    data = _pad_track_instants(dict(data))
+    tracks = data.pop("tracks", None) or []
+    if not tracks:
+        data["version"] = "1.11.0"
+        return data
+
+    pictures = list(data.get("pictures", []))
+    parents = {f"#/tracks/{i}": track["parent"] for i, track in enumerate(tracks) if track.get("parent")}
+    mapping: dict[str, str] = {}
+    replacement: dict[str, list[dict]] = {}
+
+    def owner(ref: dict) -> dict:
+        # the cues of a track move to the first ancestor that is not a track
+        while ref.get("cref") in parents:
+            ref = parents[ref["cref"]]
+        return ref
+
+    for i, track in enumerate(tracks):
+        track_ref = f"#/tracks/{i}"
+        refs: list[dict] = []
+        if track.get("image") or track.get("prov") or track.get("captions"):
+            picture_ref = f"#/pictures/{len(pictures)}"
+            mapping[track_ref] = picture_ref
+            refs.append({"cref": picture_ref})
+            picture = {k: v for k, v in track.items() if k not in ("audio", "video")}
+            parent = owner(track["parent"]) if track.get("parent") else None
+            pictures.append({**picture, "label": "picture", "children": [], "parent": parent})
+        replacement[track_ref] = [*refs, *track.get("children", [])]
+    data["pictures"] = pictures
+
+    def splice(node: Any) -> Any:
+        if isinstance(node, dict):
+            node = {key: splice(value) for key, value in node.items()}
+            if isinstance(node.get("parent"), dict) and node["parent"].get("cref") in replacement:
+                node["parent"] = owner(node["parent"])
+            if isinstance(node.get("children"), list):
+                children: list = []
+                pending = list(node["children"])
+                while pending:
+                    child = pending.pop(0)
+                    if isinstance(child, dict) and child.get("cref") in replacement:
+                        pending[:0] = replacement[child["cref"]]
+                    else:
+                        children.append(child)
+                node["children"] = children
+            return node
+        if isinstance(node, list):
+            return [splice(value) for value in node]
+        return node
+
+    data = _rewrite_refs(splice(data), mapping)
+
+    data["version"] = "1.11.0"
+    return data
+
 
 # --- 1.11 → 1.10 ----------------------------------------------------------
 # Schema 1.11 (docling-core v2.106.0): InlineGroup runs carry their own

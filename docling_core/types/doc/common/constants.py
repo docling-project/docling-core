@@ -5,7 +5,7 @@ from typing import Final
 
 from docling_core.types.doc.labels import DocItemLabel
 
-CURRENT_VERSION: Final = "1.11.0"
+CURRENT_VERSION: Final = "1.12.0"
 """Current DoclingDocument schema version.
 
 Bump this (minor) whenever a change to the serialised format would cause an
@@ -24,6 +24,11 @@ SCHEMA_VERSION_HISTORY: Final[list[dict]] = [
         "schema": "1.11.0",
         "library_version": "v2.106.0",
         "note": "InlineGroup runs carry their own significant whitespace",
+    },
+    {
+        "schema": "1.12.0",
+        "library_version": "v2.108.0",
+        "note": "TrackItem with audio and video, tracks list, DocItemLabel.TRACK, TrackSource instants",
     },
 ]
 """Ordered history of DoclingDocument schema versions in docling-core v2.x.
@@ -84,6 +89,7 @@ DEFAULT_EXPORT_LABELS = {
     DocItemLabel.FIELD_HINT,
     DocItemLabel.MARKER,
     DocItemLabel.HANDWRITTEN_TEXT,
+    DocItemLabel.TRACK,
 }
 
 

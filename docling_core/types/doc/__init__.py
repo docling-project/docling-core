@@ -40,6 +40,7 @@ from docling_core.types.doc.common.origin import (
 from docling_core.types.doc.common.reference import (
     FineRef,
     ImageRef,
+    MediaRef,
     PageItem,
     ProvenanceItem,
     RefItem,
@@ -137,6 +138,7 @@ from docling_core.types.doc.items.text import (
     TextItem,
     TitleItem,
 )
+from docling_core.types.doc.items.track import TrackItem
 from docling_core.types.doc.labels import (
     CodeLanguageLabel,
     DocItemLabel,

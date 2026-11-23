@@ -1,5 +1,6 @@
 """Test serialization."""
 
+import logging
 import threading
 from html.parser import HTMLParser
 from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
@@ -34,7 +35,7 @@ from docling_core.transforms.serializer.markdown import (
 from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer, PlainTextParams
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
-from docling_core.types.doc import DoclingDocument, ImageRef
+from docling_core.types.doc import DoclingDocument, ImageRef, TrackSource
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, FormattingFallbackMode, ImageRefMode, Size
 from docling_core.types.doc.document import (
     BaseMeta,
@@ -2034,6 +2035,19 @@ def test_webvtt(example_num):
     verify(exp_file=src.with_suffix(".gt.vtt"), actual=actual)
 
 
+def test_webvtt_instant_lasts_one_msec():
+    """WebVTT needs a cue to end after it starts, so an instant gets a duration of 1 ms."""
+    from docling_core.types.doc import TrackSource
+
+    doc = DoclingDocument(name="doc")
+    doc.add_text(label=DocItemLabel.TEXT, text="Hello", source=TrackSource(start_time=2, end_time=2))
+    doc.add_text(label=DocItemLabel.TEXT, text="World", source=TrackSource(start_time=2, end_time=2))
+
+    actual = WebVTTDocSerializer(doc=doc).serialize().text
+
+    assert actual == "WEBVTT\n\n00:00:02.000 --> 00:00:02.001\nHello\nWorld"
+
+
 def test_webvtt_params():
     """Test WebVTT serialization with WebVTTParams."""
     src = Path("./tests/data/doc/webvtt_example_01.json")
@@ -2095,6 +2109,36 @@ def test_webvtt_param_patch_preserves_document_voices(voice, include_formatting)
     actual = WebVTTDocSerializer(doc=doc).serialize(voice=voice, include_formatting=include_formatting).text
     assert "<v " in expected
     assert actual == expected
+
+def test_webvtt_cue_shorter_than_a_millisecond_stays_serializable(caplog):
+    """A sub-millisecond track segment must not abort the whole serialization.
+
+    TrackSource accepts any end_time greater than start_time, but WebVTT
+    timestamps carry milliseconds only, so both ends used to round onto the
+    same timestamp and WebVTTCueTimings rejected the zero-length cue. The cue is
+    kept at the smallest representable span, and that loss of precision is
+    reported in the logs instead of silently dropping the segment.
+    """
+    doc = DoclingDocument(name="sub-millisecond-cue")
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="short cue",
+        source=TrackSource(start_time=11.00001, end_time=11.00002),
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="normal cue",
+        source=TrackSource(start_time=12.0, end_time=13.5),
+    )
+
+    with caplog.at_level(logging.WARNING, logger="docling_core.transforms.serializer.webvtt"):
+        actual = WebVTTDocSerializer(doc=doc).serialize().text
+
+    assert "00:00:11.000 --> 00:00:11.001" in actual
+    assert "11.00001..11.00002" in caplog.text
+    assert "short cue" in actual
+    assert "00:00:12.000 --> 00:00:13.500" in actual
+    assert "normal cue" in actual
 
 
 def test_html_meta_emits_xhtml_compatible_attributes():
