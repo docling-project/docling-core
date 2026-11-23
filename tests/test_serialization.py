@@ -1640,6 +1640,36 @@ def test_html_rich_table_cell_formatting_inside_paragraph():
     )
 
 
+def test_html_newlines_render_as_br_in_paragraphs_and_table_cells():
+    """A newline in a paragraph and in a multi-line table cell both render as <br>.
+
+    Text items already turned "\n" into "<br>"; a table cell kept the raw newline,
+    which HTML renders as a plain space, so multi-line cell text was flattened.
+    """
+    doc = DoclingDocument(name="newlines")
+    doc.add_text(label=DocItemLabel.TEXT, text="line one\nline two")
+    doc.add_table(
+        data=TableData(
+            num_rows=1,
+            num_cols=1,
+            table_cells=[
+                TableCell(
+                    start_row_offset_idx=0,
+                    end_row_offset_idx=1,
+                    start_col_offset_idx=0,
+                    end_col_offset_idx=1,
+                    text="Expedited\nOvernight",
+                )
+            ],
+        )
+    )
+
+    html_text = HTMLDocSerializer(doc=doc).serialize().text
+
+    assert "<p>line one<br>line two</p>" in html_text
+    assert "<td>Expedited<br>Overnight</td>" in html_text
+
+
 class _HTMLProbe(HTMLParser):
     """Collects the elements, attributes and per-element text of a parsed HTML document."""
 
