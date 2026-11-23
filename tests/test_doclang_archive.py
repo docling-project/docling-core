@@ -10,14 +10,18 @@ from xml.etree import ElementTree
 
 import pytest
 from doclang import PackagingError
+from PIL import Image
 
 from docling_core.types.doc import (
+    BoundingBox,
     DocItemLabel,
     DoclingDocument,
     DocumentOrigin,
     ImageRef,
     ImageRefMode,
     MediaRef,
+    ProvenanceItem,
+    Size,
     TrackSource,
 )
 from tests.test_data_gen_flag import GEN_TEST_DATA
@@ -509,3 +513,35 @@ def test_doclang_archive_keeps_pages_without_content(content_pages: list[int], t
     loaded = DoclingDocument.load_from_doclang_archive(dclx_path, artifacts_dir=tmp_path / "artifacts")
     found = {item.text: item.prov[0].page_no for item in loaded.texts if item.text.startswith("text on page")}
     assert found == {f"text on page {page_no}": page_no for page_no in content_pages}
+
+
+@pytest.mark.parametrize("page_numbers", [[2, 3, 4], [10, 11], [1, 100]], ids=["from-2", "from-10", "sparse"])
+def test_doclang_archive_pairs_page_images_with_pages_not_starting_at_one(
+    page_numbers: list[int], tmp_path: Path
+) -> None:
+    """Each page keeps its own image when the page numbers do not run from 1 to N."""
+    colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
+    doc = DoclingDocument(name="offset_pages")
+    for page_no, color in zip(page_numbers, colors, strict=False):
+        doc.add_page(
+            page_no=page_no,
+            size=Size(width=100, height=100),
+            image=ImageRef.from_pil(Image.new("RGB", (8, 8), color), dpi=72),
+        )
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text=f"text on page {page_no}",
+            prov=ProvenanceItem(page_no=page_no, bbox=BoundingBox(l=1, t=1, r=2, b=2), charspan=(0, 1)),
+        )
+    dclx_path = tmp_path / "offset_pages.dclx"
+    doc.save_as_doclang_archive(dclx_path)
+
+    loaded = DoclingDocument.load_from_doclang_archive(dclx_path, artifacts_dir=tmp_path / "artifacts")
+
+    assert len(loaded.pages) == len(page_numbers)
+    for page_no, color in zip(page_numbers, colors, strict=False):
+        item = next(t for t in loaded.texts if t.text == f"text on page {page_no}")
+        image = loaded.pages[item.prov[0].page_no].image
+        assert image is not None
+        assert image.pil_image is not None
+        assert image.pil_image.getpixel((0, 0)) == color
