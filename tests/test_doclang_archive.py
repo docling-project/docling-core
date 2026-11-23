@@ -473,10 +473,6 @@ def test_save_archive_source_that_is_track_media(tmp_path: Path):
 
 
 def _doc_with_content_on(content_pages: list[int], num_pages: int = 4) -> DoclingDocument:
-    from PIL import Image
-
-    from docling_core.types.doc import BoundingBox, DocItemLabel, ProvenanceItem, Size
-
     doc = DoclingDocument(name="blank_pages")
     for page_no in range(1, num_pages + 1):
         doc.add_page(
@@ -507,7 +503,7 @@ def test_doclang_archive_keeps_pages_without_content(content_pages: list[int], t
     with zipfile.ZipFile(dclx_path) as archive:
         markup = archive.read("document.xml").decode("utf-8")
         page_images = [name for name in archive.namelist() if name.startswith("pages/")]
-    assert markup.count("<page_break") == len(doc.pages) - 1
+    assert len(ElementTree.fromstring(markup).findall("page_break")) == len(doc.pages) - 1
     assert len(page_images) == len(doc.pages)
 
     loaded = DoclingDocument.load_from_doclang_archive(dclx_path, artifacts_dir=tmp_path / "artifacts")
