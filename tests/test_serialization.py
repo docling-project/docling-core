@@ -2110,6 +2110,7 @@ def test_webvtt_param_patch_preserves_document_voices(voice, include_formatting)
     assert "<v " in expected
     assert actual == expected
 
+
 def test_webvtt_cue_shorter_than_a_millisecond_stays_serializable(caplog):
     """A sub-millisecond track segment must not abort the whole serialization.
 
