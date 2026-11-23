@@ -8,7 +8,6 @@ written without ``<chapter>`` and per-cue ``<audio>``, which have no counterpart
 import base64
 import copy
 import re
-import sys
 import warnings
 import xml.etree.ElementTree as ET
 from bisect import bisect_left, bisect_right
@@ -2597,9 +2596,15 @@ class DocLangDocSerializer(DocSerializer):
         return out
 
     def _serializes_all_pages(self) -> bool:
-        return self.params.pages is None and self.params.start_idx == 0 and self.params.stop_idx == sys.maxsize
+        """Return whether the parameters leave out no page of the document."""
+        return (
+            self.params.pages is None
+            and self.params.start_idx == 0
+            and self.params.stop_idx == CommonParams.model_fields["stop_idx"].default
+        )
 
     def _first_content_page(self) -> int | None:
+        """Return the page of the first provenance of the first item that has one, if any."""
         for item, _ in self.doc.iterate_items(with_groups=False, included_content_layers=self.params.layers):
             if isinstance(item, DocItem) and item.prov:
                 return item.prov[0].page_no
@@ -2625,6 +2630,7 @@ class DocLangDocSerializer(DocSerializer):
         breaks = list(self._get_page_breaks(text=text))
         for full_match, prev_page, next_page in breaks:
             skipped = bisect_right(declared_pages, next_page) - bisect_right(declared_pages, prev_page)
+            # a transition needs a break even when neither page is declared
             text = text.replace(full_match, page_sep * max(1, skipped))
 
         if not declared_pages or not self._serializes_all_pages():
@@ -2633,7 +2639,8 @@ class DocLangDocSerializer(DocSerializer):
             first_page = breaks[0][1]
             last_page = max(next_page for _, _, next_page in breaks)
         else:
-            first_page = last_page = self._first_content_page() or declared_pages[0]
+            content_page = self._first_content_page()
+            first_page = last_page = declared_pages[0] if content_page is None else content_page
         leading = page_sep * bisect_left(declared_pages, first_page)
         trailing = page_sep * (len(declared_pages) - bisect_right(declared_pages, last_page))
         return f"{leading}{text}{trailing}"
