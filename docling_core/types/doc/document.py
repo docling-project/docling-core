@@ -5446,6 +5446,12 @@ class DoclingDocument(BaseModel):
         Picture and page images are always stored outside the markup, under
         ``assets/`` and ``pages/`` in the archive respectively.
 
+        DocLang does not record page numbers: the n-th page of the markup is the n-th
+        page of the document. Pages are therefore numbered consecutively from 1 in the
+        archive, and ``pages/{n}.png`` holds the image of the n-th page in ascending
+        page-number order. Gaps and a first page number other than 1 are not preserved
+        when the archive is loaded.
+
         ``image_mode`` controls the picture images: ``REFERENCED`` (default) stores each
         picture's image (cropped from its page image if it has none of its own) under
         ``assets/`` and references it from the picture, ``PLACEHOLDER`` stores and
@@ -5515,16 +5521,17 @@ class DoclingDocument(BaseModel):
             }
 
             pages: dict[int, Path] = {}
-            for p_no, page in self.pages.items():
+            for archive_page_no, p_no in enumerate(sorted(self.pages), start=1):
+                page = self.pages[p_no]
                 if page.image is None:
                     continue
                 img = page.image.pil_image
                 if img is None:
                     continue
-                page_path = pages_dir / f"{p_no}.png"
+                page_path = pages_dir / f"{archive_page_no}.png"
                 page_path.parent.mkdir(parents=True, exist_ok=True)
                 _normalize_image_for_png(img).save(page_path)
-                pages[p_no] = page_path
+                pages[archive_page_no] = page_path
             if pages:
                 pack_kwargs["pages"] = pages
 

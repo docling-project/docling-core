@@ -10,6 +10,7 @@ import copy
 import re
 import warnings
 import xml.etree.ElementTree as ET
+from bisect import bisect_left, bisect_right
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
@@ -2594,6 +2595,56 @@ class DocLangDocSerializer(DocSerializer):
         out = ET.tostring(root, encoding="unicode", method="xml", short_empty_elements=True)
         return out
 
+    def _serializes_all_pages(self) -> bool:
+        """Return whether the parameters leave out no page of the document."""
+        return (
+            self.params.pages is None
+            and self.params.start_idx == 0
+            and self.params.stop_idx == CommonParams.model_fields["stop_idx"].default
+        )
+
+    def _first_content_page(self) -> int | None:
+        """Return the page of the first provenance of the first item that has one, if any."""
+        for item, _ in self.doc.iterate_items(with_groups=False, included_content_layers=self.params.layers):
+            if isinstance(item, DocItem) and item.prov:
+                return item.prov[0].page_no
+        return None
+
+    def _align_page_breaks(self, text: str) -> str:
+        """Replace page-break markers by one ``<page_break/>`` per page declared in the document.
+
+        A transition from page ``prev`` to page ``next`` emits one break for each page
+        in ``doc.pages`` in the range ``(prev, next]``, and at least one. When the whole
+        document is serialized, the declared pages before the first and after the last
+        serialized page are covered as well. The number of breaks is bounded by the
+        number of declared pages; page numbers that are not declared do not add breaks.
+
+        Args:
+            text: The serialized document body containing page-break markers.
+
+        Returns:
+            The text with the markers replaced by ``<page_break/>`` elements.
+        """
+        page_sep = DocLangVocabulary._create_selfclosing_token(token=DocLangToken.PAGE_BREAK)
+        declared_pages = sorted(self.doc.pages)
+        breaks = list(self._get_page_breaks(text=text))
+        for full_match, prev_page, next_page in breaks:
+            skipped = bisect_right(declared_pages, next_page) - bisect_right(declared_pages, prev_page)
+            # a transition needs a break even when neither page is declared
+            text = text.replace(full_match, page_sep * max(1, skipped))
+
+        if not declared_pages or not self._serializes_all_pages():
+            return text
+        if breaks:
+            first_page = breaks[0][1]
+            last_page = max(next_page for _, _, next_page in breaks)
+        else:
+            content_page = self._first_content_page()
+            first_page = last_page = declared_pages[0] if content_page is None else content_page
+        leading = page_sep * bisect_left(declared_pages, first_page)
+        trailing = page_sep * (len(declared_pages) - bisect_right(declared_pages, last_page))
+        return f"{leading}{text}{trailing}"
+
     def _order_fragmented_parts_by_page(
         self,
         parts: list[SerializationResult],
@@ -2716,10 +2767,7 @@ class DocLangDocSerializer(DocSerializer):
         text_res = delim.join([p.text for p in parts if p.text])
 
         if self.params.add_page_break:
-            # Always emit well-formed page breaks using the vocabulary
-            page_sep = DocLangVocabulary._create_selfclosing_token(token=DocLangToken.PAGE_BREAK)
-            for full_match, _, _ in self._get_page_breaks(text=text_res):
-                text_res = text_res.replace(full_match, page_sep)
+            text_res = self._align_page_breaks(text_res)
 
         text_res = f"{open_token}{head}{text_res}{close_token}"
 
