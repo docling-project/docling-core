@@ -458,10 +458,6 @@ class HTMLTableSerializer(BaseTableSerializer):
                         content = ser_res.text
                         span_source = [ser_res]
                     else:
-                        # A cell can carry multi-line text (for example TableFormer
-                        # rows joined with "\n"). HTML collapses a bare newline, so
-                        # render the line breaks as <br>, matching the text-item
-                        # serializer above.
                         content = html.escape(cell.text.strip()).replace("\n", "<br>")
                         span_source = item
 
