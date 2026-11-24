@@ -630,3 +630,29 @@ def test_webvtt_file_ruby_spans_example() -> None:
     assert isinstance(voice, WebVTTCueVoiceSpan)
     assert isinstance(voice.internal_text.components[0].component, WebVTTCueRubySpan)
     assert str(vtt[4]).endswith("\nPlain cue between ruby cues.\n")
+
+
+def test_webvtt_file_cues_out_of_start_time_order() -> None:
+    """Test that a file with cues out of start time order is parsed, sorted."""
+    content = (
+        "WEBVTT\n\n"
+        "intro\n00:00:05.000 --> 00:00:06.000\nThird\n\n"
+        "00:00:01.000 --> 00:00:02.000\nFirst\n\n"
+        "00:00:03.000 --> 00:00:04.000\nSecond\n\n"
+        "00:00:03.000 --> 00:00:03.500\nSecond, same start\n"
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+
+    assert [block.payload[0].component.text for block in vtt] == [
+        "First",
+        "Second",
+        "Second, same start",
+        "Third",
+    ]
+    assert vtt[3].identifier == "intro"
+
+    # A model built directly still requires the cues to be in order.
+    with pytest.raises(ValidationError):
+        WebVTTFile(cue_blocks=[vtt[3], vtt[0]])

@@ -753,6 +753,13 @@ class WebVTTFile(BaseModel):
             except ValueError as e:
                 warnings.warn(f"Failed to parse cue block:\n{block}\n{e}", RuntimeWarning)
 
+        # A file whose cues are not in start time order is not conforming, but the
+        # WebVTT parser does not reject it: user agents keep a text track's cues
+        # sorted by start time. Sorting here keeps one misplaced cue from failing
+        # the whole file. The sort is stable, so cues with the same start time stay
+        # in file order.
+        cues.sort(key=lambda cue: cue.timings.start)
+
         return cls(title=title, cue_blocks=cues)
 
     @staticmethod
