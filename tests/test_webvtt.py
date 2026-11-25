@@ -641,8 +641,7 @@ def test_webvtt_file_cues_out_of_start_time_order() -> None:
         "00:00:03.000 --> 00:00:04.000\nSecond\n\n"
         "00:00:03.000 --> 00:00:03.500\nSecond, same start\n"
     )
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
+    with pytest.warns(RuntimeWarning, match="not in start time order"):
         vtt = WebVTTFile.parse(content)
 
     assert [block.payload[0].component.text for block in vtt] == [

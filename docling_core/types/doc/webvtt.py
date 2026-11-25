@@ -6,6 +6,7 @@ import warnings
 from collections.abc import Iterator
 from enum import Enum
 from functools import total_ordering
+from itertools import pairwise
 from typing import Annotated, ClassVar, Literal, get_args
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -721,8 +722,9 @@ class WebVTTFile(BaseModel):
     def parse(cls, raw: str) -> Self:
         """Parse a WebVTT file.
 
-        Cues that are not in start time order are sorted by start time. Cues with the
-        same start time keep their order in the file.
+        Cues that are not in start time order are sorted by start time and a
+        RuntimeWarning is emitted. Cues with the same start time keep their order in
+        the file.
 
         Args:
             raw: The raw WebVTT file content.
@@ -756,7 +758,9 @@ class WebVTTFile(BaseModel):
             except ValueError as e:
                 warnings.warn(f"Failed to parse cue block:\n{block}\n{e}", RuntimeWarning)
 
-        cues.sort(key=lambda cue: cue.timings.start)
+        if any(cur.timings.start < prev.timings.start for prev, cur in pairwise(cues)):
+            warnings.warn("The cues are not in start time order, sorting them by start time", RuntimeWarning)
+            cues.sort(key=lambda cue: cue.timings.start)
 
         return cls(title=title, cue_blocks=cues)
 
