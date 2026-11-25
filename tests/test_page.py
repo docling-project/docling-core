@@ -221,6 +221,34 @@ def test_bounding_rectangle_angle(rectangle: BoundingRectangle, expected_angle: 
     assert pytest.approx(rectangle.angle_360, abs=1e-6) == expected_angle_360
 
 
+@pytest.mark.parametrize(
+    ("x_shift", "y_sign", "coord_origin", "expected_angle_360"),
+    [
+        (-1, 1, CoordOrigin.BOTTOMLEFT, 90),
+        (1, -1, CoordOrigin.BOTTOMLEFT, 270),
+        (-1, -1, CoordOrigin.TOPLEFT, 90),
+        (1, 1, CoordOrigin.TOPLEFT, 270),
+    ],
+)
+def test_bounding_rectangle_angle_near_vertical(
+    x_shift: int, y_sign: int, coord_origin: CoordOrigin, expected_angle_360: int
+):
+    # A vertical rectangle whose far edge drifts left by less than the 1e-3 tolerance
+    eps = 5e-4
+    rect = BoundingRectangle(
+        r_x0=0,
+        r_y0=0,
+        r_x1=-eps,
+        r_y1=y_sign,
+        r_x2=x_shift - eps,
+        r_y2=y_sign,
+        r_x3=x_shift,
+        r_y3=0,
+        coord_origin=coord_origin,
+    )
+    assert rect.angle_360 == expected_angle_360
+
+
 # -- PdfHyperlink URI validation tests --
 
 RECT = BoundingRectangle(

@@ -143,13 +143,13 @@ class BoundingRectangle(BaseModel):
             delta_y = -delta_y
 
         if abs(delta_y) < 1.0e-3:
-            angle = 0.0
+            angle = np.pi if delta_x < 0 else 0.0
         elif abs(delta_x) < 1.0e-3:
             angle = np.pi / 2.0 if delta_y > 0 else -np.pi / 2.0
         else:
             angle = math.atan(delta_y / delta_x)
-        if delta_x < 0:
-            angle += np.pi
+            if delta_x < 0:
+                angle += np.pi
         angle = angle % (2 * np.pi)
         return angle
 
