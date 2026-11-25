@@ -11,7 +11,7 @@ import pytest
 from docling_core.experimental.serializer.outline import OutlineDocSerializer, OutlineFormat, OutlineMode, OutlineParams
 from docling_core.transforms.chunker.hierarchical_chunker import DocChunk, HierarchicalChunker
 from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer
-from docling_core.types.doc import DocItemLabel, DoclingDocument
+from docling_core.types.doc import DocItemLabel, DoclingDocument, Formatting
 
 
 @pytest.mark.parametrize("level", [None, 1, 3])
@@ -114,3 +114,27 @@ def test_rich_heading_table_of_contents(level: int | None, format: OutlineFormat
         assert len(data) == 1
         assert data[0]["ref"] == heading.self_ref
         assert data[0]["title"] == "Heading eq $y=2$"
+
+
+@pytest.mark.parametrize("format", [OutlineFormat.JSON, OutlineFormat.ITXT])
+def test_rich_heading_outline_title_has_no_markdown_markup(format: OutlineFormat) -> None:
+    """The outline title of a rich heading is plain text, like the title of a plain heading."""
+    doc = DoclingDocument(name="rich heading outline")
+    heading = doc.add_heading(text="", level=1)
+    inline = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="See ", parent=inline, formatting=Formatting(bold=True))
+    doc.add_text(label=DocItemLabel.TEXT, text="the docs", parent=inline, hyperlink="http://example.com/docs")
+    doc.add_text(label=DocItemLabel.TEXT, text="Body under it.", parent=heading)
+
+    outline = (
+        OutlineDocSerializer(
+            doc=doc, params=OutlineParams(mode=OutlineMode.TABLE_OF_CONTENTS, format=format, include_non_meta=True)
+        )
+        .serialize()
+        .text
+    )
+
+    assert "See the docs" in outline
+    assert "[the docs]" not in outline
+    assert "**" not in outline
+    assert "http://example.com" not in outline
