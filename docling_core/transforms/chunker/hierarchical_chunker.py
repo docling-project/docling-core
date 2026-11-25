@@ -21,7 +21,7 @@ from docling_core.transforms.serializer.base import (
     BaseTableSerializer,
     SerializationResult,
 )
-from docling_core.transforms.serializer.common import DocSerializer, create_ser_result
+from docling_core.transforms.serializer.common import DocSerializer, create_ser_result, get_inline_content_group
 from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownParams,
@@ -36,6 +36,7 @@ from docling_core.types.doc.document import (
     InlineGroup,
     LevelNumber,
     ListGroup,
+    NodeItem,
     SectionHeaderItem,
     TableItem,
     TitleItem,
@@ -257,11 +258,13 @@ class HierarchicalChunker(BaseChunker):
                 # capture current heading
                 heading_by_level[level] = item
                 heading_text = item.text
-                if not heading_text and item.children:
-                    child = item.children[0].resolve(dl_doc)
-                    if isinstance(child, InlineGroup) or (
-                        len(item.children) == 1 and isinstance(child, FormulaItem | CodeItem)
-                    ):
+                if not heading_text:
+                    child: NodeItem | None = get_inline_content_group(item, dl_doc)
+                    if child is None and len(item.children) == 1:
+                        only_child = item.children[0].resolve(dl_doc)
+                        if isinstance(only_child, FormulaItem | CodeItem):
+                            child = only_child
+                    if child is not None:
                         # Rich headings keep their text in inline children. Consume
                         # those children here so they do not become body chunks.
                         heading_text = my_doc_ser.serialize(item=child, visited=visited, is_inline_scope=True).text

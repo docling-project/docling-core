@@ -25,7 +25,7 @@ from docling_core.transforms.serializer.base import (
     BaseTextSerializer,
     SerializationResult,
 )
-from docling_core.transforms.serializer.common import create_ser_result
+from docling_core.transforms.serializer.common import create_ser_result, get_inline_content_group
 from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownMetaSerializer,
@@ -233,8 +233,8 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
     if params.include_non_meta and isinstance(item, TitleItem | SectionHeaderItem):
         if params.format in (OutlineFormat.JSON, OutlineFormat.ITXT):
             title_text = item.text
-            if not title_text and item.children and isinstance((child := item.children[0].resolve(doc)), InlineGroup):
-                title_text = MarkdownDocSerializer(doc=doc).serialize(item=child).text
+            if not title_text and (inline_group := get_inline_content_group(item, doc)) is not None:
+                title_text = MarkdownDocSerializer(doc=doc).serialize(item=inline_group).text
         else:
             title_text = _serialize_text_item(item, doc, **kwargs)
 

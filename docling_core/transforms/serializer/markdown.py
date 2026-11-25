@@ -35,6 +35,7 @@ from docling_core.transforms.serializer.common import (
     _PageBreakSerResult,
     _should_use_legacy_annotations,
     create_ser_result,
+    get_inline_content_group,
     markdown_link_destination,
 )
 from docling_core.types.doc import (
@@ -374,13 +375,9 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         escape_html = kwargs.get("escape_html")
         escape_underscores = kwargs.get("escape_underscores")
 
-        has_inline_repr = (
-            item.text == ""
-            and len(item.children) > 0
-            and (len(item.children) == 1 or isinstance(item, TitleItem | SectionHeaderItem))
-            and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
-        )
-        if has_inline_repr:
+        child_group = get_inline_content_group(item, doc)
+        has_inline_repr = child_group is not None
+        if child_group is not None:
             text = doc_serializer.serialize(item=child_group, visited=my_visited, **kwargs).text
             processing_pending = False
         else:

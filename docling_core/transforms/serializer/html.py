@@ -37,6 +37,7 @@ from docling_core.transforms.serializer.common import (
     _get_annotation_text,
     _should_use_legacy_annotations,
     create_ser_result,
+    get_inline_content_group,
     hyperlink_uri,
 )
 from docling_core.transforms.serializer.html_styles import (
@@ -165,13 +166,9 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         res_parts: list[SerializationResult] = []
         post_processed = False
 
-        has_inline_repr = (
-            item.text == ""
-            and len(item.children) > 0
-            and (len(item.children) == 1 or isinstance(item, TitleItem | SectionHeaderItem))
-            and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
-        )
-        if has_inline_repr:
+        child_group = get_inline_content_group(item, doc)
+        has_inline_repr = child_group is not None
+        if child_group is not None:
             text = doc_serializer.serialize(item=child_group, visited=my_visited, **kwargs).text
             post_processed = True
         else:
