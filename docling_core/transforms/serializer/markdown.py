@@ -38,6 +38,7 @@ from docling_core.transforms.serializer.common import (
     markdown_link_destination,
 )
 from docling_core.types.doc import (
+    AnyTableCell,
     BaseMeta,
     CaptionPlacement,
     CodeItem,
@@ -74,6 +75,7 @@ from docling_core.types.doc import (
     RichTableCell,
     SectionHeaderItem,
     SummaryMetaField,
+    TableCell,
     TableItem,
     TabularChartMetaField,
     TextItem,
@@ -906,6 +908,293 @@ class MarkdownTableSerializer(BaseTableSerializer):
         return create_ser_result(text=text_res, span_source=res_parts)
 
 
+def _row_segment_ranges(line: str) -> list[tuple[int, int]] | None:
+    """Get the character ranges of the cells in a Markdown pipe-table row.
+
+    Args:
+        line: A single rendered table line, e.g. ``| a | b |``.
+
+    Returns:
+        A list of (start, end) ranges, one per cell, delimiting the raw
+        (still padded) cell content between the pipes, or None if the line
+        is not a pipe-delimited row.
+    """
+    if not line.startswith("|") or not line.endswith("|"):
+        return None
+    pipes = [i for i, ch in enumerate(line) if ch == "|"]
+    return [(pipes[i] + 1, pipes[i + 1]) for i in range(len(pipes) - 1)]
+
+
+def _stripped_range(segment: str, base: int) -> tuple[int, int]:
+    """Narrow a padded cell segment to the range of its text.
+
+    Args:
+        segment: The raw cell content between two pipes, padding included.
+        base: The offset of the segment's first character in the full text.
+
+    Returns:
+        The (start, end) range of the segment's non-whitespace content,
+        offset by `base`. An all-whitespace segment yields a zero-width
+        range at the position where its text would start.
+    """
+    text_start = base + (len(segment) - len(segment.lstrip()))
+    return (text_start, text_start + len(segment.strip()))
+
+
+class TableCellSpan(BaseModel):
+    """Character span of a single table cell in a serialized Markdown table."""
+
+    charspan: tuple[int, int]
+    """Range of the cell's rendered text within the result text.
+
+    The range covers the cell text as rendered in the table, with the
+    padding added for column alignment stripped. An empty cell yields a
+    zero-width range.
+    """
+
+    cell: AnyTableCell
+    """The table cell the span refers to."""
+
+
+class MarkdownTableSerResult(SerializationResult):
+    """Serialization result of a Markdown table, carrying per-cell spans."""
+
+    cell_spans: list[TableCellSpan] = []
+    """One span per rendered cell occurrence, in row-major grid order."""
+
+
+class CellSpanTableSerializer(MarkdownTableSerializer):
+    """Markdown table serializer that also reports per-cell character spans.
+
+    Renders exactly like `MarkdownTableSerializer`, but returns a
+    `MarkdownTableSerResult` whose `cell_spans` map each rendered cell
+    occurrence back to the corresponding table cell. The plain
+    serialization result only carries a single span for the whole table
+    item, losing the per-cell provenance (bounding boxes, grid offsets)
+    each cell holds.
+
+    The ranges are recovered by parsing the rendered table positionally
+    against the table's grid, so cells with duplicate values still get
+    distinct ranges. One span is produced per rendered occurrence: a cell
+    spanning several body slots yields one span per covered slot, while a
+    header cell repeated over stacked header rows shares the single
+    flattened occurrence. If the rendered table does not structurally
+    match the grid (row or column counts), `cell_spans` is left empty
+    rather than holding wrong ranges.
+    """
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: TableItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serializes the passed item, adding per-cell spans to the result."""
+        res = super().serialize(item=item, doc_serializer=doc_serializer, doc=doc, **kwargs)
+        return MarkdownTableSerResult(
+            text=res.text,
+            spans=res.spans,
+            cell_spans=self._compute_cell_spans(
+                item=item,
+                doc_serializer=doc_serializer,
+                doc=doc,
+                text=res.text,
+                **kwargs,
+            ),
+        )
+
+    def _compute_cell_spans(
+        self,
+        *,
+        item: TableItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        text: str,
+        **kwargs: Any,
+    ) -> list[TableCellSpan]:
+        """Map the rendered table in `text` back to the item's grid cells."""
+        grid = item.data.grid
+        if not grid or not grid[0] or not text:
+            return []
+        num_rows = len(grid)
+        num_cols = len(grid[0])
+        num_headers = _count_header_rows(item)
+
+        # Anchor on the separator row: the header line sits directly above
+        # it and the body lines are the contiguous pipe lines below it.
+        lines = text.split("\n")
+        line_offsets: list[int] = []
+        offset = 0
+        for line in lines:
+            line_offsets.append(offset)
+            offset += len(line) + 1
+        sep_idx = next(
+            (i for i, line in enumerate(lines) if MARKDOWN_SEPARATOR_ROW_RE.match(line)),
+            None,
+        )
+        if sep_idx is None or sep_idx == 0:
+            return []
+        body_lines: list[int] = []
+        for i in range(sep_idx + 1, len(lines)):
+            if not lines[i].startswith("|"):
+                break
+            body_lines.append(i)
+        if len(body_lines) != num_rows - num_headers:
+            return []
+
+        header_spans = self._header_cell_spans(
+            item=item,
+            doc_serializer=doc_serializer,
+            doc=doc,
+            grid=grid,
+            num_headers=num_headers,
+            num_cols=num_cols,
+            header_line=lines[sep_idx - 1],
+            header_offset=line_offsets[sep_idx - 1],
+            **kwargs,
+        )
+        if header_spans is None:
+            return []
+
+        cell_spans: list[TableCellSpan] = list(header_spans)
+        for body_pos, line_idx in enumerate(body_lines):
+            line = lines[line_idx]
+            ranges = _row_segment_ranges(line)
+            if ranges is None or len(ranges) != num_cols:
+                return []
+            grid_row = grid[num_headers + body_pos]
+            for col_idx, (seg_start, seg_end) in enumerate(ranges):
+                charspan = _stripped_range(line[seg_start:seg_end], line_offsets[line_idx] + seg_start)
+                cell_spans.append(TableCellSpan(charspan=charspan, cell=grid_row[col_idx]))
+        return cell_spans
+
+    def _header_cell_spans(
+        self,
+        *,
+        item: TableItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        grid: list[list[TableCell]],
+        num_headers: int,
+        num_cols: int,
+        header_line: str,
+        header_offset: int,
+        **kwargs: Any,
+    ) -> list[TableCellSpan] | None:
+        """Compute the cell spans for the flattened header row.
+
+        Replays `_flatten_header_rows` per column to attribute each part of
+        the joined header text to the header cell it came from, then locates
+        the parts sequentially within the rendered header line. Returns None
+        if the rendered header does not match the replayed flattening.
+        """
+        ranges = _row_segment_ranges(header_line)
+        if ranges is None or len(ranges) != num_cols:
+            return None
+        header_texts = self._render_header_texts(
+            item=item,
+            doc_serializer=doc_serializer,
+            doc=doc,
+            num_headers=num_headers,
+            **kwargs,
+        )
+        found: list[tuple[int, int, TableCellSpan]] = []
+        for col_idx in range(num_cols):
+            # replay the dedup/join of _flatten_header_rows for this column,
+            # tracking which header row each surviving part came from
+            parts: list[tuple[str, int]] = []
+            for row_idx in range(num_headers):
+                row_texts = header_texts[row_idx]
+                cell_text = row_texts[col_idx] if col_idx < len(row_texts) else ""
+                if cell_text and (not parts or parts[-1][0] != cell_text):
+                    parts.append((cell_text, row_idx))
+            seg_start, seg_end = ranges[col_idx]
+            text_start, text_end = _stripped_range(header_line[seg_start:seg_end], 0)
+            if header_line[seg_start + text_start : seg_start + text_end] != HEADER_ROW_SEPARATOR.join(
+                part for part, _ in parts
+            ):
+                return None
+            cursor = seg_start + text_start
+            for part_pos, (part_text, row_idx) in enumerate(parts):
+                span = self._locate_header_part(
+                    line=header_line,
+                    part=part_text,
+                    cursor=cursor,
+                    is_last=part_pos == len(parts) - 1,
+                )
+                if span is None:
+                    return None
+                found.append(
+                    (
+                        row_idx,
+                        col_idx,
+                        TableCellSpan(
+                            charspan=(header_offset + span[0], header_offset + span[1]),
+                            cell=grid[row_idx][col_idx],
+                        ),
+                    )
+                )
+                cursor = span[1] + len(HEADER_ROW_SEPARATOR)
+        found.sort(key=lambda entry: (entry[0], entry[1]))
+        return [span for _, _, span in found]
+
+    @staticmethod
+    def _locate_header_part(
+        *,
+        line: str,
+        part: str,
+        cursor: int,
+        is_last: bool,
+    ) -> tuple[int, int] | None:
+        """Locate a header part in the rendered header line at or after `cursor`.
+
+        A candidate occurrence only counts if it is the last part or is
+        immediately followed by the header row separator, which keeps the
+        location correct when a part's text also appears inside an earlier
+        part.
+        """
+        pos = cursor
+        while True:
+            cand = line.find(part, pos)
+            if cand == -1:
+                return None
+            after = cand + len(part)
+            if is_last or line.startswith(HEADER_ROW_SEPARATOR, after):
+                return (cand, after)
+            pos = cand + 1
+
+    @staticmethod
+    def _render_header_texts(
+        *,
+        item: TableItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        num_headers: int,
+        **kwargs: Any,
+    ) -> list[list[str]]:
+        """Render the header rows' cell texts as `MarkdownTableSerializer` does."""
+        rendered: list[list[str]] = []
+        rich_texts: dict[tuple[int, int], str] = {}
+        for row in item.data.grid[:num_headers]:
+            rendered_row: list[str] = []
+            for col in row:
+                if isinstance(col, RichTableCell):
+                    key = (col.start_row_offset_idx, col.start_col_offset_idx)
+                    if key not in rich_texts:
+                        ref_item = col.ref.resolve(doc=doc)
+                        inner_kwargs = {**kwargs, "_nested_in_table": True, "in_table_cell": True}
+                        rich_texts[key] = doc_serializer.serialize(item=ref_item, **inner_kwargs).text
+                    cell_text = rich_texts[key]
+                else:
+                    cell_text = col.text or ""
+                rendered_row.append(cell_text.replace("\n", " ").replace("|", "&#124;"))
+            rendered.append(rendered_row)
+        return rendered
+
+
 class MarkdownPictureSerializer(BasePictureSerializer):
     """Markdown-specific picture item serializer."""
 
@@ -1335,6 +1624,10 @@ class MarkdownDocSerializer(DocSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a document out of its parts."""
+        if len(parts) == 1 and not self.requires_page_break():
+            # return the single part as-is, preserving any
+            # SerializationResult subclass (and its extra payload)
+            return parts[0]
         text_res = "\n\n".join([p.text for p in parts if p.text])
         if self.requires_page_break():
             page_sep = self.params.page_break_placeholder or ""
