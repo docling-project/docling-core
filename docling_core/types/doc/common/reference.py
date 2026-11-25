@@ -2,6 +2,7 @@
 
 import base64
 import mimetypes
+from bisect import bisect_left, bisect_right
 from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Optional, Union
@@ -27,6 +28,17 @@ except ImportError:
 
 if TYPE_CHECKING:
     from docling_core.types.doc.document import DoclingDocument
+
+
+def _shift_index(item_index: int, deleted: list[int]) -> int:
+    """Return the index an item moves to when the items at the sorted `deleted` indices are removed."""
+    return item_index - bisect_right(deleted, item_index)
+
+
+def _is_deleted(item_index: int, deleted: list[int]) -> bool:
+    """Tell whether `item_index` is in the sorted list `deleted`."""
+    pos = bisect_left(deleted, item_index)
+    return pos < len(deleted) and deleted[pos] == item_index
 
 
 class RefItem(BaseModel):
@@ -63,14 +75,11 @@ class RefItem(BaseModel):
 
     def _update_with_lookup(
         self,
-        lookup: dict[str, dict[int, int]],
+        lookup: dict[str, list[int]],
     ) -> None:
         path = self._split_ref_to_path()
         if len(path) == 3 and (item_label := path[1]) in lookup:
-            item_index = int(path[2])
-            # Count how many items have been deleted in front of you
-            delta = sum(val if item_index >= key else 0 for key, val in lookup[item_label].items())
-            new_index = item_index + delta
+            new_index = _shift_index(int(path[2]), lookup[item_label])
             self.cref = f"#/{item_label}/{new_index}"
 
 
