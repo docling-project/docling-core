@@ -644,13 +644,12 @@ def test_webvtt_file_cues_out_of_start_time_order() -> None:
     with pytest.warns(RuntimeWarning, match="not in start time order"):
         vtt = WebVTTFile.parse(content)
 
-    assert [block.payload[0].component.text for block in vtt] == [
-        "First",
-        "Second",
-        "Second, same start",
-        "Third",
+    assert [str(block) for block in vtt] == [
+        "00:00:01.000 --> 00:00:02.000\nFirst\n",
+        "00:00:03.000 --> 00:00:04.000\nSecond\n",
+        "00:00:03.000 --> 00:00:03.500\nSecond, same start\n",
+        "intro\n00:00:05.000 --> 00:00:06.000\nThird\n",
     ]
-    assert vtt[3].identifier == "intro"
 
     # A model built directly still requires the cues to be in order.
     with pytest.raises(ValidationError):
