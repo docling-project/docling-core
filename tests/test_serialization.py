@@ -36,7 +36,7 @@ from docling_core.transforms.serializer.markdown import (
 from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer, PlainTextParams
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
-from docling_core.types.doc import DoclingDocument, ImageRef, NodeItem, TrackSource
+from docling_core.types.doc import DoclingDocument, ImageRef, TrackSource
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, FormattingFallbackMode, ImageRefMode, Size
 from docling_core.types.doc.document import (
     BaseMeta,
@@ -2107,7 +2107,7 @@ def test_html_inline_formula_without_mathml_keeps_text():
     assert _parse_html(actual).text_of("code") == "x<y"
 
 
-def build_rich_heading_doc(level: int | None, following: str = "paragraph") -> tuple[DoclingDocument, NodeItem]:
+def build_rich_heading_doc(level: int | None, following: str = "paragraph") -> DoclingDocument:
     """Build an empty title or section header whose content is a leading inline group.
 
     Args:
@@ -2116,7 +2116,7 @@ def build_rich_heading_doc(level: int | None, following: str = "paragraph") -> t
             paragraph or `"subsection"` for a nested level-4 heading with a paragraph.
 
     Returns:
-        The document and the heading item.
+        The document. The heading is its first text item (`doc.texts[0]`).
     """
     doc = DoclingDocument(name="rich-heading")
     heading = doc.add_title(text="") if level is None else doc.add_heading(text="", level=level)
@@ -2125,14 +2125,14 @@ def build_rich_heading_doc(level: int | None, following: str = "paragraph") -> t
     doc.add_text(label=DocItemLabel.FORMULA, text="y=2", parent=inline)
     body_parent = doc.add_heading(text="Subsection", level=4, parent=heading) if following == "subsection" else heading
     doc.add_text(label=DocItemLabel.TEXT, text="Body under it.", parent=body_parent)
-    return doc, heading
+    return doc
 
 
 @pytest.mark.parametrize("level", [None, 1, 3])
 @pytest.mark.parametrize("following", ["paragraph", "subsection"])
 def test_markdown_rich_heading_keeps_inline_content(level: int | None, following: str):
     """A heading whose content is an inline group renders it in the Markdown heading line, before the body."""
-    doc, _ = build_rich_heading_doc(level, following)
+    doc = build_rich_heading_doc(level, following)
 
     markdown = doc.export_to_markdown()
 
@@ -2146,7 +2146,7 @@ def test_markdown_rich_heading_keeps_inline_content(level: int | None, following
 @pytest.mark.parametrize("following", ["paragraph", "subsection"])
 def test_html_rich_heading_keeps_inline_content(level: int | None, following: str):
     """A heading whose content is an inline group renders it inside the HTML heading tag, before the body."""
-    doc, _ = build_rich_heading_doc(level, following)
+    doc = build_rich_heading_doc(level, following)
     depth = 1 if level is None else level + 1
 
     html = doc.export_to_html(formula_to_mathml=False)

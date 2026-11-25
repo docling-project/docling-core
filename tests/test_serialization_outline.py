@@ -639,7 +639,8 @@ def test_outline_serialization_spans():
 @pytest.mark.parametrize("format", list(OutlineFormat))
 def test_outline_rich_heading_uses_inline_content_as_title(level: int | None, format: OutlineFormat):
     """The outline title of a heading whose content is an inline group is that content, without the body."""
-    doc, heading = build_rich_heading_doc(level)
+    doc = build_rich_heading_doc(level)
+    ref = doc.texts[0].self_ref
 
     outline = (
         OutlineDocSerializer(
@@ -649,13 +650,14 @@ def test_outline_rich_heading_uses_inline_content_as_title(level: int | None, fo
         .text
     )
 
-    assert outline.count("Heading eq") == outline.count("y=2") == 1
-    assert "Body under it." not in outline
     if format == OutlineFormat.JSON:
         data = json.loads(outline)
-        assert len(data) == 1
-        assert data[0]["ref"] == heading.self_ref
-        assert data[0]["title"] == "Heading eq $y=2$"
+        assert [(entry["ref"], entry["title"]) for entry in data] == [(ref, "Heading eq $y=2$")]
+    elif format == OutlineFormat.ITXT:
+        assert outline == f"  [ref={ref}] [Heading eq $y=2$]"
+    else:
+        depth = 1 if level is None else level + 1
+        assert outline == f"{'#' * depth} Heading eq $y=2$\n\\[ref={ref}\\]"
 
 
 @pytest.mark.parametrize("format", [OutlineFormat.JSON, OutlineFormat.ITXT])

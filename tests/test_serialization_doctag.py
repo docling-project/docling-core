@@ -154,7 +154,7 @@ def test_doctags_serialize_param_patch_reaches_formatting_hook(inline, include_f
 @pytest.mark.parametrize("following", ["paragraph", "subsection"])
 def test_doctags_rich_heading_keeps_inline_content(level: int | None, following: str):
     """A heading whose content is an inline group keeps it inside the DocTags heading element, before the body."""
-    doc, _ = build_rich_heading_doc(level, following)
+    doc = build_rich_heading_doc(level, following)
 
     tokens = serialize_doctags(doc)
 
