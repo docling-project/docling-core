@@ -237,14 +237,8 @@ class TableItem(FloatingItem):
         for i in range(nrows):
             for j in range(ncols):
                 cell: TableCell = grid[i][j]
-                rowspan, rowstart = (
-                    cell.row_span,
-                    cell.start_row_offset_idx,
-                )
-                colspan, colstart = (
-                    cell.col_span,
-                    cell.start_col_offset_idx,
-                )
+                rowstart = cell.start_row_offset_idx
+                colstart = cell.start_col_offset_idx
 
                 has_page_info = page_no in doc.pages
 
@@ -278,20 +272,13 @@ class TableItem(FloatingItem):
                             body.append(str(content))
                     else:
                         body.append(str(table_token.OTSL_ECEL.value))
+                elif rowstart != i and colstart != j:
+                    # the slot continues the cell both from above and from the left
+                    body.append(str(table_token.OTSL_XCEL.value))
+                elif rowstart != i:
+                    body.append(str(table_token.OTSL_UCEL.value))
                 else:
-                    add_cross_cell = False
-                    if rowstart != i:
-                        if colspan == 1:
-                            body.append(str(table_token.OTSL_UCEL.value))
-                        else:
-                            add_cross_cell = True
-                    if colstart != j:
-                        if rowspan == 1:
-                            body.append(str(table_token.OTSL_LCEL.value))
-                        else:
-                            add_cross_cell = True
-                    if add_cross_cell:
-                        body.append(str(table_token.OTSL_XCEL.value))
+                    body.append(str(table_token.OTSL_LCEL.value))
             body.append(str(table_token.OTSL_NL.value))
         body_str = "".join(body)
         return body_str
