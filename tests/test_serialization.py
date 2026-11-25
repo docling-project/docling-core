@@ -36,7 +36,7 @@ from docling_core.transforms.serializer.markdown import (
 from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer, PlainTextParams
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
-from docling_core.types.doc import DoclingDocument, ImageRef, TrackSource
+from docling_core.types.doc import DoclingDocument, ImageRef, NodeItem, TrackSource
 from docling_core.types.doc.base import BoundingBox, CoordOrigin, FormattingFallbackMode, ImageRefMode, Size
 from docling_core.types.doc.document import (
     BaseMeta,
@@ -2105,6 +2105,74 @@ def test_html_inline_formula_without_mathml_keeps_text():
     actual = HTMLDocSerializer(doc=doc, params=HTMLParams(formula_to_mathml=False)).serialize().text
 
     assert _parse_html(actual).text_of("code") == "x<y"
+
+
+def build_rich_heading_doc(level: int | None, following: str = "paragraph") -> tuple[DoclingDocument, NodeItem]:
+    """Build an empty title or section header whose content is a leading inline group.
+
+    Args:
+        level: The section header level, or `None` for a title.
+        following: What the heading owns after its inline group: `"paragraph"` for a body
+            paragraph or `"subsection"` for a nested level-4 heading with a paragraph.
+
+    Returns:
+        The document and the heading item.
+    """
+    doc = DoclingDocument(name="rich-heading")
+    heading = doc.add_title(text="") if level is None else doc.add_heading(text="", level=level)
+    inline = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="Heading eq ", parent=inline)
+    doc.add_text(label=DocItemLabel.FORMULA, text="y=2", parent=inline)
+    body_parent = doc.add_heading(text="Subsection", level=4, parent=heading) if following == "subsection" else heading
+    doc.add_text(label=DocItemLabel.TEXT, text="Body under it.", parent=body_parent)
+    return doc, heading
+
+
+@pytest.mark.parametrize("level", [None, 1, 3])
+@pytest.mark.parametrize("following", ["paragraph", "subsection"])
+def test_markdown_rich_heading_keeps_inline_content(level: int | None, following: str):
+    """A heading whose content is an inline group renders it in the Markdown heading line, before the body."""
+    doc, _ = build_rich_heading_doc(level, following)
+
+    markdown = doc.export_to_markdown()
+
+    depth = 1 if level is None else level + 1
+    assert markdown.splitlines()[0] == f"{'#' * depth} Heading eq $y=2$"
+    assert markdown.count("Heading eq") == 1
+    assert markdown.index("Body under it.") > markdown.index("$y=2$")
+
+
+@pytest.mark.parametrize("level", [None, 1, 3])
+@pytest.mark.parametrize("following", ["paragraph", "subsection"])
+def test_html_rich_heading_keeps_inline_content(level: int | None, following: str):
+    """A heading whose content is an inline group renders it inside the HTML heading tag, before the body."""
+    doc, _ = build_rich_heading_doc(level, following)
+    depth = 1 if level is None else level + 1
+
+    html = doc.export_to_html(formula_to_mathml=False)
+
+    heading_html = html.split(f"<h{depth}>", 1)[1].split(f"</h{depth}>", 1)[0]
+    assert "Heading eq" in heading_html
+    assert "y=2" in heading_html
+    assert "Body under it." not in heading_html
+    assert html.count("Heading eq") == 1
+    assert html.index("Body under it.") > html.index(f"</h{depth}>")
+
+
+@pytest.mark.parametrize("level", [None, 1])
+def test_inline_content_after_a_body_item_is_not_a_heading(level: int | None):
+    """An inline group that follows a body item of a heading is body content, not the heading's text."""
+    doc = DoclingDocument(name="body-inline-content")
+    heading = doc.add_title(text="") if level is None else doc.add_heading(text="", level=level)
+    doc.add_text(label=DocItemLabel.TEXT, text="First body.", parent=heading)
+    inline = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="Later body.", parent=inline)
+
+    depth = 1 if level is None else level + 1
+    markdown = doc.export_to_markdown()
+    assert markdown.splitlines()[0].strip() == "#" * depth
+    assert markdown.index("First body.") < markdown.index("Later body.")
+    assert f"<h{depth}></h{depth}>" in doc.export_to_html()
 
 
 def test_html_formula_without_mathml_does_not_warn_about_mathml(caplog: pytest.LogCaptureFixture):

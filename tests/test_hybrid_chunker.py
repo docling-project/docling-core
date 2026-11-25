@@ -1050,6 +1050,7 @@ class _WordCountTokenizer(_TestTokenizer):
 
 @pytest.mark.parametrize("level", [None, 1, 3])
 def test_rich_heading_with_body_keeps_hybrid_chunk_context(level: int | None) -> None:
+    """A rich heading with a body paragraph contextualizes the hybrid chunk of that paragraph."""
     doc = DoclingDocument(name="rich heading")
     heading = doc.add_title(text="") if level is None else doc.add_heading(text="", level=level)
     inline = doc.add_inline_group(parent=heading)
