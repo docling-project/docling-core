@@ -1053,7 +1053,7 @@ def test_rich_heading_with_body_keeps_hybrid_chunk_context(level: int | None) ->
     doc = DoclingDocument(name="rich heading")
     heading = doc.add_title(text="") if level is None else doc.add_heading(text="", level=level)
     inline = doc.add_inline_group(parent=heading)
-    doc.add_text(label=DocItemLabel.TEXT, text="Heading eq", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="Heading eq ", parent=inline)
     doc.add_text(label=DocItemLabel.FORMULA, text="y=2", parent=inline)
     doc.add_text(label=DocItemLabel.TEXT, text="Body under it.", parent=heading)
 

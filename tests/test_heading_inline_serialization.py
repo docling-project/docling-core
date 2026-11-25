@@ -20,7 +20,7 @@ def test_rich_heading_keeps_its_inline_content(level: int | None, following: str
     doc = DoclingDocument(name="rich heading")
     heading = doc.add_title(text="") if level is None else doc.add_heading(text="", level=level)
     inline = doc.add_inline_group(parent=heading)
-    doc.add_text(label=DocItemLabel.TEXT, text="Heading eq", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="Heading eq ", parent=inline)
     doc.add_text(label=DocItemLabel.FORMULA, text="y=2", parent=inline)
     if following == "paragraph":
         doc.add_text(label=DocItemLabel.TEXT, text="Body under it.", parent=heading)
@@ -77,7 +77,7 @@ def test_rich_heading_chunk_context(level: int | None, following: str) -> None:
     doc = DoclingDocument(name="rich heading chunks")
     heading = doc.add_title(text="") if level is None else doc.add_heading(text="", level=level)
     inline = doc.add_inline_group(parent=heading)
-    doc.add_text(label=DocItemLabel.TEXT, text="Heading eq", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="Heading eq ", parent=inline)
     doc.add_text(label=DocItemLabel.FORMULA, text="y=2", parent=inline)
     parent = heading
     if following == "subsection":
@@ -97,7 +97,7 @@ def test_rich_heading_table_of_contents(level: int | None, format: OutlineFormat
     doc = DoclingDocument(name="rich heading outline")
     heading = doc.add_title(text="") if level is None else doc.add_heading(text="", level=level)
     inline = doc.add_inline_group(parent=heading)
-    doc.add_text(label=DocItemLabel.TEXT, text="Heading eq", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="Heading eq ", parent=inline)
     doc.add_text(label=DocItemLabel.FORMULA, text="y=2", parent=inline)
     doc.add_text(label=DocItemLabel.TEXT, text="Body under it.", parent=heading)
     outline = (
