@@ -1319,6 +1319,9 @@ class MarkdownDocSerializer(DocSerializer):
         if escape_underscores and params.escape_underscores:
             res = self._escape_underscores(text)
         if escape_html and params.escape_html:
+            if "\\" in res:
+                # Preserve literal backslashes before the entities Markdown will decode.
+                res = re.sub(r"(?<!\\)(\\+)(?=[&<>])", r"\1\1", res)
             res = html.escape(res, quote=False)
         res = super().post_process(
             text=res,

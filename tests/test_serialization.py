@@ -87,6 +87,25 @@ def verify(exp_file: Path, actual: str):
 # ===============================
 
 
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        (r"\<", r"\\&lt;"),
+        (r"\>", r"\\&gt;"),
+        (r"\&", r"\\&amp;"),
+        (r"\\<", r"\\\\&lt;"),
+        (r"\\\&lt;", r"\\\\\\&amp;lt;"),
+        (r"C:\docs & a < b", r"C:\docs &amp; a &lt; b"),
+    ],
+)
+def test_md_backslashes_before_html_entities(text: str, expected: str):
+    doc = DoclingDocument(name="backslashes")
+    doc.add_text(label=DocItemLabel.TEXT, text=text)
+
+    assert doc.export_to_markdown() == expected
+    assert doc.export_to_markdown(escape_html=False) == text
+
+
 def test_md_cross_page_list_page_break():
     src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
