@@ -512,12 +512,15 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                     res_parts.insert(0, cap_res)
 
         texts = [r.text for r in res_parts]
-        if isinstance(item, ListItem) and text_part and child_group is None and item.text == "" and len(texts) > 1:
-            # CommonMark: an item that starts with a blank line takes its first block on the next line
-            texts[:2] = [f"{texts[0]}\n{texts[1]}"]
-        text = (" " if is_inline_scope else "\n\n").join(texts)
-        if isinstance(item, ListItem) and len(res_parts) > 1:
-            text += "\n"  # blank line before the next sibling list item
+        sep = " " if is_inline_scope else "\n\n"
+        if isinstance(item, ListItem) and len(texts) > 1:
+            # CommonMark: a blank line after a marker with no text ends the item, so the first block goes on the next line
+            first_sep = "\n" if text_part and child_group is None and item.text == "" else sep
+            # MarkdownListSerializer joins the items with "\n" and strips the final "\n": the "\n" added here gives
+            # a blank line before the next item only. A change of that separator removes the blank line silently.
+            text = f"{texts[0]}{first_sep}{sep.join(texts[1:])}\n"
+        else:
+            text = sep.join(texts)
         if processing_pending:
             text = doc_serializer.post_process(
                 text=text,
@@ -1209,6 +1212,8 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                     else sep
                 )
             text_res += text
+        # a list item with continuation blocks ends with "\n" (see MarkdownTextSerializer): with sep, it gives a
+        # blank line before the next item, and the strip removes it after the last item
         return create_ser_result(text=text_res.rstrip("\n"), span_source=my_parts)
 
     @staticmethod
