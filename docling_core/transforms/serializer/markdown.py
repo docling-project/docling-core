@@ -378,6 +378,9 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         child_group = get_inline_content_group(item, doc)
         if child_group is not None:
             text = doc_serializer.serialize(item=child_group, visited=my_visited, **kwargs).text
+            if isinstance(item, TitleItem | SectionHeaderItem):
+                # Inline runs already carry GFM hard breaks, which a heading line cannot hold.
+                text = self._heading_line_breaks(text.replace("  \n", "\n"))
             processing_pending = False
         else:
             text = item.text

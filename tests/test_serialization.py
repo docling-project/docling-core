@@ -2160,6 +2160,20 @@ def test_html_rich_heading_keeps_inline_content(level: int | None, following: st
 
 
 @pytest.mark.parametrize("level", [None, 1])
+def test_markdown_rich_heading_stays_on_a_single_line(level: int | None):
+    """A newline inside a heading's inline runs does not split the Markdown heading line."""
+    doc = DoclingDocument(name="multiline-rich-heading")
+    heading = doc.add_title(text="") if level is None else doc.add_heading(text="", level=level)
+    inline = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="Line1\nLine2 ", parent=inline)
+    doc.add_text(label=DocItemLabel.FORMULA, text="y=2", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="Body.", parent=heading)
+
+    depth = 1 if level is None else level + 1
+    assert doc.export_to_markdown() == f"{'#' * depth} Line1 Line2 $y=2$\n\nBody."
+
+
+@pytest.mark.parametrize("level", [None, 1])
 def test_inline_content_after_a_body_item_is_not_a_heading(level: int | None):
     """An inline group that follows a body item of a heading is body content, not the heading's text."""
     doc = DoclingDocument(name="body-inline-content")
