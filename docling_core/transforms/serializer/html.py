@@ -167,7 +167,6 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         post_processed = False
 
         child_group = get_inline_content_group(item, doc)
-        has_inline_repr = child_group is not None
         if child_group is not None:
             text = doc_serializer.serialize(item=child_group, visited=my_visited, **kwargs).text
             post_processed = True
@@ -197,7 +196,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 image_mode=params.image_mode,
                 formula_to_mathml=params.formula_to_mathml,
                 is_inline_scope=is_inline_scope,
-                text_is_html=has_inline_repr,
+                text_is_html=child_group is not None,
             )
 
         elif isinstance(item, CodeItem):
@@ -209,7 +208,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             # List items are handled by list serializer
             text_parts: list[str] = []
             if text:
-                if has_inline_repr:
+                if child_group is not None:
                     text = f"\n{text}\n"
                 else:
                     text = doc_serializer.post_process(
@@ -263,7 +262,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         # Recurse into children for branches that don't already consume them.
         # The leading InlineGroup is already visited; headings can also have
         # body children. ListItem recursion is handled in its branch above.
-        if not isinstance(item, ListItem) and item.children and (not has_inline_repr or len(item.children) > 1):
+        if not isinstance(item, ListItem) and item.children and (child_group is None or len(item.children) > 1):
             nested_text = "\n".join(
                 r.text
                 for r in doc_serializer.get_parts(

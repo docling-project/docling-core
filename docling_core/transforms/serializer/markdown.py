@@ -376,7 +376,6 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         escape_underscores = kwargs.get("escape_underscores")
 
         child_group = get_inline_content_group(item, doc)
-        has_inline_repr = child_group is not None
         if child_group is not None:
             text = doc_serializer.serialize(item=child_group, visited=my_visited, **kwargs).text
             processing_pending = False
@@ -389,7 +388,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             # The syntax needs a space after the box, unless the text brings its own.
             text = f"- {box}{text}" if text[:1].isspace() else f"- {box} {text}"
         if isinstance(item, ListItem | TitleItem | SectionHeaderItem):
-            if not has_inline_repr:
+            if child_group is None:
                 # case where processing/formatting should be applied first (in inner scope)
                 if isinstance(item, TitleItem | SectionHeaderItem):
                     # Headings cannot span multiple lines; replace newlines with a
