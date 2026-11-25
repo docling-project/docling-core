@@ -814,6 +814,50 @@ def test_md_list_item_continuation_label_filter():
     assert doc.export_to_markdown(labels={DocItemLabel.LIST_ITEM}) == "- Item"
 
 
+def test_md_list_item_continuation_table_and_picture():
+    doc = DoclingDocument(name="table_and_picture")
+    group = doc.add_list_group()
+    item = doc.add_list_item(text="Results", parent=group)
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=2), parent=item)
+    for row_idx, row in enumerate([["Key", "Value"], ["a", "b"]]):
+        for col_idx, text in enumerate(row):
+            doc.add_table_cell(
+                table_item=table,
+                cell=TableCell(
+                    start_row_offset_idx=row_idx,
+                    end_row_offset_idx=row_idx + 1,
+                    start_col_offset_idx=col_idx,
+                    end_col_offset_idx=col_idx + 1,
+                    text=text,
+                    column_header=row_idx == 0,
+                ),
+            )
+    picture = doc.add_picture(parent=item)
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text="Figure 1", parent=picture)
+    picture.captions.append(caption.get_ref())
+    doc.add_list_item(text="Next", parent=group)
+
+    # Every line of a multi-line block is at the content column of the item.
+    assert doc.export_to_markdown() == (
+        "- Results\n\n"
+        "  | Key   | Value   |\n"
+        "  |-------|---------|\n"
+        "  | a     | b       |\n\n"
+        "  Figure 1\n\n"
+        "  <!-- image -->\n\n"
+        "- Next"
+    )
+
+
+def test_md_nested_list_item_with_line_break():
+    doc = DoclingDocument(name="line_break")
+    outer = doc.add_list_item(text="Outer", parent=doc.add_list_group())
+    doc.add_list_item(text="line1\nline2", parent=doc.add_list_group(parent=outer))
+
+    # The list indent applies to every line of a nested item, not only to the first one.
+    assert doc.export_to_markdown() == "- Outer\n    - line1  \n    line2"
+
+
 def test_md_mark_meta_true():
     src = Path("./tests/data/doc/2408.09869v3_enriched.json")
     doc = DoclingDocument.load_from_json(src)
