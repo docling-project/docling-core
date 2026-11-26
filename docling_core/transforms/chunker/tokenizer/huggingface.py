@@ -53,7 +53,8 @@ class HuggingFaceTokenizer(BaseTokenizer):
                 )
                 with open(config_path) as f:
                     data = json.load(f)
-                self.max_tokens = int(data["max_seq_length"])
+                # max_seq_length counts the special tokens, count_tokens does not
+                self.max_tokens = int(data["max_seq_length"]) - self.tokenizer.num_special_tokens_to_add()
             except Exception as e:
                 raise RuntimeError("max_tokens could not be determined automatically; please set explicitly.") from e
         return self

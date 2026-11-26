@@ -321,6 +321,19 @@ def test_deprecated_no_max_tokens():
     )
 
 
+def test_auto_max_tokens_fits_model_input():
+    """Chunks sized by the auto-detected `max_tokens` fit the model input, special tokens included."""
+    with open(INPUT_FILE_2, encoding="utf-8") as f:
+        dl_doc = DoclingDocument.model_validate_json(f.read())
+    max_seq_length = 256  # sentence_bert_config.json of all-MiniLM-L6-v2
+
+    chunker = HybridChunker(tokenizer=HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER))
+
+    assert HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=max_seq_length).get_max_tokens() == max_seq_length
+    for chunk in chunker.chunk(dl_doc=dl_doc):
+        assert len(INNER_TOKENIZER(chunker.contextualize(chunk))["input_ids"]) <= max_seq_length
+
+
 def test_contextualize_altered_delim():
     EXPECTED_OUT_FILE = "tests/data/chunker/2d_out_ser_chunks.json"
 
@@ -493,7 +506,7 @@ def test_chunk_explicit():
     chunker = HybridChunker(
         tokenizer=HuggingFaceTokenizer.from_pretrained(
             model_name="sentence-transformers/all-MiniLM-L6-v2",
-            max_tokens=256,
+            max_tokens=254,  # the auto-detected value: max_seq_length 256 minus 2 special tokens
         ),
     )
 
