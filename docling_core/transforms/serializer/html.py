@@ -465,7 +465,7 @@ class HTMLTableSerializer(BaseTableSerializer):
                         content = ser_res.text
                         span_source = [ser_res]
                     else:
-                        content = html.escape(cell.text.strip())
+                        content = html.escape(cell.text.strip()).replace("\n", "<br>")
                         span_source = item
 
                     celltag = "td"

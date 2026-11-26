@@ -2000,6 +2000,37 @@ def test_html_rich_table_cell_formatting_inside_paragraph():
     )
 
 
+@pytest.mark.parametrize(
+    ("text", "column_header", "expected"),
+    [
+        ("Expedited\nOvernight", False, "<td>Expedited<br>Overnight</td>"),
+        ("Header one\nHeader two", True, "<th>Header one<br>Header two</th>"),
+        ("a & b\n<c>", False, "<td>a &amp; b<br>&lt;c&gt;</td>"),
+    ],
+)
+def test_html_newlines_in_plain_table_cells_are_br(text, column_header, expected):
+    """Newlines in plain table cells are serialized as `<br>`."""
+    doc = DoclingDocument(name="newlines")
+    doc.add_table(
+        data=TableData(
+            num_rows=1,
+            num_cols=1,
+            table_cells=[
+                TableCell(
+                    start_row_offset_idx=0,
+                    end_row_offset_idx=1,
+                    start_col_offset_idx=0,
+                    end_col_offset_idx=1,
+                    text=text,
+                    column_header=column_header,
+                )
+            ],
+        )
+    )
+
+    assert expected in HTMLDocSerializer(doc=doc).serialize().text
+
+
 class _HTMLProbe(HTMLParser):
     """Collects the elements, attributes and per-element text of a parsed HTML document."""
 
