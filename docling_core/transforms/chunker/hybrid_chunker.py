@@ -395,12 +395,27 @@ class HybridChunker(BaseChunker):
                 # in every chunk.  Since splitting a Markdown row mid-cell produces
                 # an invalid fragment, split the table vertically (by columns) so
                 # that each sub-table is a complete, valid Markdown table.
+                body_end = len(body_lines)
+                if any(MARKDOWN_SEPARATOR_ROW_RE.match(line.rstrip("\n")) for line in header_lines):
+                    # A blank line ends the Markdown table. Notes after it have no columns.
+                    body_end = next((i for i, line in enumerate(body_lines) if not line.strip()), body_end)
                 segments = self._split_table_by_columns(
                     header_lines=header_lines,
-                    body_lines=body_lines,
+                    body_lines=body_lines[:body_end],
                     preamble=preamble,
                     available_length=available_length,
                 )
+                if body_end < len(body_lines):
+                    trailing_lines = body_lines[body_end:]
+                    last_with_notes = segments[-1] + "".join(trailing_lines)
+                    if self.tokenizer.count_tokens(last_with_notes) <= available_length:
+                        segments[-1] = last_with_notes
+                    else:
+                        notes_chunker = LineBasedTokenChunker(
+                            tokenizer=self.tokenizer,
+                            max_tokens_override=available_length,
+                        )
+                        segments.extend(notes_chunker.chunk_text(lines=trailing_lines[1:]))
             else:
                 # fallback for rows that don't fit.
                 line_chunker = LineBasedTokenChunker(

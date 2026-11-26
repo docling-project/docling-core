@@ -1048,6 +1048,53 @@ class _WordCountTokenizer(_TestTokenizer):
         return len(text.split())
 
 
+@pytest.mark.parametrize(
+    "footnote",
+    ["Dates are estimates.", "Dates are estimates. " + " ".join(["Check the schedule."] * 12)],
+    ids=["fits_with_table", "requires_own_chunks"],
+)
+def test_wide_markdown_table_keeps_columns_with_a_footnote(footnote: str):
+    rows = [
+        ("Item", "Ship date", "Warehouse"),
+        ("Case 1", "Tuesday morning in October", "Warehouse in Tokyo"),
+        ("Case 2", "Friday afternoon in November", "Warehouse in Osaka"),
+    ]
+    cells = [
+        TableCell(
+            text=text,
+            start_row_offset_idx=row_index,
+            end_row_offset_idx=row_index + 1,
+            start_col_offset_idx=col_index,
+            end_col_offset_idx=col_index + 1,
+            column_header=(row_index == 0),
+        )
+        for row_index, row in enumerate(rows)
+        for col_index, text in enumerate(row)
+    ]
+    doc = DoclingDocument(name="shipments")
+    table = doc.add_table(data=TableData(num_rows=len(rows), num_cols=len(rows[0]), table_cells=cells))
+    note = doc.add_text(label=DocItemLabel.FOOTNOTE, text=footnote)
+    table.footnotes.append(note.get_ref())
+    chunker = HybridChunker(
+        tokenizer=_WordCountTokenizer(max_tokens=25),
+        serializer_provider=CompactMarkdownSerializerProvider(),
+        repeat_table_header=True,
+        omit_header_on_overflow=False,
+        merge_peers=False,
+    )
+
+    chunks = list(chunker.chunk(doc))
+
+    result = "\n".join(chunk.text for chunk in chunks)
+    for row in rows:
+        for cell in row:
+            assert cell in result
+    assert result.count("Dates are estimates.") == 1
+    assert "| Dates are estimates." not in result
+    assert " ".join(result.split()).endswith(footnote)
+    assert all(chunker.tokenizer.count_tokens(chunk.text) <= chunker.max_tokens for chunk in chunks)
+
+
 class _UnderCountingTokenizer(_TestTokenizer):
     """Word-counting tokenizer whose per-chunk counts under-estimate joined text.
 
