@@ -1958,6 +1958,25 @@ def test_misplaced_list_items():
         assert doc == exp_doc
 
 
+def test_delete_items_many_renumbers_references():
+    doc = DoclingDocument(name="many")
+    texts = [doc.add_text(label=DocItemLabel.TEXT, text=str(i)) for i in range(10)]
+    picture = doc.add_picture(caption=texts[7])
+
+    # Delete non-contiguous items, including the first and the last of the texts
+    deleted = {0, 1, 4, 9}
+    doc.delete_items(node_items=[texts[i] for i in sorted(deleted, reverse=True)])
+
+    kept = [str(i) for i in range(10) if i not in deleted]
+    assert [t.text for t in doc.texts] == kept
+    for index, text_item in enumerate(doc.texts):
+        assert text_item.self_ref == f"#/texts/{index}"
+        assert text_item.parent is not None and text_item.parent.cref == "#/body"
+
+    assert [c.cref for c in doc.body.children] == [f"#/texts/{i}" for i in range(len(kept))] + ["#/pictures/0"]
+    assert picture.captions[0].resolve(doc).text == "7"
+
+
 def test_delete_items_renumbers_orphaned_items():
     # The caption is referenced by the picture but is not one of its children, so it is not
     # reachable from body via children. Deleting an item before it must still renumber it.

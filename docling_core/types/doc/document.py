@@ -102,6 +102,8 @@ from docling_core.types.doc.common.reference import (
     PageItem,
     ProvenanceItem,
     RefItem,
+    _is_deleted,
+    _shift_index,
     media_type_of,
 )
 from docling_core.types.doc.common.scalars import CharSpan, LevelNumber, Uint64
@@ -606,11 +608,12 @@ class DoclingDocument(BaseModel):
             if not refs:
                 return num_removed
 
-            lookup: dict[str, dict[int, int]] = {"groups": {int(ref.cref.split("/")[2]): -1 for ref in refs}}
-            for index in sorted(lookup["groups"], reverse=True):
+            lookup: dict[str, list[int]] = {"groups": sorted(int(ref.cref.split("/")[2]) for ref in refs)}
+            for index in reversed(lookup["groups"]):
                 del self.groups[index]
+            crefs = {ref.cref for ref in refs}
             for node in self._iterate_all_nodes():
-                self._update_node_with_lookup(node=node, refs_to_be_deleted=refs, lookup=lookup)
+                self._update_node_with_lookup(node=node, refs_to_be_deleted=crefs, lookup=lookup)
             num_removed += len(refs)
 
     class _KVMigrData(BaseModel):
@@ -1171,6 +1174,8 @@ class DoclingDocument(BaseModel):
         if not refs:
             return
 
+        crefs = {r.cref for r in refs}
+
         # Identify the to_be_deleted_items
         for item, stack in self._iterate_items_with_stack(
             with_groups=True,
@@ -1179,7 +1184,7 @@ class DoclingDocument(BaseModel):
         ):
             ref = item.get_ref()
 
-            if ref in refs:
+            if ref.cref in crefs:
                 to_be_deleted_items[tuple(stack)] = ref.cref
 
             substacks = [stack[0 : i + 1] for i in range(len(stack) - 1)]
@@ -1200,54 +1205,47 @@ class DoclingDocument(BaseModel):
                 _logger.debug(f"deleted item in tree at stack: {stack_} => {ref_}")
 
         # Create a new lookup of the orphans:
-        # dict of item_label (`texts`, `tables`, ...) to a
-        # dict of item_label with delta (default = -1).
-        lookup: dict[str, dict[int, int]] = {}
+        # dict of item_label (`texts`, `tables`, ...) to the sorted indices of the deleted items.
+        deleted: dict[str, set[int]] = {}
 
         for stack_, ref_ in to_be_deleted_items.items():
             path = ref_.split("/")
             if len(path) == 3:
-                item_label = path[1]
-                item_index = int(path[2])
+                deleted.setdefault(path[1], set()).add(int(path[2]))
 
-                if item_label not in lookup:
-                    lookup[item_label] = {}
-
-                lookup[item_label][item_index] = -1
+        lookup = {item_label: sorted(item_inds) for item_label, item_inds in deleted.items()}
 
         # Remove the orphans in reverse order
         for item_label, item_inds in lookup.items():
-            for item_index, _ in sorted(item_inds.items(), reverse=True):  # delete the last in the list first!
+            for item_index in reversed(item_inds):  # delete the last in the list first!
                 _logger.debug(f"deleting item in doc for {item_label} for {item_index}")
                 del self.__getattribute__(item_label)[item_index]
 
         # Update all nodes, not only those reachable from body via children: orphaned items
         # (e.g. captions whose parent does not list them as children) must be renumbered too
         for node in self._iterate_all_nodes():
-            self._update_node_with_lookup(node=node, refs_to_be_deleted=refs, lookup=lookup)
+            self._update_node_with_lookup(node=node, refs_to_be_deleted=crefs, lookup=lookup)
 
     # Update the references
-    def _update_ref_with_lookup(self, item_label: str, item_index: int, lookup: dict[str, dict[int, int]]) -> RefItem:
+    def _update_ref_with_lookup(self, item_label: str, item_index: int, lookup: dict[str, list[int]]) -> RefItem:
         """Update ref with lookup."""
         if item_label not in lookup:  # Nothing to be done
             return RefItem(cref=f"#/{item_label}/{item_index}")
 
-        # Count how many items have been deleted in front of you
-        delta = sum(val if item_index >= key else 0 for key, val in lookup[item_label].items())
-        new_index = item_index + delta
+        new_index = _shift_index(item_index, lookup[item_label])
 
         return RefItem(cref=f"#/{item_label}/{new_index}")
 
     def _update_refitems_with_lookup(
         self,
         ref_items: list[RefItem],
-        refs_to_be_deleted: list[RefItem],
-        lookup: dict[str, dict[int, int]],
+        refs_to_be_deleted: set[str],
+        lookup: dict[str, list[int]],
     ) -> list[RefItem]:
         """Update refitems with lookup."""
         new_refitems = []
         for ref_item in ref_items:
-            if ref_item not in refs_to_be_deleted:  # if ref_item is in ref, then delete/skip them
+            if ref_item.cref not in refs_to_be_deleted:  # refs to deleted items are dropped
                 path = ref_item._split_ref_to_path()
                 if len(path) == 3:
                     new_refitems.append(
@@ -1285,13 +1283,13 @@ class DoclingDocument(BaseModel):
     def _update_node_with_lookup(
         self,
         node: NodeItem,
-        refs_to_be_deleted: list[RefItem],
-        lookup: dict[str, dict[int, int]],
-    ):
+        refs_to_be_deleted: set[str],
+        lookup: dict[str, list[int]],
+    ) -> None:
         """Update the references of a single node with lookup."""
         # Update the comments references on any DocItem
         if isinstance(node, DocItem):
-            node.comments = [ref_item for ref_item in node.comments if ref_item not in refs_to_be_deleted]
+            node.comments = [ref_item for ref_item in node.comments if ref_item.cref not in refs_to_be_deleted]
             for ref_item in node.comments:
                 ref_item._update_with_lookup(lookup=lookup)
 
@@ -1327,7 +1325,7 @@ class DoclingDocument(BaseModel):
             for graph_cell in node.graph.cells:
                 if graph_cell.item_ref is None or len(path := graph_cell.item_ref._split_ref_to_path()) != 3:
                     continue
-                if int(path[2]) in lookup.get(path[1], {}):  # the referenced item was deleted
+                if _is_deleted(int(path[2]), lookup.get(path[1], [])):  # the referenced item was deleted
                     graph_cell.item_ref = None
                 else:
                     graph_cell.item_ref = self._update_ref_with_lookup(
