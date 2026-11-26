@@ -57,7 +57,7 @@ DoclingDocument helpers are actually based).
 
 👉 More details:
 - [Serialization docs](https://docling-project.github.io/docling/concepts/serialization/)
-- [Serialization example](https://docling-project.github.io/docling/examples/serialization/)
+- [Serialization example](https://docling-project.github.io/docling/_generated/examples/serialization/)
 
 ### Chunking
 
@@ -67,8 +67,8 @@ different use cases.
 
 👉 More details:
 - [Chunking docs](https://docling-project.github.io/docling/concepts/chunking/)
-- [Hybrid chunking example](https://docling-project.github.io/docling/examples/hybrid_chunking/)
-- [Advanced chunking and serialization](https://docling-project.github.io/docling/examples/advanced_chunking_and_serialization/)
+- [Hybrid chunking example](https://docling-project.github.io/docling/_generated/examples/hybrid_chunking/)
+- [Advanced chunking and serialization](https://docling-project.github.io/docling/_generated/examples/advanced_chunking_and_serialization/)
 
 ### Profiling
 
