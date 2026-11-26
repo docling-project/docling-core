@@ -95,7 +95,7 @@ class HybridChunker(BaseChunker):
                 warnings.warn(
                     "Deprecated initialization parameter types for HybridChunker. "
                     "For updated usage check out "
-                    "https://docling-project.github.io/docling/examples/hybrid_chunking/",
+                    "https://docling-project.github.io/docling/_generated/examples/hybrid_chunking/",
                     DeprecationWarning,
                 )
 
