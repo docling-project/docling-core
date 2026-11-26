@@ -4,10 +4,12 @@ from abc import ABC, abstractmethod
 from pathlib import Path, PurePath
 from typing import Any, Optional, Union
 
-from pydantic import AnyUrl, BaseModel
+from pydantic import AnyUrl, BaseModel, Field
 from typing_extensions import deprecated
 
 from docling_core.types.doc.document import (
+    AnyTableCell,
+    CharSpan,
     DocItem,
     DoclingDocument,
     FloatingItem,
@@ -29,11 +31,26 @@ class Span(BaseModel):
     # prov_idx: Optional[PositiveInt] = None  # None to be interpreted as whole DocItem
 
 
+class TableCellSpan(BaseModel):
+    """Character range of one rendered table cell in a serialization result."""
+
+    item: TableItem
+    cell: AnyTableCell
+    row: int
+    """Grid row of the rendered cell."""
+    col: int
+    """Grid column of the rendered cell."""
+    charspan: CharSpan
+    """Start and end of the cell text in the result text, without the padding."""
+
+
 class SerializationResult(BaseModel):
     """SerializationResult."""
 
     text: str = ""
     spans: list[Span] = []
+    cell_spans: list[TableCellSpan] = Field(default_factory=list)
+    """Table cells found in `text`, only reported when a serializer is asked to."""
     # group: Optional[GroupItem] = None  # set when result reflects specific group item
 
     def get_unique_doc_items(self) -> list[DocItem]:
