@@ -61,7 +61,7 @@ from docling_core.types.doc.document import (
     TableData,
     TextItem,
 )
-from docling_core.types.doc.labels import DocItemLabel, GraphCellLabel, GraphLinkLabel
+from docling_core.types.doc.labels import DocItemLabel, GraphCellLabel, GraphLinkLabel, GroupLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -3211,3 +3211,56 @@ def test_code_footnotes_serialized_to_markdown_and_html():
         '<figure><pre><code>print(1)</code></pre><div class="footnote">Code note.</div></figure>'
         in doc.export_to_html()
     )
+
+
+def _doc_with_rich_cell_without_prov(table_page: int) -> DoclingDocument:
+    """A located table whose rich cell content has no provenance of its own."""
+    doc = DoclingDocument(name="rich_cell_pages")
+    for page_no in (1, 2):
+        doc.add_page(page_no=page_no, size=Size(width=600, height=800))
+    prov = ProvenanceItem(page_no=table_page, bbox=BoundingBox(l=50, t=100, r=550, b=300), charspan=(0, 0))
+    table = doc.add_table(
+        data=TableData(
+            num_rows=1,
+            num_cols=2,
+            table_cells=[
+                TableCell(
+                    text="plain cell",
+                    start_row_offset_idx=0,
+                    end_row_offset_idx=1,
+                    start_col_offset_idx=0,
+                    end_col_offset_idx=1,
+                ),
+            ],
+        ),
+        prov=prov,
+    )
+    group = doc.add_group(parent=table, label=GroupLabel.UNSPECIFIED)
+    doc.add_text(label=DocItemLabel.TEXT, text="rich cell text", parent=group)
+    table.data.table_cells.append(
+        RichTableCell(
+            text="rich cell text",
+            ref=group.get_ref(),
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=1,
+            end_col_offset_idx=2,
+        )
+    )
+    return doc
+
+
+def test_page_filter_keeps_rich_cell_content_without_prov_with_its_table():
+    doc = _doc_with_rich_cell_without_prov(table_page=1)
+
+    assert "rich cell text" in doc.export_to_markdown()
+    assert "rich cell text" in doc.export_to_markdown(page_no=1)
+    assert "rich cell text" in doc.export_to_html(page_no=1)
+    assert "plain cell" in doc.export_to_markdown(page_no=1)
+
+
+def test_page_filter_drops_rich_cell_content_without_prov_with_its_table():
+    doc = _doc_with_rich_cell_without_prov(table_page=1)
+
+    assert "rich cell text" not in doc.export_to_markdown(page_no=2)
+    assert "rich cell text" not in doc.export_to_html(page_no=2)
