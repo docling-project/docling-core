@@ -1,9 +1,11 @@
 """Tests for DocLang archive (``.dclx``) save and load."""
 
+import base64
 import json
 import shutil
 import zipfile
 from copy import deepcopy
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 from xml.etree import ElementTree
@@ -541,3 +543,84 @@ def test_doclang_archive_pairs_page_images_with_pages_not_starting_at_one(
         assert image is not None
         assert image.pil_image is not None
         assert image.pil_image.getpixel((0, 0)) == color
+
+
+def _copy_with_distinct_png_bytes(source: Path, target: Path) -> None:
+    """Copy an archive, storing its images as PNGs that re-encoding them would not reproduce."""
+    from PIL.PngImagePlugin import PngInfo
+
+    info = PngInfo()
+    info.add_text("kept", "only in the stored bytes")
+    with zipfile.ZipFile(source) as src, zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as dst:
+        for member in src.infolist():
+            data = src.read(member)
+            if member.filename.startswith(("assets/", "pages/")):
+                with Image.open(BytesIO(data)) as img:
+                    out = BytesIO()
+                    img.save(out, format="PNG", pnginfo=info, compress_level=1)
+                    data = out.getvalue()
+            dst.writestr(member, data)
+
+
+def test_load_from_doclang_archive_writes_nothing_by_default(tmp_path: Path) -> None:
+    archive = tmp_path / "two_pages.dclx"
+    _copy_with_distinct_png_bytes(LOAD_FIXTURE_DCLX, archive)
+
+    loaded = DoclingDocument.load_from_doclang_archive(archive)
+
+    # no ``two_pages_artifacts`` next to the archive, or anything else
+    assert sorted(tmp_path.iterdir()) == [archive]
+    _verify_loaded_doclang_archive(actual=loaded, exp_file=LOAD_FIXTURE_GT_JSON, tmp_path=tmp_path)
+
+    # each image is the stored member, byte for byte, not a re-encoding of it
+    with zipfile.ZipFile(archive) as zf:
+        markup = ElementTree.fromstring(zf.read("document.xml"))
+        picture_members = [el.get("uri") for el in markup.iter() if el.tag.rpartition("}")[2] == "src"]
+        expected = {f"pages/{page_no}.png": loaded.pages[page_no].image for page_no in (1, 2)}
+        expected |= dict(zip(picture_members, [picture.image for picture in loaded.pictures], strict=True))
+        assert len(expected) == 3
+        for member, image in expected.items():
+            assert image is not None
+            prefix = f"data:{image.mimetype};base64,"
+            assert str(image.uri).startswith(prefix)
+            assert base64.b64decode(str(image.uri).removeprefix(prefix)) == zf.read(member), member
+            assert image.pil_image is not None
+
+    # the images live in the document itself, so they survive a JSON round trip
+    restored = DoclingDocument.model_validate_json(loaded.model_dump_json())
+    assert restored.pictures[0].image is not None
+    assert restored.pictures[0].image.pil_image is not None
+    assert restored.pictures[0].image.pil_image.size == loaded.pictures[0].image.pil_image.size
+
+    resaved = tmp_path / "out" / "resaved.dclx"
+    resaved.parent.mkdir()
+    loaded.save_as_doclang_archive(resaved)
+    with zipfile.ZipFile(resaved) as zf:
+        names = zf.namelist()
+    assert {"pages/1.png", "pages/2.png"} <= set(names)
+    assert any(name.startswith("assets/") for name in names)
+
+
+def test_load_from_doclang_archive_keeps_files_in_artifacts_dir(tmp_path: Path) -> None:
+    artifacts_dir = tmp_path / "kept"
+    loaded = DoclingDocument.load_from_doclang_archive(LOAD_FIXTURE_DCLX, artifacts_dir=artifacts_dir)
+
+    assert (artifacts_dir / "document.xml").is_file()
+    page_image = loaded.pages[1].image
+    assert page_image is not None
+    assert isinstance(page_image.uri, Path)
+    assert page_image.uri.is_relative_to(artifacts_dir.resolve())
+
+
+def test_embedding_archive_files_leaves_other_images_alone(tmp_path: Path) -> None:
+    outside = tmp_path / "outside.png"
+    Image.new("RGB", (2, 2)).save(outside)
+    doc = DoclingDocument(name="doc")
+    doc.add_picture(image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=2, height=2), uri=outside))
+
+    archive_root = tmp_path / "archive"
+    archive_root.mkdir()
+    DoclingDocument._embed_doclang_archive_files(doc=doc, archive_root=archive_root)
+
+    assert doc.pictures[0].image is not None
+    assert doc.pictures[0].image.uri == outside
