@@ -501,9 +501,38 @@ def test_webvtt_unclosed_and_stray_end_tags() -> None:
     assert str(vtt[1]).rstrip("\n").endswith("\nwhat she said")
     assert str(vtt[2]).rstrip("\n").endswith("\nLast cue")
 
-    # Misnested end tags are still rejected.
-    with pytest.raises(ValueError, match="Incorrect end tag"):
-        WebVTTCueBlock.parse("00:01.000 --> 00:02.000\n<b><i>both</b></i>\n")
+    # A misnested end tag does not match the innermost open span, so it is
+    # ignored (WebVTT 1, 6.4) and the cue keeps its text: </b> is skipped,
+    # </i> closes the italic span, and <b> is closed at the end of the cue.
+    block = WebVTTCueBlock.parse("00:01.000 --> 00:02.000\n<b><i>both</b></i>\n")
+    assert len(block.payload) == 1
+    assert str(block.payload[0]) == "<b><i>both</i></b>"
+    block = WebVTTCueBlock.parse("00:01.000 --> 00:02.000\n<i>one</b> two</i>\n")
+    assert str(block.payload[0]) == "<i>one two</i>"
+
+
+def test_webvtt_stray_less_than_sign() -> None:
+    """Test that a '<' that starts no tag is kept as text instead of dropping the cue."""
+    for text in ["If x < 5, stop", "<3 you", "a <- b", "1 < 2 > 0"]:
+        block = WebVTTCueBlock.parse(f"00:01.000 --> 00:02.000\n{text}\n")
+        assert len(block.payload) == 1
+        assert isinstance(block.payload[0].component, WebVTTCueTextSpan)
+        assert block.payload[0].component.text == text
+
+    # A '<' next to real cue spans keeps both the spans and the text.
+    block = WebVTTCueBlock.parse("00:01.000 --> 00:02.000\n<i>x</i> < <b>y</b>\n")
+    assert [str(c) for c in block.payload] == ["<i>x</i>", " &lt; ", "<b>y</b>"]
+
+    # Every cue of a file is converted, and the cue round-trips.
+    content = (
+        "WEBVTT\n\n"
+        "00:00:01.000 --> 00:00:02.000\nFirst cue\n\n"
+        "00:00:03.000 --> 00:00:04.000\nIf x < 5, stop\n\n"
+        "00:00:05.000 --> 00:00:06.000\nLast cue\n"
+    )
+    vtt = WebVTTFile.parse(content)
+    assert len(vtt) == 3
+    assert WebVTTFile.parse(str(vtt))[1].payload[0].component.text == "If x < 5, stop"
 
 
 def test_webvtt_unknown_tags() -> None:

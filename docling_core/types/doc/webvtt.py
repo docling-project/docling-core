@@ -489,7 +489,9 @@ class WebVTTCueBlock(BaseModel):
             terminator = WebVTTLineTerminator.LF if idx < len(text_list) - 1 or text.endswith("\n") else None
             if len(line) > 0:
                 yield WebVTTCueComponentWithTerminator(
-                    component=WebVTTCueTextSpan(text=line),
+                    # A '<' left here starts no cue span or timestamp tag, as in "x < 5",
+                    # so keep it as text instead of dropping the cue.
+                    component=WebVTTCueTextSpan(text=line.replace("<", "&lt;")),
                     terminator=terminator,
                 )
 
@@ -606,7 +608,7 @@ class WebVTTCueBlock(BaseModel):
 
             # Following WebVTT 1, 6.4, <rt> only applies directly inside <ruby>; otherwise its
             # start tag, and its end tag when no <rt> is open, are ignored. Any other end tag
-            # without an open span is ignored as well.
+            # that does not close the innermost open span is ignored as well.
             if not gps["end"]:
                 if gps["tag"] != "rt" or (tag_stack and tag_stack[-1]["tag"] == "ruby"):
                     tag_stack.append(gps)
@@ -616,9 +618,8 @@ class WebVTTCueBlock(BaseModel):
                 # </ruby> implicitly closes an open <rt> (WebVTT 1, 4.2.2).
                 if gps["tag"] == "ruby" and tag_stack[-1]["tag"] == "rt":
                     _close_top_span()
-                if tag_stack[-1]["tag"] != gps["tag"]:
-                    raise ValueError(f"Incorrect end tag: {tag_stack[-1]['tag']}")
-                _close_top_span()
+                if tag_stack and tag_stack[-1]["tag"] == gps["tag"]:
+                    _close_top_span()
 
             pos = match.end()
             i += 1
