@@ -514,10 +514,9 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         texts = [r.text for r in res_parts]
         sep = " " if is_inline_scope else "\n\n"
         if isinstance(item, ListItem) and len(texts) > 1:
-            # CommonMark: a blank line after a marker with no text ends the item, so the first block goes on the next line
+            # A blank line after a marker without text ends the item: the first block goes on the next line.
             first_sep = "\n" if text_part and child_group is None and item.text == "" else sep
-            # MarkdownListSerializer joins the items with "\n" and strips the final "\n": the "\n" added here gives
-            # a blank line before the next item only. A change of that separator removes the blank line silently.
+            # MarkdownListSerializer joins the items with "\n": the trailing "\n" makes a blank line before the next one.
             text = f"{texts[0]}{first_sep}{sep.join(texts[1:])}\n"
         else:
             text = sep.join(texts)
@@ -536,8 +535,8 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
     def _inline_content_group(item: TextItem, doc: DoclingDocument) -> InlineGroup | None:
         """Return the inline group that holds the text of an item with empty text.
 
-        A list item can own continuation blocks after the inline group of its text, so
-        for a list item the group only has to be its first child.
+        For a list item the group only has to be the first child, because continuation
+        blocks can follow it.
 
         Args:
             item: The text item to inspect.
@@ -562,7 +561,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         **kwargs: Any,
     ) -> list[SerializationResult]:
         """Serialize the block children of a list item, indented to its content column."""
-        # sub-lists alone are left to the list serializer, as before
+        # an item whose children are only sub-lists is left to the list serializer
         if all(c.cref in visited or isinstance(c.resolve(doc), ListGroup) for c in item.children):
             return []
         parts = doc_serializer.get_parts(item=item, visited=visited, **kwargs)
@@ -1212,8 +1211,7 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                     else sep
                 )
             text_res += text
-        # a list item with continuation blocks ends with "\n" (see MarkdownTextSerializer): with sep, it gives a
-        # blank line before the next item, and the strip removes it after the last item
+        # drop the trailing "\n" that MarkdownTextSerializer adds to the last item
         return create_ser_result(text=text_res.rstrip("\n"), span_source=my_parts)
 
     @staticmethod

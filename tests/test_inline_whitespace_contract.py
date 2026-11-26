@@ -275,8 +275,7 @@ def test_list_item_text_stays_apart_from_its_inline_group() -> None:
     for text, formatting in [("more ", None), ("x", _BOLD), (" y", None)]:
         doc.add_text(label=DocItemLabel.TEXT, text=text, parent=group, formatting=formatting)
 
-    # docling-project/docling#4837, section B: the group is the item text only when the item has no text
-    # and the group is its first child.
+    # The group is the item text only when the item has no text and the group is its first child.
     assert doc.export_to_markdown() == "- Intro\n\n  more **x** y"
     assert item._get_plain_text(doc) == "Intro more x y"
 
