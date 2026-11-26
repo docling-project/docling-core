@@ -44,7 +44,7 @@ from docling_core.types.doc.common.constants import (
     FIRST_SUPPORTED_MINOR,
     SCHEMA_VERSION_HISTORY,
 )
-from docling_core.types.doc.document import DoclingDocument
+from docling_core.types.doc.document import DocItemLabel, DoclingDocument, Formatting
 
 # Root of the repository, used to locate docs/schemas/.
 _REPO_ROOT = Path(__file__).parent.parent
@@ -284,11 +284,11 @@ class TestSchemaSnapshotRendering:
         assert set(schema["$defs"]["FieldItem"]["properties"]) == set(FieldItem.model_fields)
 
 
-class TestProjector_1_11_to_1_10:
+class TestProjector_1_13_to_1_12:
     """Group geometry is dropped for old clients without changing content."""
 
     def test_strips_group_provenance_and_preserves_content(self):
-        from docling_core.compat import _project_1_11_to_1_10
+        from docling_core.compat import _project_1_13_to_1_12
         from docling_core.types.doc import BoundingBox, DocItemLabel, ProvenanceItem, Size
 
         doc = DoclingDocument(name="located groups")
@@ -302,8 +302,8 @@ class TestProjector_1_11_to_1_10:
         data = doc.model_dump(mode="json", by_alias=True)
         data["furniture"] = {**_minimal_doc_dict()["furniture"], "prov": [prov.model_dump(mode="json")]}
 
-        result = _project_1_11_to_1_10(data)
-        assert result["version"] == "1.10.0"
+        result = _project_1_13_to_1_12(data)
+        assert result["version"] == "1.12.0"
         assert "prov" not in result["body"]
         assert "prov" not in result["furniture"]
         assert all("prov" not in item for item in result["groups"])
@@ -313,13 +313,201 @@ class TestProjector_1_11_to_1_10:
         assert data["body"]["prov"]
         assert data["furniture"]["prov"]
         assert all(item["prov"] for item in data["groups"])
-        schema = json.loads((_SCHEMAS_DIR / "DoclingDocument_1_10.json").read_text())
+        schema = json.loads((_SCHEMAS_DIR / "DoclingDocument_1_12.json").read_text())
         jsonschema.validate(instance=result, schema=schema)
-        projected = project_to(doc, target_version="1.10.0")
+        projected = project_to(doc, target_version="1.12.0")
         jsonschema.validate(instance=projected.model_dump(mode="json", by_alias=True), schema=schema)
-        assert projected.version == "1.10.0"
+        assert projected.version == "1.12.0"
         assert all(not item.prov for item in projected.groups)
         assert projected.texts[0].prov == doc.texts[0].prov
+
+
+class TestProjector_1_12_to_1_11:
+    """Tests for the 1.12 → 1.11 downgrade projector."""
+
+    def _apply(self, data: dict) -> dict:
+        from docling_core.compat import _project_1_12_to_1_11
+
+        return _project_1_12_to_1_11(data)
+
+    def test_version_set_to_1_11(self):
+        result = self._apply(_minimal_doc_dict("1.12.0"))
+        assert result["version"] == "1.11.0"
+        assert "tracks" not in result
+
+    def test_instants_get_a_duration(self):
+        """A 1.11 client requires the end time to be after the start time."""
+        from docling_core.types.doc import TrackSource
+
+        doc = DoclingDocument(name="doc")
+        track = doc.add_track()
+        doc.add_text(label=DocItemLabel.TEXT, text="a", parent=track, source=TrackSource(start_time=2, end_time=2))
+        doc.add_text(label=DocItemLabel.TEXT, text="b", source=TrackSource(start_time=3, end_time=5))
+
+        result = self._apply(doc.model_dump(mode="python"))
+
+        assert [(s["start_time"], s["end_time"]) for t in result["texts"] for s in t["source"]] == pytest.approx(
+            [
+                (2, 2.001),
+                (3, 5),
+            ]
+        )
+        DoclingDocument.model_validate(result)
+
+    def test_track_is_replaced_by_its_cues(self):
+        """The transcript stays in the reading order, so old clients still export it."""
+        from docling_core.types.doc import TrackSource
+
+        doc = DoclingDocument(name="doc")
+        doc.add_text(label=DocItemLabel.TEXT, text="before")
+        track = doc.add_track()
+        doc.add_text(label=DocItemLabel.TEXT, text="cue", parent=track, source=TrackSource(start_time=0, end_time=1))
+
+        result = self._apply(doc.model_dump(mode="python"))
+
+        assert "tracks" not in result
+        assert result["pictures"] == []
+        assert [ref["cref"] for ref in result["body"]["children"]] == ["#/texts/0", "#/texts/1"]
+        assert result["texts"][1]["parent"]["cref"] == "#/body"
+        assert DoclingDocument.model_validate(result).export_to_markdown() == "before\n\ncue"
+
+    def test_track_cover_becomes_a_picture_before_its_cues(self):
+        """The cover, location and captions of a track are kept as a picture."""
+        from docling_core.types.doc import ImageRef, MediaRef, Size, TrackSource
+
+        doc = DoclingDocument(name="doc")
+        doc.add_picture()
+        track = doc.add_track(
+            image=ImageRef(mimetype="image/png", dpi=72, size=Size(width=1, height=1), uri=Path("x.png")),
+            audio=MediaRef(mimetype="audio/mpeg", uri=Path("a.mp3")),
+        )
+        doc.add_text(label=DocItemLabel.TEXT, text="cue", parent=track, source=TrackSource(start_time=0, end_time=1))
+
+        result = self._apply(doc.model_dump(mode="python"))
+
+        picture = result["pictures"][1]
+        assert picture["label"] == "picture"
+        assert picture["self_ref"] == "#/pictures/1"
+        assert str(picture["image"]["uri"]) == "x.png"
+        assert picture["children"] == []
+        assert "audio" not in picture
+        assert [ref["cref"] for ref in result["body"]["children"]] == ["#/pictures/0", "#/pictures/1", "#/texts/0"]
+        assert result["texts"][0]["parent"]["cref"] == "#/body"
+        DoclingDocument.model_validate(result)
+
+
+class TestProjector_1_11_to_1_10:
+    """Tests for the 1.11 → 1.10 downgrade projector."""
+
+    def _apply(self, data: dict) -> dict:
+        from docling_core.compat import _project_1_11_to_1_10
+
+        return _project_1_11_to_1_10(data)
+
+    def test_version_set_to_1_10(self):
+        result = self._apply(_minimal_doc_dict("1.11.0"))
+        assert result["version"] == "1.10.0"
+
+    def test_plain_text_keeps_its_whitespace(self):
+        """Only inline-group runs are stripped; other text items stay as they are."""
+        data = _minimal_doc_dict("1.11.0")
+        data["texts"] = [
+            {
+                "self_ref": "#/texts/0",
+                "parent": None,
+                "children": [],
+                "content_layer": "body",
+                "label": "text",
+                "orig": "bold ",
+                "text": "bold ",
+                "prov": [],
+            }
+        ]
+        result = self._apply(data)
+        assert result["texts"][0]["text"] == "bold "
+
+    def test_inline_runs_are_stripped_to_the_old_shape(self):
+        """A 1.10 client joins runs with " ", so runs must not carry boundary whitespace."""
+        doc = DoclingDocument(name="runs")
+        caption = doc.add_text(label=DocItemLabel.CAPTION, text=" Caption ")
+        heading = doc.add_heading(text="Heading ")
+        group = doc.add_inline_group()
+        doc.add_text(label=DocItemLabel.TEXT, text="Some ", parent=group)
+        doc.add_text(label=DocItemLabel.TEXT, text="bold ", parent=group, formatting=Formatting(bold=True))
+        doc.add_text(label=DocItemLabel.TEXT, text="text with a ", parent=group)
+        doc.add_text(label=DocItemLabel.TEXT, text="link ", parent=group, hyperlink="https://example.com")
+        doc.add_text(label=DocItemLabel.TEXT, text=" ", parent=group)
+        doc.add_text(label=DocItemLabel.TEXT, text="core", parent=group, formatting=Formatting(bold=True))
+        data = json.loads(doc.model_dump_json())
+
+        result = self._apply(data)
+
+        assert len(result["texts"]) == len(data["texts"])
+        assert [t["text"] for t in result["texts"]] == [
+            " Caption ",
+            "Heading ",
+            "Some",
+            "bold",
+            "text with a",
+            "link",
+            "",
+            "core",
+        ]
+        assert [t["orig"] for t in result["texts"]] == [t["orig"] for t in data["texts"]]
+        assert data["texts"][2]["text"] == "Some "
+        assert caption.text == " Caption " and heading.text == "Heading "
+
+    def test_does_not_mutate_caller_input(self):
+        data = _minimal_doc_dict("1.11.0")
+        self._apply(data)
+        assert data["version"] == "1.11.0"
+
+    @pytest.mark.parametrize(
+        "runs",
+        [
+            [("code", "a"), ("code", "b")],
+            [("formula", "x"), ("formula", "y")],
+            [("code", "a"), ("formula", "x"), ("code", "b")],
+            [("text", "Install with "), ("code", "pip"), ("text", ", then")],
+            [("text", "a"), ("text", " "), ("text", "b")],
+        ],
+    )
+    def test_repeated_projection_and_migration_do_not_drift(self, runs):
+        """Down-projecting and reloading again must not add runs or change the output."""
+        doc = DoclingDocument(name="drift")
+        group = doc.add_inline_group()
+        for kind, text in runs:
+            if kind == "code":
+                doc.add_code(text=text, parent=group)
+            elif kind == "formula":
+                doc.add_formula(text=text, parent=group)
+            else:
+                doc.add_text(label=DocItemLabel.TEXT, text=text, parent=group)
+
+        def round_trip(d: DoclingDocument) -> DoclingDocument:
+            return DoclingDocument.model_validate(json.loads(project_to(d, "1.10.0").model_dump_json()))
+
+        first = round_trip(doc)
+        again = first
+        for _ in range(3):
+            again = round_trip(again)
+        assert again.export_to_dict() == first.export_to_dict()
+
+    def test_project_to_does_not_run_the_legacy_migration(self):
+        """project_to keeps the old-shape runs; reloading them on this core restores the spacing."""
+        doc = DoclingDocument(name="projected")
+        group = doc.add_inline_group()
+        doc.add_text(label=DocItemLabel.TEXT, text="Normal ", parent=group)
+        doc.add_text(label=DocItemLabel.TEXT, text="bold", parent=group, formatting=Formatting(bold=True))
+        doc.add_text(label=DocItemLabel.TEXT, text=" tail", parent=group)
+
+        result = project_to(doc, target_version="1.10.0")
+        dumped = json.loads(result.model_dump_json())
+
+        assert dumped["version"] == "1.10.0"
+        assert [t["text"] for t in dumped["texts"]] == ["Normal", "bold", "tail"]
+        reloaded = DoclingDocument.model_validate(dumped)
+        assert reloaded.export_to_markdown() == "Normal **bold** tail"
 
 
 class TestProjector_1_10_to_1_9:

@@ -15,7 +15,15 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
 from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 from docling_core.transforms.serializer.html import HTMLDocSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
-from docling_core.types.doc import ContentLayer, DocItemLabel, DoclingDocument, PictureItem, TableData, TextItem
+from docling_core.types.doc import (
+    ContentLayer,
+    DocItemLabel,
+    DoclingDocument,
+    DocumentOrigin,
+    PictureItem,
+    TableData,
+    TextItem,
+)
 
 from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_rich_table_doc
 
@@ -40,7 +48,7 @@ def test_rich_heading_chunk_metadata(kind: str, body: str, prefix: str) -> None:
     heading = doc.add_title(text="") if kind == "title" else doc.add_heading(text="", level=1)
     parent = doc.add_inline_group(parent=heading) if prefix else heading
     if prefix:
-        doc.add_text(label=DocItemLabel.TEXT, text=prefix.strip(), parent=parent)
+        doc.add_text(label=DocItemLabel.TEXT, text=prefix, parent=parent)
     doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=parent)
     if body:
         doc.add_text(label=DocItemLabel.TEXT, text=body)
@@ -54,7 +62,7 @@ def test_rich_heading_is_emitted_before_a_sibling_heading() -> None:
     doc = DoclingDocument(name="rich-heading")
     heading = doc.add_heading(text="", level=1)
     inline = doc.add_inline_group(parent=heading)
-    doc.add_text(label=DocItemLabel.TEXT, text="Energy", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="Energy ", parent=inline)
     doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=inline)
     doc.add_heading(text="Next", level=1)
     doc.add_text(label=DocItemLabel.TEXT, text="Body.")
@@ -64,13 +72,26 @@ def test_rich_heading_is_emitted_before_a_sibling_heading() -> None:
     assert [chunk.meta.headings for chunk in chunks] == [["Energy $E=mc^2$"], ["Next"]]
 
 
+def test_heading_only_chunks_keep_origin() -> None:
+    origin = DocumentOrigin(filename="doc.pdf", mimetype="application/pdf", binary_hash=42)
+    doc = DoclingDocument(name="headings", origin=origin)
+    doc.add_heading(text="Empty", level=1)
+    doc.add_heading(text="Full", level=1)
+    doc.add_text(label=DocItemLabel.TEXT, text="Body.")
+    doc.add_heading(text="Trailing", level=1)
+
+    chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker(always_emit_headings=True).chunk(doc)]
+    assert [chunk.text for chunk in chunks] == ["", "Body.", ""]
+    assert [chunk.meta.origin for chunk in chunks] == [origin, origin, origin]
+
+
 @pytest.mark.parametrize("kind", ["table", "picture"])
 @pytest.mark.parametrize(
     ("caption", "expected"),
     [
         ("Table 1: results", "Table 1: results"),
-        ("Table <bold>1</bold>: results", "Table **1** : results"),
-        ("Table <formula>x</formula>: results", "Table $x$ : results"),
+        ("Table <bold>1</bold>: results", "Table **1**: results"),
+        ("Table <formula>x</formula>: results", "Table $x$: results"),
     ],
 )
 def test_chunk_caption_stays_with_owner(kind: str, caption: str, expected: str, tmp_path: Path) -> None:
@@ -106,7 +127,7 @@ def test_chunk_satellite_check_keeps_unrelated_inline_text() -> None:
         "<text>After</text></doclang>"
     )
     chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker().chunk(doc)]
-    assert [chunk.text for chunk in chunks] == ["Before **body**", "Table **1** : results\n\nA", "After"]
+    assert [chunk.text for chunk in chunks] == ["Before **body**", "Table **1**: results\n\nA", "After"]
     assert doc.tables[0].self_ref in {item.self_ref for item in chunks[1].meta.doc_items}
 
 

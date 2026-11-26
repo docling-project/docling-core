@@ -6,10 +6,24 @@ import zipfile
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
+from xml.etree import ElementTree
 
 import pytest
+from doclang import PackagingError
+from PIL import Image
 
-from docling_core.types.doc import DoclingDocument, ImageRef, ImageRefMode
+from docling_core.types.doc import (
+    BoundingBox,
+    DocItemLabel,
+    DoclingDocument,
+    DocumentOrigin,
+    ImageRef,
+    ImageRefMode,
+    MediaRef,
+    ProvenanceItem,
+    Size,
+    TrackSource,
+)
 from tests.test_data_gen_flag import GEN_TEST_DATA
 
 DOC_LANG_ARCHIVE_DIR = Path("tests/data/doc/doclang_archive")
@@ -381,3 +395,149 @@ def test_load_from_doclang_archive_rejects_oversize_asset_image(
             archive_path,
             artifacts_dir=tmp_path / "artifacts",
         )
+
+
+def _source_parts(archive: Path) -> tuple[str | None, str | None, str]:
+    """The part targeted by the source relationship, the recorded name, and the content types."""
+    with zipfile.ZipFile(archive) as zf:
+        rels = {
+            rel.get("Type", "").rsplit("/", 1)[-1]: rel.get("Target", "").lstrip("/")
+            for rel in ElementTree.fromstring(zf.read("_rels/.rels"))
+        }
+        name = None
+        if (descriptor := rels.get("source-metadata")) is not None:
+            name = ElementTree.fromstring(zf.read(descriptor)).get("name")
+        return rels.get("source"), name, zf.read("[Content_Types].xml").decode()
+
+
+def test_save_archive_with_source(tmp_path: Path):
+    doc = DoclingDocument(name="report")
+    doc.add_text(label=DocItemLabel.TEXT, text="hello")
+    doc.origin = DocumentOrigin(mimetype="application/pdf", binary_hash=1, filename="Report 2026.pdf")
+    original = tmp_path / "upload-tmp"
+    original.write_bytes(b"%PDF-1.7 not parsed")
+
+    # a path: the name and media type come from the origin, not from the stored file
+    by_path = tmp_path / "by_path.dclx"
+    doc.save_as_doclang_archive(by_path, source=original)
+    target, name, types = _source_parts(by_path)
+    assert (target, name) == ("source.pdf", "Report 2026.pdf")
+    assert 'ContentType="application/pdf"' in types
+    with zipfile.ZipFile(by_path) as zf:
+        assert zf.read("source.pdf") == b"%PDF-1.7 not parsed"
+
+    # bytes work the same
+    by_bytes = tmp_path / "by_bytes.dclx"
+    doc.save_as_doclang_archive(by_bytes, source=original.read_bytes())
+    assert _source_parts(by_bytes)[:2] == ("source.pdf", "Report 2026.pdf")
+
+    # without source, nothing is stored
+    plain = tmp_path / "plain.dclx"
+    doc.save_as_doclang_archive(plain)
+    assert _source_parts(plain)[:2] == (None, None)
+
+
+def test_save_archive_with_source_without_origin(tmp_path: Path):
+    doc = DoclingDocument(name="notes")
+    doc.add_text(label=DocItemLabel.TEXT, text="hello")
+    original = tmp_path / "notes.html"
+    original.write_text("<p>hello</p>\n")
+
+    # a path without origin: its own name, and the media type guessed from it
+    archive = tmp_path / "notes.dclx"
+    doc.save_as_doclang_archive(archive, source=original)
+    target, name, types = _source_parts(archive)
+    assert (target, name) == ("source.html", "notes.html")
+    assert 'ContentType="text/html"' in types
+
+    # bytes without origin carry neither a name nor a media type
+    with pytest.raises(PackagingError, match="content type"):
+        doc.save_as_doclang_archive(tmp_path / "bytes.dclx", source=b"<p>hello</p>\n")
+    with pytest.raises(TypeError, match="Path or bytes"):
+        doc.save_as_doclang_archive(tmp_path / "str.dclx", source=str(original))
+
+
+def test_save_archive_source_that_is_track_media(tmp_path: Path):
+    recording = tmp_path / "talk.mp3"
+    recording.write_bytes(b"not decoded")
+    doc = DoclingDocument(name="talk")
+    doc.origin = DocumentOrigin(mimetype="audio/mpeg", binary_hash=1, filename="talk.mp3")
+    track = doc.add_track(audio=MediaRef.from_file(recording))
+    doc.add_text(label=DocItemLabel.TEXT, text="hi", parent=track, source=TrackSource(start_time=0, end_time=1))
+
+    archive = tmp_path / "talk.dclx"
+    doc.save_as_doclang_archive(archive, source=recording)
+    assert _source_parts(archive)[:2] == ("audio/1.mp3", "talk.mp3")
+    with zipfile.ZipFile(archive) as zf:
+        assert not [n for n in zf.namelist() if n.startswith("source.")]
+
+
+def _doc_with_content_on(content_pages: list[int], num_pages: int = 4) -> DoclingDocument:
+    doc = DoclingDocument(name="blank_pages")
+    for page_no in range(1, num_pages + 1):
+        doc.add_page(
+            page_no=page_no,
+            size=Size(width=100, height=100),
+            image=ImageRef.from_pil(Image.new("RGB", (8, 8), "white"), dpi=72),
+        )
+    for page_no in content_pages:
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text=f"text on page {page_no}",
+            prov=ProvenanceItem(page_no=page_no, bbox=BoundingBox(l=1, t=1, r=2, b=2), charspan=(0, 1)),
+        )
+    return doc
+
+
+@pytest.mark.parametrize(
+    "content_pages",
+    [[1, 2, 3, 4], [1, 2, 3], [2, 3, 4], [1, 3, 4], [1, 4], [3], []],
+    ids=["full", "blank-last", "blank-first", "blank-middle", "gap", "single", "empty"],
+)
+def test_doclang_archive_keeps_pages_without_content(content_pages: list[int], tmp_path: Path) -> None:
+    """Pages without content still occupy a page, so page images and page numbers stay aligned."""
+    doc = _doc_with_content_on(content_pages)
+    dclx_path = tmp_path / "blank_pages.dclx"
+    doc.save_as_doclang_archive(dclx_path)
+
+    with zipfile.ZipFile(dclx_path) as archive:
+        markup = archive.read("document.xml").decode("utf-8")
+        page_images = [name for name in archive.namelist() if name.startswith("pages/")]
+    assert len(ElementTree.fromstring(markup).findall("page_break")) == len(doc.pages) - 1
+    assert len(page_images) == len(doc.pages)
+
+    loaded = DoclingDocument.load_from_doclang_archive(dclx_path, artifacts_dir=tmp_path / "artifacts")
+    found = {item.text: item.prov[0].page_no for item in loaded.texts if item.text.startswith("text on page")}
+    assert found == {f"text on page {page_no}": page_no for page_no in content_pages}
+
+
+@pytest.mark.parametrize("page_numbers", [[2, 3, 4], [10, 11], [1, 100]], ids=["from-2", "from-10", "sparse"])
+def test_doclang_archive_pairs_page_images_with_pages_not_starting_at_one(
+    page_numbers: list[int], tmp_path: Path
+) -> None:
+    """Each page keeps its own image when the page numbers do not run from 1 to N."""
+    colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
+    doc = DoclingDocument(name="offset_pages")
+    for page_no, color in zip(page_numbers, colors, strict=False):
+        doc.add_page(
+            page_no=page_no,
+            size=Size(width=100, height=100),
+            image=ImageRef.from_pil(Image.new("RGB", (8, 8), color), dpi=72),
+        )
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text=f"text on page {page_no}",
+            prov=ProvenanceItem(page_no=page_no, bbox=BoundingBox(l=1, t=1, r=2, b=2), charspan=(0, 1)),
+        )
+    dclx_path = tmp_path / "offset_pages.dclx"
+    doc.save_as_doclang_archive(dclx_path)
+
+    loaded = DoclingDocument.load_from_doclang_archive(dclx_path, artifacts_dir=tmp_path / "artifacts")
+
+    assert len(loaded.pages) == len(page_numbers)
+    for page_no, color in zip(page_numbers, colors, strict=False):
+        item = next(t for t in loaded.texts if t.text == f"text on page {page_no}")
+        image = loaded.pages[item.prov[0].page_no].image
+        assert image is not None
+        assert image.pil_image is not None
+        assert image.pil_image.getpixel((0, 0)) == color

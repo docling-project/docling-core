@@ -1,3 +1,50 @@
+## [v2.108.0](https://github.com/docling-project/docling-core/releases/tag/v2.108.0) - 2026-11-20
+
+### Feature
+
+* Add TrackItem and DocLang `<track>` support ([#940](https://github.com/docling-project/docling-core/issues/940)) ([`6cb1101`](https://github.com/docling-project/docling-core/commit/6cb11010e58c97c65ef05ed90ccb0c68e761b20d))
+
+## [v2.107.1](https://github.com/docling-project/docling-core/releases/tag/v2.107.1) - 2026-11-16
+
+### Fix
+
+* **webvtt:** Keep a sub-millisecond cue serializable ([#1014](https://github.com/docling-project/docling-core/issues/1014)) ([`3faf821`](https://github.com/docling-project/docling-core/commit/3faf82187053f646a5711f2ebae3be9f7bb1a0e0))
+* **webvtt:** Escape cue text and voice names when exporting to WebVTT ([#972](https://github.com/docling-project/docling-core/issues/972)) ([`b11a140`](https://github.com/docling-project/docling-core/commit/b11a1400a2012f40db357d83342b3c183fa098a2))
+* **webvtt:** Keep whitespace-only lines inside a cue ([#975](https://github.com/docling-project/docling-core/issues/975)) ([`eb54920`](https://github.com/docling-project/docling-core/commit/eb54920b13569d4cffa9ab4db4d002593c6b5176))
+* **webvtt:** Parse cue ruby spans instead of dropping their cues ([#935](https://github.com/docling-project/docling-core/issues/935)) ([`18e6be7`](https://github.com/docling-project/docling-core/commit/18e6be77e005af3b3a66357b3c92d73a42e6ab84))
+* **webvtt:** Resolve every HTML character reference in cue text ([#926](https://github.com/docling-project/docling-core/issues/926)) ([`876ca93`](https://github.com/docling-project/docling-core/commit/876ca93c703fc2fdf928be96b08b15dce0f1da2e))
+
+## [v2.107.0](https://github.com/docling-project/docling-core/releases/tag/v2.107.0) - 2026-11-13
+
+### Feature
+
+* **document:** Get the smallest page size that contains all content of a page ([#1013](https://github.com/docling-project/docling-core/issues/1013)) ([`e437598`](https://github.com/docling-project/docling-core/commit/e437598891f2d8c997bc75a298dc9a63123b3e19))
+* **ci:** Harden AI PR triage security and robustness ([#990](https://github.com/docling-project/docling-core/issues/990)) ([`fa12a43`](https://github.com/docling-project/docling-core/commit/fa12a43fa925e385f6e6d2607df3637e9aa1a3f8))
+* Add opt-in HTML fallback for formatting in Markdown export ([#661](https://github.com/docling-project/docling-core/issues/661)) ([`626ff46`](https://github.com/docling-project/docling-core/commit/626ff46ae30a010f95fcd75060c83a16f0fc0735))
+
+### Fix
+
+* **doclang:** Preserve hyperlinks in round trip ([#1019](https://github.com/docling-project/docling-core/issues/1019)) ([`981489f`](https://github.com/docling-project/docling-core/commit/981489fb2d7fbad7f743bc0b7d7ba11cbdabd848))
+* **markdown:** Preserve edge spaces in inline code spans ([#981](https://github.com/docling-project/docling-core/issues/981)) ([`d7e5459`](https://github.com/docling-project/docling-core/commit/d7e545952a2988e01baa25c90e53443001afa70c))
+* **chunker:** Keep origin on heading-only chunks ([#999](https://github.com/docling-project/docling-core/issues/999)) ([`94c804b`](https://github.com/docling-project/docling-core/commit/94c804b95a036ddd21ebbee778c96b6899520569))
+* **file:** Preserve semicolons in quoted remote filenames ([#944](https://github.com/docling-project/docling-core/issues/944)) ([`984112f`](https://github.com/docling-project/docling-core/commit/984112f7af017c81dc5de51ad6dbd8f143374a12))
+* **serializer:** Preserve floating-item footnotes in LaTeX and DocTags ([#897](https://github.com/docling-project/docling-core/issues/897)) ([`186741a`](https://github.com/docling-project/docling-core/commit/186741a33935724dec0f9a21fd3ce917eaae5564))
+* **doclang:** Don't rewrite the document's provenance when splitting a multi-prov item ([#832](https://github.com/docling-project/docling-core/issues/832)) ([`4b029a5`](https://github.com/docling-project/docling-core/commit/4b029a5f2b3ad8778e681bd30d45e33702da0008))
+* **serializer:** Escape # in LaTeX inline code with a single backslash ([#950](https://github.com/docling-project/docling-core/issues/950)) ([`d25d97b`](https://github.com/docling-project/docling-core/commit/d25d97bff9cbdd577674abc561d0a731de268029))
+* **latex:** Recognize nested groups in document titles ([#983](https://github.com/docling-project/docling-core/issues/983)) ([`3e3be95`](https://github.com/docling-project/docling-core/commit/3e3be95e9de7472e78da2068ae2b281e4dd34611))
+
+## [v2.106.0](https://github.com/docling-project/docling-core/releases/tag/v2.106.0) - 2026-11-04
+
+### Feature
+
+* Make inline serializers concatenate runs faithfully ([#693](https://github.com/docling-project/docling-core/issues/693)) ([`738abee`](https://github.com/docling-project/docling-core/commit/738abeee008dc4607352c09c89bb0589ae4a1fc1))
+
+### Fix
+
+* **doclang:** Stop adding separators to nested inline content ([#963](https://github.com/docling-project/docling-core/issues/963)) ([`1517ab7`](https://github.com/docling-project/docling-core/commit/1517ab72757163d751750b42c87c4049290bd166))
+* **doclang:** Read a checkbox's text as the run after it, verbatim ([#955](https://github.com/docling-project/docling-core/issues/955)) ([`98218df`](https://github.com/docling-project/docling-core/commit/98218dffa1c6cc63390c34dd6972e0a19997e6c9))
+* **doclang:** Map notes and invisible layers to DocLang values ([#800](https://github.com/docling-project/docling-core/issues/800)) ([`2dc4c9f`](https://github.com/docling-project/docling-core/commit/2dc4c9f511269eb39be5aad84b838f7bb179142e))
+
 ## [v2.105.0](https://github.com/docling-project/docling-core/releases/tag/v2.105.0) - 2026-10-27
 
 ### Feature

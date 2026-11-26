@@ -3,8 +3,10 @@
 import re
 import warnings
 import xml.etree.ElementTree as ET
+from collections.abc import Callable, Sequence
 from enum import Enum
-from typing import Any, ClassVar, Final, Optional
+from typing import Any, ClassVar, Final, NamedTuple, Optional, cast
+from xml.dom.minidom import Element, Node, Text
 
 from pydantic import BaseModel
 
@@ -21,7 +23,7 @@ from docling_core.types.doc.document import FieldItem, FieldRegionItem
 from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
 
 DOCLANG_NAMESPACE: Final = "https://www.doclang.ai/ns/v0"
-_DOCLANG_VERSION: Final = "0.8"
+_DOCLANG_VERSION: Final = "0.10"
 DOCLANG_DFLT_RESOLUTION: int = 512
 
 ET.register_namespace("", DOCLANG_NAMESPACE)  # prevent prefix from ET.tostring()
@@ -294,10 +296,10 @@ class DocLangToken(str, Enum):
     # Geometric and temporal
     LOCATION = "location"
     LAYER = "layer"
-    HOUR = "hour"
-    MINUTE = "minute"
-    SECOND = "second"
-    CENTISECOND = "centisecond"
+    HOURS = "hours"
+    MINUTES = "minutes"
+    SECONDS = "seconds"
+    MSECS = "msecs"
 
     # Semantic
     HEADING = "heading"
@@ -321,6 +323,12 @@ class DocLangToken(str, Enum):
     FIELD_VALUE = "value"
     FIELD_HEADING = "field_heading"
     FIELD_HINT = "hint"
+    TRACK = "track"
+    COVER = "cover"
+    FRAME = "frame"
+    AUDIO = "audio"
+    VOICE = "voice"
+    CHAPTER = "chapter"
 
     # Grouping
     LIST = "list"
@@ -351,6 +359,8 @@ class DocLangToken(str, Enum):
     UCEL = "ucel"
     XCEL = "xcel"
     NL = "nl"
+    # -- Tracks
+    BDIV = "bdiv"
 
     # Continuation
     THREAD = "thread"
@@ -419,10 +429,10 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.LABEL: {DocLangAttributeKey.VALUE},
         DocLangToken.SRC: {DocLangAttributeKey.URI},
         DocLangToken.HREF: {DocLangAttributeKey.URI},
-        DocLangToken.HOUR: {DocLangAttributeKey.VALUE},
-        DocLangToken.MINUTE: {DocLangAttributeKey.VALUE},
-        DocLangToken.SECOND: {DocLangAttributeKey.VALUE},
-        DocLangToken.CENTISECOND: {DocLangAttributeKey.VALUE},
+        DocLangToken.HOURS: {DocLangAttributeKey.VALUE},
+        DocLangToken.MINUTES: {DocLangAttributeKey.VALUE},
+        DocLangToken.SECONDS: {DocLangAttributeKey.VALUE},
+        DocLangToken.MSECS: {DocLangAttributeKey.VALUE},
         DocLangToken.HEADING: {DocLangAttributeKey.LEVEL},
         DocLangToken.FIELD_HEADING: {DocLangAttributeKey.LEVEL},
         DocLangToken.CHECKBOX: {DocLangAttributeKey.CLASS},
@@ -466,11 +476,11 @@ class DocLangVocabulary(BaseModel):
                 DOCLANG_DFLT_RESOLUTION,
             ),  # TODO: review
         },
-        # Temporal components
-        DocLangToken.HOUR: {DocLangAttributeKey.VALUE: (0, 99)},
-        DocLangToken.MINUTE: {DocLangAttributeKey.VALUE: (0, 59)},
-        DocLangToken.SECOND: {DocLangAttributeKey.VALUE: (0, 59)},
-        DocLangToken.CENTISECOND: {DocLangAttributeKey.VALUE: (0, 99)},
+        # Temporal components (the schema does not bound the hours)
+        DocLangToken.HOURS: {DocLangAttributeKey.VALUE: (0, 9999)},
+        DocLangToken.MINUTES: {DocLangAttributeKey.VALUE: (0, 59)},
+        DocLangToken.SECONDS: {DocLangAttributeKey.VALUE: (0, 59)},
+        DocLangToken.MSECS: {DocLangAttributeKey.VALUE: (0, 999)},
         # Levels (N ≥ 1)
         DocLangToken.HEADING: {DocLangAttributeKey.LEVEL: (1, 6)},
         DocLangToken.FIELD_HEADING: {DocLangAttributeKey.LEVEL: (1, 6)},
@@ -487,10 +497,10 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.LABEL,
         DocLangToken.SRC,
         DocLangToken.HREF,
-        DocLangToken.HOUR,
-        DocLangToken.MINUTE,
-        DocLangToken.SECOND,
-        DocLangToken.CENTISECOND,
+        DocLangToken.HOURS,
+        DocLangToken.MINUTES,
+        DocLangToken.SECONDS,
+        DocLangToken.MSECS,
         DocLangToken.BR,
         DocLangToken.CHECKBOX,
         DocLangToken.LDIV,
@@ -505,6 +515,7 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.UCEL,
         DocLangToken.XCEL,
         DocLangToken.NL,
+        DocLangToken.BDIV,
         # Continuation markers
         DocLangToken.THREAD,
     }
@@ -521,10 +532,10 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.LOCATION: DocLangCategory.GEOMETRIC,
         DocLangToken.LAYER: DocLangCategory.GEOMETRIC,
         # Temporal
-        DocLangToken.HOUR: DocLangCategory.TEMPORAL,
-        DocLangToken.MINUTE: DocLangCategory.TEMPORAL,
-        DocLangToken.SECOND: DocLangCategory.TEMPORAL,
-        DocLangToken.CENTISECOND: DocLangCategory.TEMPORAL,
+        DocLangToken.HOURS: DocLangCategory.TEMPORAL,
+        DocLangToken.MINUTES: DocLangCategory.TEMPORAL,
+        DocLangToken.SECONDS: DocLangCategory.TEMPORAL,
+        DocLangToken.MSECS: DocLangCategory.TEMPORAL,
         # Semantic
         DocLangToken.HEADING: DocLangCategory.SEMANTIC,
         DocLangToken.TEXT: DocLangCategory.SEMANTIC,
@@ -543,6 +554,12 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.LIST: DocLangCategory.SEMANTIC,
         DocLangToken.TABLE: DocLangCategory.SEMANTIC,
         DocLangToken.TABULAR: DocLangCategory.SEMANTIC,
+        DocLangToken.TRACK: DocLangCategory.SEMANTIC,
+        DocLangToken.COVER: DocLangCategory.SEMANTIC,
+        DocLangToken.FRAME: DocLangCategory.SEMANTIC,
+        DocLangToken.AUDIO: DocLangCategory.SEMANTIC,
+        DocLangToken.VOICE: DocLangCategory.SEMANTIC,
+        DocLangToken.CHAPTER: DocLangCategory.SEMANTIC,
         # Grouping
         DocLangToken.GROUP: DocLangCategory.GROUPING,
         # Formatting
@@ -566,6 +583,7 @@ class DocLangVocabulary(BaseModel):
         DocLangToken.UCEL: DocLangCategory.STRUCTURAL,
         DocLangToken.XCEL: DocLangCategory.STRUCTURAL,
         DocLangToken.NL: DocLangCategory.STRUCTURAL,
+        DocLangToken.BDIV: DocLangCategory.STRUCTURAL,
         DocLangToken.FIELD_KEY: DocLangCategory.STRUCTURAL,
         DocLangToken.FIELD_VALUE: DocLangCategory.STRUCTURAL,
         # Continuation
@@ -774,18 +792,25 @@ class DocLangVocabulary(BaseModel):
         """
         special_tokens: list[str] = []
 
-        temporal_tokens = {
-            DocLangToken.HOUR,
-            DocLangToken.MINUTE,
-            DocLangToken.SECOND,
-            DocLangToken.CENTISECOND,
+        # Values of the temporal tokens, as in the DocLang token vocabulary (Annex C):
+        # their attribute ranges are wider, to validate any timestamp.
+        temporal_token_values = {
+            DocLangToken.HOURS: range(24),
+            DocLangToken.MINUTES: range(60),
+            DocLangToken.SECONDS: range(60),
+            DocLangToken.MSECS: range(0, 1000, 10),
         }
 
         for token in DocLangToken:
             # Optional gating for location/temporal tokens
             if not include_location_tokens and token is DocLangToken.LOCATION:
                 continue
-            if not include_temporal_tokens and token in temporal_tokens:
+            if token in temporal_token_values:
+                if include_temporal_tokens:
+                    special_tokens.extend(
+                        f'<{token.value} {DocLangAttributeKey.VALUE.value}="{n}"/>'
+                        for n in temporal_token_values[token]
+                    )
                 continue
 
             name = token.value
@@ -1048,7 +1073,7 @@ _DOCLANG_META_TAG_DESCRIPTION: Final = f"{_DOCLANG_META_NAMESPACE}__description"
 _DOCLANG_META_TAG_SMILES: Final = f"{_DOCLANG_META_NAMESPACE}__smiles"
 
 # Tokens allowed in an element head (before body content). Mirrors
-# ``_element_head_prefix`` serialization order plus continuation/temporal tokens.
+# ``_element_head_prefix`` serialization order plus continuation tokens.
 _ELEMENT_HEAD_TAGS: Final[frozenset[str]] = frozenset(
     {
         DocLangToken.LABEL.value,
@@ -1061,9 +1086,293 @@ _ELEMENT_HEAD_TAGS: Final[frozenset[str]] = frozenset(
         DocLangToken.CUSTOM.value,
         DocLangToken.THREAD.value,
         DocLangToken.XREF.value,
-        DocLangToken.HOUR.value,
-        DocLangToken.MINUTE.value,
-        DocLangToken.SECOND.value,
-        DocLangToken.CENTISECOND.value,
     }
 )
+
+# Formatting tags, which can themselves hold mixed content, e.g. <bold>a <italic>b</italic></bold>.
+_FORMATTING_TAGS: Final[frozenset[str]] = frozenset(
+    {
+        DocLangToken.BOLD.value,
+        DocLangToken.ITALIC.value,
+        DocLangToken.UNDERLINE.value,
+        DocLangToken.STRIKETHROUGH.value,
+        DocLangToken.SUBSCRIPT.value,
+        DocLangToken.SUPERSCRIPT.value,
+    }
+)
+
+# Elements whose body allows raw text; a text block spans nested ones (e.g. <bold> in <text>).
+_RAW_TEXT_TAGS: Final[frozenset[str]] = frozenset(
+    {
+        DocLangToken.TEXT.value,
+        DocLangToken.HEADING.value,
+        DocLangToken.CAPTION.value,
+        DocLangToken.DESCRIPTION.value,
+        DocLangToken.SUMMARY.value,
+        DocLangToken.FOOTNOTE.value,
+        DocLangToken.PAGE_HEADER.value,
+        DocLangToken.PAGE_FOOTER.value,
+        DocLangToken.FORMULA.value,
+        DocLangToken.CODE.value,
+        DocLangToken.FIELD_KEY.value,
+        DocLangToken.FIELD_VALUE.value,
+        DocLangToken.FIELD_HEADING.value,
+        DocLangToken.FIELD_HINT.value,
+        DocLangToken.MARKER.value,
+        DocLangToken.HANDWRITING.value,
+        DocLangToken.RTL.value,
+        DocLangToken.CONTENT.value,
+        "chapter",  # <track> elements, not in the vocabulary yet
+        "voice",
+    }
+    | _FORMATTING_TAGS
+)
+# Tags that may continue a virtual <text> (a list item or cell given as unwrapped text).
+_VIRTUAL_TEXT_INLINE_TAGS: Final[frozenset[str]] = _FORMATTING_TAGS | {
+    DocLangToken.HANDWRITING.value,
+    DocLangToken.RTL.value,
+    DocLangToken.CONTENT.value,
+    DocLangToken.BR.value,
+    DocLangToken.CHECKBOX.value,
+}
+# Semantic elements that are inline within a virtual <text>, but a block on their own.
+_VIRTUAL_TEXT_SEMANTIC_TAGS: Final[frozenset[str]] = frozenset({DocLangToken.CODE.value, DocLangToken.FORMULA.value})
+
+
+def _is_virtual_text_part(node: Node) -> bool:
+    """True when ``node`` may be part of a virtual <text> (in a list item or cell)."""
+    return isinstance(node, Text) or (
+        isinstance(node, Element)
+        and (node.tagName in _VIRTUAL_TEXT_INLINE_TAGS or node.tagName in _VIRTUAL_TEXT_SEMANTIC_TAGS)
+    )
+
+
+def _is_virtual_text(nodes: Sequence[Node]) -> bool:
+    """True when ``nodes`` hold raw text or text-level elements of their own.
+
+    Only then are semantic elements among them (e.g. ``<code>``) inline; otherwise they are blocks.
+    """
+    return any(
+        (isinstance(node, Text) and node.data.strip(_XML_WHITESPACE))
+        or (isinstance(node, Element) and node.tagName in _VIRTUAL_TEXT_INLINE_TAGS)
+        for node in nodes
+    )
+
+
+# DocLang 0.9 whitespace handling (spec "Content encoding and whitespace handling").
+_XML_WHITESPACE: Final = " \t\r\n"
+
+# Left as written: <custom> holds foreign markup, and <track> is not supported yet.
+_WHITESPACE_OPAQUE_TAGS: Final[frozenset[str]] = frozenset({DocLangToken.CUSTOM.value, "track"})
+
+
+class _VisibleItem(NamedTuple):
+    """Anything else visible in a flattened text block (e.g. <br/>, an inline <picture>), by tag."""
+
+    tag: str
+
+
+# A flattened text block: unprotected text nodes, <content> elements, and any other visible items.
+_WsToken = Text | Element | _VisibleItem
+_TextBlockVisitor = Callable[[Sequence[Node]], None]
+
+
+def _for_each_text_block(el: Element, visit: _TextBlockVisitor) -> None:
+    """Call ``visit`` with the nodes of each text block under ``el``, innermost blocks first."""
+    if el.tagName in _WHITESPACE_OPAQUE_TAGS:
+        return
+    if el.tagName in _RAW_TEXT_TAGS:
+        visit(el.childNodes)
+        return
+    # Not a text block itself; unwrapped text between its child elements is a virtual <text>.
+    segment: list[Node] = []
+
+    def visit_segment() -> None:
+        if _is_virtual_text(segment):
+            visit(segment)
+            return
+        # No text of its own: whitespace between blocks, which are read on their own.
+        visit([node for node in segment if not isinstance(node, Element) or node.tagName in _ELEMENT_HEAD_TAGS])
+        for node in segment:
+            if isinstance(node, Element) and node.tagName in _VIRTUAL_TEXT_SEMANTIC_TAGS:
+                _for_each_text_block(node, visit)
+
+    for node in el.childNodes:
+        if _is_virtual_text_part(node) or (isinstance(node, Element) and node.tagName in _ELEMENT_HEAD_TAGS):
+            segment.append(node)
+            continue
+        visit_segment()
+        segment = []
+        if isinstance(node, Element):
+            _for_each_text_block(node, visit)
+    visit_segment()
+
+
+def _flatten_text_block(nodes: Sequence[Node], visit: _TextBlockVisitor) -> list[_WsToken]:
+    """Flatten a text block, visiting the text blocks nested in it (element heads etc.)."""
+    out: list[_WsToken] = []
+    for node in nodes:
+        if isinstance(node, Text):
+            out.append(node)
+        elif not isinstance(node, Element):
+            continue  # comments and processing instructions are disregarded
+        elif node.tagName in _ELEMENT_HEAD_TAGS:
+            _for_each_text_block(node, visit)  # an element head is read separately, as if removed
+        elif node.tagName == DocLangToken.CONTENT.value:
+            out.append(node)  # literal; its whitespace never joins a sequence outside it
+        elif node.tagName == DocLangToken.PAGE_BREAK.value:
+            continue  # a page boundary within the text, transparent to its reading
+        elif node.tagName in _RAW_TEXT_TAGS:
+            out.extend(_flatten_text_block(node.childNodes, visit))
+        else:
+            out.append(_VisibleItem(node.tagName))
+            if node.tagName != DocLangToken.BR.value:
+                _for_each_text_block(node, visit)
+    return out
+
+
+def _content_text(el: Element) -> str:
+    return "".join(node.data for node in el.childNodes if isinstance(node, Text))
+
+
+def _read_text_block(tokens: Sequence[_WsToken]) -> list[str]:
+    """Return the reading of each token: rules 2-4 for text nodes, literal for <content>.
+
+    Other visible items read as ``"\0"``, a placeholder for something that is not a space.
+    """
+    reading: list[list[str]] = [[] for _ in tokens]
+    seen_content = False
+    in_sequence = False
+    # Indexes of the text nodes holding the first character of each sequence since the last content.
+    pending: list[int] = []
+
+    def resolve_pending() -> None:
+        # Content follows: sequences that also have content before them read as a space.
+        if seen_content:
+            for idx in pending:
+                reading[idx].append(" ")
+        pending.clear()
+
+    for idx, tok in enumerate(tokens):
+        if isinstance(tok, Text):
+            for char in tok.data:
+                if char in _XML_WHITESPACE:
+                    if not in_sequence:
+                        pending.append(idx)
+                        in_sequence = True
+                    continue
+                resolve_pending()
+                in_sequence = False
+                seen_content = True
+                reading[idx].append(char)
+            continue
+        literal = _content_text(tok) if isinstance(tok, Element) else "\0"
+        if literal:
+            resolve_pending()
+            seen_content = True
+            reading[idx].append(literal)
+            in_sequence = False
+    # Sequences still pending sit at the end of the block: dropped (rule 2).
+    return ["".join(chars) for chars in reading]
+
+
+def _apply_whitespace_rules(root: Element) -> None:
+    """Rewrite the text nodes under ``root`` in place, as DocLang 0.9 reads them.
+
+    Whitespace outside text blocks and at their edges is dropped; any other whitespace
+    sequence becomes one space, kept in the text node holding its first character.
+    ``<content>`` is literal. Afterwards, a text node holds exactly its own reading.
+    """
+
+    def visit(nodes: Sequence[Node]) -> None:
+        tokens = _flatten_text_block(nodes, visit)
+        for tok, text in zip(tokens, _read_text_block(tokens)):
+            if isinstance(tok, Text):
+                tok.data = text
+
+    _for_each_text_block(root, visit)
+
+
+# Whitespace that DocLang does not read as written: anything but a single space.
+_COLLAPSIBLE_WHITESPACE_RE: Final = re.compile(r"[\t\r\n]|  ")
+
+_INLINE_ITEM_HOSTS: Final[frozenset[str]] = frozenset(
+    {
+        DocLangToken.TEXT.value,
+        DocLangToken.CAPTION.value,
+        DocLangToken.FOOTNOTE.value,
+        DocLangToken.PAGE_HEADER.value,
+        DocLangToken.PAGE_FOOTER.value,
+    }
+)
+_VIRTUAL_TEXT_HOSTS: Final[frozenset[str]] = frozenset({DocLangToken.LIST.value, DocLangToken.TABLE.value})
+_FIELD_HOSTS: Final[frozenset[str]] = frozenset({DocLangToken.FIELD_KEY.value, DocLangToken.FIELD_VALUE.value})
+
+
+def _deserializer_keeps_space_beside(item_tag: str, host_tag: str) -> bool:
+    """True when our deserializer keeps a bare space beside a non-text item in the given text block.
+
+    All such spaces count per the spec, but some deserializer paths still trim them: there, the
+    serializer keeps writing ``<content>``, which they don't touch.
+    """
+    if item_tag == DocLangToken.CHECKBOX.value:
+        return host_tag in _INLINE_ITEM_HOSTS or host_tag in _VIRTUAL_TEXT_HOSTS or host_tag in _FIELD_HOSTS
+    if item_tag == DocLangToken.PICTURE.value:
+        return host_tag in _INLINE_ITEM_HOSTS
+    return False
+
+
+def _unwrap_redundant_content(root: Element) -> None:
+    """Unwrap each ``<content>`` under ``root`` whose text reads the same without it.
+
+    The spec asks producers to use ``<content>`` only where the whitespace rules would change
+    the reading. Whether they do depends on the neighbours, which a run serializer cannot see:
+    a run's trailing space needs no wrapper before ``<bold>x``, but does at the end of a block.
+    """
+
+    def visit(nodes: Sequence[Node]) -> None:
+        tokens = _flatten_text_block(nodes, visit)
+        reading = _read_text_block(tokens)
+        host = cast(Element, nodes[0].parentNode) if nodes else None
+        host_tag = host.tagName if host is not None else ""
+
+        def in_nested_block(el: Element) -> bool:
+            """Whether ``el`` sits in an element the deserializer reads as a block, e.g. ``<value><text>``."""
+            ancestor = cast(Element, el.parentNode)
+            while ancestor is not host:
+                if ancestor.tagName not in _VIRTUAL_TEXT_INLINE_TAGS | _VIRTUAL_TEXT_SEMANTIC_TAGS:
+                    return True
+                ancestor = cast(Element, ancestor.parentNode)
+            return False
+
+        def needs_wrapper(neighbours: Sequence[int], touching_char: int) -> bool:
+            """Whether an edge space would be lost beside the first of ``neighbours`` that reads as something."""
+            neighbour = next((i for i in neighbours if reading[i]), None)
+            if neighbour is None:
+                return True  # dropped at the block edge
+            tok = tokens[neighbour]
+            if isinstance(tok, _VisibleItem):
+                return not _deserializer_keeps_space_beside(tok.tag, host_tag)
+            return reading[neighbour][touching_char] == " "  # would merge with a neighbouring space
+
+        for idx, tok in enumerate(tokens):
+            if not isinstance(tok, Element) or not (text := reading[idx]) or _COLLAPSIBLE_WHITESPACE_RE.search(text):
+                continue
+            if in_nested_block(tok) and (text[0] == " " or text[-1] == " "):
+                continue  # the deserializer trims the edges of that block
+            parent = cast(Element, tok.parentNode)
+            if (
+                not text.strip(" ")
+                and parent.tagName not in _RAW_TEXT_TAGS
+                and not _is_virtual_text([n for n in nodes if n is not tok and n.parentNode is parent])
+            ):
+                continue  # bare, it would no longer make its list item or cell a virtual <text>
+            if text[0] == " " and needs_wrapper(range(idx - 1, -1, -1), -1):
+                continue
+            if text[-1] == " " and needs_wrapper(range(idx + 1, len(tokens)), 0):
+                continue
+            for child in list(tok.childNodes):
+                parent.insertBefore(child, tok)
+            parent.removeChild(tok)
+
+    _for_each_text_block(root, visit)

@@ -8,7 +8,7 @@ from abc import abstractmethod
 from collections.abc import Iterable
 from functools import cached_property
 from pathlib import Path, PurePath
-from typing import Annotated, Any, Final, Optional, Union
+from typing import Annotated, Any, ClassVar, Final, Optional, Union
 from urllib.parse import quote, urlsplit, urlunsplit
 
 from pydantic import (
@@ -408,6 +408,11 @@ class DocSerializer(BaseModel, BaseDocSerializer):
 
     params: CommonParams = CommonParams()
 
+    # Move whitespace at the edges of a run outside the formatting/hyperlink markers.
+    # Off for formats whose own whitespace channel must keep it inside the markup
+    # (DocLang wraps it in `<content>`), on where adjacency breaks the markup (Markdown).
+    hoist_decoration_whitespace: ClassVar[bool] = False
+
     _excluded_refs_cache: dict[str, set[str]] = {}
 
     @computed_field  # type: ignore[misc]
@@ -447,6 +452,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         params_json = params.model_dump_json()
         refs = self._excluded_refs_cache.get(params_json)
         if refs is None:
+            track_pages = self._track_pages() if params.pages is not None else {}
             refs = {
                 item.self_ref
                 for ix, (item, _) in enumerate(
@@ -465,7 +471,8 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                             or item.content_layer not in params.layers
                             or (
                                 params.pages is not None
-                                and ((not item.prov) or item.prov[0].page_no not in params.pages)
+                                and (item.prov[0].page_no if item.prov else track_pages.get(item.self_ref))
+                                not in params.pages
                             )
                         )
                     )
@@ -489,6 +496,19 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                             )
             self._excluded_refs_cache[params_json] = refs
         return refs
+
+    def _track_pages(self) -> dict[str, int]:
+        """The page of each item inside a located track: cues have no location of their own."""
+        pages: dict[str, int] = {}
+        for track in self.doc.tracks:
+            if not track.prov:
+                continue
+            for node, _ in self.doc.iterate_items(
+                root=track, with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
+            ):
+                if node is not track:
+                    pages.setdefault(node.self_ref, track.prov[0].page_no)
+        return pages
 
     @abstractmethod
     def serialize_doc(
@@ -755,7 +775,23 @@ class DocSerializer(BaseModel, BaseDocSerializer):
     ) -> str:
         """Apply some text post-processing steps."""
         params = self.params.merge_with_patch(patch=kwargs)
+
+        lead = trail = ""
         res = text
+        if self.hoist_decoration_whitespace:
+            # Inline runs carry their own significant whitespace, which may sit *inside* a
+            # formatted run (common in DOCX/HTML). Decorating it verbatim produces
+            # `**bold ** tail`, which CommonMark renders as literal asterisks. Hoist the edge
+            # whitespace around the *complete* decoration stack -- hoisting inside an
+            # individual formatter would let the hyperlink capture it again.
+            core = text.strip()
+            if not core:
+                # Whitespace-only (or empty) run: no markers, no empty hyperlink.
+                return text
+            lead = text[: len(text) - len(text.lstrip())]
+            trail = text[len(text.rstrip()) :]
+            res = core
+
         if params.include_formatting and formatting:
             if formatting.bold:
                 res = self.serialize_bold(text=res, **kwargs)
@@ -774,7 +810,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                 res = self.serialize_hyperlink(text=res, hyperlink=hyperlink, **kwargs)
             else:
                 _logger.warning("Dropping hyperlink with unsafe scheme; keeping the link text only.")
-        return res
+        return f"{lead}{res}{trail}"
 
     @override
     def serialize_bold(self, text: str, **kwargs: Any) -> str:

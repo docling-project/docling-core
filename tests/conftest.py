@@ -208,7 +208,7 @@ def _construct_doc_impl() -> DoclingDocument:
     inline1 = doc.add_inline_group(parent=g2_subgroup_li_1)
     doc.add_text(
         label=DocItemLabel.TEXT,
-        text="Here a code snippet:",
+        text="Here a code snippet: ",
         parent=inline1,
     )
     doc.add_code(
@@ -216,17 +216,17 @@ def _construct_doc_impl() -> DoclingDocument:
         parent=inline1,
         code_language=CodeLanguageLabel.PYTHON,
     )
-    doc.add_text(label=DocItemLabel.TEXT, text="(to be displayed inline)", parent=inline1)
+    doc.add_text(label=DocItemLabel.TEXT, text=" (to be displayed inline)", parent=inline1)
 
     g2_subgroup_li_2 = doc.add_list_item(text="", parent=g2_subgroup, marker="□")
     inline2 = doc.add_inline_group(parent=g2_subgroup_li_2)
     doc.add_text(
         label=DocItemLabel.TEXT,
-        text="Here a formula:",
+        text="Here a formula: ",
         parent=inline2,
     )
     doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=inline2)
-    doc.add_text(label=DocItemLabel.TEXT, text="(to be displayed inline)", parent=inline2)
+    doc.add_text(label=DocItemLabel.TEXT, text=" (to be displayed inline)", parent=inline2)
 
     doc.add_text(label=DocItemLabel.TEXT, text="Here a code block:", parent=None)
     doc.add_code(text='print("Hello world")', parent=None, code_language=CodeLanguageLabel.PYTHON)
@@ -264,52 +264,52 @@ def _construct_doc_impl() -> DoclingDocument:
     doc.add_form(graph=graph)
 
     inline_fmt = doc.add_inline_group()
-    doc.add_text(label=DocItemLabel.TEXT, text="Some formatting chops:", parent=inline_fmt)
+    doc.add_text(label=DocItemLabel.TEXT, text="Some formatting chops: ", parent=inline_fmt)
     doc.add_text(
         label=DocItemLabel.TEXT,
-        text="bold",
+        text="bold ",
         parent=inline_fmt,
         formatting=Formatting(bold=True),
     )
     doc.add_text(
         label=DocItemLabel.TEXT,
-        text="italic",
+        text="italic ",
         parent=inline_fmt,
         formatting=Formatting(italic=True),
     )
     doc.add_text(
         label=DocItemLabel.TEXT,
-        text="underline",
+        text="underline ",
         parent=inline_fmt,
         formatting=Formatting(underline=True),
     )
     doc.add_text(
         label=DocItemLabel.TEXT,
-        text="strikethrough",
+        text="strikethrough ",
         parent=inline_fmt,
         formatting=Formatting(strikethrough=True),
     )
     doc.add_text(
         label=DocItemLabel.TEXT,
-        text="subscript",
-        orig="subscript",
+        text="subscript ",
+        orig="subscript ",
         formatting=Formatting(script=Script.SUB),
         parent=inline_fmt,
     )
     doc.add_text(
         label=DocItemLabel.TEXT,
-        text="superscript",
-        orig="superscript",
+        text="superscript ",
+        orig="superscript ",
         formatting=Formatting(script=Script.SUPER),
         parent=inline_fmt,
     )
     doc.add_text(
         label=DocItemLabel.TEXT,
-        text="hyperlink",
+        text="hyperlink ",
         parent=inline_fmt,
         hyperlink=Path("."),
     )
-    doc.add_text(label=DocItemLabel.TEXT, text="&", parent=inline_fmt)
+    doc.add_text(label=DocItemLabel.TEXT, text="& ", parent=inline_fmt)
     doc.add_text(
         label=DocItemLabel.TEXT,
         text="everything at the same time.",

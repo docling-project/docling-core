@@ -53,6 +53,7 @@ from docling_core.types.doc.webvtt import (
     WebVTTFile,
     WebVTTLineTerminator,
     WebVTTTimestamp,
+    _escape,
 )
 
 _logger = logging.getLogger(__name__)
@@ -116,6 +117,27 @@ def _remove_consecutive_pairs(text: str) -> str:
     return result
 
 
+def _cue_timings(start_time: float, end_time: float) -> WebVTTCueTimings:
+    """Build the cue timings of a track segment, keeping the cue representable.
+
+    ``WebVTTCueTimings`` rejects a zero-length cue. A ``TrackSource`` can be an
+    instant, and a WebVTT timestamp only carries milliseconds, so rounding can also
+    collapse a sub-millisecond cue. Keep such a cue visible by extending its end by
+    the smallest representable step, instead of raising while serializing the whole
+    document.
+    """
+    start = WebVTTTimestamp.from_seconds(start_time)
+    end = WebVTTTimestamp.from_seconds(end_time)
+    if end <= start:
+        end = WebVTTTimestamp.from_seconds(start.seconds + 0.001)
+        if end_time > start_time:  # an instant is expected to need this
+            _logger.warning(
+                f"Track segment {start_time}..{end_time} collapses onto {start} at WebVTT "
+                f"millisecond precision, extending the cue end to {end}"
+            )
+    return WebVTTCueTimings(start=start, end=end)
+
+
 class WebVTTParams(CommonParams):
     """Serialization parameters for the Web Video Text Tracks (WebVTT) format."""
 
@@ -160,8 +182,9 @@ class WebVTTTextSerializer(BaseModel, BaseTextSerializer):
         # Apply post-processing here: formatting and voice.
         # If the TextItem is part of an InlineGroup, we need to further post-process it within the group context.
         source: TrackSource = item.source[0]
+        # Escape the text, so that the cue parser reads it back literally.
         text: str = doc_serializer.post_process(
-            text=item.text,
+            text=_escape(item.text, "<"),
             formatting=item.formatting,
             voice=source.voice,
         )
@@ -398,7 +421,8 @@ class WebVTTDocSerializer(DocSerializer):
                 _logger.warning(f"Invalid {tag} cue span without annotation: {text}")
                 return text
             else:
-                start_tag = WebVTTCueSpanStartTagAnnotated(name=tag, annotation=anno)
+                # The annotation is unescaped on validation, so it must be escaped to stay literal.
+                start_tag = WebVTTCueSpanStartTagAnnotated(name=tag, annotation=_escape(anno, ">"))
         else:
             return text
 
@@ -458,11 +482,13 @@ class WebVTTDocSerializer(DocSerializer):
                 doc_item = doc_item.children[0].resolve(doc=self.doc)
             if isinstance(doc_item, TextItem) and doc_item.source and doc_item.source[0].kind == "track":
                 prov: TrackSource = doc_item.source[0]
+                # WebVTT needs a cue to end after it starts: an instant lasts 1 ms
+                end_time = prov.end_time if prov.end_time > prov.start_time else prov.start_time + 0.001
                 if (
                     prov.identifier == id
                     and timings
                     and timings.start.seconds == prov.start_time
-                    and timings.end.seconds == prov.end_time
+                    and timings.end.seconds == end_time
                 ):
                     # When combining items with same timing, add newline and merge consecutive tags
                     combined = text.rstrip() + WebVTTLineTerminator.LF.value + part.text
@@ -476,10 +502,7 @@ class WebVTTDocSerializer(DocSerializer):
                 else:
                     if text:
                         cue_blocks.append(WebVTTCueBlock.parse(text))
-                    timings = WebVTTCueTimings(
-                        start=WebVTTTimestamp.from_seconds(prov.start_time),
-                        end=WebVTTTimestamp.from_seconds(prov.end_time),
-                    )
+                    timings = _cue_timings(prov.start_time, prov.end_time)
                     id = prov.identifier
                     text = (
                         f"{id + WebVTTLineTerminator.LF.value if id else ''}{timings}"

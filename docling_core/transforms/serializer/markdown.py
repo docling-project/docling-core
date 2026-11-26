@@ -6,7 +6,7 @@ import re
 import textwrap
 from enum import Enum
 from pathlib import Path, PurePath
-from typing import Annotated, Any, Final, Optional, Union
+from typing import Annotated, Any, ClassVar, Final, Optional, Union
 from urllib.parse import quote, urlsplit, urlunsplit
 
 from pydantic import AnyUrl, BaseModel, Field, PositiveInt
@@ -52,6 +52,7 @@ from docling_core.types.doc import (
     FieldRegionItem,
     FloatingItem,
     Formatting,
+    FormattingFallbackMode,
     FormItem,
     FormulaItem,
     GroupItem,
@@ -78,6 +79,7 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
     TopicsMetaField,
+    TrackItem,
 )
 
 _logger = logging.getLogger(__name__)
@@ -173,8 +175,9 @@ def _mark_subtree_visited(
 def _collect_subtree_text(item: NodeItem, doc: DoclingDocument, excluded_refs: set[str]) -> str:
     """Collect all text from *item*'s subtree, flattening nested tables.
 
-    Returns a space-joined string of every piece of text found so that the
-    content of a nested table is preserved in a flat, readable form.
+    Returns every piece of text found, joined with spaces (the runs of an inline
+    group are concatenated as they are), so that the content of a nested table is
+    preserved in a flat, readable form.
 
     For TableItems the text is pulled from ``data.grid`` cells directly;
     RichTableCells are resolved through their references, without visiting the
@@ -213,7 +216,8 @@ def _collect_subtree_text(item: NodeItem, doc: DoclingDocument, excluded_refs: s
             if child_text:
                 parts.append(child_text)
 
-    return " ".join(parts)
+    # Inline runs carry their own boundary whitespace; everything else is joined as blocks.
+    return ("" if isinstance(item, InlineGroup) else " ").join(parts)
 
 
 def _longest_backtick_run(text: str) -> int:
@@ -224,7 +228,10 @@ def _longest_backtick_run(text: str) -> int:
 def _code_span(text: str) -> str:
     """Wrap text in a code span whose delimiter no backtick run inside can close."""
     ticks = "`" * (_longest_backtick_run(text) + 1)
-    pad = " " if text.startswith("`") or text.endswith("`") else ""
+    # CommonMark normalizes line endings, then removes one paired edge space unless all spaces.
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n").replace("\n", " ")
+    needs_space_padding = normalized.startswith(" ") and normalized.endswith(" ") and bool(normalized.strip(" "))
+    pad = " " if text.startswith("`") or text.endswith("`") or needs_space_padding else ""
     return f"{ticks}{pad}{text}{pad}{ticks}"
 
 
@@ -267,6 +274,13 @@ class MarkdownParams(CommonParams):
     )
     orig_list_item_marker_mode: OrigListItemMarkerMode = OrigListItemMarkerMode.AUTO
     ensure_valid_list_item_marker: bool = True
+    formatting_fallback_mode: FormattingFallbackMode = Field(
+        default=FormattingFallbackMode.NONE,
+        description=(
+            "How to render formatting that has no Markdown syntax (underline, subscript, "
+            "superscript): drop it (`none`) or use HTML tags (`html`)."
+        ),
+    )
     format_code_blocks: bool = Field(
         default=True,
         description="Whether to wrap code items in markdown code formatting (e.g. backticks).",
@@ -371,10 +385,10 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             text = item.text
             processing_pending = True
 
-        if item.label == DocItemLabel.CHECKBOX_SELECTED:
-            text = f"- [x] {text}"
-        if item.label == DocItemLabel.CHECKBOX_UNSELECTED:
-            text = f"- [ ] {text}"
+        if item.label in (DocItemLabel.CHECKBOX_SELECTED, DocItemLabel.CHECKBOX_UNSELECTED):
+            box = "[x]" if item.label == DocItemLabel.CHECKBOX_SELECTED else "[ ]"
+            # The syntax needs a space after the box, unless the text brings its own.
+            text = f"- {box}{text}" if text[:1].isspace() else f"- {box} {text}"
         if isinstance(item, ListItem | TitleItem | SectionHeaderItem):
             if not has_inline_repr:
                 # case where processing/formatting should be applied first (in inner scope)
@@ -962,12 +976,13 @@ class MarkdownPictureSerializer(BasePictureSerializer):
 
     def _serialize_image_part(
         self,
-        item: PictureItem,
+        item: FloatingItem,
         doc: DoclingDocument,
         image_mode: ImageRefMode,
         image_placeholder: str,
         **kwargs: Any,
     ) -> SerializationResult:
+        """Serialize the image of a picture, or the cover of a track, by the image mode."""
         error_response = (
             "<!-- 🖼️❌ Image not available. Please use `PdfPipelineOptions(generate_picture_images=True)` -->"
         )
@@ -1092,7 +1107,11 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 and p.spans[0].item.parent
                 and isinstance(p.spans[0].item.parent.resolve(doc), InlineGroup)
             ):
-                my_parts[-1].text = f"{my_parts[-1].text}{p.text}"  # append to last
+                # append to last; a group that is the child of a text item keeps the host separator
+                group = p.spans[0].item.parent.resolve(doc)
+                host = group.parent.resolve(doc) if group.parent else None
+                sep_host = " " if isinstance(host, TextItem) and host.text else ""
+                my_parts[-1].text = f"{my_parts[-1].text}{sep_host}{p.text}"
                 my_parts[-1].spans.extend(p.spans)
             else:
                 my_parts.append(p)
@@ -1140,7 +1159,8 @@ class MarkdownInlineSerializer(BaseInlineSerializer):
             visited=my_visited,
             **kwargs,
         )
-        text_res = " ".join([p.text for p in parts if p.text])
+        # Inline runs carry their own significant whitespace; concatenate faithfully.
+        text_res = "".join([p.text for p in parts if p.text])
         return create_ser_result(text=text_res, span_source=parts)
 
 
@@ -1157,8 +1177,21 @@ class MarkdownFallbackSerializer(BaseFallbackSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        if isinstance(item, GroupItem):
+        # a track is serialized as its captions, its cover (like the image of a picture) and its cues
+        if isinstance(item, GroupItem | TrackItem):
             parts = doc_serializer.get_parts(item=item, **kwargs)
+            if isinstance(item, TrackItem):
+                if item.image is not None and item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+                    params = MarkdownParams(**kwargs)
+                    cover_res = MarkdownPictureSerializer()._serialize_image_part(
+                        item=item,
+                        doc=doc,
+                        image_mode=params.image_mode,
+                        image_placeholder=params.image_placeholder,
+                    )
+                    parts = [cover_res, *parts]
+                if (cap_res := doc_serializer.serialize_captions(item=item, **kwargs)).text:
+                    parts = [cap_res, *parts]
             text_res = "\n\n".join([p.text for p in parts if p.text])
             return create_ser_result(text=text_res, span_source=parts)
         elif isinstance(item, (FieldRegionItem, FieldItem)):
@@ -1188,6 +1221,9 @@ class MarkdownDocSerializer(DocSerializer):
 
     params: MarkdownParams = MarkdownParams()
 
+    # `**bold ** tail` renders as literal asterisks in CommonMark.
+    hoist_decoration_whitespace: ClassVar[bool] = True
+
     @override
     def serialize_bold(self, text: str, **kwargs: Any):
         """Apply Markdown-specific bold serialization."""
@@ -1202,6 +1238,26 @@ class MarkdownDocSerializer(DocSerializer):
     def serialize_strikethrough(self, text: str, **kwargs: Any):
         """Apply Markdown-specific strikethrough serialization."""
         return f"~~{text}~~"
+
+    def _fallback_formatting(self, text: str, tag: str) -> str:
+        if self.params.formatting_fallback_mode == FormattingFallbackMode.HTML:
+            return f"<{tag}>{text}</{tag}>"
+        return text
+
+    @override
+    def serialize_underline(self, text: str, **kwargs: Any):
+        """Apply Markdown-specific underline serialization."""
+        return self._fallback_formatting(text, "u")
+
+    @override
+    def serialize_subscript(self, text: str, **kwargs: Any):
+        """Apply Markdown-specific subscript serialization."""
+        return self._fallback_formatting(text, "sub")
+
+    @override
+    def serialize_superscript(self, text: str, **kwargs: Any):
+        """Apply Markdown-specific superscript serialization."""
+        return self._fallback_formatting(text, "sup")
 
     @override
     def serialize_hyperlink(

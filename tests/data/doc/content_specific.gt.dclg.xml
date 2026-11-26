@@ -95,12 +95,14 @@
   </list>
   <code>
     <label value="Python"/>
-<![CDATA[print("Hello world")]]>  </code>
+    <![CDATA[print("Hello world")]]>
+  </code>
   <formula></formula>
   <text></text>
   <code>
     <label value="Python"/>
-<![CDATA[print("Hello world")]]>  </code>
+    <![CDATA[print("Hello world")]]>
+  </code>
   <text></text>
   <formula></formula>
   <text></text>

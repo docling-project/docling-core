@@ -40,6 +40,7 @@
 <section_header_level_1><inline><text>Partially formatted</text>
 <text>heading to_escape</text>
 <code><_unknown_>not_to_escape</code>
+<text></text>
 <formula>E=mc^2</formula>
 <text>& ampersand</text>
 </inline></section_header_level_1>

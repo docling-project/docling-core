@@ -2286,6 +2286,25 @@ def test_multi_prov_text_emits_thread():
         assert "<page_break" not in ser_txt
 
 
+def test_multi_prov_text_serialization_leaves_document_unchanged():
+    """Serializing a multi-prov item must not rewrite the document's provenance.
+
+    The per-fragment rebasing of ``charspan`` happens on the copy built for each
+    fragment; mutating the provenance held by the document makes a second
+    serialization of the same document emit the first fragment's text for every
+    fragment.
+    """
+    doc = _doc_multi_prov_text()
+    item = doc.texts[0]
+    spans_before = [p.charspan for p in item.prov]
+
+    serializer = DocLangDocSerializer(doc=doc, params=DocLangParams(include_version=False))
+    first = serializer.serialize().text
+
+    assert [p.charspan for p in item.prov] == spans_before
+    assert serializer.serialize().text == first
+
+
 @doclang_validator
 def test_thread_ids_unique_across_fragmented_components():
     """Each fragmented component receives a distinct document-scoped ``thread_id``."""
@@ -2813,7 +2832,7 @@ def test_inline_group_nested_when_parent_text_item_has_text():
     root = ET.fromstring(txt)
     assert [child.tag for child in root] == ["heading"]
     heading_el = root[0]
-    assert [child.tag for child in heading_el] == ["bold", "content", "italic"]
+    assert [child.tag for child in heading_el] == ["bold", "italic"]
     assert "".join(heading_el.itertext()).replace("\n", " ").split() == [
         "Heading",
         "text",
@@ -2870,7 +2889,7 @@ def test_inline_group_nested_word_boundary_when_minimized():
 
     root = ET.fromstring(txt)
     heading_el = root[0]
-    assert "".join(heading_el.itertext()).split() == ["Heading", "text", "bold"]
+    assert "".join(heading_el.itertext()) == "Heading text bold"
 
 
 def _prov(l: float, t: float, r: float, b: float) -> ProvenanceItem:
@@ -2979,3 +2998,77 @@ def test_picture_with_nested_field_region():
     assert len(list(root.iter("field_region"))) == 1
     assert root.find("picture/field_region/field_item/key") is not None
     assert root.find("picture/field_region/field_item/value") is not None
+
+
+def _doc_with_pages(declared_pages: list[int], content_pages: list[int]) -> DoclingDocument:
+    doc = DoclingDocument(name="pages")
+    for page_no in declared_pages:
+        doc.add_page(page_no=page_no, size=Size(width=100, height=100), image=None)
+    for page_no in content_pages:
+        doc.add_text(
+            label=DocItemLabel.TEXT,
+            text=f"text on page {page_no}",
+            prov=ProvenanceItem(page_no=page_no, bbox=BoundingBox(l=1, t=1, r=2, b=2), charspan=(0, 1)),
+        )
+    return doc
+
+
+def _child_tags(doc: DoclingDocument, params: DocLangParams | None = None) -> list[str]:
+    return [child.tag for child in ET.fromstring(serialize_doclang(doc, params))]
+
+
+@pytest.mark.parametrize(
+    ("content_pages", "expected"),
+    [
+        ([1, 2, 3, 4], ["text", "page_break", "text", "page_break", "text", "page_break", "text"]),
+        ([2, 3, 4], ["page_break", "text", "page_break", "text", "page_break", "text"]),
+        ([1, 2, 3], ["text", "page_break", "text", "page_break", "text", "page_break"]),
+        ([1, 4], ["text", "page_break", "page_break", "page_break", "text"]),
+        ([3], ["page_break", "page_break", "text", "page_break"]),
+        ([], ["page_break", "page_break", "page_break"]),
+    ],
+    ids=["full", "blank-first", "blank-last", "gap", "single", "empty"],
+)
+def test_pages_without_content_get_a_page_break(content_pages: list[int], expected: list[str]):
+    """Declared pages without content still occupy a page of the markup."""
+    assert _child_tags(_doc_with_pages([1, 2, 3, 4], content_pages)) == expected
+
+
+def test_page_breaks_are_bounded_by_the_declared_pages():
+    """A large page-number gap does not multiply the page breaks."""
+    doc = _doc_with_pages([1, 2_000_000_000], [1, 2_000_000_000])
+
+    assert _child_tags(doc) == ["text", "page_break", "text"]
+
+
+def test_page_numbers_that_are_not_declared_add_no_page_break():
+    doc = _doc_with_pages([1, 5, 9], [1, 9])
+
+    assert _child_tags(doc) == ["text", "page_break", "page_break", "text"]
+
+
+def test_blank_page_inside_a_cross_page_list_gets_a_page_break():
+    doc = DoclingDocument(name="list_over_blank_page")
+    for page_no in (1, 2, 3, 4):
+        doc.add_page(page_no=page_no, size=Size(width=100, height=100), image=None)
+    group = doc.add_list_group()
+    for text, page_no in (("a", 1), ("b", 3)):
+        doc.add_list_item(
+            text=text,
+            parent=group,
+            prov=ProvenanceItem(page_no=page_no, bbox=BoundingBox(l=1, t=1, r=2, b=2), charspan=(0, 1)),
+        )
+
+    assert _child_tags(doc) == ["list", "page_break", "page_break", "list", "page_break"]
+
+
+@pytest.mark.parametrize(
+    "params",
+    [DocLangParams(pages={2, 3}), DocLangParams(start_idx=1)],
+    ids=["pages", "start_idx"],
+)
+def test_partial_serialization_adds_no_leading_or_trailing_page_breaks(params: DocLangParams):
+    """Only a full serialization pads the pages before the first and after the last content page."""
+    doc = _doc_with_pages([1, 2, 3, 4], [2, 3])
+
+    assert _child_tags(doc, params.model_copy(update={"include_version": False})) == ["text", "page_break", "text"]

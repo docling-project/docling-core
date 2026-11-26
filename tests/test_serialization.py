@@ -1,5 +1,6 @@
 """Test serialization."""
 
+import logging
 import threading
 from html.parser import HTMLParser
 from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
@@ -30,10 +31,11 @@ from docling_core.transforms.serializer.markdown import (
     OrigListItemMarkerMode,
     _cell_content_has_table,
 )
+from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer, PlainTextParams
 from docling_core.transforms.serializer.webvtt import WebVTTDocSerializer, WebVTTParams
 from docling_core.transforms.visualizer.layout_visualizer import LayoutVisualizer
-from docling_core.types.doc import DoclingDocument, ImageRef
-from docling_core.types.doc.base import BoundingBox, CoordOrigin, ImageRefMode, Size
+from docling_core.types.doc import DoclingDocument, ImageRef, TrackSource
+from docling_core.types.doc.base import BoundingBox, CoordOrigin, FormattingFallbackMode, ImageRefMode, Size
 from docling_core.types.doc.document import (
     BaseMeta,
     CharSpan,
@@ -346,6 +348,39 @@ def test_md_inline_and_formatting():
     )
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".gt.md"), actual=actual)
+
+
+@pytest.mark.parametrize(
+    ("mode", "expected"),
+    [
+        (FormattingFallbackMode.NONE, "Water is H2O, energy is E=mc2, &lt;tag&gt;"),
+        (
+            FormattingFallbackMode.HTML,
+            "Water is H<sub>2</sub>O, energy is E=mc<sup>2</sup>, <u>&lt;tag&gt;</u>",
+        ),
+    ],
+)
+def test_md_formatting_fallback_mode(mode: FormattingFallbackMode, expected: str, tmp_path: Path):
+    """Formatting without Markdown syntax is dropped or rendered as HTML."""
+    doc = DoclingDocument(name="test")
+    inline = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="Water is H", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="2", formatting=Formatting(script=Script.SUB), parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="O, energy is E=mc", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="2", formatting=Formatting(script=Script.SUPER), parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text=", ", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="<tag>", formatting=Formatting(underline=True), parent=inline)
+
+    params = MarkdownParams(formatting_fallback_mode=mode)
+    assert MarkdownDocSerializer(doc=doc, params=params).serialize().text == expected
+    assert doc.export_to_markdown(formatting_fallback_mode=mode) == expected
+    md_path = tmp_path / "doc.md"
+    doc.save_as_markdown(md_path, formatting_fallback_mode=mode)
+    assert md_path.read_text(encoding="utf-8") == expected
+
+    plain_params = PlainTextParams(formatting_fallback_mode=mode)
+    plain = PlainTextDocSerializer(doc=doc, params=plain_params).serialize().text
+    assert plain == "Water is H2O, energy is E=mc2, <tag>"
 
 
 def test_md_pb_placeholder_and_page_filter():
@@ -1764,7 +1799,7 @@ def test_html_formula_with_inline_group_is_not_double_escaped(inline_scope: bool
         parent = doc.add_inline_group(parent=doc.add_heading(text="", level=1))
     formula = doc.add_formula(text="", parent=parent)
     group = doc.add_inline_group(parent=formula)
-    doc.add_text(label=DocItemLabel.TEXT, text="a<b", parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text="a<b ", parent=group)
     doc.add_text(label=DocItemLabel.TEXT, text="x", parent=group)
 
     actual = HTMLDocSerializer(doc=doc, params=HTMLParams(formula_to_mathml=False)).serialize().text
@@ -1861,6 +1896,19 @@ def test_webvtt(example_num):
     verify(exp_file=src.with_suffix(".gt.vtt"), actual=actual)
 
 
+def test_webvtt_instant_lasts_one_msec():
+    """WebVTT needs a cue to end after it starts, so an instant gets a duration of 1 ms."""
+    from docling_core.types.doc import TrackSource
+
+    doc = DoclingDocument(name="doc")
+    doc.add_text(label=DocItemLabel.TEXT, text="Hello", source=TrackSource(start_time=2, end_time=2))
+    doc.add_text(label=DocItemLabel.TEXT, text="World", source=TrackSource(start_time=2, end_time=2))
+
+    actual = WebVTTDocSerializer(doc=doc).serialize().text
+
+    assert actual == "WEBVTT\n\n00:00:02.000 --> 00:00:02.001\nHello\nWorld"
+
+
 def test_webvtt_params():
     """Test WebVTT serialization with WebVTTParams."""
     src = Path("./tests/data/doc/webvtt_example_01.json")
@@ -1886,6 +1934,37 @@ def test_webvtt_params():
     ser_default = WebVTTDocSerializer(doc=doc, params=WebVTTParams())
     actual_default = ser_default.serialize().text
     assert len(actual) <= len(actual_default) or actual != actual_default
+
+
+def test_webvtt_cue_shorter_than_a_millisecond_stays_serializable(caplog):
+    """A sub-millisecond track segment must not abort the whole serialization.
+
+    TrackSource accepts any end_time greater than start_time, but WebVTT
+    timestamps carry milliseconds only, so both ends used to round onto the
+    same timestamp and WebVTTCueTimings rejected the zero-length cue. The cue is
+    kept at the smallest representable span, and that loss of precision is
+    reported in the logs instead of silently dropping the segment.
+    """
+    doc = DoclingDocument(name="sub-millisecond-cue")
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="short cue",
+        source=TrackSource(start_time=11.00001, end_time=11.00002),
+    )
+    doc.add_text(
+        label=DocItemLabel.TEXT,
+        text="normal cue",
+        source=TrackSource(start_time=12.0, end_time=13.5),
+    )
+
+    with caplog.at_level(logging.WARNING, logger="docling_core.transforms.serializer.webvtt"):
+        actual = WebVTTDocSerializer(doc=doc).serialize().text
+
+    assert "00:00:11.000 --> 00:00:11.001" in actual
+    assert "11.00001..11.00002" in caplog.text
+    assert "short cue" in actual
+    assert "00:00:12.000 --> 00:00:13.500" in actual
+    assert "normal cue" in actual
 
 
 def test_html_meta_emits_xhtml_compatible_attributes():
@@ -2564,7 +2643,39 @@ def test_markdown_code_block_fence_outlasts_backticks_in_code(code: str, expecte
 def test_markdown_inline_code_span_outlasts_backticks_in_code(code: str, expected: str):
     doc = DoclingDocument(name="code")
     group = doc.add_inline_group()
-    doc.add_text(label=DocItemLabel.TEXT, text="see", parent=group)
+    doc.add_text(label=DocItemLabel.TEXT, text="see ", parent=group)
+    doc.add_code(text=code, parent=group)
+    assert doc.export_to_markdown() == f"see {expected}"
+
+
+@pytest.mark.parametrize(
+    ("code", "expected"),
+    [
+        (" x ", "`  x  `"),
+        ("  x  ", "`   x   `"),
+        (" ", "` `"),
+        ("   ", "`   `"),
+        (" x", "` x`"),
+        ("x ", "`x `"),
+        (" \t ", "`  \t  `"),
+        (" \u00a0 ", "`  \u00a0  `"),
+        ("\tx\t", "`\tx\t`"),
+        ("\u00a0x\u00a0", "`\u00a0x\u00a0`"),
+        (" `x` ", "``  `x`  ``"),
+        ("\nx ", "` \nx  `"),
+        (" x\n", "`  x\n `"),
+        ("\nx\n", "` \nx\n `"),
+        ("\r\nx\r\n", "` \r\nx\r\n `"),
+        ("\rx\r", "` \rx\r `"),
+        (" x\ny ", "`  x\ny  `"),
+        (" \n ", "` \n `"),
+        (" \r\n ", "` \r\n `"),
+    ],
+)
+def test_markdown_inline_code_span_preserves_spaces(code: str, expected: str):
+    doc = DoclingDocument(name="code")
+    group = doc.add_inline_group()
+    doc.add_text(label=DocItemLabel.TEXT, text="see ", parent=group)
     doc.add_code(text=code, parent=group)
     assert doc.export_to_markdown() == f"see {expected}"
 

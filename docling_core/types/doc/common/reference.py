@@ -80,6 +80,116 @@ class FineRef(RefItem):
     range: tuple[int, int] | None = None  # start_inclusive, end_exclusive
 
 
+# Media types allowed for track media, with the archive file extension of each.
+# They match the content types a DocLang archive declares for ``audio/`` and ``video/``.
+MEDIA_EXTENSIONS: dict[str, str] = {
+    "audio/mpeg": "mp3",
+    "audio/mp4": "m4a",
+    "audio/aac": "aac",
+    "audio/ogg": "ogg",
+    "audio/wav": "wav",
+    "audio/flac": "flac",
+    "audio/x-ms-wma": "wma",
+    "audio/x-aiff": "aiff",
+    "video/mp4": "mp4",
+    "video/webm": "webm",
+    "video/x-matroska": "mkv",
+    "video/quicktime": "mov",
+    "video/x-m4v": "m4v",
+    "video/x-ms-wmv": "wmv",
+    "video/x-ms-asf": "asf",
+    "video/x-msvideo": "avi",
+    "video/mpeg": "mpg",
+    "video/x-flv": "flv",
+}
+_MEDIA_TYPES_BY_EXTENSION = {ext: mimetype for mimetype, ext in MEDIA_EXTENSIONS.items()} | {
+    "opus": "audio/ogg",
+    "aif": "audio/x-aiff",
+    "mpeg": "video/mpeg",
+}
+
+
+def media_type_of(name: str) -> str | None:
+    """Return the allowed media type for a file name's extension, if any."""
+    return _MEDIA_TYPES_BY_EXTENSION.get(Path(name).suffix.lower().lstrip("."))
+
+
+class MediaRef(BaseModel):
+    """A reference to an audio or video recording.
+
+    The ``uri`` is document content: a local path is read only for a ``MediaRef`` made
+    with ``from_file``, or after an explicit opt-in (``settings.allow_media_file_uri``).
+    Remote URIs are never fetched, and the media is never decoded. A ``MediaRef`` made
+    with ``from_bytes`` holds its media in memory instead.
+    """
+
+    mimetype: str
+    uri: AnyUrl | Path = Field(union_mode="left_to_right")
+    # The media itself, as a file or as bytes
+    _content: Path | bytes | None = None
+
+    @field_validator("mimetype")
+    @classmethod
+    def _check_mimetype(cls, v: str) -> str:
+        if v not in MEDIA_EXTENSIONS:
+            raise ValueError(f"Unsupported media type: {v!r}")
+        return v
+
+    @field_validator("uri")
+    @classmethod
+    def _check_uri(cls, v: AnyUrl | Path) -> AnyUrl | Path:
+        if isinstance(v, AnyUrl) and v.scheme == "data":
+            raise ValueError("data: URIs are not supported for media")
+        return v
+
+    @classmethod
+    def from_file(cls, path: str | Path, mimetype: str | None = None) -> Self:
+        """Reference a local file, which saving may read without a further opt-in."""
+        path = Path(path).resolve()
+        if not path.is_file():
+            raise ValueError(f"Media file not found or not a regular file: {path}")
+        if mimetype is None:
+            mimetype = media_type_of(path.name)
+            if mimetype is None:
+                raise ValueError(f"Cannot tell the media type of {path.name!r}")
+        ref = cls(mimetype=mimetype, uri=path)
+        ref._content = path
+        return ref
+
+    @classmethod
+    def from_bytes(cls, data: bytes, mimetype: str, uri: AnyUrl | Path | str) -> Self:
+        """Hold media in memory, e.g. a recording embedded in another file.
+
+        ``uri`` tells where the media comes from, such as its path inside a package. It is
+        kept as document content, and never read. The bytes are not part of the document's
+        JSON, but saving as a DocLang archive stores them.
+        """
+        if not isinstance(data, bytes):
+            raise TypeError(f"data must be bytes, not {type(data).__name__}")
+        ref = cls(mimetype=mimetype, uri=uri)
+        ref._content = data
+        return ref
+
+    @property
+    def extension(self) -> str:
+        """The file extension for the media type, e.g. ``mp3``."""
+        return MEDIA_EXTENSIONS[self.mimetype]
+
+    def _readable_content(self, allow_local: bool = False) -> Path | bytes | None:
+        """Return the media as a file to read or as bytes, or None if there is none or it may not be read."""
+        if self._content is not None:
+            return self._content
+        if isinstance(self.uri, Path):
+            path = self.uri
+        elif isinstance(self.uri, AnyUrl) and self.uri.scheme == "file":
+            path = Path(unquote(str(self.uri.path)))
+        else:
+            return None
+        if not (allow_local or settings.allow_media_file_uri):
+            return None
+        return path if path.is_file() else None
+
+
 class ImageRef(BaseModel):
     """ImageRef."""
 

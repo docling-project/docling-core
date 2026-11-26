@@ -40,8 +40,7 @@
         <location value="39"/>
         <location value="471"/>
         <location value="51"/>
-        <checkbox class="unselected"/>
-        Amended Return (Include Schedule AMD)
+        <checkbox class="unselected"/>Amended Return (Include Schedule AMD)
       </value>
     </field_item>
   </field_region>
@@ -58,7 +57,8 @@
           <location value="55"/>
           <location value="87"/>
           <location value="61"/>
-<![CDATA[1. Filer's First Name]]>        </key>
+          <![CDATA[1. Filer's First Name]]>
+        </key>
         <value>
           <location value="66"/>
           <location value="62"/>
@@ -188,7 +188,8 @@
           <location value="56"/>
           <location value="473"/>
           <location value="63"/>
-<![CDATA[2. Filer's Full Social Security No. (Example: 123-45-6789)]]>        </key>
+          <![CDATA[2. Filer's Full Social Security No. (Example: 123-45-6789)]]>
+        </key>
         <value>
           <location value="340"/>
           <location value="66"/>
@@ -248,16 +249,14 @@
         <location value="123"/>
         <location value="227"/>
         <location value="133"/>
-        <checkbox class="selected"/>
-        a. ☑ Filer
+        <checkbox class="selected"/>a. ☑ Filer
       </value>
       <value>
         <location value="190"/>
         <location value="139"/>
         <location value="235"/>
         <location value="149"/>
-        <checkbox class="unselected"/>
-        b. Spouse
+        <checkbox class="unselected"/>b. Spouse
       </value>
     </field_item>
     <list>
@@ -275,8 +274,7 @@
           <location value="131"/>
           <location value="466"/>
           <location value="146"/>
-          <checkbox class="unselected"/>
-          ☐ Check this box if 2/3 of your income is from farming , fishing , or seafaring .
+          <checkbox class="unselected"/>☐ Check this box if 2/3 of your income is from farming , fishing , or seafaring .
         </value>
       </field_item>
     </list>
@@ -295,16 +293,14 @@
           <location value="162"/>
           <location value="86"/>
           <location value="172"/>
-          <checkbox class="selected"/>
-          a. [X] Single
+          <checkbox class="selected"/>a. [X] Single
         </value>
         <value>
           <location value="39"/>
           <location value="178"/>
           <location value="125"/>
           <location value="188"/>
-          <checkbox class="unselected"/>
-          b. ☐ Married filing jointly
+          <checkbox class="unselected"/>b. ☐ Married filing jointly
         </value>
       </field_item>
     </list>
@@ -321,8 +317,7 @@
         <location value="194"/>
         <location value="141"/>
         <location value="203"/>
-        <checkbox class="unselected"/>
-        c. ☐ Married filing separately*
+        <checkbox class="unselected"/>c. ☐ Married filing separately*
       </value>
     </field_item>
     <field_item>
@@ -331,7 +326,8 @@
         <location value="166"/>
         <location value="258"/>
         <location value="185"/>
-<![CDATA[* If you check box "c," complete]]>      </key>
+        <![CDATA[* If you check box "c," complete]]>
+      </key>
       <value class="fillable">
         <location value="151"/>
         <location value="187"/>
@@ -354,24 +350,21 @@
           <location value="163"/>
           <location value="341"/>
           <location value="172"/>
-          <checkbox class="selected"/>
-          a. ☑ Resident
+          <checkbox class="selected"/>a. ☑ Resident
         </value>
         <value>
           <location value="286"/>
           <location value="178"/>
           <location value="355"/>
           <location value="188"/>
-          <checkbox class="unselected"/>
-          b. ☐ Nonresident *
+          <checkbox class="unselected"/>b. ☐ Nonresident *
         </value>
         <value>
           <location value="285"/>
           <location value="193"/>
           <location value="375"/>
           <location value="204"/>
-          <checkbox class="unselected"/>
-          c. ☐ Part-Year Resident *
+          <checkbox class="unselected"/>c. ☐ Part-Year Resident *
         </value>
       </field_item>
     </list>
@@ -380,7 +373,8 @@
       <location value="171"/>
       <location value="471"/>
       <location value="197"/>
-<![CDATA[* If you check box "b" or "c," you must complete and include Schedule NR.]]>    </text>
+      <![CDATA[* If you check box "b" or "c," you must complete and include Schedule NR.]]>
+    </text>
     <list>
       <ldiv/>
       <text>
@@ -1120,7 +1114,8 @@
           <location value="367"/>
           <location value="359"/>
           <location value="373"/>
-<![CDATA[14. Income subject to tax . Subtract line 13 from line 12 . If line 13 is greater than line 12 , enter "0" .........]]>        </key>
+          <![CDATA[14. Income subject to tax . Subtract line 13 from line 12 . If line 13 is greater than line 12 , enter "0" .........]]>
+        </key>
         <value>
           <location value="368"/>
           <location value="367"/>
@@ -1221,7 +1216,8 @@
           <location value="398"/>
           <location value="357"/>
           <location value="405"/>
-<![CDATA[16. Taxable income . Subtract line 15 from line 14 . If line 15 is greater than line 14 , enter "0" ... .........]]>        </key>
+          <![CDATA[16. Taxable income . Subtract line 15 from line 14 . If line 15 is greater than line 14 , enter "0" ... .........]]>
+        </key>
         <value>
           <location value="368"/>
           <location value="398"/>
@@ -1377,7 +1373,8 @@
           <location value="462"/>
           <location value="358"/>
           <location value="475"/>
-<![CDATA[20. Income Tax. Subtract the sum of lines 18b and 19b from line 17. If the sum of lines 18b and 19b is greater than line 17, enter "0".....]]>        </key>
+          <![CDATA[20. Income Tax. Subtract the sum of lines 18b and 19b from line 17. If the sum of lines 18b and 19b is greater than line 17, enter "0".....]]>
+        </key>
         <value>
           <location value="367"/>
           <location value="467"/>
