@@ -5,15 +5,21 @@ import zipfile
 from pathlib import Path
 
 import pytest
+from PIL import Image
 from pydantic import ValidationError
 
-from docling_core.types.doc import DocItemLabel, DoclingDocument, MediaRef, TrackItem, TrackSource
+from docling_core.types.doc import DocItemLabel, DoclingDocument, ImageRef, MediaRef, TrackItem, TrackSource
 from docling_core.utils.settings import settings
 from tests.doclang_validation import SCHEMATRON_BACKEND_AVAILABLE
 
 
-def _add_track(doc: DoclingDocument, audio: MediaRef | None = None, video: MediaRef | None = None) -> TrackItem:
-    track = doc.add_track(audio=audio, video=video)
+def _add_track(
+    doc: DoclingDocument,
+    audio: MediaRef | None = None,
+    video: MediaRef | None = None,
+    image: ImageRef | None = None,
+) -> TrackItem:
+    track = doc.add_track(audio=audio, video=video, image=image)
     doc.add_text(label=DocItemLabel.TEXT, text="hi", parent=track, source=TrackSource(start_time=0, end_time=1))
     return track
 
@@ -71,6 +77,37 @@ def test_archive_round_trip(tmp_path, media_files):
     again = tmp_path / "again.dclx"
     back.save_as_doclang_archive(again)
     assert _members(again) == ["audio/2.mp3", "video/3.mp4"]
+
+
+def test_archive_media_is_held_in_memory_by_default(tmp_path, media_files):
+    doc = DoclingDocument(name="media")
+    cover = ImageRef.from_pil(Image.new("RGB", (4, 3), "red"), dpi=72)
+    _add_track(doc, audio=MediaRef.from_file(media_files["mp3"]), image=cover)
+    _add_track(doc, video=MediaRef.from_file(media_files["mp4"]))
+    folder = tmp_path / "archives"
+    folder.mkdir()
+    archive = folder / "out.dclx"
+    doc.save_as_doclang_archive(archive)
+
+    back = DoclingDocument.load_from_doclang_archive(archive)
+    # nothing is extracted next to the archive
+    assert list(folder.iterdir()) == [archive]
+
+    audio, video = back.tracks[0].audio, back.tracks[1].video
+    assert audio is not None and video is not None
+    # the uri is the path inside the archive, the bytes are kept in memory
+    assert audio.uri == Path("audio/1.mp3")
+    assert video.uri == Path("video/2.mp4")
+    assert audio._readable_content() == b"not decoded"
+    assert back.tracks[0].image is not None
+    assert str(back.tracks[0].image.uri).startswith("data:image/png;base64,")
+    assert back.tracks[0].image.pil_image.size == (4, 3)
+
+    again = tmp_path / "again.dclx"
+    back.save_as_doclang_archive(again)
+    assert _members(again) == ["audio/1.mp3", "video/2.mp4"]
+    with zipfile.ZipFile(again) as zf:
+        assert zf.read("audio/1.mp3") == b"not decoded"
 
 
 def test_local_paths_need_opt_in(tmp_path, media_files, caplog):

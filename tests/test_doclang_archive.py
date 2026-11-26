@@ -541,3 +541,46 @@ def test_doclang_archive_pairs_page_images_with_pages_not_starting_at_one(
         assert image is not None
         assert image.pil_image is not None
         assert image.pil_image.getpixel((0, 0)) == color
+
+
+def test_load_from_doclang_archive_writes_nothing_by_default(tmp_path: Path) -> None:
+    archive = tmp_path / "two_pages.dclx"
+    shutil.copy2(LOAD_FIXTURE_DCLX, archive)
+
+    loaded = DoclingDocument.load_from_doclang_archive(archive)
+
+    # no ``two_pages_artifacts`` next to the archive, or anything else
+    assert sorted(tmp_path.iterdir()) == [archive]
+    _verify_loaded_doclang_archive(actual=loaded, exp_file=LOAD_FIXTURE_GT_JSON, tmp_path=tmp_path)
+
+    images = [picture.image for picture in loaded.pictures] + [page.image for page in loaded.pages.values()]
+    assert len(images) == 3
+    for image in images:
+        assert image is not None
+        assert str(image.uri).startswith(f"data:{image.mimetype};base64,")
+        assert image.pil_image is not None
+
+    # the images live in the document itself, so they survive a JSON round trip
+    restored = DoclingDocument.model_validate_json(loaded.model_dump_json())
+    assert restored.pictures[0].image is not None
+    assert restored.pictures[0].image.pil_image is not None
+    assert restored.pictures[0].image.pil_image.size == loaded.pictures[0].image.pil_image.size
+
+    resaved = tmp_path / "out" / "resaved.dclx"
+    resaved.parent.mkdir()
+    loaded.save_as_doclang_archive(resaved)
+    with zipfile.ZipFile(resaved) as zf:
+        names = zf.namelist()
+    assert {"pages/1.png", "pages/2.png"} <= set(names)
+    assert any(name.startswith("assets/") for name in names)
+
+
+def test_load_from_doclang_archive_keeps_files_in_artifacts_dir(tmp_path: Path) -> None:
+    artifacts_dir = tmp_path / "kept"
+    loaded = DoclingDocument.load_from_doclang_archive(LOAD_FIXTURE_DCLX, artifacts_dir=artifacts_dir)
+
+    assert (artifacts_dir / "document.xml").is_file()
+    page_image = loaded.pages[1].image
+    assert page_image is not None
+    assert isinstance(page_image.uri, Path)
+    assert page_image.uri.is_relative_to(artifacts_dir.resolve())

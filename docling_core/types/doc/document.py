@@ -5631,13 +5631,18 @@ class DoclingDocument(BaseModel):
     ) -> "DoclingDocument":
         """Load a DoclingDocument from a DocLang OPC archive (``.dclx``).
 
-        The archive is extracted to ``artifacts_dir`` (default: ``<name>_artifacts`` next
-        to the ``.dclx`` file). Relative ``<src uri=\"...\"/>`` paths and optional
-        ``pages/`` images are resolved inside that directory.
+        By default nothing is written next to the archive: it is extracted to a temporary
+        directory, which is removed once the document is loaded. Picture and page images
+        are then held as ``data:`` URIs, and the audio and video of tracks as bytes
+        (``MediaRef.from_bytes``), so the whole package is kept in memory.
+
+        With ``artifacts_dir``, the archive is extracted there and kept: images and media
+        reference the extracted files, and large media is not held in memory.
 
         Args:
             filename: Path to the ``.dclx`` archive.
-            artifacts_dir: Optional extraction directory for package members.
+            artifacts_dir: Optional directory to extract the package members to, and to keep
+                them in. A relative path is taken from the folder of the ``.dclx`` file.
             validate: When True, run DocLang XSD/Schematron validation on ``document.xml``.
             max_member_size: Maximum uncompressed size in bytes for any single archive member
                 (default: 512 MiB).
@@ -5654,12 +5659,37 @@ class DoclingDocument(BaseModel):
             inline runs were stored without boundary whitespace and now join without a separator
             (``Normal**bold**tail``). Re-convert the source, or keep JSON for long-term storage.
         """
-        from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
-
         if isinstance(filename, str):
             filename = Path(filename)
+        extract_kwargs: dict[str, Any] = {
+            "validate": validate,
+            "max_member_size": max_member_size,
+            "max_total_size": max_total_size,
+        }
 
-        artifacts_dir, _ = cls(name="")._get_output_paths(filename, artifacts_dir)
+        if artifacts_dir is not None:
+            artifacts_dir, _ = cls(name="")._get_output_paths(filename, artifacts_dir)
+            return cls._load_extracted_doclang_archive(filename, artifacts_dir=artifacts_dir, **extract_kwargs)
+
+        with tempfile.TemporaryDirectory() as staging_name:
+            staging_root = Path(staging_name)
+            doc = cls._load_extracted_doclang_archive(filename, artifacts_dir=staging_root, **extract_kwargs)
+            cls._embed_doclang_archive_files(doc=doc, archive_root=staging_root)
+        return doc
+
+    @classmethod
+    def _load_extracted_doclang_archive(
+        cls,
+        filename: Path,
+        *,
+        artifacts_dir: Path,
+        validate: bool,
+        max_member_size: int,
+        max_total_size: int,
+    ) -> "DoclingDocument":
+        """Extract ``filename`` to ``artifacts_dir`` and load it, referencing the extracted files."""
+        from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
+
         safe_extract_zip_archive(
             filename,
             artifacts_dir,
@@ -5692,6 +5722,42 @@ class DoclingDocument(BaseModel):
         cls._restore_doclang_archive_page_images(doc=doc, archive_root=artifacts_dir)
         cls._restore_doclang_archive_track_media(doc=doc, archive_root=artifacts_dir)
         return doc
+
+    @staticmethod
+    def _embed_doclang_archive_files(*, doc: "DoclingDocument", archive_root: Path) -> None:
+        """Read the images and media that reference files in ``archive_root`` into memory.
+
+        Afterwards the document no longer refers to ``archive_root``, which can be removed.
+        Images become ``data:`` URIs of their stored bytes (not re-encoded), and media is
+        held with ``MediaRef.from_bytes``, under its path inside the archive.
+        """
+        archive_root = archive_root.resolve()
+
+        def archive_member(uri: AnyUrl | Path) -> Path | None:
+            return uri if isinstance(uri, Path) and uri.is_relative_to(archive_root) else None
+
+        items: list[FloatingItem] = [
+            *doc.pictures,
+            *doc.tables,
+            *doc.key_value_items,
+            *doc.form_items,
+            *doc.tracks,
+        ]
+        image_refs = [item.image for item in items if item.image is not None]
+        image_refs += [page.image for page in doc.pages.values() if page.image is not None]
+        for image_ref in image_refs:
+            if (path := archive_member(image_ref.uri)) is None:
+                continue
+            encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+            image_ref.uri = AnyUrl(f"data:{image_ref.mimetype};base64,{encoded}")
+
+        for track in doc.tracks:
+            for kind in ("audio", "video"):
+                ref: MediaRef | None = getattr(track, kind)
+                if ref is None or (path := archive_member(ref.uri)) is None:
+                    continue
+                member = Path(path.relative_to(archive_root).as_posix())
+                setattr(track, kind, MediaRef.from_bytes(path.read_bytes(), ref.mimetype, uri=member))
 
     @staticmethod
     def _restore_doclang_archive_track_media(*, doc: "DoclingDocument", archive_root: Path) -> None:
