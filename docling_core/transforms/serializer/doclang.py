@@ -63,6 +63,7 @@ from docling_core.transforms.serializer._doclang_utils import (
 )
 from docling_core.transforms.serializer.base import (
     BaseAnnotationSerializer,
+    BaseBlockQuoteSerializer,
     BaseDocSerializer,
     BaseFallbackSerializer,
     BaseFormSerializer,
@@ -82,9 +83,11 @@ from docling_core.transforms.serializer.common import (
     _PageBreakSerResult,
     create_ser_result,
     hyperlink_uri,
+    serialize_block_quote_attribution,
 )
 from docling_core.types.doc import (
     BaseMeta,
+    BlockQuoteGroup,
     BoundingBox,
     CodeItem,
     ContentLayer,
@@ -2305,6 +2308,36 @@ def _implicit_track(item: NodeItem, doc: DoclingDocument) -> list[NodeItem]:
     return run
 
 
+class DocLangBlockQuoteSerializer(BaseBlockQuoteSerializer):
+    """DocLang block quote serializer: a plain group whose attribution stays inside it."""
+
+    @override
+    def serialize(
+        self,
+        *,
+        item: BlockQuoteGroup,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        **kwargs: Any,
+    ) -> SerializationResult:
+        """Serialize the quoted blocks and the attribution, wrapped as a named group when requested."""
+        params = DocLangParams(**kwargs)
+        delim = _get_delim(params=params)
+        parts = doc_serializer.get_parts(item=item, **kwargs)
+        if not params.add_named_groups and params.add_page_break and isinstance(doc_serializer, DocLangDocSerializer):
+            parts = doc_serializer._order_fragmented_parts_by_page(parts)
+        parts.extend(serialize_block_quote_attribution(item=item, doc_serializer=doc_serializer, doc=doc, **kwargs))
+        text_res = delim.join([p.text for p in parts if p.text])
+        if params.add_named_groups:
+            head = _create_label_token(value=item.label.value)
+            text_res = (
+                f"{DocLangVocabulary._create_group_token(name=item.name)}"
+                f"{head}{text_res}"
+                f"{DocLangVocabulary._create_group_token(closing=True)}"
+            )
+        return create_ser_result(text=text_res, span_source=parts)
+
+
 class DocLangFallbackSerializer(BaseFallbackSerializer):
     """Fallback serializer concatenating text for list/inline groups."""
 
@@ -2503,6 +2536,7 @@ class DocLangDocSerializer(DocSerializer):
 
     list_serializer: BaseListSerializer = DocLangListSerializer()
     inline_serializer: BaseInlineSerializer = DocLangInlineSerializer()
+    block_quote_serializer: BaseBlockQuoteSerializer = DocLangBlockQuoteSerializer()
 
     meta_serializer: BaseMetaSerializer = DocLangMetaSerializer()
     annotation_serializer: BaseAnnotationSerializer = DocLangAnnotationSerializer()
@@ -2516,7 +2550,7 @@ class DocLangDocSerializer(DocSerializer):
     @override
     def serialize_captions(
         self,
-        item: FloatingItem,
+        item: FloatingItem | BlockQuoteGroup,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize the item's captions with DocLang location tokens."""
