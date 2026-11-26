@@ -25,6 +25,7 @@ from docling_core.transforms.serializer.common import (
     DocSerializer,
     _should_use_legacy_annotations,
     create_ser_result,
+    get_inline_content_group,
 )
 from docling_core.types.doc.document import (
     BoundingBox,
@@ -52,6 +53,7 @@ from docling_core.types.doc.document import (
     TableItem,
     TableToken,
     TextItem,
+    TitleItem,
 )
 
 
@@ -133,11 +135,7 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
                 parts.append(location)
 
         if params.add_content:
-            if (
-                item.text == ""
-                and len(item.children) == 1
-                and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
-            ):
+            if (child_group := get_inline_content_group(item, doc)) is not None:
                 ser_res = doc_serializer.serialize(item=child_group, visited=my_visited, **kwargs)
                 text_part = ser_res.text
             else:

@@ -1,5 +1,6 @@
 """Test serialization."""
 
+import re
 from pathlib import Path
 
 import pytest
@@ -10,7 +11,7 @@ from docling_core.transforms.serializer.doctags import (
 )
 from docling_core.types.doc import DocItemLabel, DoclingDocument, Formatting, TableData
 
-from .test_serialization import verify
+from .test_serialization import build_rich_heading_doc, verify
 
 # ===============================
 # DocTags tests
@@ -147,3 +148,20 @@ def test_doctags_serialize_param_patch_reaches_formatting_hook(inline, include_f
     assert ("<bold>bold</bold>" in expected) == include_formatting
     assert serializer.serialize(include_formatting=include_formatting).text == expected
     assert serializer.serialize().text == original
+
+
+@pytest.mark.parametrize("level", [None, 1, 3])
+@pytest.mark.parametrize("following", ["paragraph", "subsection"])
+def test_doctags_rich_heading_keeps_inline_content(level: int | None, following: str):
+    """A heading whose content is an inline group keeps it inside the DocTags heading element, before the body."""
+    doc = build_rich_heading_doc(level, following)
+
+    tokens = serialize_doctags(doc)
+
+    heading_tag = re.search(r"<(title|section_header_level_\d+)>(.*?)</\1>", tokens, re.DOTALL)
+    assert heading_tag is not None
+    assert "Heading eq" in heading_tag[2]
+    assert "y=2" in heading_tag[2]
+    assert "Body under it." not in heading_tag[2]
+    assert tokens.count("Heading eq") == 1
+    assert tokens.index("Body under it.") > heading_tag.end()

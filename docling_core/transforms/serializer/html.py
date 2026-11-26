@@ -37,6 +37,7 @@ from docling_core.transforms.serializer.common import (
     _get_annotation_text,
     _should_use_legacy_annotations,
     create_ser_result,
+    get_inline_content_group,
     hyperlink_uri,
 )
 from docling_core.transforms.serializer.html_styles import (
@@ -165,12 +166,8 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         res_parts: list[SerializationResult] = []
         post_processed = False
 
-        has_inline_repr = (
-            item.text == ""
-            and len(item.children) == 1
-            and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
-        )
-        if has_inline_repr:
+        child_group = get_inline_content_group(item, doc)
+        if child_group is not None:
             text = doc_serializer.serialize(item=child_group, visited=my_visited, **kwargs).text
             post_processed = True
         else:
@@ -199,7 +196,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 image_mode=params.image_mode,
                 formula_to_mathml=params.formula_to_mathml,
                 is_inline_scope=is_inline_scope,
-                text_is_html=has_inline_repr,
+                text_is_html=child_group is not None,
             )
 
         elif isinstance(item, CodeItem):
@@ -211,7 +208,7 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             # List items are handled by list serializer
             text_parts: list[str] = []
             if text:
-                if has_inline_repr:
+                if child_group is not None:
                     text = f"\n{text}\n"
                 else:
                     text = doc_serializer.post_process(
@@ -263,9 +260,9 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
             )
 
         # Recurse into children for branches that don't already consume them.
-        # has_inline_repr already consumed the single InlineGroup child; ListItem
-        # recursion is handled inline in its branch above.
-        if not has_inline_repr and not isinstance(item, ListItem) and item.children:
+        # The leading InlineGroup is already visited; headings can also have
+        # body children. ListItem recursion is handled in its branch above.
+        if not isinstance(item, ListItem) and item.children and (child_group is None or len(item.children) > 1):
             nested_text = "\n".join(
                 r.text
                 for r in doc_serializer.get_parts(

@@ -35,6 +35,7 @@ from docling_core.transforms.serializer.common import (
     _PageBreakSerResult,
     _should_use_legacy_annotations,
     create_ser_result,
+    get_inline_content_group,
     markdown_link_destination,
 )
 from docling_core.types.doc import (
@@ -374,13 +375,12 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         escape_html = kwargs.get("escape_html")
         escape_underscores = kwargs.get("escape_underscores")
 
-        has_inline_repr = (
-            item.text == ""
-            and len(item.children) == 1
-            and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
-        )
-        if has_inline_repr:
+        child_group = get_inline_content_group(item, doc)
+        if child_group is not None:
             text = doc_serializer.serialize(item=child_group, visited=my_visited, **kwargs).text
+            if isinstance(item, TitleItem | SectionHeaderItem):
+                # Inline runs already carry GFM hard breaks, which a heading line cannot hold.
+                text = self._heading_line_breaks(text.replace("  \n", "\n"))
             processing_pending = False
         else:
             text = item.text
@@ -391,7 +391,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             # The syntax needs a space after the box, unless the text brings its own.
             text = f"- {box}{text}" if text[:1].isspace() else f"- {box} {text}"
         if isinstance(item, ListItem | TitleItem | SectionHeaderItem):
-            if not has_inline_repr:
+            if child_group is None:
                 # case where processing/formatting should be applied first (in inner scope)
                 if isinstance(item, TitleItem | SectionHeaderItem):
                     # Headings cannot span multiple lines; replace newlines with a
