@@ -370,8 +370,8 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         my_visited = visited if visited is not None else set()
         params = MarkdownParams(**kwargs)
         res_parts: list[SerializationResult] = []
-        escape_html = True
-        escape_underscores = True
+        escape_html = kwargs.get("escape_html")
+        escape_underscores = kwargs.get("escape_underscores")
 
         has_inline_repr = (
             item.text == ""
@@ -379,7 +379,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
         )
         if has_inline_repr:
-            text = doc_serializer.serialize(item=child_group, visited=my_visited).text
+            text = doc_serializer.serialize(item=child_group, visited=my_visited, **kwargs).text
             processing_pending = False
         else:
             text = item.text
@@ -406,6 +406,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                     escape_underscores=escape_underscores,
                     formatting=item.formatting,
                     hyperlink=item.hyperlink,
+                    **{k: v for k, v in kwargs.items() if k not in ("escape_html", "escape_underscores")},
                 )
                 processing_pending = False
 
@@ -502,6 +503,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 escape_underscores=escape_underscores,
                 formatting=item.formatting,
                 hyperlink=item.hyperlink,
+                **{k: v for k, v in kwargs.items() if k not in ("escape_html", "escape_underscores")},
             )
         return create_ser_result(text=text, span_source=res_parts)
 
@@ -1297,25 +1299,26 @@ class MarkdownDocSerializer(DocSerializer):
         """Apply Markdown-specific strikethrough serialization."""
         return f"~~{text}~~"
 
-    def _fallback_formatting(self, text: str, tag: str) -> str:
-        if self.params.formatting_fallback_mode == FormattingFallbackMode.HTML:
+    def _fallback_formatting(self, text: str, tag: str, **kwargs: Any) -> str:
+        params = self.params.merge_with_patch(patch=kwargs)
+        if params.formatting_fallback_mode == FormattingFallbackMode.HTML:
             return f"<{tag}>{text}</{tag}>"
         return text
 
     @override
     def serialize_underline(self, text: str, **kwargs: Any):
         """Apply Markdown-specific underline serialization."""
-        return self._fallback_formatting(text, "u")
+        return self._fallback_formatting(text, "u", **kwargs)
 
     @override
     def serialize_subscript(self, text: str, **kwargs: Any):
         """Apply Markdown-specific subscript serialization."""
-        return self._fallback_formatting(text, "sub")
+        return self._fallback_formatting(text, "sub", **kwargs)
 
     @override
     def serialize_superscript(self, text: str, **kwargs: Any):
         """Apply Markdown-specific superscript serialization."""
-        return self._fallback_formatting(text, "sup")
+        return self._fallback_formatting(text, "sup", **kwargs)
 
     @override
     def serialize_hyperlink(
@@ -1365,8 +1368,8 @@ class MarkdownDocSerializer(DocSerializer):
         self,
         text: str,
         *,
-        escape_html: bool = True,
-        escape_underscores: bool = True,
+        escape_html: bool | None = None,
+        escape_underscores: bool | None = None,
         formatting: Formatting | None = None,
         hyperlink: AnyUrl | PurePath | None = None,
         **kwargs: Any,
@@ -1374,14 +1377,17 @@ class MarkdownDocSerializer(DocSerializer):
         """Apply some text post-processing steps."""
         res = text
         params = self.params.merge_with_patch(patch=kwargs)
-        if escape_underscores and params.escape_underscores:
+        escape_underscores = params.escape_underscores if escape_underscores is None else escape_underscores
+        escape_html = params.escape_html if escape_html is None else escape_html
+        if escape_underscores:
             res = self._escape_underscores(text)
-        if escape_html and params.escape_html:
+        if escape_html:
             res = html.escape(res, quote=False)
         res = super().post_process(
             text=res,
             formatting=formatting,
             hyperlink=hyperlink,
+            **kwargs,
         )
         return res
 

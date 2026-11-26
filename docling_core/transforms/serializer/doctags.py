@@ -138,13 +138,14 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
                 and len(item.children) == 1
                 and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
             ):
-                ser_res = doc_serializer.serialize(item=child_group, visited=my_visited)
+                ser_res = doc_serializer.serialize(item=child_group, visited=my_visited, **kwargs)
                 text_part = ser_res.text
             else:
                 text_part = doc_serializer.post_process(
                     text=item.text,
                     formatting=item.formatting,
                     hyperlink=item.hyperlink,
+                    **kwargs,
                 )
 
             if isinstance(item, CodeItem):
@@ -607,10 +608,11 @@ class DocTagsDocSerializer(DocSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a document out of its pages."""
-        delim = _get_delim(params=self.params)
+        params = self.params.merge_with_patch(patch=kwargs)
+        delim = _get_delim(params=params)
         text_res = delim.join([p.text for p in parts if p.text])
 
-        if self.params.add_page_break:
+        if params.add_page_break:
             page_sep = f"<{DocumentToken.PAGE_BREAK.value}>"
             for full_match, _, _ in self._get_page_breaks(text=text_res):
                 text_res = text_res.replace(full_match, page_sep)
