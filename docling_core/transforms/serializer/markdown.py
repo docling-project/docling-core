@@ -41,6 +41,7 @@ from docling_core.types.doc import (
     BaseMeta,
     CaptionPlacement,
     CodeItem,
+    CodeLanguageLabel,
     ContentLayer,
     CoordOrigin,
     DescriptionAnnotation,
@@ -235,10 +236,10 @@ def _code_span(text: str) -> str:
     return f"{ticks}{pad}{text}{pad}{ticks}"
 
 
-def _code_block(text: str) -> str:
+def _code_block(text: str, *, lang: str = "") -> str:
     """Wrap text in a fenced code block whose fence is longer than any backtick run inside."""
     fence = "`" * max(3, _longest_backtick_run(text) + 1)
-    return f"{fence}\n{text}\n{fence}"
+    return f"{fence}{lang}\n{text}\n{fence}"
 
 
 class OrigListItemMarkerMode(str, Enum):
@@ -459,7 +460,8 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             if params.format_code_blocks:
                 # inline items and all hyperlinks: format as code span
                 bt = is_inline_scope or (params.include_hyperlinks and item.hyperlink)
-                text_part = _code_span(text) if bt else _code_block(text)
+                lang = item.code_language.value.lower() if item.code_language != CodeLanguageLabel.UNKNOWN else ""
+                text_part = _code_span(text) if bt else _code_block(text, lang=lang)
             else:
                 text_part = text
             escape_html = False
