@@ -739,6 +739,7 @@ class _HTMLGraphDataSerializer:
         # If we have roots, make a list structure
         if root_ids:
             parts.append(f'<ul class="{class_name}">')
+            rendered: set[int] = set()
             for root_id in root_ids:
                 parts.append(
                     self._render_cell_tree(
@@ -747,6 +748,7 @@ class _HTMLGraphDataSerializer:
                         child_links=child_links,
                         value_links=value_links,
                         level=0,
+                        rendered=rendered,
                     )
                 )
             parts.append("</ul>")
@@ -776,8 +778,15 @@ class _HTMLGraphDataSerializer:
         child_links: dict,
         value_links: dict,
         level: int,
+        rendered: set[int],
     ) -> str:
-        """Recursively render a cell and its children as a nested list."""
+        """Recursively render a cell and its children as a nested list.
+
+        Each cell is rendered once per graph: a child that was already rendered is
+        skipped. A cell with several parents therefore appears only under the first
+        parent that reaches it, and a cycle in the to_child links ends.
+        """
+        rendered.add(cell_id)
         cell = cell_map[cell_id]
         cell_text = html.escape(cell.text)
 
@@ -791,13 +800,18 @@ class _HTMLGraphDataSerializer:
 
             cell_text = f"<strong>{cell_text}</strong>: {', '.join(value_texts)}"
 
+        child_ids = [child_id for child_id in child_links.get(cell_id, []) if child_id not in rendered]
+
         # If this cell has children, create a nested list
-        if child_links.get(cell_id):
+        if child_ids:
             children_html = []
             children_html.append(f"<li>{cell_text}</li>")
             children_html.append("<ul>")
 
-            for child_id in child_links[cell_id]:
+            for child_id in child_ids:
+                # An earlier sibling's subtree may have rendered this child already.
+                if child_id in rendered:
+                    continue
                 children_html.append(
                     self._render_cell_tree(
                         cell_id=child_id,
@@ -805,13 +819,14 @@ class _HTMLGraphDataSerializer:
                         child_links=child_links,
                         value_links=value_links,
                         level=level + 1,
+                        rendered=rendered,
                     )
                 )
 
             children_html.append("</ul>")
             return "\n".join(children_html)
 
-        elif cell_id in value_links:
+        elif cell_id in value_links or cell_id in child_links:
             return f"<li>{cell_text}</li>"
         else:
             # Leaf node - just render the cell

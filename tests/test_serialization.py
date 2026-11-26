@@ -45,6 +45,9 @@ from docling_core.types.doc.document import (
     EntitiesMetaField,
     EntityMention,
     Formatting,
+    GraphCell,
+    GraphData,
+    GraphLink,
     LanguageMetaField,
     PictureClassificationMetaField,
     PictureClassificationPrediction,
@@ -58,7 +61,7 @@ from docling_core.types.doc.document import (
     TableData,
     TextItem,
 )
-from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc.labels import DocItemLabel, GraphCellLabel, GraphLinkLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -1565,6 +1568,89 @@ def test_html_charts():
     )
     actual = ser.serialize().text
     verify(exp_file=src.with_suffix(".gt.html"), actual=actual)
+
+
+def test_html_key_value_graph_with_cycle():
+    """A to_child cycle, as XBRL presentation and calculation links can form, is rendered once."""
+    doc = DoclingDocument(name="kv_cycle")
+    doc.add_key_values(
+        graph=GraphData(
+            cells=[
+                GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="Statement", orig="Statement"),
+                GraphCell(label=GraphCellLabel.KEY, cell_id=1, text="Expenses", orig="Expenses"),
+                GraphCell(label=GraphCellLabel.KEY, cell_id=2, text="Income", orig="Income"),
+                GraphCell(label=GraphCellLabel.VALUE, cell_id=3, text="42", orig="42"),
+            ],
+            links=[
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=0, target_cell_id=1),
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=1, target_cell_id=2),
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=2, target_cell_id=1),
+                GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=2, target_cell_id=3),
+            ],
+        )
+    )
+
+    actual = doc.export_to_html()
+
+    assert actual.count("<li>Statement</li>") == 1
+    assert actual.count("<li>Expenses</li>") == 1
+    assert actual.count("<li><strong>Income</strong>: 42</li>") == 1
+
+
+def test_html_key_value_graph_shared_child_rendered_under_first_parent():
+    """A cell with two parents is rendered once, under the parent that reaches it first."""
+    doc = DoclingDocument(name="kv_diamond")
+    doc.add_key_values(
+        graph=GraphData(
+            cells=[
+                GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="Statement", orig="Statement"),
+                GraphCell(label=GraphCellLabel.KEY, cell_id=1, text="Expenses", orig="Expenses"),
+                GraphCell(label=GraphCellLabel.KEY, cell_id=2, text="Costs", orig="Costs"),
+                GraphCell(label=GraphCellLabel.KEY, cell_id=3, text="Salaries", orig="Salaries"),
+                GraphCell(label=GraphCellLabel.VALUE, cell_id=4, text="42", orig="42"),
+            ],
+            links=[
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=0, target_cell_id=1),
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=0, target_cell_id=2),
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=1, target_cell_id=3),
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=2, target_cell_id=3),
+                GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=3, target_cell_id=4),
+            ],
+        )
+    )
+
+    actual = doc.export_to_html()
+
+    # Costs keeps its list item although its only child is shown under Expenses.
+    assert (
+        "<li>Statement</li>\n<ul>\n"
+        "<li>Expenses</li>\n<ul>\n<li><strong>Salaries</strong>: 42</li>\n</ul>\n"
+        "<li>Costs</li>\n</ul>"
+    ) in actual
+    assert actual.count("<strong>Salaries</strong>") == 1
+
+
+def test_html_key_value_graph_dense_cycles_render_each_cell_once():
+    """Cells that all link to each other render once each, not once per path through them."""
+    size = 8
+    cells = [GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="Statement", orig="Statement")]
+    links = []
+    for i in range(1, size + 1):
+        cells.append(GraphCell(label=GraphCellLabel.KEY, cell_id=i, text=f"Item {i}", orig=f"Item {i}"))
+        links.append(GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=0, target_cell_id=i))
+        links.extend(
+            GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=i, target_cell_id=j)
+            for j in range(1, size + 1)
+            if j != i
+        )
+    doc = DoclingDocument(name="kv_clique")
+    doc.add_key_values(graph=GraphData(cells=cells, links=links))
+
+    actual = doc.export_to_html()
+
+    assert actual.count("<li>") == size + 1
+    for i in range(1, size + 1):
+        assert actual.count(f"<li>Item {i}</li>") == 1
 
 
 def test_html_cross_page_list_page_break():
