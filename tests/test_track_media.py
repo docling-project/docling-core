@@ -110,6 +110,33 @@ def test_archive_media_is_held_in_memory_by_default(tmp_path, media_files):
         assert zf.read("audio/1.mp3") == b"not decoded"
 
 
+def test_archive_media_is_not_kept_in_json_by_default(tmp_path, media_files, monkeypatch, caplog):
+    doc = DoclingDocument(name="media")
+    _add_track(doc, audio=MediaRef.from_file(media_files["mp3"]))
+    archive = tmp_path / "out.dclx"
+    doc.save_as_doclang_archive(archive)
+    back = DoclingDocument.load_from_doclang_archive(archive)
+
+    # the bytes are not part of the JSON, and the extracted files are gone: the recording is lost
+    restored = DoclingDocument.model_validate_json(back.model_dump_json())
+    audio = restored.tracks[0].audio
+    assert audio is not None
+    assert audio.mimetype == "audio/mpeg"
+    assert audio.uri == Path("audio/1.mp3")
+    monkeypatch.chdir(tmp_path)
+    assert audio._readable_content(allow_local=True) is None
+    with caplog.at_level(logging.WARNING):
+        restored.save_as_doclang_archive(tmp_path / "again.dclx", allow_local_media=True)
+    assert _members(tmp_path / "again.dclx") == []
+    assert "not stored" in caplog.text
+
+    # with artifacts_dir, the extracted recording stays and can be read again
+    kept = DoclingDocument.load_from_doclang_archive(archive, artifacts_dir=tmp_path / "art")
+    restored = DoclingDocument.model_validate_json(kept.model_dump_json())
+    restored.save_as_doclang_archive(tmp_path / "kept.dclx", allow_local_media=True)
+    assert _members(tmp_path / "kept.dclx") == ["audio/1.mp3"]
+
+
 def test_local_paths_need_opt_in(tmp_path, media_files, caplog):
     doc = DoclingDocument(name="media")
     _add_track(doc, audio=MediaRef.from_file(media_files["mp3"]))

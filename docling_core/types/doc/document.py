@@ -5654,6 +5654,13 @@ class DoclingDocument(BaseModel):
             parsing. Archive ``assets/`` and ``pages/`` images are capped by
             ``settings.max_image_decoded_size`` before Pillow opens them.
 
+            The bytes of the audio and video of tracks are not part of the document's JSON
+            (see ``MediaRef.from_bytes``). Without ``artifacts_dir``, the in-memory copy is the
+            only one: a document saved as JSON keeps the media type and the path inside the
+            archive, but not the recording. To convert a ``.dclx`` with media to JSON, load it
+            with ``artifacts_dir`` (and save it with ``allow_local_media`` later), or keep the
+            archive.
+
             Unlike JSON, DocLang carries no schema version, so archives written by docling-core
             before schema 1.11.0 (the inline whitespace contract) are loaded as current: their
             inline runs were stored without boundary whitespace and now join without a separator
