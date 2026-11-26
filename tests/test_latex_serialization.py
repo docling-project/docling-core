@@ -228,8 +228,8 @@ def test_latex_inline_code_escapes_hash_with_a_single_backslash():
     assert "\\\\#" not in body
 
 
-def test_latex_inline_code_without_hash_is_unchanged():
-    r"""Inline code without `#` keeps its text, including underscores."""
+def test_latex_inline_code_without_specials_is_unchanged():
+    r"""Inline code without LaTeX special characters keeps its text verbatim."""
     doc = DoclingDocument(name="t")
     para = doc.add_text(label=DocItemLabel.TEXT, text="")
     ig = doc.add_inline_group(parent=para)
@@ -238,6 +238,59 @@ def test_latex_inline_code_without_hash_is_unchanged():
     body = LaTeXDocSerializer(doc=doc).serialize().text.split("\\begin{document}")[1]
 
     assert "\\texttt{git checkout -b feature}" in body
+
+
+@pytest.mark.parametrize(
+    ("code", "expected"),
+    [
+        ("my_var", r"\texttt{my\_var}"),
+        ("100% done", r"\texttt{100\% done}"),
+        ("a&b", r"\texttt{a\&b}"),
+        ("a{b}c", r"\texttt{a\{b\}c}"),
+        ("x\\y", r"\texttt{x\textbackslash{}y}"),
+        ("$x$", r"\texttt{\$x\$}"),
+        ("a^b", r"\texttt{a\textasciicircum{}b}"),
+        ("a~b", r"\texttt{a\textasciitilde{}b}"),
+    ],
+)
+def test_latex_inline_code_escapes_latex_specials(code, expected):
+    r"""Inline code is typeset in text mode, so its LaTeX specials must be escaped.
+
+    A raw ``_`` (or ``%``, ``&``, ``{``, ``}``, ``\``, ``$``, ``^``, ``~``)
+    inside ``\texttt{}`` makes the exported document fail to compile, exactly
+    like an unescaped ``#`` did in #949.
+    """
+    doc = DoclingDocument(name="t")
+    para = doc.add_text(label=DocItemLabel.TEXT, text="")
+    ig = doc.add_inline_group(parent=para)
+    doc.add_code(text=code, parent=ig)
+
+    body = LaTeXDocSerializer(doc=doc).serialize().text.split("\\begin{document}")[1]
+
+    assert expected in body
+
+
+def test_latex_inline_code_escape_disabled_keeps_raw_text_but_escapes_hash():
+    r"""With escape_latex disabled raw text is kept, but `#` is still escaped once.
+
+    Raw specials may fail to compile or change the rendering, which is what the
+    option asks for. `#` is a macro parameter character in text mode either way,
+    so it stays escaped, and only once: a double backslash is a line break and
+    would leave the `#` unescaped.
+    """
+    doc = DoclingDocument(name="t")
+    para = doc.add_text(label=DocItemLabel.TEXT, text="")
+    ig = doc.add_inline_group(parent=para)
+    doc.add_code(text="my_var#tag", parent=ig)
+
+    body = (
+        LaTeXDocSerializer(doc=doc, params=LaTeXParams(escape_latex=False))
+        .serialize()
+        .text.split("\\begin{document}")[1]
+    )
+
+    assert "\\texttt{my_var\\#tag}" in body
+    assert "\\\\#" not in body
 
 
 def test_latex_column_spanning_rich_cell_keeps_text_in_every_column(col_span_rich_table_doc):
