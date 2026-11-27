@@ -387,6 +387,31 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             text = re.sub(r"^( {0,3})>", r"\1\\>", text, flags=re.M)
         return text
 
+    def _escape_plain_text(
+        self,
+        text: str,
+        *,
+        item: TextItem,
+        doc: DoclingDocument,
+        params: MarkdownParams,
+        is_inline_scope: bool,
+        is_raw: bool,
+    ) -> str:
+        """Escape Markdown syntax in a plain text or paragraph item when `escape_markdown_syntax` is on.
+
+        Only raw text is escaped (`is_raw`): formatting and hyperlink markup is added later in post_process.
+        """
+        if not (is_raw and params.escape_markdown_syntax) or item.label not in (
+            DocItemLabel.TEXT,
+            DocItemLabel.PARAGRAPH,
+        ):
+            return text
+        return self._escape_md_syntax(
+            text,
+            line_starts=not is_inline_scope or _inline_run_starts_line(item, doc),
+            escape_gt=not params.escape_html,
+        )
+
     @override
     def serialize(
         self,
@@ -534,17 +559,14 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             # Apply GFM hard line breaks: single \n -> "  \n", \n\n preserved.
             text_part = self._md_line_breaks(text)
 
-        if (
-            params.escape_markdown_syntax
-            and processing_pending
-            and item.label in (DocItemLabel.TEXT, DocItemLabel.PARAGRAPH)
-        ):
-            # Raw text only: formatting/hyperlink markup is added later in post_process.
-            text_part = self._escape_md_syntax(
-                text_part,
-                line_starts=not is_inline_scope or _inline_run_starts_line(item, doc),
-                escape_gt=not params.escape_html,
-            )
+        text_part = self._escape_plain_text(
+            text_part,
+            item=item,
+            doc=doc,
+            params=params,
+            is_inline_scope=is_inline_scope,
+            is_raw=processing_pending,
+        )
 
         if text_part:
             text_res = create_ser_result(text=text_part, span_source=item)
