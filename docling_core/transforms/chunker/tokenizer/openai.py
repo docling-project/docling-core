@@ -38,7 +38,7 @@ class OpenAITokenizer(BaseTokenizer):
 
     def count_tokens(self, text: str) -> int:
         """Get number of tokens for given text."""
-        return len(self.tokenizer.encode(text=text))
+        return len(self.tokenizer.encode_ordinary(text=text))
 
     def get_max_tokens(self) -> int:
         """Get maximum number of tokens allowed."""
