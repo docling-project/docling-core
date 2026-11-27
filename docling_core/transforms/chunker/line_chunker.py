@@ -255,9 +255,19 @@ class LineBasedTokenChunker(BaseChunker):
                     )
 
                 if not take:
+                    restore_prefix = self.prefix_len > 0 and not self.omit_prefix_on_overflow
+                    if restore_prefix and current == self.prefix:
+                        # The chunk holds only the mandatory prefix and still cannot take
+                        # any content. Flushing would restore the same prefix and retry the
+                        # same text indefinitely, so fail instead.
+                        raise ValueError(
+                            f"Character {remaining[0]!r} cannot fit within the token budget of "
+                            f"{self.max_tokens} together with the prefix ({self.prefix_len} tokens). "
+                            f"Increase max_tokens, shorten the prefix, or set omit_prefix_on_overflow=True."
+                        )
                     if current:
                         chunks.append(current)
-                        if self.prefix_len > 0 and not self.omit_prefix_on_overflow:
+                        if restore_prefix:
                             current = self.prefix
                             current_len = self.prefix_len
                         else:
