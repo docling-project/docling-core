@@ -16,7 +16,7 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
 )
 from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
 from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
-from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
+from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer, get_default_tokenizer
 from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
 from docling_core.transforms.serializer.html import HTMLTableSerializer
 from docling_core.transforms.serializer.markdown import (
@@ -321,6 +321,32 @@ def test_deprecated_no_max_tokens():
     )
 
 
+def test_auto_max_tokens_fits_model_input():
+    """Chunks sized by the auto-detected `max_tokens` fit the model input, special tokens included."""
+    with open(INPUT_FILE_0, encoding="utf-8") as f:
+        dl_doc = DoclingDocument.model_validate_json(f.read())
+    max_seq_length = 256  # sentence_bert_config.json of all-MiniLM-L6-v2
+
+    tokenizer = HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER)
+    chunker = HybridChunker(tokenizer=tokenizer)
+
+    assert tokenizer.get_max_tokens() == max_seq_length - INNER_TOKENIZER.num_special_tokens_to_add() == 254
+    assert HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER, max_tokens=300).get_max_tokens() == 300
+    for chunk in chunker.chunk(dl_doc=dl_doc):
+        assert len(INNER_TOKENIZER(chunker.contextualize(chunk))["input_ids"]) <= max_seq_length
+
+
+def test_auto_max_tokens_without_special_token_count(monkeypatch):
+    """A tokenizer that does not implement `num_special_tokens_to_add` gets the plain `max_seq_length`."""
+
+    def not_implemented(self, pair=False):
+        raise NotImplementedError
+
+    monkeypatch.setattr(type(INNER_TOKENIZER), "num_special_tokens_to_add", not_implemented)
+
+    assert HuggingFaceTokenizer(tokenizer=INNER_TOKENIZER).get_max_tokens() == 256
+
+
 def test_contextualize_altered_delim():
     EXPECTED_OUT_FILE = "tests/data/chunker/2d_out_ser_chunks.json"
 
@@ -493,7 +519,7 @@ def test_chunk_explicit():
     chunker = HybridChunker(
         tokenizer=HuggingFaceTokenizer.from_pretrained(
             model_name="sentence-transformers/all-MiniLM-L6-v2",
-            max_tokens=256,
+            max_tokens=get_default_tokenizer().get_max_tokens(),
         ),
     )
 
