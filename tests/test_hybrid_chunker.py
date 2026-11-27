@@ -479,7 +479,7 @@ def test_chunk_single_cell_rich_table():
     chunks = list(chunker.chunk(dl_doc=doc))
 
     assert len(chunks) == 1
-    assert chunks[0].text == "Important body text inside layout table"
+    assert chunks[0].text == "row_0, col_0 = Important body text inside layout table"
     assert [item.self_ref for item in chunks[0].meta.doc_items] == [doc.tables[0].self_ref]
 
 

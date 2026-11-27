@@ -43,7 +43,7 @@
             }
         },
         {
-            "text": "440-A, Asset Category = Hardware. 440-A, Unit Count = 142. 440-A, Status = Operational. 440-B, Asset Category = Software License. 440-B, Unit Count = 12. 440-B, Status = Pending*. 441-C, Asset Category = Cloud Instance. 441-C, Unit Count = 3. 441-C, Status = Operational. 442-D, Asset Category = Legacy Support. 442-D, Unit Count = 1. 442-D, Status = Archived**\n\n*Note: The 'Pending' status indicates that the asset is awaiting final security validation.\n\n**Note: 'Archived' items are scheduled for decommissioning at the end of the current fiscal year.",
+            "text": "row_0, Record ID = 440-A. row_0, Asset Category = Hardware. row_0, Unit Count = 142. row_0, Status = Operational. row_1, Record ID = 440-B. row_1, Asset Category = Software License. row_1, Unit Count = 12. row_1, Status = Pending*. row_2, Record ID = 441-C. row_2, Asset Category = Cloud Instance. row_2, Unit Count = 3. row_2, Status = Operational. row_3, Record ID = 442-D. row_3, Asset Category = Legacy Support. row_3, Unit Count = 1. row_3, Status = Archived**\n\n*Note: The 'Pending' status indicates that the asset is awaiting final security validation.\n\n**Note: 'Archived' items are scheduled for decommissioning at the end of the current fiscal year.",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
