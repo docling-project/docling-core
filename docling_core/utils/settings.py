@@ -6,6 +6,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class CoreSettings(BaseSettings):
+    # `populate_by_name` lets `CoreSettings(artifacts_path=...)` work. Without it, a
+    # field with a `validation_alias` accepts only the alias names.
     model_config = SettingsConfigDict(env_prefix="DOCLINGCORE_", populate_by_name=True)
 
     allow_image_file_uri: Annotated[

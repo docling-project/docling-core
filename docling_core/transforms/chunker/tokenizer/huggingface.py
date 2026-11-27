@@ -2,12 +2,12 @@
 
 import json
 import logging
-import re
 from os import PathLike
 from pathlib import Path
 from typing import Any, Final
 
 from huggingface_hub import hf_hub_download, snapshot_download
+from huggingface_hub.utils import HFValidationError, validate_repo_id
 from pydantic import ConfigDict, model_validator
 from typing_extensions import Self
 
@@ -33,15 +33,11 @@ _logger = logging.getLogger(__name__)
 _DEFAULT_MODEL_NAME: Final = "sentence-transformers/all-MiniLM-L6-v2"
 _SENTENCE_BERT_CONFIG: Final = "sentence_bert_config.json"
 
-# A Hugging Face repo id is `name` or `namespace/name`. Each part starts with an
-# alphanumeric character, so a part can never be `.` or `..`.
-_REPO_ID_RE: Final = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*(/[A-Za-z0-9][A-Za-z0-9._-]*)?")
-
 # transformers sets `model_max_length` to a very large integer when the
 # tokenizer files do not declare a limit.
 _MAX_PLAUSIBLE_MODEL_LENGTH: Final = 1_000_000
 
-# The files that a tokenizer needs. Model weights are not in this list.
+# The files that the common tokenizers need. Model weights are not in this list.
 _TOKENIZER_FILE_PATTERNS: Final = (
     "config.json",
     "tokenizer.json",
@@ -52,12 +48,42 @@ _TOKENIZER_FILE_PATTERNS: Final = (
     "vocab.txt",
     "merges.txt",
     "*.model",
+    "tokenizer.model.v*",
+    "*.tiktoken",
+    "chat_template*",
     _SENTENCE_BERT_CONFIG,
 )
 
+# The (artifacts path, model name) pairs for which the warning was logged.
+_warned_missing: set[tuple[str, str]] = set()
+
 
 def _is_repo_id(name: str) -> bool:
-    return _REPO_ID_RE.fullmatch(name) is not None and ".." not in name
+    # The Hugging Face rules also reject `..`, `--`, an absolute path and more
+    # than one `/`, so a valid repo id maps to exactly one folder name.
+    try:
+        validate_repo_id(name)
+    except HFValidationError:
+        return False
+    return True
+
+
+def _warn_missing_once(model_name: str, artifacts_path: Path) -> None:
+    key = (str(artifacts_path), model_name)
+    if key in _warned_missing:
+        return
+    _warned_missing.add(key)
+    _logger.warning(
+        "Tokenizer '%s' was not found in the artifacts path '%s'. "
+        "Loading it from the Hugging Face Hub or its local cache instead. "
+        "To make it available offline, run "
+        "docling_core.transforms.chunker.tokenizer.huggingface."
+        "download_tokenizer(repo_id='%s', output_dir='%s').",
+        model_name,
+        artifacts_path,
+        model_name,
+        artifacts_path,
+    )
 
 
 def get_tokenizer_folder(repo_id: str) -> str:
@@ -81,12 +107,16 @@ def get_tokenizer_folder(repo_id: str) -> str:
     return repo_id.replace("/", "--")
 
 
-def download_tokenizer(repo_id: str, output_dir: Path, revision: str | None = None) -> Path:
+def download_tokenizer(repo_id: str, output_dir: str | PathLike[str], revision: str | None = None) -> Path:
     """Download the tokenizer files of a Hugging Face repo into an artifacts directory.
 
     Only the tokenizer and configuration files are downloaded, not the model
     weights. The result can be loaded with
     `HuggingFaceTokenizer.from_pretrained(repo_id, artifacts_path=output_dir)`.
+
+    The list of downloaded files is a best effort for the common tokenizers. If
+    a tokenizer needs a file that is not in the list, copy that file from the
+    repo into the returned folder.
 
     Args:
         repo_id: The Hugging Face repo id.
@@ -109,25 +139,20 @@ def download_tokenizer(repo_id: str, output_dir: Path, revision: str | None = No
     return local_dir
 
 
-def _resolve_max_tokens(tokenizer: "PreTrainedTokenizerBase") -> int:
-    name_or_path = str(tokenizer.name_or_path)
-    local_dir = Path(name_or_path)
-    if local_dir.is_dir():
-        # The tokenizer comes from a local folder: do not use the network.
-        config_path = local_dir / _SENTENCE_BERT_CONFIG
-        if config_path.is_file():
-            with config_path.open(encoding="utf-8") as f:
-                return int(json.load(f)["max_seq_length"])
-        model_max_length = int(tokenizer.model_max_length)
-        if 0 < model_max_length <= _MAX_PLAUSIBLE_MODEL_LENGTH:
-            return model_max_length
-        raise ValueError(f"'{local_dir}' does not declare a maximum sequence length")
-
-    # try to use SentenceTransformers-specific config as that seems to be
-    # reliable (whenever available)
-    config_path = Path(hf_hub_download(repo_id=name_or_path, filename=_SENTENCE_BERT_CONFIG))
+def _read_max_seq_length(config_path: Path) -> int:
     with config_path.open(encoding="utf-8") as f:
         return int(json.load(f)["max_seq_length"])
+
+
+def _resolve_local_max_tokens(local_dir: Path, tokenizer: "PreTrainedTokenizerBase") -> int:
+    """Resolve the maximum number of tokens from a local tokenizer folder."""
+    config_path = local_dir / _SENTENCE_BERT_CONFIG
+    if config_path.is_file():
+        return _read_max_seq_length(config_path)
+    model_max_length = int(tokenizer.model_max_length)
+    if 0 < model_max_length <= _MAX_PLAUSIBLE_MODEL_LENGTH:
+        return model_max_length
+    raise ValueError(f"'{local_dir}' does not declare a maximum sequence length")
 
 
 class HuggingFaceTokenizer(BaseTokenizer):
@@ -149,7 +174,13 @@ class HuggingFaceTokenizer(BaseTokenizer):
     def _patch(self) -> Self:
         if self.max_tokens is None:
             try:
-                self.max_tokens = _resolve_max_tokens(self.tokenizer)
+                # try to use SentenceTransformers-specific config as that seems to be
+                # reliable (whenever available)
+                config_path = hf_hub_download(
+                    repo_id=self.tokenizer.name_or_path,
+                    filename=_SENTENCE_BERT_CONFIG,
+                )
+                self.max_tokens = _read_max_seq_length(Path(config_path))
             except Exception as e:
                 raise RuntimeError("max_tokens could not be determined automatically; please set explicitly.") from e
         return self
@@ -167,7 +198,7 @@ class HuggingFaceTokenizer(BaseTokenizer):
         cls,
         model_name: str | PathLike,
         max_tokens: int | None = None,
-        artifacts_path: Path | None = None,
+        artifacts_path: str | PathLike[str] | None = None,
         **kwargs,
     ) -> Self:
         """Create tokenizer from model name.
@@ -180,47 +211,72 @@ class HuggingFaceTokenizer(BaseTokenizer):
                 before, see `download_tokenizer`. Defaults to
                 `settings.artifacts_path`. If the directory contains the
                 tokenizer of `model_name`, the tokenizer is loaded from there
-                and the network is not used. Otherwise a warning is logged and
+                with `local_files_only=True`, also when the caller passes a
+                different value for `local_files_only`. If the tokenizer folder
+                is missing or empty, a warning is logged one time and
                 `model_name` is loaded in the usual way.
             **kwargs: Additional arguments for `AutoTokenizer.from_pretrained`.
+
+        Raises:
+            RuntimeError: If the tokenizer folder in `artifacts_path` has files
+                but cannot be loaded, or if `max_tokens` cannot be resolved.
         """
         if not _TRANSFORMERS_AVAILABLE:
             raise ImportError(_INSTALL_HINT) from _TRANSFORMERS_IMPORT_ERROR
-        name_or_path: str | PathLike = model_name
         if artifacts_path is None:
             artifacts_path = settings.artifacts_path
-        # Only a repo id is looked up in the artifacts directory. Any other
-        # value, such as `../x` or an absolute path, is never joined to it.
-        if artifacts_path is not None and isinstance(model_name, str) and _is_repo_id(model_name):
-            local_dir = Path(artifacts_path) / get_tokenizer_folder(model_name)
-            if local_dir.is_dir():
-                name_or_path = local_dir
-                kwargs["local_files_only"] = True
-            else:
-                _logger.warning(
-                    "Tokenizer '%s' was not found in the artifacts path '%s'. "
-                    "Loading it from the Hugging Face Hub or its local cache instead. "
-                    "To make it available offline, run "
-                    "docling_core.transforms.chunker.tokenizer.huggingface."
-                    "download_tokenizer(repo_id='%s', output_dir='%s').",
-                    model_name,
-                    artifacts_path,
-                    model_name,
-                    artifacts_path,
-                )
-        my_kwargs: dict[str, Any] = {
-            "tokenizer": AutoTokenizer.from_pretrained(pretrained_model_name_or_path=name_or_path, **kwargs),
-        }
+
+        # The folder that the tokenizer is loaded from, when this is known
+        # without a guess. It is then also the source of `max_tokens`.
+        local_dir: Path | None = None
+        if not isinstance(model_name, str):
+            # A path object always names a local folder.
+            local_dir = Path(model_name)
+            tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=model_name, **kwargs)
+        elif (artifacts_dir := cls._find_in_artifacts(model_name, artifacts_path)) is not None:
+            local_dir = artifacts_dir
+            kwargs["local_files_only"] = True
+            try:
+                tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=artifacts_dir, **kwargs)
+            except Exception as e:
+                raise RuntimeError(
+                    f"The tokenizer folder '{artifacts_dir}' could not be loaded. It can be incomplete. "
+                    "Delete it and download it again with docling_core.transforms.chunker.tokenizer."
+                    f"huggingface.download_tokenizer(repo_id='{model_name}', output_dir='{artifacts_path}')."
+                ) from e
+        else:
+            tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=model_name, **kwargs)
+
+        if max_tokens is None and local_dir is not None:
+            try:
+                max_tokens = _resolve_local_max_tokens(local_dir, tokenizer)
+            except Exception as e:
+                raise RuntimeError("max_tokens could not be determined automatically; please set explicitly.") from e
+        my_kwargs: dict[str, Any] = {"tokenizer": tokenizer}
         if max_tokens is not None:
             my_kwargs["max_tokens"] = max_tokens
         return cls(**my_kwargs)
+
+    @staticmethod
+    def _find_in_artifacts(model_name: str, artifacts_path: str | PathLike[str] | None) -> Path | None:
+        """Get the folder of `model_name` in the artifacts directory, if it has files."""
+        # Only a repo id is looked up in the artifacts directory. Any other
+        # value, such as `../x` or an absolute path, is never joined to it.
+        if artifacts_path is None or not _is_repo_id(model_name):
+            return None
+        local_dir = Path(artifacts_path) / get_tokenizer_folder(model_name)
+        # An empty folder is what an interrupted download can leave behind.
+        if local_dir.is_dir() and any(local_dir.iterdir()):
+            return local_dir
+        _warn_missing_once(model_name, Path(artifacts_path))
+        return None
 
     def get_tokenizer(self):
         """Get underlying tokenizer object."""
         return self.tokenizer
 
 
-def get_default_tokenizer(artifacts_path: Path | None = None) -> HuggingFaceTokenizer:
+def get_default_tokenizer(artifacts_path: str | PathLike[str] | None = None) -> HuggingFaceTokenizer:
     """Get default tokenizer instance.
 
     Args:
