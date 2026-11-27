@@ -1984,7 +1984,13 @@ class DocLangInlineSerializer(BaseInlineSerializer):
         elif isinstance(parent_item, ListItem):
             should_wrap = not params.use_virtual_text or _list_item_has_segment_siblings(item=parent_item, doc=doc)
         elif isinstance(parent_item, TextItem):
-            should_wrap = False
+            # The text serializer nests only the first child group in the parent item. A later
+            # group has no host element and needs its own <text> wrapper, unless the parent has
+            # no text and a non-group first child: then all children are already nested.
+            first_ref = parent_item.children[0]
+            should_wrap = first_ref.cref != item.self_ref and (
+                bool(parent_item.text) or isinstance(first_ref.resolve(doc), InlineGroup)
+            )
         else:
             should_wrap = True
         # A link shared by all runs moves to the <text> wrapper (see _shared_href).

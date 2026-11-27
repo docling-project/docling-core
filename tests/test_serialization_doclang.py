@@ -2892,6 +2892,49 @@ def test_inline_group_nested_word_boundary_when_minimized():
     assert "".join(heading_el.itertext()) == "Heading text bold"
 
 
+def test_second_inline_group_of_text_item_is_wrapped_in_text():
+    """Only the first InlineGroup nests in its parent item; later ones get a <text> wrapper.
+
+    Regression test: the 2nd+ InlineGroup children of a ``TextItem`` used to be
+    emitted as bare runs at the parent's sibling level, which is invalid DocLang
+    and loses the plain-text runs on deserialization.
+    """
+    doc = DoclingDocument(name="t")
+    parent = doc.add_text(label=DocItemLabel.TEXT, text="Parent")
+    para = doc.add_inline_group(parent=parent)
+    doc.add_text(DocItemLabel.TEXT, "Hello ", parent=para)
+    doc.add_text(DocItemLabel.TEXT, "world", parent=para, formatting=Formatting(bold=True))
+    para2 = doc.add_inline_group(parent=parent)
+    doc.add_text(DocItemLabel.TEXT, "Second ", parent=para2)
+    doc.add_text(DocItemLabel.TEXT, "para", parent=para2, formatting=Formatting(italic=True))
+    doc.add_text(DocItemLabel.TEXT, "Plain child", parent=parent)
+
+    txt = serialize_doclang(doc)
+
+    root = ET.fromstring(txt)
+    assert [child.tag for child in root] == ["text", "text", "text"]
+    assert "".join(root[0].itertext()).split() == ["Parent", "Hello", "world"]
+    assert "".join(root[1].itertext()).split() == ["Second", "para"]
+    assert [child.tag for child in root[1]] == ["italic"]
+
+    restored = DocLangDocDeserializer().deserialize_str(txt)
+    assert "Second" in restored.export_to_markdown()
+
+
+def test_inline_group_after_plain_child_of_textless_item_is_not_wrapped():
+    """A text-less item whose first child is not a group already nests all children."""
+    doc = DoclingDocument(name="t")
+    parent = doc.add_text(label=DocItemLabel.TEXT, text="")
+    doc.add_text(DocItemLabel.TEXT, "Plain ", parent=parent)
+    group = doc.add_inline_group(parent=parent)
+    doc.add_text(DocItemLabel.TEXT, "bold", parent=group, formatting=Formatting(bold=True))
+
+    txt = serialize_doclang(doc)
+
+    # Same output as before the fix: the group is nested, with no extra <text> wrapper of its own.
+    assert txt == ("<doclang>\n  <text><text><content>Plain </content></text> <bold>bold</bold></text>\n</doclang>")
+
+
 def _prov(l: float, t: float, r: float, b: float) -> ProvenanceItem:
     return ProvenanceItem(
         page_no=1,
