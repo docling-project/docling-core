@@ -593,3 +593,18 @@ def test_resolve_remote_filename_quoted_parameters(disposition: str, expected: s
         )
         == expected
     )
+
+
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("https://example.com/papers/annual%20report.pdf", "annual report.pdf"),
+        ("https://example.com/d/%E6%96%87%E6%A1%A3.pdf", "文档.pdf"),
+        ("https://example.com/d/a%2F..%2F..%2Fsecret.pdf", "secret.pdf"),
+        ("https://example.com/d/%2E%2E", "file"),
+        ("https://example.com/d/bad%00name.pdf", "file"),
+    ],
+)
+def test_resolve_remote_filename_decodes_url_path(url: str, expected: str) -> None:
+    """A name taken from the URL path is percent-decoded, then sanitized."""
+    assert resolve_remote_filename(AnyHttpUrl(url), {}) == expected
