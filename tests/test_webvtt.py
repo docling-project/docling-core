@@ -662,6 +662,7 @@ def test_webvtt_file_cues_out_of_start_time_order() -> None:
         "<i>Previously on the show</i>\nwe met the team.",
         "<v Ann>Hello there</v>\n<v Bob>Hi Ann</v>",
         "Text <b>bold</b>\n<i>italic</i> text",
+        "<ruby>a<rt>b</rt></ruby>\nc",
     ],
 )
 def test_webvtt_parse_line_break_after_end_tag(cue_text: str) -> None:
@@ -669,3 +670,9 @@ def test_webvtt_parse_line_break_after_end_tag(cue_text: str) -> None:
     timings = "00:01.000 --> 00:02.000\n"
     block = WebVTTCueBlock.parse(timings + cue_text)
     assert str(block) == timings + cue_text + "\n"
+
+
+def test_webvtt_parse_line_break_after_stray_end_tag() -> None:
+    """A stray end tag is ignored, and the line break after it is kept."""
+    block = WebVTTCueBlock.parse("00:01.000 --> 00:02.000\na</i>\nb")
+    assert str(block) == "00:01.000 --> 00:02.000\na\nb\n"
