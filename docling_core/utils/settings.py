@@ -1,11 +1,14 @@
+from pathlib import Path
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class CoreSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="DOCLINGCORE_")
+    # `populate_by_name` lets `CoreSettings(artifacts_path=...)` work. Without it, a
+    # field with a `validation_alias` accepts only the alias names.
+    model_config = SettingsConfigDict(env_prefix="DOCLINGCORE_", populate_by_name=True)
 
     allow_image_file_uri: Annotated[
         bool,
@@ -63,6 +66,20 @@ class CoreSettings(BaseSettings):
     max_doclang_xml_bytes: int = 128 * 1024 * 1024  # 128 MiB
     max_doclang_xml_depth: int = 128
     max_doclang_xml_elements: int = 1_000_000
+
+    artifacts_path: Annotated[
+        Path | None,
+        Field(
+            description=(
+                "Directory with artifacts that were downloaded before, such as the "
+                "tokenizers of the chunkers. An artifact that is found there is "
+                "loaded without network access. The environment variable "
+                "DOCLING_ARTIFACTS_PATH of docling is also accepted, so that one "
+                "directory can serve the docling models and the chunking."
+            ),
+            validation_alias=AliasChoices("DOCLINGCORE_ARTIFACTS_PATH", "DOCLING_ARTIFACTS_PATH"),
+        ),
+    ] = None
 
 
 settings = CoreSettings()
