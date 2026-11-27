@@ -1,3 +1,5 @@
+import pytest
+
 from docling_core.types.doc.base import BoundingBox
 from docling_core.types.doc.document import DoclingDocument, TableCell, TableData
 
@@ -309,3 +311,42 @@ def test_table_export_to_otsl_page_less_document_with_cell_bbox():
     table = doc.add_table(data=data)
 
     assert table.export_to_otsl(doc=doc)
+
+
+@pytest.mark.parametrize("fmt", ["doctags", "doclang"])
+def test_table_export_reads_the_grid_once(monkeypatch, fmt):
+    # `TableData.grid` builds the whole grid on every read; reading it once per
+    # cell made exporting a table of n cells build n * n of them.
+    num_rows, num_cols = 40, 3
+    doc = DoclingDocument(name="grid_reads")
+    doc.add_table(
+        data=TableData(
+            num_rows=num_rows,
+            num_cols=num_cols,
+            table_cells=[
+                TableCell(
+                    text=f"r{i}c{j}",
+                    start_row_offset_idx=i,
+                    end_row_offset_idx=i + 1,
+                    start_col_offset_idx=j,
+                    end_col_offset_idx=j + 1,
+                )
+                for i in range(num_rows)
+                for j in range(num_cols)
+            ],
+        )
+    )
+
+    build = TableData.grid.fget
+    builds = 0
+
+    def counted(self):
+        nonlocal builds
+        builds += 1
+        return build(self)
+
+    monkeypatch.setattr(TableData, "grid", property(counted))
+    text = doc.export_to_doctags() if fmt == "doctags" else doc.export_to_doclang()
+
+    assert "r39c2" in text
+    assert builds == 1
