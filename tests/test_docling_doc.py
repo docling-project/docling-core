@@ -8,7 +8,7 @@ from collections.abc import Callable
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional, Union
 from unittest.mock import Mock
 
 import pytest
@@ -3811,7 +3811,7 @@ def test_document_with_negative_table_cell_offset_fails_validation() -> None:
         DoclingDocument.model_validate(data)
 
 
-def _make_grid_cell(row_start, row_end, col_start, col_end, text="value"):
+def _make_grid_cell(row_start: int, row_end: int, col_start: int, col_end: int, text: str = "value") -> TableCell:
     return TableCell(
         text=text,
         start_row_offset_idx=row_start,
@@ -3833,7 +3833,7 @@ def test_table_grid_constructs_only_uncovered_cells(monkeypatch, coordinates, ho
     original_init = TableCell.__init__
     constructed = 0
 
-    def counted_init(self, *args, **kwargs):
+    def counted_init(self: TableCell, *args: Any, **kwargs: Any) -> None:
         nonlocal constructed
         constructed += 1
         original_init(self, *args, **kwargs)

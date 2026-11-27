@@ -177,7 +177,15 @@ class TableData(BaseModel):  # TBD
     def grid(
         self,
     ) -> list[list[TableCell]]:
-        """Grid."""
+        """Dense ``num_rows`` x ``num_cols`` matrix of the table cells.
+
+        A cell that spans several rows or columns is repeated at every position it
+        covers. When cells overlap, the one that appears last in ``table_cells``
+        wins. Positions not covered by any cell hold new, empty cells.
+
+        Returns:
+            The cell matrix, one list per row.
+        """
         num_cols = max(0, self.num_cols)
         table_data: list[list[TableCell | None]] = [[None] * num_cols for _ in range(self.num_rows)]
         # Place source cells before constructing empty cells for the remaining gaps.
