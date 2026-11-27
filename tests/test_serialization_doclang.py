@@ -2676,6 +2676,58 @@ def test_rtl_text_formatting():
     )
 
 
+def _ser_rtl(doc: DoclingDocument) -> str:
+    return (
+        DocLangDocSerializer(
+            doc=doc,
+            params=DocLangParams(include_version=False, add_location=False, pretty_indentation=None),
+        )
+        .serialize()
+        .text
+    )
+
+
+@doclang_validator
+def test_rtl_text_with_escaped_characters():
+    """RTL text that needs CDATA or a content wrapper keeps <rtl>, with the CDATA inside it."""
+    doc = DoclingDocument(name="rtl_escaped")
+    doc.add_text(label=DocItemLabel.TEXT, text='قال "مرحبا" & وداعا')
+    doc.add_text(label=DocItemLabel.TEXT, text="مرحبا ")
+    ser_txt = _ser_rtl(doc)
+    assert '<text><rtl><![CDATA[قال "مرحبا" & وداعا]]></rtl></text>' in ser_txt
+    assert "<text><rtl><content>مرحبا </content></rtl></text>" in ser_txt
+    validate_dclg_xml(ser_txt)
+    texts = [it.text for it in DocLangDocDeserializer().deserialize_str(ser_txt).texts]
+    assert texts == ['قال "مرحبا" & وداعا', "مرحبا "]
+
+
+@doclang_validator
+def test_rtl_caption_and_table_cell():
+    """RTL captions and table cells are wrapped in <rtl>, and CDATA stays inside the wrapper."""
+    doc = DoclingDocument(name="rtl_caption_cell")
+    cap = doc.add_text(label=DocItemLabel.CAPTION, text="الشكل الشكل & صورة صورة")
+    doc.add_picture(caption=cap)
+    td = TableData(num_rows=1, num_cols=1)
+    td.table_cells.append(
+        TableCell(
+            text="خلية",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+        )
+    )
+    doc.add_table(data=td)
+    ser_txt = _ser_rtl(doc)
+    assert "<caption><rtl><![CDATA[الشكل الشكل & صورة صورة]]></rtl></caption>" in ser_txt
+    assert "<![CDATA[<rtl>" not in ser_txt
+    assert "<fcel/><rtl>خلية</rtl><nl/>" in ser_txt
+    validate_dclg_xml(ser_txt)
+    doc2 = DocLangDocDeserializer().deserialize_str(ser_txt)
+    assert doc2.texts[0].text == "الشكل الشكل & صورة صورة"
+    assert doc2.tables[0].data.table_cells[0].text == "خلية"
+
+
 def _doc_table_xcel_span() -> DoclingDocument:
     doc = DoclingDocument(name="table_xcel")
     cells = [
