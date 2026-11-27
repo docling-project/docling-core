@@ -489,9 +489,7 @@ class WebVTTCueBlock(BaseModel):
             terminator = WebVTTLineTerminator.LF if idx < len(text_list) - 1 or text.endswith("\n") else None
             if len(line) > 0:
                 yield WebVTTCueComponentWithTerminator(
-                    # A '<' left here starts no cue span or timestamp tag, as in "x < 5",
-                    # so keep it as text instead of dropping the cue.
-                    component=WebVTTCueTextSpan(text=line.replace("<", "&lt;")),
+                    component=WebVTTCueTextSpan(text=line),
                     terminator=terminator,
                 )
 
