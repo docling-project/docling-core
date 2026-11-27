@@ -26,7 +26,13 @@ _INSTALL_HINT = (
 
 
 class HuggingFaceTokenizer(BaseTokenizer):
-    """HuggingFace tokenizer."""
+    """HuggingFace tokenizer.
+
+    Attributes:
+        tokenizer: The HuggingFace tokenizer.
+        max_tokens: The maximum number of tokens per chunk. If not set, it is resolved
+            from the model's `max_seq_length` minus the tokenizer's special tokens.
+    """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -53,10 +59,15 @@ class HuggingFaceTokenizer(BaseTokenizer):
                 )
                 with open(config_path) as f:
                     data = json.load(f)
-                # max_seq_length counts the special tokens, count_tokens does not
-                self.max_tokens = int(data["max_seq_length"]) - self.tokenizer.num_special_tokens_to_add()
+                max_seq_length = int(data["max_seq_length"])
             except Exception as e:
                 raise RuntimeError("max_tokens could not be determined automatically; please set explicitly.") from e
+            try:
+                num_special_tokens = self.tokenizer.num_special_tokens_to_add()
+            except NotImplementedError:
+                num_special_tokens = 0
+            # max_seq_length includes special tokens; count_tokens excludes them
+            self.max_tokens = max_seq_length - num_special_tokens
         return self
 
     def count_tokens(self, text: str):

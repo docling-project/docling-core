@@ -60,7 +60,8 @@ class HybridChunker(BaseChunker):
         tokenizer: The tokenizer to use; either instantiated object or name or path of
             respective pretrained model
         max_tokens: The maximum number of tokens per chunk. If not set, limit is
-            resolved from the tokenizer
+            resolved from the tokenizer. `HuggingFaceTokenizer` uses the model's
+            `max_seq_length` minus its special tokens.
         repeat_table_header: Whether to repeat a table header if the table is chunked
         merge_peers: Whether to merge undersized chunks sharing same relevant metadata
         always_emit_headings: Whether to emit headings even for empty sections
