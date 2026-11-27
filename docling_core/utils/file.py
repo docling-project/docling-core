@@ -1,8 +1,10 @@
+# SPDX-License-Identifier: MIT
 """File-related utilities."""
 
 import ipaddress
 import logging
 import re
+import shutil
 import socket
 import tempfile
 from email.message import Message
@@ -29,6 +31,7 @@ _MAX_REDIRECTS = 5
 # and similar), which are either small or in the multi-megabyte range, so a
 # large chunk keeps the read loop short without wasting memory.
 _DOWNLOAD_CHUNK_SIZE = 512 * 1024
+_LOCAL_COPY_CHUNK_SIZE = 512 * 1024
 
 
 class FileSizeLimitExceededError(ValueError):
@@ -373,11 +376,60 @@ def resolve_source_to_stream(
     return doc_stream
 
 
+def _copy_local_source_to_path(source: Path, workdir: Path | None) -> Path | None:
+    """Stream a new local copy; leave existing destinations to the buffered path."""
+    temporary_workdir: Path | None = None
+    created_destination: Path | None = None
+    try:
+        # Open the source before creating any destination directories. An
+        # unreadable source must not create a workdir or truncate a destination.
+        with source.open("rb") as input_file:
+            if workdir is None:
+                workdir = Path(tempfile.mkdtemp())
+                temporary_workdir = workdir
+            workdir.mkdir(exist_ok=True, parents=True)
+            destination = workdir / source.name
+            try:
+                output_file = destination.open("xb")
+            except FileExistsError:
+                # Preserve read-before-write behavior for overwrites, including
+                # same-path, hard-link and symbolic-link aliases of the source.
+                return None
+            created_destination = destination
+            with output_file:
+                shutil.copyfileobj(input_file, output_file, length=_LOCAL_COPY_CHUNK_SIZE)
+    except BaseException:
+        # Clean up after leaving the file contexts, including when closing fails.
+        # Only remove resources created here, and preserve the original I/O error
+        # if cleanup itself fails (for example, because of filesystem permissions).
+        if created_destination is not None:
+            try:
+                created_destination.unlink(missing_ok=True)
+            except OSError:
+                _logger.warning("Failed to remove incomplete local copy %s", created_destination, exc_info=True)
+        if temporary_workdir is not None:
+            try:
+                temporary_workdir.rmdir()
+            except OSError:
+                _logger.warning("Failed to remove temporary directory %s", temporary_workdir, exc_info=True)
+        raise
+
+    return created_destination
+
+
 def _resolve_source_to_path(
     source: Path | AnyHttpUrl | str,
     headers: dict[str, str] | None = None,
     workdir: Path | None = None,
 ) -> Path:
+    try:
+        TypeAdapter(AnyHttpUrl).validate_python(source)
+    except ValidationError:
+        if isinstance(source, Path) or (isinstance(source, str) and "://" not in source):
+            copied_path = _copy_local_source_to_path(Path(source), workdir)
+            if copied_path is not None:
+                return copied_path
+
     doc_stream = resolve_source_to_stream(source=source, headers=headers)
 
     # use a temporary directory if not specified
@@ -404,6 +456,9 @@ def resolve_source_to_path(
 
     If a URL is provided, the content is first downloaded to a local file, located in
       the provided workdir or in a temporary directory if no workdir provided.
+    Local files are also copied; the caller retains ownership of the original file.
+    New local copies use a bounded buffer. Existing destinations retain the buffered
+    read-before-write behavior, including when source and destination are the same file.
 
     Args:
         source (Path | AnyHttpUrl | str): The file input source. Can be a path or URL.
