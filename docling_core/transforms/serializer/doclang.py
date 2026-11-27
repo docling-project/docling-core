@@ -500,7 +500,10 @@ def _serialize_satellite(
     region), the latter serialized like any other child.
     """
     head = _element_head_prefix(item=item, doc=doc, params=params)
-    content = _escape_text(item.text, params) if item.text and content_type in params.content_types else ""
+    content = ""
+    if item.text and content_type in params.content_types:
+        # escape first, so that a CDATA section ends up inside the direction wrapper
+        content = doc_serializer.post_process(text=_escape_text(item.text, params), **kwargs)
     nested = ""
     if item.children and content_type in params.content_types:
         excluded = doc_serializer.get_excluded_refs(**kwargs)
@@ -702,6 +705,22 @@ def _escape_text(text: str, params: DocLangParams, *, wrap_multiline: bool = Tru
         # text = f'<{el_str} xml:space="preserve">{text}</{el_str}>'
         text = _wrap(text=text, wrap_tag=DocLangToken.CONTENT.value)
     return text
+
+
+_CDATA_SECTION_RE = re.compile(r"<!\[CDATA\[(.*?)\]\]>", re.DOTALL)
+
+
+def _unescape_text(text: str) -> str:
+    """Return the characters that ``_escape_text`` output reads as.
+
+    Drops the ``<content>`` wrapper and the CDATA delimiters, so that properties of the text
+    itself (e.g. its direction) are not skewed by the escaping markup.
+    """
+    open_tag = f"<{DocLangToken.CONTENT.value}>"
+    close_tag = f"</{DocLangToken.CONTENT.value}>"
+    if text.startswith(open_tag) and text.endswith(close_tag):
+        text = text[len(open_tag) : -len(close_tag)]
+    return _CDATA_SECTION_RE.sub(lambda m: m.group(1), text)
 
 
 def _collapse_whitespace(node: Node) -> None:
@@ -1817,7 +1836,7 @@ class DocLangTableSerializer(BaseTableSerializer):
                         parts.append(cell_loc)
                     if ContentType.TABLE_CELL in params.content_types:
                         if not isinstance(cell, RichTableCell):
-                            content = _escape_text(content, params)
+                            content = doc_serializer.post_process(text=_escape_text(content, params), **kwargs)
                             if not params.use_virtual_text:
                                 content = _wrap(text=content, wrap_tag=DocLangToken.TEXT.value)
                         parts.append(content)
@@ -2878,6 +2897,6 @@ class DocLangDocSerializer(DocSerializer):
             **kwargs,
         )
         params = self.params.merge_with_patch(patch=kwargs)
-        if params.include_formatting and get_text_direction(text) == "rtl":
+        if params.include_formatting and get_text_direction(_unescape_text(text)) == "rtl":
             res = self.serialize_rtl(text=res, **kwargs)
         return res

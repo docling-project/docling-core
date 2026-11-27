@@ -4,7 +4,7 @@ import warnings
 import xml.etree.ElementTree as ET
 from itertools import chain
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import pytest
 from pydantic import AnyUrl
@@ -2704,6 +2704,77 @@ def test_rtl_text_formatting():
         exp_file=Path("./tests/data/doc/rtl_text.gt.dclg.xml"),
         actual=ser_txt,
     )
+
+
+def _ser_rtl(doc: DoclingDocument, **kwargs: Any) -> str:
+    return (
+        DocLangDocSerializer(
+            doc=doc,
+            params=DocLangParams(include_version=False, add_location=False, pretty_indentation=None),
+        )
+        .serialize(**kwargs)
+        .text
+    )
+
+
+@doclang_validator
+def test_rtl_text_with_escaped_characters():
+    """RTL text that needs CDATA or a content wrapper keeps <rtl>, with the CDATA inside it."""
+    doc = DoclingDocument(name="rtl_escaped")
+    doc.add_text(label=DocItemLabel.TEXT, text='قال "مرحبا" & وداعا')
+    doc.add_text(label=DocItemLabel.TEXT, text="مرحبا ")
+    ser_txt = _ser_rtl(doc)
+    assert '<text><rtl><![CDATA[قال "مرحبا" & وداعا]]></rtl></text>' in ser_txt
+    assert "<text><rtl><content>مرحبا </content></rtl></text>" in ser_txt
+    validate_dclg_xml(ser_txt)
+    texts = [it.text for it in DocLangDocDeserializer().deserialize_str(ser_txt).texts]
+    assert texts == ['قال "مرحبا" & وداعا', "مرحبا "]
+
+
+def _doc_rtl_satellites_and_cell() -> DoclingDocument:
+    doc = DoclingDocument(name="rtl_caption_cell")
+    cap = doc.add_text(label=DocItemLabel.CAPTION, text="الشكل الشكل & صورة صورة")
+    ftn = doc.add_text(label=DocItemLabel.FOOTNOTE, text="حاشية")
+    pic = doc.add_picture(caption=cap)
+    pic.footnotes = [ftn.get_ref()]
+    td = TableData(num_rows=1, num_cols=1)
+    td.table_cells.append(
+        TableCell(
+            text="خلية",
+            start_row_offset_idx=0,
+            end_row_offset_idx=1,
+            start_col_offset_idx=0,
+            end_col_offset_idx=1,
+        )
+    )
+    doc.add_table(data=td)
+    return doc
+
+
+@doclang_validator
+@pytest.mark.parametrize(
+    ("use_virtual_text", "cell_txt"),
+    [(True, "<fcel/><rtl>خلية</rtl><nl/>"), (False, "<fcel/><text><rtl>خلية</rtl></text><nl/>")],
+)
+def test_rtl_caption_footnote_and_table_cell(use_virtual_text: bool, cell_txt: str):
+    """RTL captions, footnotes and table cells are wrapped in <rtl>, and CDATA stays inside the wrapper."""
+    ser_txt = _ser_rtl(_doc_rtl_satellites_and_cell(), use_virtual_text=use_virtual_text)
+    assert "<caption><rtl><![CDATA[الشكل الشكل & صورة صورة]]></rtl></caption>" in ser_txt
+    assert "<footnote><rtl>حاشية</rtl></footnote>" in ser_txt
+    assert "<![CDATA[<rtl>" not in ser_txt
+    assert cell_txt in ser_txt
+    validate_dclg_xml(ser_txt)
+    doc2 = DocLangDocDeserializer().deserialize_str(ser_txt)
+    pic2 = doc2.pictures[0]
+    assert [ref.resolve(doc2).text for ref in pic2.captions] == ["الشكل الشكل & صورة صورة"]
+    assert [ref.resolve(doc2).text for ref in pic2.footnotes] == ["حاشية"]
+    assert doc2.tables[0].data.table_cells[0].text == "خلية"
+
+
+def test_rtl_caption_footnote_and_table_cell_without_formatting():
+    """A per-call include_formatting=False also drops <rtl> from captions, footnotes and table cells."""
+    ser_txt = _ser_rtl(_doc_rtl_satellites_and_cell(), include_formatting=False)
+    assert "<rtl>" not in ser_txt
 
 
 def _doc_table_xcel_span() -> DoclingDocument:

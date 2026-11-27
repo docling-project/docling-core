@@ -2200,7 +2200,11 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         footnotes: list[TextItem] = []
         for node in el.childNodes:
             if isinstance(node, Element) and (label := labels.get(node.tagName)) is not None:
-                inline_tags = _FORMATTING_TAGS | {DocLangToken.BR.value, DocLangToken.CONTENT.value}
+                inline_tags = _FORMATTING_TAGS | {
+                    DocLangToken.BR.value,
+                    DocLangToken.CONTENT.value,
+                    DocLangToken.RTL.value,
+                }
                 nested = [
                     n
                     for n in node.childNodes
