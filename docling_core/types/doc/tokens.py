@@ -198,6 +198,16 @@ class DocumentToken(str, Enum):
     CHECKBOX_UNSELECTED = "checkbox_unselected"
     FORM = "form"
     KEY_VALUE_REGION = "key_value_region"
+    GRADING_SCALE = "grading_scale"
+    EMPTY_VALUE = "empty_value"
+    FIELD_REGION = "field_region"
+    FIELD_HEADING = "field_heading"
+    FIELD_ITEM = "field_item"
+    FIELD_KEY = "field_key"
+    FIELD_VALUE = "field_value"
+    FIELD_HINT = "field_hint"
+    MARKER = "marker"
+    TRACK = "track"
 
     PARAGRAPH = "paragraph"
     REFERENCE = "reference"
@@ -255,6 +265,16 @@ class DocumentToken(str, Enum):
             DocItemLabel.REFERENCE: DocumentToken.REFERENCE,
             DocItemLabel.CHART: DocumentToken.CHART,
             DocItemLabel.HANDWRITTEN_TEXT: DocumentToken.HANDWRITTEN_TEXT,
+            DocItemLabel.GRADING_SCALE: DocumentToken.GRADING_SCALE,
+            DocItemLabel.EMPTY_VALUE: DocumentToken.EMPTY_VALUE,
+            DocItemLabel.FIELD_REGION: DocumentToken.FIELD_REGION,
+            DocItemLabel.FIELD_HEADING: DocumentToken.FIELD_HEADING,
+            DocItemLabel.FIELD_ITEM: DocumentToken.FIELD_ITEM,
+            DocItemLabel.FIELD_KEY: DocumentToken.FIELD_KEY,
+            DocItemLabel.FIELD_VALUE: DocumentToken.FIELD_VALUE,
+            DocItemLabel.FIELD_HINT: DocumentToken.FIELD_HINT,
+            DocItemLabel.MARKER: DocumentToken.MARKER,
+            DocItemLabel.TRACK: DocumentToken.TRACK,
         }
 
         res: str

@@ -113,6 +113,42 @@ def test_doctags_meta():
     verify(exp_file=src.with_suffix(".gt.dt"), actual=actual)
 
 
+@pytest.mark.parametrize(
+    "label",
+    [
+        DocItemLabel.EMPTY_VALUE,
+        DocItemLabel.FIELD_HEADING,
+        DocItemLabel.FIELD_KEY,
+        DocItemLabel.FIELD_VALUE,
+        DocItemLabel.FIELD_HINT,
+        DocItemLabel.MARKER,
+    ],
+    ids=lambda label: label.value,
+)
+def test_doctags_serializes_text_items_with_form_labels(label: DocItemLabel) -> None:
+    """Text items with form labels serialize into their own DocTags token."""
+    doc = DoclingDocument(name="t")
+    doc.add_text(label=label, text="payload")
+
+    txt = serialize_doctags(doc)
+
+    assert f"<{label.value}>payload</{label.value}>" in txt
+
+
+def test_doctags_marker_does_not_abort_neighbouring_text() -> None:
+    """A marker item must not stop the export of surrounding text items."""
+    doc = DoclingDocument(name="t")
+    doc.add_text(label=DocItemLabel.TEXT, text="before")
+    doc.add_text(label=DocItemLabel.MARKER, text="1.")
+    doc.add_text(label=DocItemLabel.TEXT, text="after")
+
+    txt = serialize_doctags(doc)
+
+    assert "<text>before</text>" in txt
+    assert "<marker>1.</marker>" in txt
+    assert "<text>after</text>" in txt
+
+
 @pytest.mark.parametrize("mode", list(DocTagsParams.Mode))
 def test_doctags_serialize_param_patch_reaches_inline_group(mode):
     doc = DoclingDocument(name="test")

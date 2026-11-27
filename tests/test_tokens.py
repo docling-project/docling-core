@@ -1,5 +1,8 @@
 """Unit tests for document tokens."""
 
+import pytest
+
+from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.tokens import DocumentToken
 
 
@@ -49,3 +52,11 @@ def test_get_location_fully_inverted_bbox():
         page_h=1000.0,
     )
     assert inverted == ordered
+
+
+@pytest.mark.parametrize("label", list(DocItemLabel), ids=lambda label: label.value)
+def test_every_doc_item_label_has_a_doctags_token(label: DocItemLabel) -> None:
+    """Every DocItemLabel must map to a registered DocTags special token."""
+    token = DocumentToken.create_token_name_from_doc_item_label(label)
+
+    assert f"<{token}>" in DocumentToken.get_special_tokens()
