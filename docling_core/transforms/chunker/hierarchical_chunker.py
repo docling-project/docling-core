@@ -137,9 +137,9 @@ class TripletTableSerializer(BaseTableSerializer):
                         table_text = col_name
                 else:
                     # For multi-column tables
-                    # copy header as first row and shift all rows by one
-                    triplet_df = table_df.copy()
-                    triplet_df.loc[-1] = triplet_df.columns  # type: ignore[call-overload]
+                    # object dtype so the header row can be inserted regardless of column dtype
+                    triplet_df = table_df.astype(object)
+                    triplet_df.loc[-1] = triplet_df.columns
                     triplet_df.index = triplet_df.index + 1
                     triplet_df = triplet_df.sort_index()
 

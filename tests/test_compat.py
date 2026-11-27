@@ -424,6 +424,8 @@ class TestProjector_1_11_to_1_10:
         self._apply(data)
         assert data["version"] == "1.11.0"
 
+    # Reloading a 1.10 document triggers the (once-per-process) legacy separator warning by design.
+    @pytest.mark.filterwarnings("ignore:Document uses schema version 1.10.0:UserWarning")
     @pytest.mark.parametrize(
         "runs",
         [
@@ -455,6 +457,7 @@ class TestProjector_1_11_to_1_10:
             again = round_trip(again)
         assert again.export_to_dict() == first.export_to_dict()
 
+    @pytest.mark.filterwarnings("ignore:Document uses schema version 1.10.0:UserWarning")
     def test_project_to_does_not_run_the_legacy_migration(self):
         """project_to keeps the old-shape runs; reloading them on this core restores the spacing."""
         doc = DoclingDocument(name="projected")
