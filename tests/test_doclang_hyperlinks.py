@@ -239,3 +239,49 @@ def test_heading_with_shared_link_keeps_its_runs() -> None:
     assert _text_runs(loaded) == _text_runs(doc)
     # The heading has no text of its own for its link to cover, so only the runs keep it.
     assert loaded.texts[0].hyperlink is None
+
+
+@pytest.mark.parametrize("level", [1, 2])
+@pytest.mark.parametrize("page_breaks", [True, False])
+@pytest.mark.parametrize("linked", [(True, True, True), (True, False, True), (False, True, False)])
+def test_threaded_heading_keeps_run_order_and_links(
+    level: int, page_breaks: bool, linked: tuple[bool, bool, bool]
+) -> None:
+    fragments = []
+    expected = []
+    for index, (text, has_link) in enumerate(zip(("One", "Two", "Three"), linked)):
+        location = "".join(f'<location value="{value}"/>' for value in (10, 20 + index * 50, 30, 40 + index * 50))
+        target = f"https://example.com/{index}" if has_link else None
+        body = f'<text><href uri="{target}"/>{text}</text>' if target else text
+        fragments.append(f'<heading level="{level}"><thread thread_id="1"/>{location}{body}</heading>')
+        expected.append((text, target, None))
+    separator = "<page_break/>" if page_breaks else ""
+    xml = '<doclang version="0.9">' + separator.join(fragments) + "</doclang>"
+    assert_valid_dclg_xml(xml)
+
+    loaded = DocLangDocDeserializer().deserialize_str(xml)
+
+    assert _text_runs(loaded) == expected
+    headings = [item for item in loaded.texts if item.label in {DocItemLabel.TITLE, DocItemLabel.SECTION_HEADER}]
+    assert len(headings) == 1
+    assert headings[0].label == (DocItemLabel.TITLE if level == 1 else DocItemLabel.SECTION_HEADER)
+    pages = [1, 2, 3] if page_breaks else [1, 1, 1]
+    assert [prov.page_no for prov in headings[0].prov] == pages
+    assert all(prov.charspan == (0, 0) for prov in headings[0].prov)
+
+    before = loaded.export_to_dict()
+    serializer = DocLangDocSerializer(doc=loaded, params=DocLangParams(pretty_indentation=None))
+    serialized = serializer.serialize().text
+    assert serializer.serialize().text == serialized
+    assert loaded.export_to_dict() == before
+    assert_valid_dclg_xml(serialized)
+    reloaded = DocLangDocDeserializer().deserialize_str(serialized)
+    assert _text_runs(reloaded) == expected
+    reloaded_heading = next(item for item in reloaded.texts if item.label == headings[0].label)
+    assert [prov.page_no for prov in reloaded_heading.prov] == pages
+    assert [prov.bbox for prov in reloaded_heading.prov] == [prov.bbox for prov in headings[0].prov]
+    assert [
+        [prov.page_no for prov in item.prov]
+        for item, _ in reloaded.iterate_items()
+        if isinstance(item, TextItem) and item.text
+    ] == [[page] for page in pages]

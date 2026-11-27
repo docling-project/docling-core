@@ -685,6 +685,21 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
 
         return "".join(parts), lang_label
 
+    def _parse_heading_runs(
+        self,
+        *,
+        doc: DoclingDocument,
+        nodes: Sequence[Node],
+        group: InlineGroup,
+        prov_list: list[ProvenanceItem],
+    ) -> None:
+        """Keep each heading fragment's location on its inline text runs."""
+        start = len(doc.texts)
+        self._parse_inline_runs(doc=doc, nodes=nodes, parent=group, formatting=None)
+        for run in doc.texts[start:]:
+            if not run.prov:
+                run.prov = [prov.model_copy(update={"charspan": (0, len(run.orig))}) for prov in prov_list]
+
     def _parse_heading(self, *, doc: DoclingDocument, el: Element, parent: NodeItem | None) -> None:
         lvl_txt = el.getAttribute(DocLangAttributeKey.LEVEL.value) or "1"
         try:
@@ -710,7 +725,33 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 and (existing := self._get_thread_item(thread_id, host=DocLangToken.HEADING.value)) is not None
                 and isinstance(existing, TextItem)
             ):
-                self._merge_threaded_text_item(text=text, prov_list=prov_list, existing=existing)
+                first_child = existing.children[0].resolve(doc) if existing.children else None
+                if has_linked_runs or isinstance(first_child, InlineGroup):
+                    # All fragments must share one inline flow. A later fragment on the
+                    # host would precede its existing runs, and flattening loses links.
+                    if isinstance(first_child, InlineGroup):
+                        group = first_child
+                    else:
+                        group = doc.add_inline_group(parent=existing)
+                        if existing.text:
+                            first_run = doc.add_text(
+                                label=DocItemLabel.TEXT,
+                                text=existing.text,
+                                orig=existing.orig,
+                                parent=group,
+                                hyperlink=existing.hyperlink,
+                                formatting=existing.formatting,
+                                content_layer=existing.content_layer,
+                            )
+                            first_run.prov = [prov.model_copy(deep=True) for prov in existing.prov]
+                            existing.text = existing.orig = ""
+                            existing.hyperlink = None
+                            for prov in existing.prov:
+                                prov.charspan = (0, 0)
+                    self._parse_heading_runs(doc=doc, nodes=body_nodes, group=group, prov_list=prov_list)
+                    self._merge_threaded_text_item(text="", prov_list=prov_list, existing=existing)
+                else:
+                    self._merge_threaded_text_item(text=text, prov_list=prov_list, existing=existing)
                 self._source_recorder.bind_item(el, existing)
                 return
             # Level 1 maps to TitleItem, level > 1 maps to SectionHeaderItem with level-1
@@ -733,7 +774,8 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
                 )
             self._apply_initial_text_provenance(item, text=heading_text, prov_list=prov_list)
             if has_linked_runs:
-                self._parse_inline_group(doc=doc, el=el, parent=item, nodes=body_nodes)
+                group = doc.add_inline_group(parent=item)
+                self._parse_heading_runs(doc=doc, nodes=body_nodes, group=group, prov_list=prov_list)
             if thread_id:
                 self._register_thread(thread_id=thread_id, host=DocLangToken.HEADING.value, item=item)
             self._apply_custom_meta_from_element(item=item, el=el)
