@@ -114,6 +114,9 @@ class TableItem(FloatingItem):
             columns = ["" for _ in range(self.data.num_cols)]
             for i in range(num_headers):
                 for j, cell in enumerate(grid[i]):
+                    if cell.start_row_offset_idx != i:
+                        # `grid` repeats a row-spanning header cell; name the column with it once
+                        continue
                     col_name = text_of(cell)
                     if columns[j] != "":
                         col_name = f".{col_name}"

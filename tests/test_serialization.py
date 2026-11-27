@@ -1096,6 +1096,23 @@ def _cell(text: str, row: int, col: int, *, row_span: int = 1, column_header: bo
             [["Caption", "2.5", "2.4"]],
             id="stacked-header-with-unmarked-row-label",
         ),
+        # "Name" spans both header rows; `grid` repeats it in row 1, where it must
+        # not name the column a second time.
+        pytest.param(
+            3,
+            2,
+            [
+                _cell("Name", 0, 0, row_span=2, column_header=True),
+                _cell("Q1", 0, 1, column_header=True),
+                _cell("Jan", 1, 1, column_header=True),
+                _cell("Ann", 2, 0),
+                _cell("5", 2, 1),
+            ],
+            "| Name | Q1 - Jan |\n| - | - |\n| Ann | 5 |",
+            ["Name", "Q1.Jan"],
+            [["Ann", "5"]],
+            id="row-spanning-header-names-its-column-once",
+        ),
         pytest.param(
             2,
             2,
