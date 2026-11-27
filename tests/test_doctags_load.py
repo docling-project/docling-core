@@ -168,3 +168,59 @@ def test_doctags_inline():
         exp_file=exp,
         actual=deser_doc.export_to_dict(),
     )
+
+
+def _load_doctags(doctags: str) -> DoclingDocument:
+    return DoclingDocument.load_from_doctags(DocTagsDocument.from_doctags_and_image_pairs([doctags], None))
+
+
+def test_doctags_nested_list_in_its_own_list_item():
+    doc = _load_doctags(
+        "<doctag><unordered_list><list_item>a</list_item>"
+        "<list_item><unordered_list><list_item>a1</list_item></unordered_list></list_item>"
+        "<list_item>b</list_item></unordered_list><text>after</text></doctag>"
+    )
+    assert doc.export_to_markdown() == "- a\n    - a1\n- b\n\nafter"
+
+
+def test_doctags_nested_list_inside_a_list_item():
+    doc = _load_doctags(
+        "<doctag><unordered_list><list_item>a<unordered_list><list_item>a1</list_item>"
+        "</unordered_list></list_item><list_item>b</list_item></unordered_list>"
+        "<text>after</text></doctag>"
+    )
+    assert [t.text for t in doc.texts] == ["a", "a1", "b", "after"]
+    assert doc.export_to_markdown() == "- a\n    - a1\n- b\n\nafter"
+
+
+def test_doctags_nested_lists_are_numbered_per_level():
+    doc = _load_doctags(
+        "<doctag><ordered_list><list_item>x</list_item>"
+        "<list_item><unordered_list><list_item>y1</list_item><list_item>y2</list_item>"
+        "</unordered_list></list_item><list_item>z</list_item></ordered_list></doctag>"
+    )
+    assert doc.export_to_markdown() == "1. x\n    - y1\n    - y2\n2. z"
+
+
+def test_doctags_nested_list_round_trip():
+    doc = DoclingDocument(name="nested")
+    outer = doc.add_list_group(name="list")
+    doc.add_list_item("one", enumerated=True, marker="1.", parent=outer)
+    two = doc.add_list_item("two", enumerated=True, marker="2.", parent=outer)
+    inner = doc.add_list_group(name="list", parent=two)
+    doc.add_list_item("two-a", enumerated=True, marker="1.", parent=inner)
+    doc.add_list_item("two-b", enumerated=True, marker="2.", parent=inner)
+    doc.add_list_item("three", enumerated=True, marker="3.", parent=outer)
+    doc.add_text(label="text", text="after")
+
+    back = _load_doctags(doc.export_to_doctags())
+    assert back.export_to_markdown() == doc.export_to_markdown()
+
+
+def test_doctags_unclosed_list_keeps_the_following_content():
+    doc = _load_doctags(
+        "<doctag><unordered_list><list_item>a</list_item>"
+        "<list_item><unordered_list><list_item>a1</list_item></unordered_list></list_item>"
+        "<text>after</text></doctag>"
+    )
+    assert [t.text for t in doc.texts][-1] == "after"
