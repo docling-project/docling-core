@@ -243,6 +243,27 @@ def _code_block(text: str, *, lang: str = "") -> str:
     return f"{fence}{lang}\n{text}\n{fence}"
 
 
+def _inline_run_starts_line(item: TextItem, doc: DoclingDocument) -> bool:
+    """Whether `item` is the first run of an inline group that starts a Markdown line.
+
+    Walks up through nested inline groups while `item` (or its group) is the first child.
+    A group that is the inline representation of a list item or heading follows a marker,
+    so its first run is mid-line; any other group starts a block of its own.
+    """
+    node: NodeItem = item
+    parent = node.parent.resolve(doc) if node.parent else None
+    while isinstance(parent, InlineGroup):
+        if not parent.children or parent.children[0].cref != node.self_ref:
+            return False
+        node = parent
+        parent = node.parent.resolve(doc) if node.parent else None
+    if node is item:
+        return False
+    if isinstance(parent, TextItem) and parent.text == "" and len(parent.children) == 1:
+        return parent.label in (DocItemLabel.TEXT, DocItemLabel.PARAGRAPH)
+    return True
+
+
 class OrigListItemMarkerMode(str, Enum):
     """Display mode for original list item marker."""
 
@@ -263,6 +284,14 @@ class MarkdownParams(CommonParams):
     page_break_placeholder: str | None = None  # e.g. "<!-- page break -->"
     escape_underscores: bool = True
     escape_html: bool = True
+    escape_markdown_syntax: bool = Field(
+        default=False,
+        description=(
+            "Backslash-escape Markdown syntax in plain text items so it renders literally: "
+            "block markers at line start (headings, list markers, block quotes, thematic breaks, "
+            "setext underlines, indented code) and literal asterisks."
+        ),
+    )
     mark_meta: bool = Field(default=False, description="Mark meta sections.")
     include_annotations: bool = Field(
         default=True,
@@ -336,6 +365,52 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         in subclasses.
         """
         return text.replace("\n", " ")
+
+    def _escape_md_syntax(self, text: str, *, line_starts: bool = True, escape_gt: bool = False) -> str:
+        """Backslash-escape Markdown syntax in raw text so it renders literally.
+
+        Must run on raw text, before formatting or hyperlink markup is added.
+        Literal `*` is always escaped. With `line_starts`, block markers at the
+        start of each line are escaped too, and 4+ spaces of indentation (which
+        would start a code block and cannot be backslash-escaped) are removed.
+        `>` is escaped only with `escape_gt` (with HTML escaping it is `&gt;`).
+        """
+        text = re.sub(r"(?<!\\)\*", r"\\*", text)
+        if not line_starts:
+            return text
+        text = re.sub(r"^(?: {4}| {0,3}\t)[ \t]*", "", text, flags=re.M)
+        text = re.sub(r"^( {0,3})(#{1,6})(?=[ \t]|$)", r"\1\\\2", text, flags=re.M)
+        text = re.sub(r"^( {0,3})([-+])(?=[ \t]|$)", r"\1\\\2", text, flags=re.M)
+        text = re.sub(r"^( {0,3})(\d{1,9})([.)])(?=[ \t]|$)", r"\1\2\\\3", text, flags=re.M)
+        text = re.sub(r"^( {0,3})([-_=])(?=[-_= \t]*$)", r"\1\\\2", text, flags=re.M)
+        if escape_gt:
+            text = re.sub(r"^( {0,3})>", r"\1\\>", text, flags=re.M)
+        return text
+
+    def _escape_plain_text(
+        self,
+        text: str,
+        *,
+        item: TextItem,
+        doc: DoclingDocument,
+        params: MarkdownParams,
+        is_inline_scope: bool,
+        is_raw: bool,
+    ) -> str:
+        """Escape Markdown syntax in a plain text or paragraph item when `escape_markdown_syntax` is on.
+
+        Only raw text is escaped (`is_raw`): formatting and hyperlink markup is added later in post_process.
+        """
+        if not (is_raw and params.escape_markdown_syntax) or item.label not in (
+            DocItemLabel.TEXT,
+            DocItemLabel.PARAGRAPH,
+        ):
+            return text
+        return self._escape_md_syntax(
+            text,
+            line_starts=not is_inline_scope or _inline_run_starts_line(item, doc),
+            escape_gt=not params.escape_html,
+        )
 
     @override
     def serialize(
@@ -483,6 +558,15 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         else:
             # Apply GFM hard line breaks: single \n -> "  \n", \n\n preserved.
             text_part = self._md_line_breaks(text)
+
+        text_part = self._escape_plain_text(
+            text_part,
+            item=item,
+            doc=doc,
+            params=params,
+            is_inline_scope=is_inline_scope,
+            is_raw=processing_pending,
+        )
 
         if text_part:
             text_res = create_ser_result(text=text_part, span_source=item)
