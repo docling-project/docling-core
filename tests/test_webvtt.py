@@ -24,6 +24,7 @@ from docling_core.types.doc.webvtt import (
     WebVTTCueTimings,
     WebVTTCueVoiceSpan,
     WebVTTFile,
+    WebVTTLineTerminator,
     WebVTTTimestamp,
 )
 
@@ -672,7 +673,49 @@ def test_webvtt_parse_line_break_after_end_tag(cue_text: str) -> None:
     assert str(block) == timings + cue_text + "\n"
 
 
+@pytest.mark.parametrize(
+    "cue_text",
+    [
+        "<i>\nfoo</i>",
+        "Hi <i>\nfoo</i>",
+        "<v Ann>\nHello</v>",
+        "<i>\n<b>bold</b> text</i>",
+        "<ruby>base<rt>\nannotation</rt></ruby>",
+    ],
+)
+def test_webvtt_parse_line_break_after_start_tag(cue_text: str) -> None:
+    """A line break right after a start tag is kept inside the span."""
+    timings = "00:01.000 --> 00:02.000\n"
+    block = WebVTTCueBlock.parse(timings + cue_text)
+    assert str(block) == timings + cue_text + "\n"
+
+
 def test_webvtt_parse_line_break_after_stray_end_tag() -> None:
     """A stray end tag is ignored, and the line break after it is kept."""
     block = WebVTTCueBlock.parse("00:01.000 --> 00:02.000\na</i>\nb")
     assert str(block) == "00:01.000 --> 00:02.000\na\nb\n"
+
+
+def test_webvtt_file_line_break_after_start_tag() -> None:
+    """Test a WebVTT file with line breaks right after cue span start tags."""
+    with open("./tests/data/webvtt/webvtt_example_06.vtt", encoding="utf-8") as f:
+        content = f.read()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vtt = WebVTTFile.parse(content)
+
+    assert len(vtt) == 4
+    assert str(vtt[0]).endswith("\n<i>\nPreviously on the show</i> we met the team.\n")
+    assert str(vtt[1]).endswith("\n<v Ann>\nHello there</v>\n")
+    assert str(vtt[2]).endswith("\nText before <b>\n<u>bold and underlined</u> text</b>\n")
+
+    # The line break is kept by the span, not by the component that holds the span.
+    italic = vtt[0].payload[0]
+    assert isinstance(italic.component, WebVTTCueItalicSpan)
+    assert italic.component.internal_text.terminator == WebVTTLineTerminator.LF
+    assert italic.terminator is None
+
+    # A span that does not start with a line break has no leading terminator.
+    voice = vtt[3].payload[0].component
+    assert isinstance(voice, WebVTTCueVoiceSpan)
+    assert voice.internal_text.terminator is None

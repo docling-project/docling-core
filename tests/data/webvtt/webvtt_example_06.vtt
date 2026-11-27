@@ -1,0 +1,18 @@
+WEBVTT Line breaks after start tags
+
+NOTE A line break right after a cue span start tag belongs to that span.
+
+00:01.000 --> 00:03.000
+<i>
+Previously on the show</i> we met the team.
+
+00:03.000 --> 00:05.000
+<v Ann>
+Hello there</v>
+
+00:05.000 --> 00:07.000
+Text before <b>
+<u>bold and underlined</u> text</b>
+
+00:07.000 --> 00:09.000
+<v Bob>No line break after this start tag</v>

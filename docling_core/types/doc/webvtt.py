@@ -496,12 +496,14 @@ class WebVTTCueBlock(BaseModel):
 
     @staticmethod
     def _create_span(
-        start: dict[str, str | None], children: list[WebVTTCueComponentWithTerminator]
+        start: dict[str, str | None],
+        children: list[WebVTTCueComponentWithTerminator],
     ) -> WebVTTCueComponent:
         """Create a WebVTT cue span component from parsed start tag metadata and child components.
 
         Args:
-            start: Dictionary containing parsed tag groups ('tag', 'class', 'annotation').
+            start: Dictionary containing parsed tag groups ('tag', 'class', 'annotation') and,
+                optionally, the 'terminator' that follows the start tag.
             children: Child cue components contained within this span.
 
         Returns:
@@ -519,7 +521,11 @@ class WebVTTCueBlock(BaseModel):
             st = WebVTTCueSpanStartTagAnnotated(name=tag, classes=classes, annotation=annotation.strip())
         else:
             st = WebVTTCueSpanStartTag(name=tag, classes=classes)
-        it = WebVTTCueInternalText(components=children)
+        terminator = start.get("terminator")
+        it = WebVTTCueInternalText(
+            terminator=WebVTTLineTerminator(terminator) if terminator else None,
+            components=children,
+        )
         if tag == "c":
             return WebVTTCueClassSpan(start_tag=st, internal_text=it)
         if tag == "b":
@@ -596,10 +602,14 @@ class WebVTTCueBlock(BaseModel):
             stack[-1].append(WebVTTCueComponentWithTerminator(component=cls._create_span(closed, children)))
 
         def _add_text(text: str) -> None:
-            # A line break right after an end tag belongs to the span that just closed.
             components = stack[-1]
-            if text.startswith("\n") and components and components[-1].terminator is None:
-                components[-1].terminator = WebVTTLineTerminator.LF
+            if text.startswith("\n"):
+                # A line break belongs to the component that just closed or, before any content, to the open span.
+                if components:
+                    if components[-1].terminator is None:
+                        components[-1].terminator = WebVTTLineTerminator.LF
+                elif tag_stack:
+                    tag_stack[-1]["terminator"] = WebVTTLineTerminator.LF
             components.extend(cls._create_text_components(text))
 
         pos = 0
