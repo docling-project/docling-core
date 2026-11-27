@@ -604,6 +604,10 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                     parts.append(part)
                 if body_meta_part is not None and meta_position == "after":
                     parts.append(body_meta_part)
+                if len(parts) == 1:
+                    # return the single part as-is, preserving any
+                    # SerializationResult subclass (and its extra payload)
+                    return parts[0]
                 return create_ser_result(
                     text=delim.join([p.text for p in parts if p.text]),
                     span_source=parts,
@@ -717,6 +721,10 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         if meta_part is not None and meta_position == "after":
             parts.append(meta_part)
 
+        if len(parts) == 1:
+            # return the single part as-is, preserving any
+            # SerializationResult subclass (and its extra payload)
+            return parts[0]
         return create_ser_result(text=delim.join([p.text for p in parts if p.text]), span_source=parts)
 
     def _skip_in_walk(self, *, node: NodeItem, root: NodeItem | None) -> bool:

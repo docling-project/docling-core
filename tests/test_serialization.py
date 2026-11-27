@@ -26,10 +26,12 @@ from docling_core.transforms.serializer.html import (
 from docling_core.transforms.serializer.latex import LaTeXDocSerializer
 from docling_core.transforms.serializer.markdown import (
     CaptionPlacement,
+    CellSpanTableSerializer,
     MarkdownDocSerializer,
     MarkdownParams,
     MarkdownPictureSerializer,
     MarkdownTableSerializer,
+    MarkdownTableSerResult,
     OrigListItemMarkerMode,
     _cell_content_has_table,
 )
@@ -1166,6 +1168,183 @@ def test_table_header_rows_in_markdown_and_dataframe(
     dataframe = table.export_to_dataframe(doc)
     assert list(dataframe.columns) == df_columns
     assert dataframe.values.tolist() == df_values
+
+
+def _cell_span_serializer(doc: DoclingDocument, **params_kwargs) -> MarkdownDocSerializer:
+    return MarkdownDocSerializer(
+        doc=doc,
+        table_serializer=CellSpanTableSerializer(),
+        params=MarkdownParams(**params_kwargs),
+    )
+
+
+def _assert_cell_span_slices(res: MarkdownTableSerResult) -> None:
+    for cell_span in res.cell_spans:
+        start, end = cell_span.charspan
+        assert res.text[start:end] == cell_span.cell.text
+
+
+def test_md_cell_span_table_serializer_issue_738():
+    """Per-cell spans survive document-level serialization (issue #738)."""
+    doc = _table_with_rows(
+        [["Item", "Price"], ["Widget", "3600"], ["Gadget", "3600"]],
+        num_header_rows=1,
+    )
+    table = doc.tables[0]
+
+    res = _cell_span_serializer(doc).serialize()
+    assert isinstance(res, MarkdownTableSerResult)
+
+    # the rendered text is byte-identical to the default serializer's output
+    assert res.text == MarkdownDocSerializer(doc=doc).serialize().text
+
+    # one span per grid slot, in row-major order, each pointing at its cell's text
+    assert [cs.cell for cs in res.cell_spans] == [cell for row in table.data.grid for cell in row]
+    _assert_cell_span_slices(res)
+
+    # the duplicate "3600" values get distinct ranges
+    spans_3600 = [cs.charspan for cs in res.cell_spans if cs.cell.text == "3600"]
+    assert len(spans_3600) == 2
+    assert spans_3600[0] != spans_3600[1]
+
+
+def test_md_cell_span_table_serializer_stacked_headers():
+    doc = _table_with_rows(
+        [["Product", "Tier 1", "Tier 2"], ["", "0-99", "100+"], ["CAT-001", "10.00", "9.00"]],
+        num_header_rows=2,
+    )
+    res = _cell_span_serializer(doc).serialize()
+    assert isinstance(res, MarkdownTableSerResult)
+    _assert_cell_span_slices(res)
+
+    by_position = {(cs.cell.start_row_offset_idx, cs.cell.start_col_offset_idx): cs for cs in res.cell_spans}
+    # each part of the flattened header is attributed to the cell it came from
+    start, end = by_position[(0, 1)].charspan
+    assert res.text[start:end] == "Tier 1"
+    start, end = by_position[(1, 1)].charspan
+    assert res.text[start:end] == "0-99"
+    # the empty header cell at (1, 0) contributes no part to the flattened header
+    assert (1, 0) not in by_position
+    # 5 header occurrences + 3 body cells
+    assert len(res.cell_spans) == 8
+
+
+def test_md_cell_span_table_serializer_stacked_header_dedup():
+    doc = _table_with_rows(
+        [["human", "MRCNN"], ["human", "R50"], ["84-89", "68.4"]],
+        num_header_rows=2,
+    )
+    res = _cell_span_serializer(doc).serialize()
+    assert isinstance(res, MarkdownTableSerResult)
+    _assert_cell_span_slices(res)
+
+    # "human" sits in both header rows of column 0 but is flattened to a
+    # single occurrence, attributed to the first header row's cell
+    human_spans = [cs for cs in res.cell_spans if cs.cell.text == "human"]
+    assert len(human_spans) == 1
+    assert human_spans[0].cell.start_row_offset_idx == 0
+
+
+def test_md_cell_span_table_serializer_row_spanning_cell():
+    doc = DoclingDocument(name="")
+    table = doc.add_table(data=TableData(num_rows=3, num_cols=3))
+    for cell in [
+        _cell("A", 0, 0, column_header=True),
+        _cell("B", 0, 1, column_header=True),
+        _cell("C", 0, 2, column_header=True),
+        _cell("X", 1, 0, row_span=2),
+        _cell("1", 1, 1),
+        _cell("2", 1, 2),
+        _cell("3", 2, 1),
+        _cell("4", 2, 2),
+    ]:
+        doc.add_table_cell(table_item=table, cell=cell)
+
+    res = _cell_span_serializer(doc).serialize()
+    assert isinstance(res, MarkdownTableSerResult)
+    _assert_cell_span_slices(res)
+    assert len(res.cell_spans) == 9
+
+    # the row-spanning cell is rendered once per covered slot
+    x_spans = [cs for cs in res.cell_spans if cs.cell.text == "X"]
+    assert len(x_spans) == 2
+    assert x_spans[0].cell is x_spans[1].cell
+    assert x_spans[0].charspan != x_spans[1].charspan
+
+
+def test_md_cell_span_table_serializer_col_spanning_cell():
+    doc = DoclingDocument(name="")
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=3))
+    for cell in [
+        _cell("A", 0, 0, column_header=True),
+        _cell("B", 0, 1, column_header=True),
+        _cell("C", 0, 2, column_header=True),
+        TableCell(
+            text="Y",
+            start_row_offset_idx=1,
+            end_row_offset_idx=2,
+            start_col_offset_idx=0,
+            end_col_offset_idx=2,
+            col_span=2,
+        ),
+        _cell("5", 1, 2),
+    ]:
+        doc.add_table_cell(table_item=table, cell=cell)
+
+    res = _cell_span_serializer(doc).serialize()
+    assert isinstance(res, MarkdownTableSerResult)
+    _assert_cell_span_slices(res)
+    assert len(res.cell_spans) == 6
+
+    # the column-spanning cell is rendered once per covered slot
+    y_spans = [cs for cs in res.cell_spans if cs.cell.text == "Y"]
+    assert len(y_spans) == 2
+    assert y_spans[0].cell is y_spans[1].cell
+    assert y_spans[0].charspan != y_spans[1].charspan
+
+
+def test_md_cell_span_table_serializer_empty_cell():
+    doc = _table_with_rows([["A", "B"], ["x", ""]], num_header_rows=1)
+    res = _cell_span_serializer(doc).serialize()
+    assert isinstance(res, MarkdownTableSerResult)
+    _assert_cell_span_slices(res)
+
+    empty_spans = [cs for cs in res.cell_spans if cs.cell.text == ""]
+    assert len(empty_spans) == 1
+    start, end = empty_spans[0].charspan
+    assert start == end
+
+
+def test_md_cell_span_table_serializer_compact_tables():
+    doc = _table_with_rows(
+        [["Item", "Price"], ["Widget", "3600"], ["Gadget", "3600"]],
+        num_header_rows=1,
+    )
+    res = _cell_span_serializer(doc, compact_tables=True).serialize()
+    assert isinstance(res, MarkdownTableSerResult)
+    assert res.text == MarkdownDocSerializer(doc=doc, params=MarkdownParams(compact_tables=True)).serialize().text
+    assert len(res.cell_spans) == 6
+    _assert_cell_span_slices(res)
+
+
+def test_md_cell_span_table_serializer_item_level():
+    doc = _table_with_rows([["Item", "Price"], ["Widget", "3600"]], num_header_rows=1)
+    res = _cell_span_serializer(doc).serialize(item=doc.tables[0])
+    assert isinstance(res, MarkdownTableSerResult)
+    assert len(res.cell_spans) == 4
+    _assert_cell_span_slices(res)
+
+
+def test_md_cell_span_table_serializer_multi_part_doc():
+    doc = _table_with_rows([["Item", "Price"], ["Widget", "3600"]], num_header_rows=1)
+    doc.add_text(label=DocItemLabel.TEXT, text="Some closing text.")
+
+    res = _cell_span_serializer(doc).serialize()
+    # a multi-part document still yields the plain result type, with the
+    # same text as the default serializer
+    assert not isinstance(res, MarkdownTableSerResult)
+    assert res.text == MarkdownDocSerializer(doc=doc).serialize().text
+    assert "3600" in res.text
 
 
 def test_md_table_with_header_flags_below_row_zero_keeps_every_row_as_data():
