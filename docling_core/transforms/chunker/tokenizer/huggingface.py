@@ -43,8 +43,7 @@ class HuggingFaceTokenizer(BaseTokenizer):
     def _patch(self) -> Self:
         if self.max_tokens is None:
             try:
-                # huggingface_hub comes with transformers, which this tokenizer needs. It is
-                # imported here so that the chunkers load with the chunking-openai extra.
+                # Imported lazily: huggingface_hub is not installed with the chunking-openai extra.
                 from huggingface_hub import hf_hub_download
 
                 # try to use SentenceTransformers-specific config as that seems to be
