@@ -192,7 +192,7 @@ class LaTeXTextSerializer(BaseModel, BaseTextSerializer):
         returns a ``SerializationResult`` ready to be joined into the document.
         """
         my_visited = visited if visited is not None else set()
-        LaTeXParams(**kwargs)
+        params = LaTeXParams(**kwargs)
         parts: list[SerializationResult] = []
 
         # Inline group passthrough
@@ -247,11 +247,15 @@ class LaTeXTextSerializer(BaseModel, BaseTextSerializer):
         elif isinstance(item, CodeItem):
             # Inline vs block code
             if is_inline_scope:
-                # Escape only macro parameter char in inline code to avoid TeX errors
-                # Keep other characters (e.g., underscores) as-is to preserve expected output.
-                # The escape is a single backslash: `\\` would be a line break and would
-                # leave the `#` a macro parameter character, which TeX rejects.
-                safe_text = text.replace("#", r"\#")
+                # Inline code is typeset in text mode inside \texttt{}, so raw
+                # special characters can either fail to compile or change the
+                # rendered result; escape them like paragraph text. `#` stays
+                # escaped even when escape_latex is disabled, because it is a
+                # macro parameter character and would break the document anyway.
+                if params.escape_latex:
+                    safe_text = _escape_latex(text)
+                else:
+                    safe_text = text.replace("#", r"\#")
                 text_part = f"\\texttt{{{safe_text}}}"
             else:
                 text_part = f"\\begin{{verbatim}}\n{text}\n\\end{{verbatim}}"
