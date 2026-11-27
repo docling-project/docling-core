@@ -347,7 +347,7 @@ def _create_src_token(*, uri: str) -> str:
 def _image_src_uri(*, item: FloatingItem, doc: DoclingDocument, params: DocLangParams) -> str | None:
     """Return the ``<src>`` URI of the image of a floating item for the image mode, if any."""
     if params.image_mode in [ImageRefMode.REFERENCED, ImageRefMode.EMBEDDED] and item.image and item.image.uri:
-        return str(item.image.uri)
+        return hyperlink_uri(item.image.uri)
     if params.image_mode == ImageRefMode.EMBEDDED and (img := item.get_image(doc)):
         buffer = BytesIO()
         _normalize_image_for_png(img).save(buffer, format="PNG")
