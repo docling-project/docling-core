@@ -29,6 +29,7 @@ from docling_core.types.doc import (
     NodeItem,
     PictureClassificationClass,
     PictureClassificationData,
+    PictureClassificationLabel,
     PictureClassificationMetaField,
     PictureClassificationPrediction,
     PictureMeta,
@@ -256,6 +257,21 @@ def test_md_ser_include_picture_classification_legacy_path():
         suppressed_text = doc.export_to_markdown(include_picture_classification=False)
     assert "chart" not in suppressed_text
     assert "<!-- image -->" in suppressed_text
+
+
+def test_doctags_ser_covers_every_picture_classification_label():
+    # `other_chart` had no token, so the whole document failed to serialize rather
+    # than one picture losing its class.
+    for label in PictureClassificationLabel:
+        doc = DoclingDocument(name="test")
+        pic = doc.add_picture()
+        pic.meta = PictureMeta(
+            classification=PictureClassificationMetaField(
+                predictions=[PictureClassificationPrediction(class_name=label.value, confidence=1.0)]
+            )
+        )
+
+        assert f"<{label.value}>" in doc.export_to_doctags()
 
 
 def test_ser_custom_meta_serializer(doc_with_group_with_metadata: DoclingDocument):
