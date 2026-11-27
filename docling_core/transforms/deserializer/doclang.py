@@ -695,7 +695,9 @@ class DocLangDocDeserializer(BaseDocDeserializer, BaseModel):
         prov_list = self._extract_provenance(doc=doc, el=el)
         content_layer = self._extract_layer(el=el)
         text = self._get_text(el)
-        if text:
+        # an element without any content is an empty heading, as for text-like elements
+        is_empty = not text and self._extract_thread_id(el) is None and self._is_empty_text_block(el)
+        if text or is_empty:
             # Flattening a heading with linked runs discards each run's target. The runs
             # then carry the links, including the heading's own (see _extract_hyperlink).
             _, body_nodes = self._split_element_children_head_body(el)

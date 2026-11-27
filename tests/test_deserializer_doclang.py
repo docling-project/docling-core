@@ -2854,6 +2854,27 @@ def test_empty_code_is_kept() -> None:
     assert not doc.groups
 
 
+@pytest.mark.parametrize("label", [DocItemLabel.TITLE, DocItemLabel.SECTION_HEADER])
+def test_empty_heading_survives_roundtrip(label: DocItemLabel) -> None:
+    doc = DoclingDocument(name="t")
+    _add_default_page(doc)
+    if label == DocItemLabel.TITLE:
+        doc.add_title(text="", prov=_default_prov())
+    else:
+        doc.add_heading(text="", level=1, prov=_default_prov())
+    xml = DocLangDocSerializer(doc=doc).serialize().text
+
+    back = DocLangDocDeserializer().deserialize_str(xml)
+
+    (item,) = back.texts
+    assert item.label == label
+    if label == DocItemLabel.SECTION_HEADER:
+        assert item.level == 1
+    assert item.text == ""
+    assert len(item.prov) == 1 and item.prov[0].bbox.l < item.prov[0].bbox.r
+    assert DocLangDocSerializer(doc=back).serialize().text == xml
+
+
 def _cdata(text: str) -> str:
     return f"<![CDATA[{text.replace(']]>', ']]]]><![CDATA[>')}]]>"
 
