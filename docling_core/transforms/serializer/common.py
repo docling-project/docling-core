@@ -56,9 +56,11 @@ from docling_core.types.doc import (
     RefItem,
     RichTableCell,
     Script,
+    SectionHeaderItem,
     TableAnnotationType,
     TableItem,
     TextItem,
+    TitleItem,
 )
 from docling_core.types.doc.document import DOCUMENT_TOKENS_EXPORT_LABELS
 
@@ -272,6 +274,30 @@ def create_ser_result(
         text=text,
         spans=spans,
     )
+
+
+def get_inline_content_group(item: TextItem, doc: DoclingDocument) -> InlineGroup | None:
+    """Return the inline group that holds the content of a text item with empty text.
+
+    Rich items keep their content in a leading `InlineGroup` child instead of in
+    `item.text`. Titles and section headers may own further children after that
+    group (the section body), so the group is still their content. For any other
+    item, the group only counts when it is the sole child.
+
+    Args:
+        item: The text item to inspect.
+        doc: The document used to resolve the item's children.
+
+    Returns:
+        The leading inline group holding the item's content, or `None` if the item
+        does not represent its content that way.
+    """
+    if item.text or not item.children:
+        return None
+    if len(item.children) > 1 and not isinstance(item, TitleItem | SectionHeaderItem):
+        return None
+    first_child = item.children[0].resolve(doc)
+    return first_child if isinstance(first_child, InlineGroup) else None
 
 
 def hyperlink_uri(hyperlink: AnyUrl | PurePath) -> str:
@@ -896,7 +922,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             ]
             # FIXME: using the caption_delimiter for now ...
             text_res = params.caption_delim.join([r.text for r in results])
-            text_res = self.post_process(text=text_res)
+            text_res = self.post_process(text=text_res, **kwargs)
         else:
             text_res = ""
         return create_ser_result(text=text_res, span_source=results)

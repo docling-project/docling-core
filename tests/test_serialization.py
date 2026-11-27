@@ -9,11 +9,13 @@ from unittest.mock import MagicMock, patch
 from xml.etree import ElementTree as ET
 
 import pytest
+from markdown_it import MarkdownIt
 from PIL import Image
 from pydantic import AnyUrl
 
 from docling_core.transforms.chunker.hierarchical_chunker import TripletTableSerializer
 from docling_core.transforms.serializer.common import _DEFAULT_LABELS
+from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
     HTMLMetaSerializer,
@@ -43,6 +45,9 @@ from docling_core.types.doc.document import (
     EntitiesMetaField,
     EntityMention,
     Formatting,
+    GraphCell,
+    GraphData,
+    GraphLink,
     LanguageMetaField,
     PictureClassificationMetaField,
     PictureClassificationPrediction,
@@ -56,7 +61,7 @@ from docling_core.types.doc.document import (
     TableData,
     TextItem,
 )
-from docling_core.types.doc.labels import DocItemLabel
+from docling_core.types.doc.labels import DocItemLabel, GraphCellLabel, GraphLinkLabel
 
 from .test_data_gen_flag import GEN_TEST_DATA
 
@@ -294,6 +299,140 @@ def test_md_nested_list_page_break_keeps_indent():
     assert f"\n\n    {_PAGE_BREAK}\n\n" in doc.export_to_markdown(page_break_placeholder=_PAGE_BREAK)
 
 
+def _md_as_html(markdown: str) -> str:
+    """Render Markdown with a CommonMark parser, as a reader of the export would."""
+    return MarkdownIt("commonmark").render(markdown).replace("\n", "")
+
+
+def _paged_nested_list_doc(*, enumerated: bool = False) -> DoclingDocument:
+    """outer one (page 1) > [inner a (page 1), inner b (page 2)], outer two (page 2)."""
+    doc = DoclingDocument(name="paged")
+    for page_no in (1, 2):
+        doc.add_page(page_no=page_no, size=Size(width=595, height=842), image=None)
+
+    def _prov(page_no: int, text: str) -> ProvenanceItem:
+        return ProvenanceItem(
+            page_no=page_no,
+            bbox=BoundingBox(l=50, t=700, r=500, b=680, coord_origin=CoordOrigin.BOTTOMLEFT),
+            charspan=(0, len(text)),
+        )
+
+    outer = doc.add_list_group(name="outer")
+    doc.add_list_item(text="outer one", parent=outer, enumerated=enumerated, prov=_prov(1, "outer one"))
+    inner = doc.add_list_group(name="inner", parent=outer)
+    doc.add_list_item(text="inner a", parent=inner, prov=_prov(1, "inner a"))
+    doc.add_list_item(text="inner b", parent=inner, prov=_prov(2, "inner b"))
+    doc.add_list_item(text="outer two", parent=outer, enumerated=enumerated, prov=_prov(2, "outer two"))
+    return doc
+
+
+def test_md_list_starting_with_sublist_hangs_it_on_an_empty_item():
+    doc = DoclingDocument(name="structural")
+    outer = doc.add_list_group(name="outer")
+    inner = doc.add_list_group(name="inner", parent=outer)
+    doc.add_list_item(text="inner a", parent=inner)
+    doc.add_list_item(text="inner b", parent=inner)
+    doc.add_list_item(text="outer two", parent=outer)
+
+    # an indented block with no item before it would be an indented code block; the marker
+    # is padded so that the sub-list's own markers stay at the content column of the new item
+    md = doc.export_to_markdown()
+    assert md == "-   - inner a\n    - inner b\n- outer two"
+    # protects: the sub-list is nested in an item of the outer list and keeps both items
+    assert _md_as_html(md) == "<ul><li><ul><li>inner a</li><li>inner b</li></ul></li><li>outer two</li></ul>"
+
+    md = doc.export_to_markdown(indent=2)
+    assert md == "- - inner a\n  - inner b\n- outer two"
+    assert _md_as_html(md) == "<ul><li><ul><li>inner a</li><li>inner b</li></ul></li><li>outer two</li></ul>"
+
+
+def test_md_list_starting_with_enumerated_sublist():
+    doc = DoclingDocument(name="structural")
+    outer = doc.add_list_group(name="outer")
+    inner = doc.add_list_group(name="inner", parent=outer)
+    doc.add_list_item(text="inner a", parent=inner, enumerated=True)
+    doc.add_list_item(text="inner b", parent=inner, enumerated=True)
+    doc.add_list_item(text="outer two", parent=outer)
+
+    md = doc.export_to_markdown()
+    assert md == "-   1. inner a\n    2. inner b\n- outer two"
+    # protects: the ordered sub-list keeps both items under the empty item
+    assert _md_as_html(md) == "<ul><li><ol><li>inner a</li><li>inner b</li></ol></li><li>outer two</li></ul>"
+
+
+def test_md_sublist_after_an_item_gets_no_extra_marker():
+    doc = DoclingDocument(name="nested")
+    outer = doc.add_list_group(name="outer")
+    doc.add_list_item(text="outer one", parent=outer)
+    inner = doc.add_list_group(name="inner", parent=outer)
+    doc.add_list_item(text="inner a", parent=inner)
+    doc.add_list_item(text="outer two", parent=outer)
+
+    md = doc.export_to_markdown()
+    assert md == "- outer one\n    - inner a\n- outer two"
+    assert _md_as_html(md) == "<ul><li>outer one<ul><li>inner a</li></ul></li><li>outer two</li></ul>"
+
+
+@pytest.mark.parametrize("enumerated", [False, True])
+def test_md_nested_orphan_sublist_does_not_turn_the_item_above_into_a_heading(enumerated: bool):
+    # outer item `one`, then a sub-list `i` that starts with a sub-list `k` followed by `mid`:
+    # what the HTML backend produces for <ul><li>one<ul><li><ul><li>deep</li></ul></li><li>mid</li></ul></li></ul>
+    doc = DoclingDocument(name="nested-orphan")
+    o = doc.add_list_group(name="o")
+    doc.add_list_item(text="one", parent=o, enumerated=enumerated)
+    i = doc.add_list_group(name="i", parent=o)
+    k = doc.add_list_group(name="k", parent=i)
+    doc.add_list_item(text="deep", parent=k, enumerated=enumerated)
+    doc.add_list_item(text="deep two", parent=k, enumerated=enumerated)
+    doc.add_list_item(text="mid", parent=i)
+
+    md = doc.export_to_markdown()
+    if enumerated:
+        assert md == "1. one\n    -   1. deep\n        2. deep two\n    - mid"
+        expected = "<ol><li>one<ul><li><ol><li>deep</li><li>deep two</li></ol></li><li>mid</li></ul></li></ol>"
+    else:
+        assert md == "- one\n    -   - deep\n        - deep two\n    - mid"
+        expected = "<ul><li>one<ul><li><ul><li>deep</li><li>deep two</li></ul></li><li>mid</li></ul></li></ul>"
+    # protects: a bare marker under the paragraph line `one` would make it a setext heading
+    # and the sub-list a code block; `one` stays an item and `deep` stays a nested list
+    assert _md_as_html(md) == expected
+
+
+def test_md_page_filtered_nested_list_keeps_the_sublist_in_the_list():
+    doc = _paged_nested_list_doc()
+
+    # page 2 starts inside the sub-list: its parent item is on page 1
+    md = doc.export_to_markdown(page_no=2)
+    assert md == "-   - inner b\n- outer two"
+    assert _md_as_html(md) == "<ul><li><ul><li>inner b</li></ul></li><li>outer two</li></ul>"
+
+    md = doc.export_to_markdown()
+    assert md == "- outer one\n    - inner a\n    - inner b\n- outer two"
+    assert _md_as_html(md) == "<ul><li>outer one<ul><li>inner a</li><li>inner b</li></ul></li><li>outer two</li></ul>"
+
+
+def test_md_orphan_sublist_in_enumerated_list_keeps_the_numbering():
+    doc = _paged_nested_list_doc(enumerated=True)
+
+    # the empty item takes the position of the sub-list among the list's children
+    md = doc.export_to_markdown(page_no=2)
+    assert md == "2.  - inner b\n3. outer two"
+    assert _md_as_html(md) == '<ol start="2"><li><ul><li>inner b</li></ul></li><li>outer two</li></ol>'
+
+    md = doc.export_to_markdown()
+    assert md == "1. outer one\n    - inner a\n    - inner b\n3. outer two"
+
+
+def test_md_text_with_leading_space_in_a_list_gets_no_empty_item():
+    # only a child ListGroup is a sub-list; other parts keep their previous output
+    doc = DoclingDocument(name="lead")
+    group = doc.add_list_group(name="list")
+    doc.add_text(label=DocItemLabel.TEXT, text=" lead", parent=group)
+    doc.add_list_item(text="item", parent=group)
+
+    assert doc.export_to_markdown() == " lead\n- item"
+
+
 def test_md_page_break_between_list_and_table():
     doc = _make_paged_doc([("item one", 1), ("item two", 1)], as_list=True, num_pages=2)
     doc.add_table(
@@ -381,6 +520,144 @@ def test_md_formatting_fallback_mode(mode: FormattingFallbackMode, expected: str
     plain_params = PlainTextParams(formatting_fallback_mode=mode)
     plain = PlainTextDocSerializer(doc=doc, params=plain_params).serialize().text
     assert plain == "Water is H2O, energy is E=mc2, <tag>"
+
+
+def test_md_serialize_param_patch_reaches_text_formatting():
+    """Per-call serialize() patches apply to text formatting and its HTML fallback."""
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True))
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "**bold**"
+    assert ser.serialize(include_formatting=False).text == "bold"
+
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="2", formatting=Formatting(script=Script.SUB))
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "2"
+    assert ser.serialize(formatting_fallback_mode=FormattingFallbackMode.HTML).text == "<sub>2</sub>"
+
+
+def test_md_serialize_param_patch_reaches_inline_group():
+    """Per-call serialize() patches reach formatting inside inline-group text items."""
+    doc = DoclingDocument(name="test")
+    holder = doc.add_text(label=DocItemLabel.TEXT, text="")
+    inline = doc.add_inline_group(parent=holder)
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True), parent=inline)
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "**bold**"
+    assert ser.serialize(include_formatting=False).text == "bold"
+
+    doc = DoclingDocument(name="test")
+    holder = doc.add_text(label=DocItemLabel.TEXT, text="")
+    inline = doc.add_inline_group(parent=holder)
+    doc.add_text(label=DocItemLabel.TEXT, text="2", formatting=Formatting(script=Script.SUB), parent=inline)
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "2"
+    assert ser.serialize(formatting_fallback_mode=FormattingFallbackMode.HTML).text == "<sub>2</sub>"
+
+
+def test_md_serialize_param_patch_controls_escaping():
+    """Per-call escape_html/escape_underscores patches reach Markdown post_process."""
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="<b>x</b>")
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "&lt;b&gt;x&lt;/b&gt;"
+    assert ser.serialize(escape_html=False).text == "<b>x</b>"
+
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="a_b")
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "a\\_b"
+    assert ser.serialize(escape_underscores=False).text == "a_b"
+
+    doc = DoclingDocument(name="test")
+    holder = doc.add_text(label=DocItemLabel.TEXT, text="")
+    inline = doc.add_inline_group(parent=holder)
+    doc.add_text(label=DocItemLabel.TEXT, text="<i>y</i>", parent=inline)
+    ser = MarkdownDocSerializer(doc=doc)
+    assert ser.serialize().text == "&lt;i&gt;y&lt;/i&gt;"
+    assert ser.serialize(escape_html=False).text == "<i>y</i>"
+
+
+@pytest.mark.parametrize("plain_text", [False, True])
+@pytest.mark.parametrize("enabled", [False, True])
+@pytest.mark.parametrize("scope", ["text", "heading", "list", "inline", "footnote"])
+@pytest.mark.parametrize(
+    ("parameter", "text", "escaped"),
+    [("escape_html", "<b>x</b>", "&lt;b&gt;x&lt;/b&gt;"), ("escape_underscores", "a_b", "a\\_b")],
+)
+def test_md_serialize_param_patch_escaping_both_directions(plain_text, enabled, scope, parameter, text, escaped):
+    doc = DoclingDocument(name="test")
+    if scope == "heading":
+        doc.add_heading(text=text)
+    elif scope == "list":
+        doc.add_list_item(text=text, parent=doc.add_list_group())
+    elif scope == "inline":
+        holder = doc.add_text(label=DocItemLabel.TEXT, text="")
+        inline = doc.add_inline_group(parent=holder)
+        doc.add_text(label=DocItemLabel.TEXT, text=text, parent=inline)
+    elif scope == "footnote":
+        table = doc.add_table(data=TableData(num_rows=1, num_cols=1, table_cells=[]))
+        table.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text=text).get_ref())
+    else:
+        doc.add_text(label=DocItemLabel.TEXT, text=text)
+    serializer_cls = PlainTextDocSerializer if plain_text else MarkdownDocSerializer
+    params_cls = PlainTextParams if plain_text else MarkdownParams
+    serializer = serializer_cls(doc=doc, params=params_cls(**{parameter: not enabled}))
+    original = serializer.serialize().text
+    expected = serializer_cls(doc=doc, params=params_cls(**{parameter: enabled})).serialize().text
+    assert (escaped if enabled else text) in expected
+    assert serializer.serialize(**{parameter: enabled}).text == expected
+    assert serializer.serialize().text == original
+
+
+@pytest.mark.parametrize("plain_text", [False, True])
+@pytest.mark.parametrize("kind", ["code", "formula"])
+@pytest.mark.parametrize("enabled", [False, True])
+def test_md_serialize_param_patch_keeps_code_formula_unescaped(plain_text, kind, enabled):
+    doc = DoclingDocument(name="test")
+    text = "<b>a_b</b>"
+    if kind == "code":
+        doc.add_code(text=text)
+    else:
+        doc.add_formula(text=text)
+    serializer_cls = PlainTextDocSerializer if plain_text else MarkdownDocSerializer
+    serializer = serializer_cls(doc=doc)
+    assert text in serializer.serialize(escape_html=enabled, escape_underscores=enabled).text
+    assert serializer.serialize(escape_html=enabled, escape_underscores=enabled).text == serializer.serialize().text
+
+
+def test_md_serialize_param_patch_controls_footnote_escaping():
+    """Per-call escape patches reach footnote text through serialize_footnotes."""
+    doc = DoclingDocument(name="t")
+    tbl = doc.add_table(data=TableData(num_rows=1, num_cols=1, table_cells=[]))
+    tbl.footnotes.append(doc.add_text(label=DocItemLabel.FOOTNOTE, text="foot_note_text").get_ref())
+
+    default = MarkdownDocSerializer(doc=doc).serialize().text
+    assert "foot\\_note" in default
+
+    patched = MarkdownDocSerializer(doc=doc).serialize(escape_underscores=False).text
+    assert "foot_note_text" in patched
+
+    ctor = MarkdownDocSerializer(doc=doc, params=MarkdownParams(escape_underscores=False)).serialize().text
+    assert patched == ctor
+
+
+def test_html_serialize_param_patch_reaches_text_formatting():
+    """Per-call serialize() patches apply to HTML text formatting."""
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True))
+    ser = HTMLDocSerializer(doc=doc)
+    assert "<strong>bold</strong>" in ser.serialize().text
+    assert "<strong>bold</strong>" not in ser.serialize(include_formatting=False).text
+
+    doc = DoclingDocument(name="test")
+    holder = doc.add_text(label=DocItemLabel.TEXT, text="")
+    inline = doc.add_inline_group(parent=holder)
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True), parent=inline)
+    ser = HTMLDocSerializer(doc=doc)
+    assert "<strong>bold</strong>" in ser.serialize().text
+    assert "<strong>bold</strong>" not in ser.serialize(include_formatting=False).text
 
 
 def test_md_pb_placeholder_and_page_filter():
@@ -1293,6 +1570,89 @@ def test_html_charts():
     verify(exp_file=src.with_suffix(".gt.html"), actual=actual)
 
 
+def test_html_key_value_graph_with_cycle():
+    """A to_child cycle, as XBRL presentation and calculation links can form, is rendered once."""
+    doc = DoclingDocument(name="kv_cycle")
+    doc.add_key_values(
+        graph=GraphData(
+            cells=[
+                GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="Statement", orig="Statement"),
+                GraphCell(label=GraphCellLabel.KEY, cell_id=1, text="Expenses", orig="Expenses"),
+                GraphCell(label=GraphCellLabel.KEY, cell_id=2, text="Income", orig="Income"),
+                GraphCell(label=GraphCellLabel.VALUE, cell_id=3, text="42", orig="42"),
+            ],
+            links=[
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=0, target_cell_id=1),
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=1, target_cell_id=2),
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=2, target_cell_id=1),
+                GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=2, target_cell_id=3),
+            ],
+        )
+    )
+
+    actual = doc.export_to_html()
+
+    assert actual.count("<li>Statement</li>") == 1
+    assert actual.count("<li>Expenses</li>") == 1
+    assert actual.count("<li><strong>Income</strong>: 42</li>") == 1
+
+
+def test_html_key_value_graph_shared_child_rendered_under_first_parent():
+    """A cell with two parents is rendered once, under the parent that reaches it first."""
+    doc = DoclingDocument(name="kv_diamond")
+    doc.add_key_values(
+        graph=GraphData(
+            cells=[
+                GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="Statement", orig="Statement"),
+                GraphCell(label=GraphCellLabel.KEY, cell_id=1, text="Expenses", orig="Expenses"),
+                GraphCell(label=GraphCellLabel.KEY, cell_id=2, text="Costs", orig="Costs"),
+                GraphCell(label=GraphCellLabel.KEY, cell_id=3, text="Salaries", orig="Salaries"),
+                GraphCell(label=GraphCellLabel.VALUE, cell_id=4, text="42", orig="42"),
+            ],
+            links=[
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=0, target_cell_id=1),
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=0, target_cell_id=2),
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=1, target_cell_id=3),
+                GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=2, target_cell_id=3),
+                GraphLink(label=GraphLinkLabel.TO_VALUE, source_cell_id=3, target_cell_id=4),
+            ],
+        )
+    )
+
+    actual = doc.export_to_html()
+
+    # Costs keeps its list item although its only child is shown under Expenses.
+    assert (
+        "<li>Statement</li>\n<ul>\n"
+        "<li>Expenses</li>\n<ul>\n<li><strong>Salaries</strong>: 42</li>\n</ul>\n"
+        "<li>Costs</li>\n</ul>"
+    ) in actual
+    assert actual.count("<strong>Salaries</strong>") == 1
+
+
+def test_html_key_value_graph_dense_cycles_render_each_cell_once():
+    """Cells that all link to each other render once each, not once per path through them."""
+    size = 8
+    cells = [GraphCell(label=GraphCellLabel.KEY, cell_id=0, text="Statement", orig="Statement")]
+    links = []
+    for i in range(1, size + 1):
+        cells.append(GraphCell(label=GraphCellLabel.KEY, cell_id=i, text=f"Item {i}", orig=f"Item {i}"))
+        links.append(GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=0, target_cell_id=i))
+        links.extend(
+            GraphLink(label=GraphLinkLabel.TO_CHILD, source_cell_id=i, target_cell_id=j)
+            for j in range(1, size + 1)
+            if j != i
+        )
+    doc = DoclingDocument(name="kv_clique")
+    doc.add_key_values(graph=GraphData(cells=cells, links=links))
+
+    actual = doc.export_to_html()
+
+    assert actual.count("<li>") == size + 1
+    for i in range(1, size + 1):
+        assert actual.count(f"<li>Item {i}</li>") == 1
+
+
 def test_html_cross_page_list_page_break():
     src = Path("./tests/data/doc/activities.json")
     doc = DoclingDocument.load_from_json(src)
@@ -1640,6 +2000,37 @@ def test_html_rich_table_cell_formatting_inside_paragraph():
     )
 
 
+@pytest.mark.parametrize(
+    ("text", "column_header", "expected"),
+    [
+        ("Expedited\nOvernight", False, "<td>Expedited<br>Overnight</td>"),
+        ("Header one\nHeader two", True, "<th>Header one<br>Header two</th>"),
+        ("a & b\n<c>", False, "<td>a &amp; b<br>&lt;c&gt;</td>"),
+    ],
+)
+def test_html_newlines_in_plain_table_cells_are_br(text, column_header, expected):
+    """Newlines in plain table cells are serialized as `<br>`."""
+    doc = DoclingDocument(name="newlines")
+    doc.add_table(
+        data=TableData(
+            num_rows=1,
+            num_cols=1,
+            table_cells=[
+                TableCell(
+                    start_row_offset_idx=0,
+                    end_row_offset_idx=1,
+                    start_col_offset_idx=0,
+                    end_col_offset_idx=1,
+                    text=text,
+                    column_header=column_header,
+                )
+            ],
+        )
+    )
+
+    assert expected in HTMLDocSerializer(doc=doc).serialize().text
+
+
 class _HTMLProbe(HTMLParser):
     """Collects the elements, attributes and per-element text of a parsed HTML document."""
 
@@ -1714,6 +2105,88 @@ def test_html_inline_formula_without_mathml_keeps_text():
     actual = HTMLDocSerializer(doc=doc, params=HTMLParams(formula_to_mathml=False)).serialize().text
 
     assert _parse_html(actual).text_of("code") == "x<y"
+
+
+def build_rich_heading_doc(level: int | None, following: str = "paragraph") -> DoclingDocument:
+    """Build an empty title or section header whose content is a leading inline group.
+
+    Args:
+        level: The section header level, or `None` for a title.
+        following: What the heading owns after its inline group: `"paragraph"` for a body
+            paragraph or `"subsection"` for a nested level-4 heading with a paragraph.
+
+    Returns:
+        The document. The heading is its first text item (`doc.texts[0]`).
+    """
+    doc = DoclingDocument(name="rich-heading")
+    heading = doc.add_title(text="") if level is None else doc.add_heading(text="", level=level)
+    inline = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="Heading eq ", parent=inline)
+    doc.add_text(label=DocItemLabel.FORMULA, text="y=2", parent=inline)
+    body_parent = doc.add_heading(text="Subsection", level=4, parent=heading) if following == "subsection" else heading
+    doc.add_text(label=DocItemLabel.TEXT, text="Body under it.", parent=body_parent)
+    return doc
+
+
+@pytest.mark.parametrize("level", [None, 1, 3])
+@pytest.mark.parametrize("following", ["paragraph", "subsection"])
+def test_markdown_rich_heading_keeps_inline_content(level: int | None, following: str):
+    """A heading whose content is an inline group renders it in the Markdown heading line, before the body."""
+    doc = build_rich_heading_doc(level, following)
+
+    markdown = doc.export_to_markdown()
+
+    depth = 1 if level is None else level + 1
+    assert markdown.splitlines()[0] == f"{'#' * depth} Heading eq $y=2$"
+    assert markdown.count("Heading eq") == 1
+    assert markdown.index("Body under it.") > markdown.index("$y=2$")
+
+
+@pytest.mark.parametrize("level", [None, 1, 3])
+@pytest.mark.parametrize("following", ["paragraph", "subsection"])
+def test_html_rich_heading_keeps_inline_content(level: int | None, following: str):
+    """A heading whose content is an inline group renders it inside the HTML heading tag, before the body."""
+    doc = build_rich_heading_doc(level, following)
+    depth = 1 if level is None else level + 1
+
+    html = doc.export_to_html(formula_to_mathml=False)
+
+    heading_html = html.split(f"<h{depth}>", 1)[1].split(f"</h{depth}>", 1)[0]
+    assert "Heading eq" in heading_html
+    assert "y=2" in heading_html
+    assert "Body under it." not in heading_html
+    assert html.count("Heading eq") == 1
+    assert html.index("Body under it.") > html.index(f"</h{depth}>")
+
+
+@pytest.mark.parametrize("level", [None, 1])
+def test_markdown_rich_heading_stays_on_a_single_line(level: int | None):
+    """A newline inside a heading's inline runs does not split the Markdown heading line."""
+    doc = DoclingDocument(name="multiline-rich-heading")
+    heading = doc.add_title(text="") if level is None else doc.add_heading(text="", level=level)
+    inline = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="Line1\nLine2 ", parent=inline)
+    doc.add_text(label=DocItemLabel.FORMULA, text="y=2", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="Body.", parent=heading)
+
+    depth = 1 if level is None else level + 1
+    assert doc.export_to_markdown() == f"{'#' * depth} Line1 Line2 $y=2$\n\nBody."
+
+
+@pytest.mark.parametrize("level", [None, 1])
+def test_inline_content_after_a_body_item_is_not_a_heading(level: int | None):
+    """An inline group that follows a body item of a heading is body content, not the heading's text."""
+    doc = DoclingDocument(name="body-inline-content")
+    heading = doc.add_title(text="") if level is None else doc.add_heading(text="", level=level)
+    doc.add_text(label=DocItemLabel.TEXT, text="First body.", parent=heading)
+    inline = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="Later body.", parent=inline)
+
+    depth = 1 if level is None else level + 1
+    markdown = doc.export_to_markdown()
+    assert markdown.splitlines()[0].strip() == "#" * depth
+    assert markdown.index("First body.") < markdown.index("Later body.")
+    assert f"<h{depth}></h{depth}>" in doc.export_to_html()
 
 
 def test_html_formula_without_mathml_does_not_warn_about_mathml(caplog: pytest.LogCaptureFixture):
@@ -1934,6 +2407,42 @@ def test_webvtt_params():
     ser_default = WebVTTDocSerializer(doc=doc, params=WebVTTParams())
     actual_default = ser_default.serialize().text
     assert len(actual) <= len(actual_default) or actual != actual_default
+
+
+def test_webvtt_serialize_param_patch_controls_formatting():
+    """Per-call param patches reach WebVTT post_process: include_formatting is honored."""
+    src = Path("./tests/data/doc/webvtt_example_02.json")
+    doc = DoclingDocument.load_from_json(src)
+
+    default = WebVTTDocSerializer(doc=doc).serialize().text
+    assert "<i>" in default
+
+    patched = WebVTTDocSerializer(doc=doc).serialize(include_formatting=False).text
+    assert "<i>" not in patched
+    # Voice spans are cue metadata, not formatting: they stay.
+    assert "<v " in patched
+
+    # The per-call patch matches the constructor-level parameter.
+    ctor = WebVTTDocSerializer(doc=doc, params=WebVTTParams(include_formatting=False)).serialize().text
+    assert patched == ctor
+
+    # A per-call patch wins over the constructor parameter in both directions.
+    restored = (
+        WebVTTDocSerializer(doc=doc, params=WebVTTParams(include_formatting=False))
+        .serialize(include_formatting=True)
+        .text
+    )
+    assert restored == default
+
+
+@pytest.mark.parametrize("voice", ["X", "", None])
+@pytest.mark.parametrize("include_formatting", [True, False])
+def test_webvtt_param_patch_preserves_document_voices(voice, include_formatting):
+    doc = DoclingDocument.load_from_json(Path("./tests/data/doc/webvtt_example_02.json"))
+    expected = WebVTTDocSerializer(doc=doc).serialize(include_formatting=include_formatting).text
+    actual = WebVTTDocSerializer(doc=doc).serialize(voice=voice, include_formatting=include_formatting).text
+    assert "<v " in expected
+    assert actual == expected
 
 
 def test_webvtt_cue_shorter_than_a_millisecond_stays_serializable(caplog):
@@ -2426,6 +2935,31 @@ def test_doclang_src_stays_inside_attribute():
     root = ET.fromstring(doc.export_to_doclang(image_mode=ImageRefMode.REFERENCED))
 
     assert [el.get("uri") for el in root.iter("src")] == [str(uri)]
+
+
+def test_doclang_serialize_param_patch_controls_formatting():
+    """Per-call param patches reach DocLang post_process: include_formatting is honored."""
+    doc = DoclingDocument(name="x")
+    doc.add_text(label=DocItemLabel.TEXT, text="bold words", formatting=Formatting(bold=True))
+
+    default = DocLangDocSerializer(doc=doc).serialize().text
+    assert "<bold>" in default
+
+    patched = DocLangDocSerializer(doc=doc).serialize(include_formatting=False).text
+    assert "<bold>" not in patched
+    assert "bold words" in patched
+
+    # The per-call patch matches the constructor-level parameter.
+    ctor = DocLangDocSerializer(doc=doc, params=DocLangParams(include_formatting=False)).serialize().text
+    assert patched == ctor
+
+    # A per-call patch wins over the constructor parameter in both directions.
+    restored = (
+        DocLangDocSerializer(doc=doc, params=DocLangParams(include_formatting=False))
+        .serialize(include_formatting=True)
+        .text
+    )
+    assert restored == default
 
 
 def test_export_to_markdown_image_dir_saves_and_references_images(sample_doc, tmp_path):

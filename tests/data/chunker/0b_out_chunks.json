@@ -593,7 +593,7 @@
             }
         },
         {
-            "text": "```\nfrom docling.document_converter import DocumentConverter Large\n```",
+            "text": "```python\nfrom docling.document_converter import DocumentConverter Large\n```",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",
@@ -636,7 +636,7 @@
             }
         },
         {
-            "text": "```\nsource = \"https://arxiv.org/pdf/2206.01062\" # PDF path or URL converter = DocumentConverter() result = converter.convert_single(source) print(result.render_as_markdown()) # output: \"## DocLayNet: A Human -Annotated Dataset for Document -Layout Analysis [...]\"\n```",
+            "text": "```python\nsource = \"https://arxiv.org/pdf/2206.01062\" # PDF path or URL converter = DocumentConverter() result = converter.convert_single(source) print(result.render_as_markdown()) # output: \"## DocLayNet: A Human -Annotated Dataset for Document -Layout Analysis [...]\"\n```",
             "meta": {
                 "schema_name": "docling_core.transforms.chunker.DocMeta",
                 "version": "1.0.0",

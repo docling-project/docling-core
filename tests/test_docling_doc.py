@@ -1958,6 +1958,25 @@ def test_misplaced_list_items():
         assert doc == exp_doc
 
 
+def test_delete_items_many_renumbers_references():
+    doc = DoclingDocument(name="many")
+    texts = [doc.add_text(label=DocItemLabel.TEXT, text=str(i)) for i in range(10)]
+    picture = doc.add_picture(caption=texts[7])
+
+    # Delete non-contiguous items, including the first and the last of the texts
+    deleted = {0, 1, 4, 9}
+    doc.delete_items(node_items=[texts[i] for i in sorted(deleted, reverse=True)])
+
+    kept = [str(i) for i in range(10) if i not in deleted]
+    assert [t.text for t in doc.texts] == kept
+    for index, text_item in enumerate(doc.texts):
+        assert text_item.self_ref == f"#/texts/{index}"
+        assert text_item.parent is not None and text_item.parent.cref == "#/body"
+
+    assert [c.cref for c in doc.body.children] == [f"#/texts/{i}" for i in range(len(kept))] + ["#/pictures/0"]
+    assert picture.captions[0].resolve(doc).text == "7"
+
+
 def test_delete_items_renumbers_orphaned_items():
     # The caption is referenced by the picture but is not one of its children, so it is not
     # reachable from body via children. Deleting an item before it must still renumber it.
@@ -3730,3 +3749,63 @@ def test_validate_rejects_total_table_cells_over_limit(monkeypatch, body, furnit
     DoclingDocument.model_validate(_tables_doc_dict(body=2))
     with pytest.raises(ValidationError, match="exceeding the limit of 8"):
         DoclingDocument.model_validate(_tables_doc_dict(body=body, furniture=furniture, orphans=orphans))
+
+
+@pytest.mark.parametrize(
+    "field",
+    ["start_row_offset_idx", "end_row_offset_idx", "start_col_offset_idx", "end_col_offset_idx"],
+)
+def test_table_cell_rejects_negative_offsets(field: str) -> None:
+    """Negative offsets would otherwise wrap around and overwrite cells at the end of the grid."""
+    offsets = {
+        "start_row_offset_idx": 0,
+        "end_row_offset_idx": 1,
+        "start_col_offset_idx": 0,
+        "end_col_offset_idx": 1,
+    }
+    offsets[field] = -1
+
+    with pytest.raises(ValidationError, match=field):
+        TableCell(text="x", **offsets)
+
+
+@pytest.mark.parametrize("axis", ["row", "col"])
+def test_table_cell_rejects_inverted_offset_ranges(axis: str) -> None:
+    """An end offset smaller than its start offset is rejected, an equal one is accepted."""
+    offsets = {
+        "start_row_offset_idx": 0,
+        "end_row_offset_idx": 1,
+        "start_col_offset_idx": 0,
+        "end_col_offset_idx": 1,
+    }
+    offsets[f"start_{axis}_offset_idx"] = 2
+    offsets[f"end_{axis}_offset_idx"] = 2
+    TableCell(text="x", **offsets)
+
+    offsets[f"end_{axis}_offset_idx"] = 1
+    with pytest.raises(ValidationError, match=f"end_{axis}_offset_idx"):
+        TableCell(text="x", **offsets)
+
+
+def test_document_with_negative_table_cell_offset_fails_validation() -> None:
+    doc = DoclingDocument(name="t")
+    doc.add_table(
+        data=TableData(
+            num_rows=1,
+            num_cols=1,
+            table_cells=[
+                TableCell(
+                    text="A",
+                    start_row_offset_idx=0,
+                    end_row_offset_idx=1,
+                    start_col_offset_idx=0,
+                    end_col_offset_idx=1,
+                )
+            ],
+        )
+    )
+    data = doc.model_dump(mode="json")
+    data["tables"][0]["data"]["table_cells"][0]["start_row_offset_idx"] = -1
+
+    with pytest.raises(ValidationError, match="start_row_offset_idx"):
+        DoclingDocument.model_validate(data)

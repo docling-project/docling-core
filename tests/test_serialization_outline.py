@@ -11,10 +11,11 @@ from docling_core.experimental.serializer.outline import (
     OutlineParams,
     _format_indented_text_line,
 )
-from docling_core.types.doc import DoclingDocument
+from docling_core.types.doc import DoclingDocument, Formatting
 from docling_core.types.doc.document import RefItem
 from docling_core.types.doc.labels import DocItemLabel
 
+from .test_serialization import build_rich_heading_doc
 from .test_utils import assert_or_generate_ground_truth
 
 
@@ -632,3 +633,52 @@ def test_outline_serialization_spans():
     # Verify the expected items are present (nested_item and its 7 children)
     assert len(items_json_f) == 8, f"Expected 8 items, got {len(items_json_f)}"
     assert nested_item.self_ref in refs_json_f, "Start item should be included"
+
+
+@pytest.mark.parametrize("level", [None, 1])
+@pytest.mark.parametrize("format", list(OutlineFormat))
+def test_outline_rich_heading_uses_inline_content_as_title(level: int | None, format: OutlineFormat):
+    """The outline title of a heading whose content is an inline group is that content, without the body."""
+    doc = build_rich_heading_doc(level)
+    ref = doc.texts[0].self_ref
+
+    outline = (
+        OutlineDocSerializer(
+            doc=doc, params=OutlineParams(mode=OutlineMode.TABLE_OF_CONTENTS, format=format, include_non_meta=True)
+        )
+        .serialize()
+        .text
+    )
+
+    if format == OutlineFormat.JSON:
+        data = json.loads(outline)
+        assert [(entry["ref"], entry["title"]) for entry in data] == [(ref, "Heading eq $y=2$")]
+    elif format == OutlineFormat.ITXT:
+        assert outline == f"  [ref={ref}] [Heading eq $y=2$]"
+    else:
+        depth = 1 if level is None else level + 1
+        assert outline == f"{'#' * depth} Heading eq $y=2$\n\\[ref={ref}\\]"
+
+
+@pytest.mark.parametrize("format", [OutlineFormat.JSON, OutlineFormat.ITXT])
+def test_outline_rich_heading_title_has_no_markdown_markup(format: OutlineFormat):
+    """The JSON and ITXT outline title of a rich heading is plain text, like the title of a plain heading."""
+    doc = DoclingDocument(name="rich-heading-outline")
+    heading = doc.add_heading(text="", level=1)
+    inline = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="See ", parent=inline, formatting=Formatting(bold=True))
+    doc.add_text(label=DocItemLabel.TEXT, text="the docs", parent=inline, hyperlink="http://example.com/docs")
+    doc.add_text(label=DocItemLabel.TEXT, text="Body under it.", parent=heading)
+
+    outline = (
+        OutlineDocSerializer(
+            doc=doc, params=OutlineParams(mode=OutlineMode.TABLE_OF_CONTENTS, format=format, include_non_meta=True)
+        )
+        .serialize()
+        .text
+    )
+
+    assert "See the docs" in outline
+    assert "[the docs]" not in outline
+    assert "**" not in outline
+    assert "http://example.com" not in outline

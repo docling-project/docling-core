@@ -49,7 +49,7 @@ This is the caption of figure 2.
 
 Here a code block:
 
-```
+```python
 print("Hello world")
 ```
 

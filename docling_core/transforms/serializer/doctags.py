@@ -25,6 +25,7 @@ from docling_core.transforms.serializer.common import (
     DocSerializer,
     _should_use_legacy_annotations,
     create_ser_result,
+    get_inline_content_group,
 )
 from docling_core.types.doc.document import (
     BoundingBox,
@@ -52,6 +53,7 @@ from docling_core.types.doc.document import (
     TableItem,
     TableToken,
     TextItem,
+    TitleItem,
 )
 
 
@@ -133,18 +135,15 @@ class DocTagsTextSerializer(BaseModel, BaseTextSerializer):
                 parts.append(location)
 
         if params.add_content:
-            if (
-                item.text == ""
-                and len(item.children) == 1
-                and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
-            ):
-                ser_res = doc_serializer.serialize(item=child_group, visited=my_visited)
+            if (child_group := get_inline_content_group(item, doc)) is not None:
+                ser_res = doc_serializer.serialize(item=child_group, visited=my_visited, **kwargs)
                 text_part = ser_res.text
             else:
                 text_part = doc_serializer.post_process(
                     text=item.text,
                     formatting=item.formatting,
                     hyperlink=item.hyperlink,
+                    **kwargs,
                 )
 
             if isinstance(item, CodeItem):
@@ -607,10 +606,11 @@ class DocTagsDocSerializer(DocSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize a document out of its pages."""
-        delim = _get_delim(params=self.params)
+        params = self.params.merge_with_patch(patch=kwargs)
+        delim = _get_delim(params=params)
         text_res = delim.join([p.text for p in parts if p.text])
 
-        if self.params.add_page_break:
+        if params.add_page_break:
             page_sep = f"<{DocumentToken.PAGE_BREAK.value}>"
             for full_match, _, _ in self._get_page_breaks(text=text_res):
                 text_res = text_res.replace(full_match, page_sep)

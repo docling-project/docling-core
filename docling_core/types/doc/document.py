@@ -102,6 +102,8 @@ from docling_core.types.doc.common.reference import (
     PageItem,
     ProvenanceItem,
     RefItem,
+    _is_deleted,
+    _shift_index,
     media_type_of,
 )
 from docling_core.types.doc.common.scalars import CharSpan, LevelNumber, Uint64
@@ -606,11 +608,12 @@ class DoclingDocument(BaseModel):
             if not refs:
                 return num_removed
 
-            lookup: dict[str, dict[int, int]] = {"groups": {int(ref.cref.split("/")[2]): -1 for ref in refs}}
-            for index in sorted(lookup["groups"], reverse=True):
+            lookup: dict[str, list[int]] = {"groups": sorted(int(ref.cref.split("/")[2]) for ref in refs)}
+            for index in reversed(lookup["groups"]):
                 del self.groups[index]
+            crefs = {ref.cref for ref in refs}
             for node in self._iterate_all_nodes():
-                self._update_node_with_lookup(node=node, refs_to_be_deleted=refs, lookup=lookup)
+                self._update_node_with_lookup(node=node, refs_to_be_deleted=crefs, lookup=lookup)
             num_removed += len(refs)
 
     class _KVMigrData(BaseModel):
@@ -1171,6 +1174,8 @@ class DoclingDocument(BaseModel):
         if not refs:
             return
 
+        crefs = {r.cref for r in refs}
+
         # Identify the to_be_deleted_items
         for item, stack in self._iterate_items_with_stack(
             with_groups=True,
@@ -1179,7 +1184,7 @@ class DoclingDocument(BaseModel):
         ):
             ref = item.get_ref()
 
-            if ref in refs:
+            if ref.cref in crefs:
                 to_be_deleted_items[tuple(stack)] = ref.cref
 
             substacks = [stack[0 : i + 1] for i in range(len(stack) - 1)]
@@ -1200,54 +1205,47 @@ class DoclingDocument(BaseModel):
                 _logger.debug(f"deleted item in tree at stack: {stack_} => {ref_}")
 
         # Create a new lookup of the orphans:
-        # dict of item_label (`texts`, `tables`, ...) to a
-        # dict of item_label with delta (default = -1).
-        lookup: dict[str, dict[int, int]] = {}
+        # dict of item_label (`texts`, `tables`, ...) to the sorted indices of the deleted items.
+        deleted: dict[str, set[int]] = {}
 
         for stack_, ref_ in to_be_deleted_items.items():
             path = ref_.split("/")
             if len(path) == 3:
-                item_label = path[1]
-                item_index = int(path[2])
+                deleted.setdefault(path[1], set()).add(int(path[2]))
 
-                if item_label not in lookup:
-                    lookup[item_label] = {}
-
-                lookup[item_label][item_index] = -1
+        lookup = {item_label: sorted(item_inds) for item_label, item_inds in deleted.items()}
 
         # Remove the orphans in reverse order
         for item_label, item_inds in lookup.items():
-            for item_index, _ in sorted(item_inds.items(), reverse=True):  # delete the last in the list first!
+            for item_index in reversed(item_inds):  # delete the last in the list first!
                 _logger.debug(f"deleting item in doc for {item_label} for {item_index}")
                 del self.__getattribute__(item_label)[item_index]
 
         # Update all nodes, not only those reachable from body via children: orphaned items
         # (e.g. captions whose parent does not list them as children) must be renumbered too
         for node in self._iterate_all_nodes():
-            self._update_node_with_lookup(node=node, refs_to_be_deleted=refs, lookup=lookup)
+            self._update_node_with_lookup(node=node, refs_to_be_deleted=crefs, lookup=lookup)
 
     # Update the references
-    def _update_ref_with_lookup(self, item_label: str, item_index: int, lookup: dict[str, dict[int, int]]) -> RefItem:
+    def _update_ref_with_lookup(self, item_label: str, item_index: int, lookup: dict[str, list[int]]) -> RefItem:
         """Update ref with lookup."""
         if item_label not in lookup:  # Nothing to be done
             return RefItem(cref=f"#/{item_label}/{item_index}")
 
-        # Count how many items have been deleted in front of you
-        delta = sum(val if item_index >= key else 0 for key, val in lookup[item_label].items())
-        new_index = item_index + delta
+        new_index = _shift_index(item_index, lookup[item_label])
 
         return RefItem(cref=f"#/{item_label}/{new_index}")
 
     def _update_refitems_with_lookup(
         self,
         ref_items: list[RefItem],
-        refs_to_be_deleted: list[RefItem],
-        lookup: dict[str, dict[int, int]],
+        refs_to_be_deleted: set[str],
+        lookup: dict[str, list[int]],
     ) -> list[RefItem]:
         """Update refitems with lookup."""
         new_refitems = []
         for ref_item in ref_items:
-            if ref_item not in refs_to_be_deleted:  # if ref_item is in ref, then delete/skip them
+            if ref_item.cref not in refs_to_be_deleted:  # refs to deleted items are dropped
                 path = ref_item._split_ref_to_path()
                 if len(path) == 3:
                     new_refitems.append(
@@ -1285,13 +1283,13 @@ class DoclingDocument(BaseModel):
     def _update_node_with_lookup(
         self,
         node: NodeItem,
-        refs_to_be_deleted: list[RefItem],
-        lookup: dict[str, dict[int, int]],
-    ):
+        refs_to_be_deleted: set[str],
+        lookup: dict[str, list[int]],
+    ) -> None:
         """Update the references of a single node with lookup."""
         # Update the comments references on any DocItem
         if isinstance(node, DocItem):
-            node.comments = [ref_item for ref_item in node.comments if ref_item not in refs_to_be_deleted]
+            node.comments = [ref_item for ref_item in node.comments if ref_item.cref not in refs_to_be_deleted]
             for ref_item in node.comments:
                 ref_item._update_with_lookup(lookup=lookup)
 
@@ -1327,7 +1325,7 @@ class DoclingDocument(BaseModel):
             for graph_cell in node.graph.cells:
                 if graph_cell.item_ref is None or len(path := graph_cell.item_ref._split_ref_to_path()) != 3:
                     continue
-                if int(path[2]) in lookup.get(path[1], {}):  # the referenced item was deleted
+                if _is_deleted(int(path[2]), lookup.get(path[1], [])):  # the referenced item was deleted
                     graph_cell.item_ref = None
                 else:
                     graph_cell.item_ref = self._update_ref_with_lookup(
@@ -5446,6 +5444,12 @@ class DoclingDocument(BaseModel):
         Picture and page images are always stored outside the markup, under
         ``assets/`` and ``pages/`` in the archive respectively.
 
+        DocLang does not record page numbers: the n-th page of the markup is the n-th
+        page of the document. Pages are therefore numbered consecutively from 1 in the
+        archive, and ``pages/{n}.png`` holds the image of the n-th page in ascending
+        page-number order. Gaps and a first page number other than 1 are not preserved
+        when the archive is loaded.
+
         ``image_mode`` controls the picture images: ``REFERENCED`` (default) stores each
         picture's image (cropped from its page image if it has none of its own) under
         ``assets/`` and references it from the picture, ``PLACEHOLDER`` stores and
@@ -5515,16 +5519,17 @@ class DoclingDocument(BaseModel):
             }
 
             pages: dict[int, Path] = {}
-            for p_no, page in self.pages.items():
+            for archive_page_no, p_no in enumerate(sorted(self.pages), start=1):
+                page = self.pages[p_no]
                 if page.image is None:
                     continue
                 img = page.image.pil_image
                 if img is None:
                     continue
-                page_path = pages_dir / f"{p_no}.png"
+                page_path = pages_dir / f"{archive_page_no}.png"
                 page_path.parent.mkdir(parents=True, exist_ok=True)
                 _normalize_image_for_png(img).save(page_path)
-                pages[p_no] = page_path
+                pages[archive_page_no] = page_path
             if pages:
                 pack_kwargs["pages"] = pages
 
@@ -5624,13 +5629,18 @@ class DoclingDocument(BaseModel):
     ) -> "DoclingDocument":
         """Load a DoclingDocument from a DocLang OPC archive (``.dclx``).
 
-        The archive is extracted to ``artifacts_dir`` (default: ``<name>_artifacts`` next
-        to the ``.dclx`` file). Relative ``<src uri=\"...\"/>`` paths and optional
-        ``pages/`` images are resolved inside that directory.
+        By default nothing is written next to the archive: it is extracted to a temporary
+        directory, which is removed once the document is loaded. Picture and page images
+        are then held as ``data:`` URIs, and the audio and video of tracks as bytes
+        (``MediaRef.from_bytes``), so the whole package is kept in memory.
+
+        With ``artifacts_dir``, the archive is extracted there and kept: images and media
+        reference the extracted files, and large media is not held in memory.
 
         Args:
             filename: Path to the ``.dclx`` archive.
-            artifacts_dir: Optional extraction directory for package members.
+            artifacts_dir: Optional directory to extract the package members to, and to keep
+                them in. A relative path is taken from the folder of the ``.dclx`` file.
             validate: When True, run DocLang XSD/Schematron validation on ``document.xml``.
             max_member_size: Maximum uncompressed size in bytes for any single archive member
                 (default: 512 MiB).
@@ -5642,17 +5652,49 @@ class DoclingDocument(BaseModel):
             parsing. Archive ``assets/`` and ``pages/`` images are capped by
             ``settings.max_image_decoded_size`` before Pillow opens them.
 
+            The bytes of the audio and video of tracks are not part of the document's JSON
+            (see ``MediaRef.from_bytes``). Without ``artifacts_dir``, the in-memory copy is the
+            only one: a document saved as JSON keeps the media type and the path inside the
+            archive, but not the recording. To convert a ``.dclx`` with media to JSON, load it
+            with ``artifacts_dir`` (and save it with ``allow_local_media`` later), or keep the
+            archive.
+
             Unlike JSON, DocLang carries no schema version, so archives written by docling-core
             before schema 1.11.0 (the inline whitespace contract) are loaded as current: their
             inline runs were stored without boundary whitespace and now join without a separator
             (``Normal**bold**tail``). Re-convert the source, or keep JSON for long-term storage.
         """
-        from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
-
         if isinstance(filename, str):
             filename = Path(filename)
+        extract_kwargs: dict[str, Any] = {
+            "validate": validate,
+            "max_member_size": max_member_size,
+            "max_total_size": max_total_size,
+        }
 
-        artifacts_dir, _ = cls(name="")._get_output_paths(filename, artifacts_dir)
+        if artifacts_dir is not None:
+            artifacts_dir, _ = cls(name="")._get_output_paths(filename, artifacts_dir)
+            return cls._load_extracted_doclang_archive(filename, artifacts_dir=artifacts_dir, **extract_kwargs)
+
+        with tempfile.TemporaryDirectory() as staging_name:
+            staging_root = Path(staging_name)
+            doc = cls._load_extracted_doclang_archive(filename, artifacts_dir=staging_root, **extract_kwargs)
+            cls._embed_doclang_archive_files(doc=doc, archive_root=staging_root)
+        return doc
+
+    @classmethod
+    def _load_extracted_doclang_archive(
+        cls,
+        filename: Path,
+        *,
+        artifacts_dir: Path,
+        validate: bool,
+        max_member_size: int,
+        max_total_size: int,
+    ) -> "DoclingDocument":
+        """Extract ``filename`` to ``artifacts_dir`` and load it, referencing the extracted files."""
+        from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
+
         safe_extract_zip_archive(
             filename,
             artifacts_dir,
@@ -5685,6 +5727,42 @@ class DoclingDocument(BaseModel):
         cls._restore_doclang_archive_page_images(doc=doc, archive_root=artifacts_dir)
         cls._restore_doclang_archive_track_media(doc=doc, archive_root=artifacts_dir)
         return doc
+
+    @staticmethod
+    def _embed_doclang_archive_files(*, doc: "DoclingDocument", archive_root: Path) -> None:
+        """Read the images and media that reference files in ``archive_root`` into memory.
+
+        Afterwards the document no longer refers to ``archive_root``, which can be removed.
+        Images become ``data:`` URIs of their stored bytes (not re-encoded), and media is
+        held with ``MediaRef.from_bytes``, under its path inside the archive.
+        """
+        archive_root = archive_root.resolve()
+
+        def archive_member(uri: AnyUrl | Path) -> Path | None:
+            return uri if isinstance(uri, Path) and uri.is_relative_to(archive_root) else None
+
+        items: list[FloatingItem] = [
+            *doc.pictures,
+            *doc.tables,
+            *doc.key_value_items,
+            *doc.form_items,
+            *doc.tracks,
+        ]
+        image_refs = [item.image for item in items if item.image is not None]
+        image_refs += [page.image for page in doc.pages.values() if page.image is not None]
+        for image_ref in image_refs:
+            if (path := archive_member(image_ref.uri)) is None:
+                continue
+            encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+            image_ref.uri = AnyUrl(f"data:{image_ref.mimetype};base64,{encoded}")
+
+        for track in doc.tracks:
+            for kind in ("audio", "video"):
+                ref: MediaRef | None = getattr(track, kind)
+                if ref is None or (path := archive_member(ref.uri)) is None:
+                    continue
+                member = Path(path.relative_to(archive_root).as_posix())
+                setattr(track, kind, MediaRef.from_bytes(path.read_bytes(), ref.mimetype, uri=member))
 
     @staticmethod
     def _restore_doclang_archive_track_media(*, doc: "DoclingDocument", archive_root: Path) -> None:

@@ -49,7 +49,7 @@ item 2 of list after empty list
 
 Here a code block:
 
-```
+```python
 print("Hello world")
 ```
 

@@ -21,7 +21,7 @@ from docling_core.transforms.serializer.base import (
     BaseTableSerializer,
     SerializationResult,
 )
-from docling_core.transforms.serializer.common import DocSerializer, create_ser_result
+from docling_core.transforms.serializer.common import DocSerializer, create_ser_result, get_inline_content_group
 from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownParams,
@@ -36,12 +36,33 @@ from docling_core.types.doc.document import (
     InlineGroup,
     LevelNumber,
     ListGroup,
+    NodeItem,
     SectionHeaderItem,
     TableItem,
     TitleItem,
 )
 
 _logger = logging.getLogger(__name__)
+
+
+def _get_heading_content(heading: TitleItem | SectionHeaderItem, doc: DoclingDocument) -> NodeItem | None:
+    """Return the node that holds the content of a heading with empty text.
+
+    Args:
+        heading: The title or section header to inspect.
+        doc: The document used to resolve the heading's children.
+
+    Returns:
+        The leading inline group, or the sole formula or code child, or `None` if the
+        heading has no such content node.
+    """
+    if (group := get_inline_content_group(heading, doc)) is not None:
+        return group
+    if len(heading.children) == 1:
+        only_child = heading.children[0].resolve(doc)
+        if isinstance(only_child, FormulaItem | CodeItem):
+            return only_child
+    return None
 
 
 class TripletTableSerializer(BaseTableSerializer):
@@ -257,12 +278,10 @@ class HierarchicalChunker(BaseChunker):
                 # capture current heading
                 heading_by_level[level] = item
                 heading_text = item.text
-                if not heading_text and len(item.children) == 1:
-                    child = item.children[0].resolve(dl_doc)
-                    if isinstance(child, InlineGroup | FormulaItem | CodeItem):
-                        # Rich headings keep their text in inline children. Consume
-                        # those children here so they do not become body chunks.
-                        heading_text = my_doc_ser.serialize(item=child, visited=visited, is_inline_scope=True).text
+                if not heading_text and (content := _get_heading_content(item, dl_doc)) is not None:
+                    # Rich headings keep their text in inline children. Consume
+                    # those children here so they do not become body chunks.
+                    heading_text = my_doc_ser.serialize(item=content, visited=visited, is_inline_scope=True).text
                 heading_text_by_level[level] = heading_text
 
                 continue

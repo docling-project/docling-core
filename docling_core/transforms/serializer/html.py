@@ -37,6 +37,7 @@ from docling_core.transforms.serializer.common import (
     _get_annotation_text,
     _should_use_legacy_annotations,
     create_ser_result,
+    get_inline_content_group,
     hyperlink_uri,
 )
 from docling_core.transforms.serializer.html_styles import (
@@ -48,6 +49,7 @@ from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     BaseMeta,
     CodeItem,
+    CodeLanguageLabel,
     CodeMetaField,
     ContentLayer,
     DescriptionAnnotation,
@@ -164,13 +166,9 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         res_parts: list[SerializationResult] = []
         post_processed = False
 
-        has_inline_repr = (
-            item.text == ""
-            and len(item.children) == 1
-            and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
-        )
-        if has_inline_repr:
-            text = doc_serializer.serialize(item=child_group, visited=my_visited).text
+        child_group = get_inline_content_group(item, doc)
+        if child_group is not None:
+            text = doc_serializer.serialize(item=child_group, visited=my_visited, **kwargs).text
             post_processed = True
         else:
             text = item.text
@@ -179,7 +177,9 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 if not isinstance(item, CodeItem):
                     text = text.replace("\n", "<br>")
             if not isinstance(item, CodeItem | FormulaItem | ListItem):
-                text = doc_serializer.post_process(text=text, formatting=item.formatting, hyperlink=item.hyperlink)
+                text = doc_serializer.post_process(
+                    text=text, formatting=item.formatting, hyperlink=item.hyperlink, **kwargs
+                )
                 post_processed = True
 
         # Prepare the HTML based on item type
@@ -196,23 +196,26 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 image_mode=params.image_mode,
                 formula_to_mathml=params.formula_to_mathml,
                 is_inline_scope=is_inline_scope,
-                text_is_html=has_inline_repr,
+                text_is_html=child_group is not None,
             )
 
         elif isinstance(item, CodeItem):
-            text = f"<code>{text}</code>" if is_inline_scope else f"<pre><code>{text}</code></pre>"
+            lang = item.code_language.value.lower() if item.code_language != CodeLanguageLabel.UNKNOWN else ""
+            code_class = f' class="language-{html.escape(lang)}"' if lang and not is_inline_scope else ""
+            text = f"<code>{text}</code>" if is_inline_scope else f"<pre><code{code_class}>{text}</code></pre>"
 
         elif isinstance(item, ListItem):
             # List items are handled by list serializer
             text_parts: list[str] = []
             if text:
-                if has_inline_repr:
+                if child_group is not None:
                     text = f"\n{text}\n"
                 else:
                     text = doc_serializer.post_process(
                         text=text,
                         formatting=item.formatting,
                         hyperlink=item.hyperlink,
+                        **kwargs,
                     )
                     post_processed = True
                 text_parts.append(text)
@@ -253,12 +256,13 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 text=text,
                 formatting=item.formatting,
                 hyperlink=item.hyperlink,
+                **kwargs,
             )
 
         # Recurse into children for branches that don't already consume them.
-        # has_inline_repr already consumed the single InlineGroup child; ListItem
-        # recursion is handled inline in its branch above.
-        if not has_inline_repr and not isinstance(item, ListItem) and item.children:
+        # The leading InlineGroup is already visited; headings can also have
+        # body children. ListItem recursion is handled in its branch above.
+        if not isinstance(item, ListItem) and item.children and (child_group is None or len(item.children) > 1):
             nested_text = "\n".join(
                 r.text
                 for r in doc_serializer.get_parts(
@@ -458,7 +462,7 @@ class HTMLTableSerializer(BaseTableSerializer):
                         content = ser_res.text
                         span_source = [ser_res]
                     else:
-                        content = html.escape(cell.text.strip())
+                        content = html.escape(cell.text.strip()).replace("\n", "<br>")
                         span_source = item
 
                     celltag = "td"
@@ -732,6 +736,7 @@ class _HTMLGraphDataSerializer:
         # If we have roots, make a list structure
         if root_ids:
             parts.append(f'<ul class="{class_name}">')
+            rendered: set[int] = set()
             for root_id in root_ids:
                 parts.append(
                     self._render_cell_tree(
@@ -740,6 +745,7 @@ class _HTMLGraphDataSerializer:
                         child_links=child_links,
                         value_links=value_links,
                         level=0,
+                        rendered=rendered,
                     )
                 )
             parts.append("</ul>")
@@ -769,8 +775,15 @@ class _HTMLGraphDataSerializer:
         child_links: dict,
         value_links: dict,
         level: int,
+        rendered: set[int],
     ) -> str:
-        """Recursively render a cell and its children as a nested list."""
+        """Recursively render a cell and its children as a nested list.
+
+        Each cell is rendered once per graph: a child that was already rendered is
+        skipped. A cell with several parents therefore appears only under the first
+        parent that reaches it, and a cycle in the to_child links ends.
+        """
+        rendered.add(cell_id)
         cell = cell_map[cell_id]
         cell_text = html.escape(cell.text)
 
@@ -784,13 +797,18 @@ class _HTMLGraphDataSerializer:
 
             cell_text = f"<strong>{cell_text}</strong>: {', '.join(value_texts)}"
 
+        child_ids = [child_id for child_id in child_links.get(cell_id, []) if child_id not in rendered]
+
         # If this cell has children, create a nested list
-        if child_links.get(cell_id):
+        if child_ids:
             children_html = []
             children_html.append(f"<li>{cell_text}</li>")
             children_html.append("<ul>")
 
-            for child_id in child_links[cell_id]:
+            for child_id in child_ids:
+                # An earlier sibling's subtree may have rendered this child already.
+                if child_id in rendered:
+                    continue
                 children_html.append(
                     self._render_cell_tree(
                         cell_id=child_id,
@@ -798,13 +816,14 @@ class _HTMLGraphDataSerializer:
                         child_links=child_links,
                         value_links=value_links,
                         level=level + 1,
+                        rendered=rendered,
                     )
                 )
 
             children_html.append("</ul>")
             return "\n".join(children_html)
 
-        elif cell_id in value_links:
+        elif cell_id in value_links or cell_id in child_links:
             return f"<li>{cell_text}</li>"
         else:
             # Leaf node - just render the cell
