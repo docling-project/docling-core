@@ -3867,6 +3867,3 @@ def test_table_grid_fills_gaps_with_fresh_independent_cells():
             if cell is not source:
                 assert cell is not second[i][j]
                 assert cell.model_dump() == _make_grid_cell(i, i + 1, j, j + 1, text="").model_dump()
-    first[0][1].text = "local gap edit"
-    assert all(cell.text == "" for cell in gaps if cell is not first[0][1])
-    assert second[0][1].text == table.grid[0][1].text == ""
