@@ -2588,6 +2588,36 @@ def _doc_cross_page_table() -> DoclingDocument:
     return doc
 
 
+def test_cross_page_list_without_page_breaks_stays_one_block():
+    """With ``add_page_break=False`` a page-spanning list is one ``<list>``: no sentinel, no threading."""
+    doc = _doc_cross_page_list()
+
+    ser_txt = serialize_doclang(doc, params=DocLangParams(include_version=False, add_page_break=False))
+
+    assert "DOCLING_DOC_PAGE_BREAK" not in ser_txt
+    root = ET.fromstring(ser_txt)
+    assert [child.tag for child in root] == ["list"]
+    assert [child.tag for child in root[0] if child.tag == "ldiv"] == ["ldiv", "ldiv"]
+    assert root.find(".//thread") is None
+
+
+@pytest.mark.parametrize(
+    ("make_doc", "tag"),
+    [
+        pytest.param(_doc_cross_page_paragraph, "text", id="paragraph"),
+        pytest.param(_doc_cross_page_table, "table", id="table"),
+    ],
+)
+def test_cross_page_fragments_without_page_breaks_stay_threaded(make_doc, tag):
+    """With ``add_page_break=False`` the threaded fragments of an item are not separated by a sentinel."""
+    ser_txt = serialize_doclang(make_doc(), params=DocLangParams(include_version=False, add_page_break=False))
+
+    assert "DOCLING_DOC_PAGE_BREAK" not in ser_txt
+    root = ET.fromstring(ser_txt)
+    assert [child.tag for child in root] == [tag, tag]
+    assert len({fragment.find("thread").get("thread_id") for fragment in root}) == 1
+
+
 def _doc_cross_column_list() -> DoclingDocument:
     """List group with one item per column on the same page (cross-column layout)."""
     doc = DoclingDocument(name="cross_column_list")

@@ -248,7 +248,16 @@ class DocLangParams(CommonParams):
     add_table_cell_location: Annotated[bool, _advanced_field()] = False
     add_referenced_caption: Annotated[bool, _advanced_field()] = True
     add_referenced_footnote: Annotated[bool, _advanced_field()] = True
-    add_page_break: Annotated[bool, _advanced_field()] = True
+    add_page_break: Annotated[
+        bool,
+        _advanced_field(
+            detail=(
+                "Emit <page_break/> between content on different pages. When False, a list that "
+                "spans pages is serialized as one <list>, and the fragments of a multi-page "
+                "text item or table stay threaded without a page break between them."
+            ),
+        ),
+    ] = True
     add_content: Annotated[bool, _advanced_field()] = True
     content_types: Annotated[
         set[ContentType],
@@ -916,7 +925,9 @@ class DocLangListSerializer(BaseModel, BaseListSerializer):
 
         ordered = item.first_item_is_enumerated(doc)
         list_close = f"</{DocLangToken.LIST.value}>"
-        spans_pages = any(
+        # A list is split into threaded per-page blocks only to place page breaks
+        # between them; without page breaks it stays one block.
+        spans_pages = params.add_page_break and any(
             child_segments[i][1] is not None
             and child_segments[i + 1][1] is not None
             and child_segments[i][1] != child_segments[i + 1][1]
@@ -1006,6 +1017,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
             # Split multi-provenance items into per-provenance fragments linked by
             # a shared thread_id; insert page breaks when page_no changes.
             # List items are not split here; cross-page lists are handled at list-group level.
+            params = DocLangParams(**kwargs)
             thread_id = _allocate_thread_id(doc_serializer, item)
             res: list[SerializationResult] = []
             for idp, prov_ in enumerate(item.prov):
@@ -1037,7 +1049,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
 
             out_parts: list[str] = []
             for idp, tres in enumerate(res):
-                if idp > 0 and item.prov[idp - 1].page_no != item.prov[idp].page_no:
+                if idp > 0 and params.add_page_break and item.prov[idp - 1].page_no != item.prov[idp].page_no:
                     pb = _PageBreakNode(
                         self_ref=f"#/pb/{idp}",
                         prev_page=item.prov[idp - 1].page_no,
@@ -1935,7 +1947,7 @@ class DocLangTableSerializer(BaseTableSerializer):
 
             out_parts: list[str] = []
             for idp, tres in enumerate(res):
-                if idp > 0 and item.prov[idp - 1].page_no != item.prov[idp].page_no:
+                if idp > 0 and params.add_page_break and item.prov[idp - 1].page_no != item.prov[idp].page_no:
                     pb = _PageBreakNode(
                         self_ref=f"#/pb/{idp}",
                         prev_page=item.prov[idp - 1].page_no,
