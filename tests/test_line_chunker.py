@@ -244,10 +244,11 @@ def test_chunk_text_makes_progress_after_standalone_prefix():
         tokenizer=tiktoken.get_encoding("cl100k_base"),
         max_tokens=1,
     )
-    chunker = LineBasedTokenChunker(
-        tokenizer=tokenizer,
-        prefix="a",
-    )
+    with pytest.warns(UserWarning, match="Chunks prefix is too long"):
+        chunker = LineBasedTokenChunker(
+            tokenizer=tokenizer,
+            prefix="a",
+        )
 
     chunks = chunker.chunk_text(["tegory"])
 
