@@ -4,6 +4,7 @@ import html
 import re
 import warnings
 from collections.abc import Iterator
+from dataclasses import dataclass
 from enum import Enum
 from functools import total_ordering
 from itertools import pairwise
@@ -434,6 +435,36 @@ WebVTTCueComponent = Annotated[
 ]
 
 
+@dataclass
+class _OpenSpan:
+    """A WebVTT cue span whose start tag has been parsed and whose end tag has not been found yet.
+
+    Attributes:
+        tag: The start tag name.
+        classes: The classes of the start tag, if any.
+        annotation: The annotation of the start tag, if any.
+        terminator: The line terminator that follows the start tag, if any.
+    """
+
+    tag: START_TAG_NAMES
+    classes: list[str] | None = None
+    annotation: str | None = None
+    terminator: WebVTTLineTerminator | None = None
+
+    @classmethod
+    def from_match(cls, match: re.Match) -> Self:
+        """Create an open cue span from a match of the cue span start tag pattern.
+
+        Args:
+            match: A match of `WebVTTCueBlock._pattern_tag` for a start tag.
+
+        Returns:
+            The open cue span.
+        """
+        classes = [c for c in match["class"].split(".") if c] if match["class"] else None
+        return cls(tag=match["tag"], classes=classes, annotation=match["annotation"] or None)
+
+
 class WebVTTCueBlock(BaseModel):
     """Model representing a WebVTT cue block.
 
@@ -496,24 +527,21 @@ class WebVTTCueBlock(BaseModel):
 
     @staticmethod
     def _create_span(
-        start: dict[str, str | None],
+        start: _OpenSpan,
         children: list[WebVTTCueComponentWithTerminator],
     ) -> WebVTTCueComponent:
         """Create a WebVTT cue span component from parsed start tag metadata and child components.
 
         Args:
-            start: Dictionary containing parsed tag groups ('tag', 'class', 'annotation') and,
-                optionally, the 'terminator' that follows the start tag.
+            start: The open cue span with the parsed start tag metadata.
             children: Child cue components contained within this span.
 
         Returns:
             The instantiated WebVTT cue span component.
         """
-        tag = start["tag"]
-        annotation = start["annotation"]
-        classes: list[str] | None = None
-        if start["class"]:
-            classes = [c for c in start["class"].split(".") if c]
+        tag = start.tag
+        annotation = start.annotation
+        classes = start.classes
         st: WebVTTCueSpanStartTag
         if annotation and tag == "lang":
             st = WebVTTCueLanguageSpanStartTag(name=tag, classes=classes, annotation=annotation.strip())
@@ -521,11 +549,7 @@ class WebVTTCueBlock(BaseModel):
             st = WebVTTCueSpanStartTagAnnotated(name=tag, classes=classes, annotation=annotation.strip())
         else:
             st = WebVTTCueSpanStartTag(name=tag, classes=classes)
-        terminator = start.get("terminator")
-        it = WebVTTCueInternalText(
-            terminator=WebVTTLineTerminator(terminator) if terminator else None,
-            components=children,
-        )
+        it = WebVTTCueInternalText(terminator=start.terminator, components=children)
         if tag == "c":
             return WebVTTCueClassSpan(start_tag=st, internal_text=it)
         if tag == "b":
@@ -594,7 +618,7 @@ class WebVTTCueBlock(BaseModel):
         cue_text = cls._pattern_any_tag.sub(cls._strip_unknown_tag, cue_text)
 
         stack: list[list[WebVTTCueComponentWithTerminator]] = [[]]
-        tag_stack: list[dict] = []
+        tag_stack: list[_OpenSpan] = []
 
         def _close_top_span() -> None:
             children = stack.pop()
@@ -609,7 +633,7 @@ class WebVTTCueBlock(BaseModel):
                     if components[-1].terminator is None:
                         components[-1].terminator = WebVTTLineTerminator.LF
                 elif tag_stack:
-                    tag_stack[-1]["terminator"] = WebVTTLineTerminator.LF
+                    tag_stack[-1].terminator = WebVTTLineTerminator.LF
             components.extend(cls._create_text_components(text))
 
         pos = 0
@@ -625,16 +649,16 @@ class WebVTTCueBlock(BaseModel):
             # start tag, and its end tag when no <rt> is open, are ignored. Any other end tag
             # without an open span is ignored as well.
             if not gps["end"]:
-                if gps["tag"] != "rt" or (tag_stack and tag_stack[-1]["tag"] == "ruby"):
-                    tag_stack.append(gps)
+                if gps["tag"] != "rt" or (tag_stack and tag_stack[-1].tag == "ruby"):
+                    tag_stack.append(_OpenSpan.from_match(match))
                     stack.append([])
-            elif tag_stack and (gps["tag"] != "rt" or tag_stack[-1]["tag"] == "rt"):
+            elif tag_stack and (gps["tag"] != "rt" or tag_stack[-1].tag == "rt"):
                 # The end tag of the last ruby text span may be omitted, so
                 # </ruby> implicitly closes an open <rt> (WebVTT 1, 4.2.2).
-                if gps["tag"] == "ruby" and tag_stack[-1]["tag"] == "rt":
+                if gps["tag"] == "ruby" and tag_stack[-1].tag == "rt":
                     _close_top_span()
-                if tag_stack[-1]["tag"] != gps["tag"]:
-                    raise ValueError(f"Incorrect end tag: {tag_stack[-1]['tag']}")
+                if tag_stack[-1].tag != gps["tag"]:
+                    raise ValueError(f"Incorrect end tag: {tag_stack[-1].tag}")
                 _close_top_span()
 
             pos = match.end()
