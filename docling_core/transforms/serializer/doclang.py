@@ -494,7 +494,7 @@ def _serialize_satellite(
     content = ""
     if item.text and content_type in params.content_types:
         # escape first, so that a CDATA section ends up inside the direction wrapper
-        content = doc_serializer.post_process(text=_escape_text(item.text, params))
+        content = doc_serializer.post_process(text=_escape_text(item.text, params), **kwargs)
     nested = ""
     if item.children and content_type in params.content_types:
         excluded = doc_serializer.get_excluded_refs(**kwargs)
@@ -1824,7 +1824,7 @@ class DocLangTableSerializer(BaseTableSerializer):
                         parts.append(cell_loc)
                     if ContentType.TABLE_CELL in params.content_types:
                         if not isinstance(cell, RichTableCell):
-                            content = doc_serializer.post_process(text=_escape_text(content, params))
+                            content = doc_serializer.post_process(text=_escape_text(content, params), **kwargs)
                             if not params.use_virtual_text:
                                 content = _wrap(text=content, wrap_tag=DocLangToken.TEXT.value)
                         parts.append(content)
