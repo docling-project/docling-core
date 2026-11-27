@@ -1527,6 +1527,9 @@ class DocLangPictureSerializer(BasePictureSerializer):
                 PictureClassificationLabel.FLOW_CHART.value,
                 PictureClassificationLabel.SCATTER_CHART.value,
                 PictureClassificationLabel.HEATMAP.value,
+                PictureClassificationLabel.BOX_PLOT.value,
+                PictureClassificationLabel.SCATTER_PLOT.value,
+                PictureClassificationLabel.OTHER_CHART.value,
             }
         return False
 

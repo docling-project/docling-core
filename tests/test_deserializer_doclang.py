@@ -42,7 +42,7 @@ from docling_core.types.doc import (
     TabularChartMetaField,
     TextItem,
 )
-from docling_core.types.doc.document import GroupLabel
+from docling_core.types.doc.document import DocTagsDocument, GroupLabel
 from docling_core.types.doc.labels import CodeLanguageLabel, PictureClassificationLabel
 from tests.doclang_validation import assert_valid_dclg_xml, doclang_validator
 from tests.test_data_gen_flag import GEN_TEST_DATA
@@ -2904,3 +2904,32 @@ def test_custom_field_structured_roundtrip() -> None:
     out = DocLangDocSerializer(doc=doc2).serialize().text
     assert out == DocLangDocSerializer(doc=doc).serialize().text
     assert "<content>" not in out  # nested values are not wrapped just for containing newlines
+
+
+@pytest.mark.parametrize("chart_class", ["other_chart", "box_plot", "scatter_plot"])
+def test_chart_classes_keep_chart_data_in_doclang_and_doctags(chart_class: str):
+    """Every chart class keeps its table in DocLang and its class in DocTags."""
+    doc = DoclingDocument(name="chart")
+    _add_default_page(doc)
+    chart_data = TableData(num_rows=0, num_cols=2)
+    chart_data.add_row(["Region", "Revenue"])
+    chart_data.add_row(["North", "120"])
+    picture = doc.add_picture(prov=_default_prov())
+    picture.meta = PictureMeta(
+        classification=PictureClassificationMetaField(
+            predictions=[PictureClassificationPrediction(class_name=chart_class, confidence=1.0)]
+        ),
+        tabular_chart=TabularChartMetaField(chart_data=chart_data),
+    )
+
+    doclang = DocLangDocSerializer(doc=doc, params=DocLangParams(include_version=False)).serialize().text
+    reloaded = _deserialize(doclang).pictures[0]
+    assert reloaded.meta.tabular_chart is not None
+    assert [[cell.text for cell in row] for row in reloaded.meta.tabular_chart.chart_data.grid] == [
+        ["Region", "Revenue"],
+        ["North", "120"],
+    ]
+
+    doctags = DocTagsDocument.from_doctags_and_image_pairs([doc.export_to_doctags()], None)
+    from_doctags = DoclingDocument.load_from_doctags(doctags).pictures[0]
+    assert from_doctags.meta.classification.get_main_prediction().class_name == chart_class
