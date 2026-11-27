@@ -4,15 +4,20 @@ import numpy as np
 import pytest
 from pydantic import AnyUrl, ValidationError
 
-from docling_core.types.doc import CoordOrigin, Size
+from docling_core.types.doc import BoundingBox, CoordOrigin, Size
 from docling_core.types.doc.page import (
     BoundingRectangle,
     Coord2D,
     PdfDestination,
     PdfDestinationKind,
     PdfHyperlink,
+    PdfPageBoundaryType,
+    PdfPageGeometry,
     PdfTableOfContents,
     PdfWidget,
+    SegmentedPdfPage,
+    TextCell,
+    TextCellUnit,
 )
 
 SQRT_2 = math.sqrt(2)
@@ -422,3 +427,46 @@ class TestPdfDestinationValidation:
         assert dest.kind == PdfDestinationKind.UNKNOWN
         assert dest.point is None
         assert dest.coord_origin == CoordOrigin.BOTTOMLEFT
+
+
+def _segmented_page_with_two_lines() -> SegmentedPdfPage:
+    page_box = BoundingBox(l=0, t=100, r=100, b=0, coord_origin=CoordOrigin.BOTTOMLEFT)
+    cells = [
+        TextCell(
+            index=index,
+            rect=BoundingRectangle.from_bounding_box(
+                BoundingBox(l=10, t=top, r=90, b=top - 10, coord_origin=CoordOrigin.BOTTOMLEFT)
+            ),
+            text=text,
+            orig=text,
+            from_ocr=False,
+        )
+        for index, (text, top) in enumerate([("Upper", 90), ("Lower", 20)])
+    ]
+    return SegmentedPdfPage(
+        dimension=PdfPageGeometry(
+            angle=0,
+            rect=BoundingRectangle.from_bounding_box(page_box),
+            boundary_type=PdfPageBoundaryType.CROP_BOX,
+            art_bbox=page_box,
+            bleed_bbox=page_box,
+            crop_bbox=page_box,
+            media_bbox=page_box,
+            trim_bbox=page_box,
+        ),
+        char_cells=[],
+        word_cells=[],
+        textline_cells=cells,
+    )
+
+
+@pytest.mark.parametrize(
+    "bbox",
+    [
+        BoundingBox(l=0, t=100, r=100, b=50, coord_origin=CoordOrigin.BOTTOMLEFT),
+        BoundingBox(l=0, t=0, r=100, b=50, coord_origin=CoordOrigin.TOPLEFT),
+    ],
+)
+def test_crop_text_respects_bbox_coord_origin(bbox: BoundingBox):
+    page = _segmented_page_with_two_lines()
+    assert page.crop_text(cell_unit=TextCellUnit.LINE, bbox=bbox) == "Upper"
