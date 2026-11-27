@@ -124,11 +124,9 @@ def _is_collectable_function(language: CodeLanguageLabel, node: Node, constructo
 
 def _get_default_tokenizer() -> "BaseTokenizer":
     """Get the default tokenizer instance."""
-    from docling_core.transforms.chunker.tokenizer.huggingface import (
-        HuggingFaceTokenizer,
-    )
+    from docling_core.transforms.chunker.tokenizer.huggingface import get_default_tokenizer
 
-    return HuggingFaceTokenizer.from_pretrained(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    return get_default_tokenizer()
 
 
 def _has_child(node: Node, child_name: str) -> bool:
