@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+
 """Datastructures for PaginatedDocument."""
 
 import copy
@@ -1514,6 +1516,9 @@ class PdfDestination(BaseModel):
 
     ``page_size`` is the target page in that same frame, so the coordinate origin can be
     changed without loading the page.
+
+    ``structure_element_id`` identifies the target of a PDF structure destination, when
+    available. It is the PDF object number and generation number separated by a space.
     """
 
     page_no: PageNumber
@@ -1523,6 +1528,7 @@ class PdfDestination(BaseModel):
     coord_origin: CoordOrigin = CoordOrigin.BOTTOMLEFT
 
     page_size: Size
+    structure_element_id: str | None = None
 
     def to_top_left_origin(self) -> "PdfDestination":
         """Return this destination with a top-left coordinate origin."""
@@ -1546,6 +1552,7 @@ class PdfDestination(BaseModel):
             point=point,
             coord_origin=coord_origin,
             page_size=self.page_size,
+            structure_element_id=self.structure_element_id,
         )
 
 
