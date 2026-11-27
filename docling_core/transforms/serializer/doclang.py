@@ -248,7 +248,16 @@ class DocLangParams(CommonParams):
     add_table_cell_location: Annotated[bool, _advanced_field()] = False
     add_referenced_caption: Annotated[bool, _advanced_field()] = True
     add_referenced_footnote: Annotated[bool, _advanced_field()] = True
-    add_page_break: Annotated[bool, _advanced_field()] = True
+    add_page_break: Annotated[
+        bool,
+        _advanced_field(
+            detail=(
+                "Emit <page_break/> between content on different pages. When False, a list that "
+                "spans pages is serialized as one <list>, and the fragments of a multi-page "
+                "text item or table stay threaded without a page break between them."
+            ),
+        ),
+    ] = True
     add_content: Annotated[bool, _advanced_field()] = True
     content_types: Annotated[
         set[ContentType],
@@ -1004,11 +1013,11 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
         Returns:
             SerializationResult containing the serialized text and span mappings.
         """
-        params = DocLangParams(**kwargs)
         if len(item.prov) > 1 and not isinstance(item, ListItem):
             # Split multi-provenance items into per-provenance fragments linked by
             # a shared thread_id; insert page breaks when page_no changes.
             # List items are not split here; cross-page lists are handled at list-group level.
+            params = DocLangParams(**kwargs)
             thread_id = _allocate_thread_id(doc_serializer, item)
             res: list[SerializationResult] = []
             for idp, prov_ in enumerate(item.prov):
