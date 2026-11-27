@@ -25,13 +25,14 @@ from docling_core.transforms.serializer.base import (
     BaseTextSerializer,
     SerializationResult,
 )
-from docling_core.transforms.serializer.common import create_ser_result
+from docling_core.transforms.serializer.common import create_ser_result, get_inline_content_group
 from docling_core.transforms.serializer.markdown import (
     MarkdownDocSerializer,
     MarkdownMetaSerializer,
     MarkdownParams,
     MarkdownTextSerializer,
 )
+from docling_core.transforms.serializer.plain_text import PlainTextDocSerializer
 from docling_core.types.base import _JSON_POINTER_REGEX
 from docling_core.types.doc import (
     BaseMeta,
@@ -101,6 +102,8 @@ def _serialize_text_item(item: TextItem, doc: DoclingDocument, **kwargs: Any) ->
     """
     md_serializer = MarkdownDocSerializer(doc=doc)
     text_serializer = MarkdownTextSerializer()
+    # The outline labels select outline entries, not the runs inside a heading.
+    kwargs = {k: v for k, v in kwargs.items() if k != "labels"}
     result = text_serializer.serialize(item=item, doc_serializer=md_serializer, doc=doc, **kwargs)
     return result.text.strip()
 
@@ -231,11 +234,12 @@ def _default_text(item: NodeItem, doc: DoclingDocument, **kwargs: Any) -> str:
     # Extract title/heading text once if needed
     title_text: str | None = None
     if params.include_non_meta and isinstance(item, TitleItem | SectionHeaderItem):
-        title_text = (
-            item.text
-            if params.format in (OutlineFormat.JSON, OutlineFormat.ITXT)
-            else _serialize_text_item(item, doc, **kwargs)
-        )
+        if params.format in (OutlineFormat.JSON, OutlineFormat.ITXT):
+            title_text = item.text
+            if not title_text and (inline_group := get_inline_content_group(item, doc)) is not None:
+                title_text = PlainTextDocSerializer(doc=doc).serialize(item=inline_group).text
+        else:
+            title_text = _serialize_text_item(item, doc, **kwargs)
 
     # For JSON and ITXT formats, return structured data as JSON string
     # (ITXT will be assembled at document level in serialize_doc)

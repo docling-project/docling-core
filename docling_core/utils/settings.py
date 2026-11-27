@@ -17,6 +17,15 @@ class CoreSettings(BaseSettings):
         ),
     ] = False
     max_image_decoded_size: int = 20 * 1024 * 1024  # 20MB
+    allow_media_file_uri: Annotated[
+        bool,
+        Field(
+            description=(
+                "Allow reading local media files referenced by a MediaRef, "
+                "either as file:// URIs or as plain filesystem paths."
+            ),
+        ),
+    ] = False
     allowed_private_ips: Annotated[
         list[str],
         Field(

@@ -39,6 +39,7 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
 )
+from docling_core.utils.settings import settings
 
 DOCLANG_NS = "https://www.doclang.ai/ns/v0"
 NS = {"d": DOCLANG_NS}
@@ -77,7 +78,6 @@ SEMANTIC_INLINE_TYPES = {
     "value": "field_value",
 }
 XPATH_OPERATORS = {"and", "div", "mod", "or"}
-MAX_XML_BYTES = 64 * 1024 * 1024
 MAX_ARCHIVE_MEMBER_BYTES = 512 * 1024 * 1024
 MAX_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024
 
@@ -139,12 +139,34 @@ class LoadedDocument:
         *,
         stdin_bytes: bytes | None = None,
         validate: bool = False,
+        max_xml_bytes: int | None = None,
     ) -> LoadedDocument:
-        raw, input_type, members = _read_source(source, stdin_bytes=stdin_bytes)
-        if len(raw) > MAX_XML_BYTES:
-            raise DclqError(f"DocLang XML exceeds the {MAX_XML_BYTES}-byte limit")
+        """Load a DocLang document from a path, archive, or standard input.
 
-        parser = etree.XMLParser(resolve_entities=False, no_network=True, load_dtd=False, huge_tree=False)
+        Args:
+            source: Path to a ``.dclg``, ``.xml`` or ``.dclx`` file, or ``-`` for standard input.
+            stdin_bytes: Raw bytes read from standard input when ``source`` is ``-``.
+            validate: Validate the document against the DocLang schema before loading.
+            max_xml_bytes: Maximum size of the DocLang XML in bytes. Defaults to
+                ``docling_core.utils.settings.settings.max_doclang_xml_bytes``.
+
+        Returns:
+            The loaded document.
+
+        Raises:
+            DclqError: If the input cannot be read, exceeds the size limit, or is not valid DocLang.
+        """
+        if max_xml_bytes is None:
+            max_xml_bytes = settings.max_doclang_xml_bytes
+        raw, input_type, members = _read_source(source, stdin_bytes=stdin_bytes, max_xml_bytes=max_xml_bytes)
+        if len(raw) > max_xml_bytes:
+            raise DclqError(
+                f"DocLang XML exceeds the {max_xml_bytes}-byte limit; "
+                "set DOCLINGCORE_MAX_DOCLANG_XML_BYTES to change it"
+            )
+
+        # Total size is bounded by max_xml_bytes above; huge_tree only lifts libxml2's per-node limits.
+        parser = etree.XMLParser(resolve_entities=False, no_network=True, load_dtd=False, huge_tree=True)
         try:
             raw_root = etree.fromstring(raw, parser=parser)
         except (etree.XMLSyntaxError, ValueError) as exc:
@@ -185,9 +207,12 @@ class LoadedDocument:
         etree.cleanup_namespaces(semantic_root)
         text = etree.tostring(semantic_root, encoding="unicode")
 
+        # The re-serialized text can be larger than the raw input (e.g. CDATA escaping), which was already
+        # checked against max_xml_bytes, so the deserializer budget is sized to the text itself.
+        text_nbytes = len(text.encode("utf-8"))
         source_map = DocLangSourceMap()
         try:
-            document = DocLangDocDeserializer().deserialize_str(text, source_map=source_map)
+            document = DocLangDocDeserializer().deserialize_str(text, source_map=source_map, max_xml_bytes=text_nbytes)
             document.name = Path(source).stem if source != "-" else "stdin"
             document._hierarchize()
         except Exception as exc:
@@ -454,7 +479,7 @@ class LoadedDocument:
         raise DclqError(f"unknown context scope: {scope}")
 
 
-def _read_source(source: str, *, stdin_bytes: bytes | None) -> tuple[bytes, str, tuple[str, ...]]:
+def _read_source(source: str, *, stdin_bytes: bytes | None, max_xml_bytes: int) -> tuple[bytes, str, tuple[str, ...]]:
     if source == "-":
         if stdin_bytes is None:
             raise DclqError("standard input was not provided")
@@ -476,12 +501,18 @@ def _read_source(source: str, *, stdin_bytes: bytes | None) -> tuple[bytes, str,
                 documents = [info for info in infos if info.filename == "document.xml"]
                 if len(documents) != 1:
                     raise DclqError("DocLang archive must contain exactly one document.xml")
-                if documents[0].file_size > MAX_XML_BYTES:
-                    raise DclqError(f"document.xml exceeds the {MAX_XML_BYTES}-byte limit")
+                if documents[0].file_size > max_xml_bytes:
+                    raise DclqError(
+                        f"document.xml exceeds the {max_xml_bytes}-byte limit; "
+                        "set DOCLINGCORE_MAX_DOCLANG_XML_BYTES to change it"
+                    )
                 with archive.open(documents[0]) as document:
-                    raw = document.read(MAX_XML_BYTES + 1)
-                if len(raw) > MAX_XML_BYTES:
-                    raise DclqError(f"document.xml exceeds the {MAX_XML_BYTES}-byte limit")
+                    raw = document.read(max_xml_bytes + 1)
+                if len(raw) > max_xml_bytes:
+                    raise DclqError(
+                        f"document.xml exceeds the {max_xml_bytes}-byte limit; "
+                        "set DOCLINGCORE_MAX_DOCLANG_XML_BYTES to change it"
+                    )
                 return raw, "dclx", tuple(info.filename for info in infos)
         except (OSError, zipfile.BadZipFile) as exc:
             raise DclqError(f"could not read DocLang archive: {exc}") from exc

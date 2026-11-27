@@ -616,3 +616,45 @@ def test_latex_keeps_first_title_when_later_title_is_formatted() -> None:
     assert result.count(r"\maketitle") == 1
     assert "Between titles." in result
     assert "After titles." in result
+
+
+def test_latex_serialize_param_patch_reaches_text_formatting():
+    """Per-call serialize() patches apply to LaTeX text formatting."""
+    doc = DoclingDocument(name="test")
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True))
+    ser = LaTeXDocSerializer(doc=doc)
+    assert "\\textbf{bold}" in ser.serialize().text
+    assert "\\textbf{bold}" not in ser.serialize(include_formatting=False).text
+
+    doc = DoclingDocument(name="test")
+    holder = doc.add_text(label=DocItemLabel.TEXT, text="")
+    inline = doc.add_inline_group(parent=holder)
+    doc.add_text(label=DocItemLabel.TEXT, text="bold", formatting=Formatting(bold=True), parent=inline)
+    ser = LaTeXDocSerializer(doc=doc)
+    assert "\\textbf{bold}" in ser.serialize().text
+    assert "\\textbf{bold}" not in ser.serialize(include_formatting=False).text
+
+
+@pytest.mark.parametrize(
+    ("level", "expected_heading"),
+    [
+        (None, r"\title{Heading eq $y=2$}"),
+        (1, r"\section{Heading eq $y=2$}"),
+        (3, r"\subsubsection{Heading eq $y=2$}"),
+    ],
+)
+def test_latex_rich_heading_keeps_inline_content_before_body(level: int | None, expected_heading: str) -> None:
+    """A heading with a leading inline group and body children keeps its text in the heading command."""
+    doc = DoclingDocument(name="rich heading")
+    heading = doc.add_title(text="") if level is None else doc.add_heading(text="", level=level)
+    inline = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="Heading eq ", parent=inline)
+    doc.add_text(label=DocItemLabel.FORMULA, text="y=2", parent=inline)
+    doc.add_text(label=DocItemLabel.TEXT, text="Body under it.", parent=heading)
+
+    result = LaTeXDocSerializer(doc=doc).serialize().text
+
+    assert result.count(expected_heading) == 1
+    assert result.count("Heading eq") == 1
+    assert result.count("Body under it.") == 1
+    assert result.index(expected_heading) < result.index("Body under it.")

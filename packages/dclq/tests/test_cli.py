@@ -2,9 +2,12 @@ import json
 import zipfile
 from pathlib import Path
 
+import pytest
 from dclq import __version__
 from dclq.cli import main
-from dclq.document import MAX_XML_BYTES
+from dclq.document import DclqError, LoadedDocument
+
+from docling_core.utils.settings import settings
 
 DOCUMENT = """<doclang xmlns="https://www.doclang.ai/ns/v0" version="0.7">
   <heading level="1">Report</heading>
@@ -387,7 +390,7 @@ def test_archive_input_and_grep_exit_codes(tmp_path: Path, capsys, monkeypatch) 
     assert main(["grep", "missing", str(archive), "-q"]) == 1
     assert main(["grep", "[", str(archive)]) == 2
     assert "invalid regular expression" in capsys.readouterr().err
-    assert read_sizes and set(read_sizes) == {MAX_XML_BYTES + 1}
+    assert read_sizes and set(read_sizes) == {settings.max_doclang_xml_bytes + 1}
 
     prefixed = tmp_path / "prefixed.xml"
     prefixed.write_text(
@@ -504,3 +507,27 @@ def test_context_scope_clips_at_its_boundary(tmp_path: Path, capsys) -> None:
     # page was removed: it severs threads across page breaks for a layout reason
     assert main(["grep", "Beta", str(path), "-C", "1", "--context-scope", "page"]) == 2
     assert "'page' is not one of" in capsys.readouterr().err
+
+
+def test_load_single_node_above_libxml2_default_limit() -> None:
+    big = b'<doclang xmlns="https://www.doclang.ai/ns/v0"><text>' + b"a" * (11 * 1024 * 1024) + b"</text></doclang>"
+    assert LoadedDocument.load("-", stdin_bytes=big).document.texts
+
+
+def test_max_xml_bytes_applies_to_raw_input_not_escaped_text() -> None:
+    # CDATA is re-serialized with escaping, so the text handed to the deserializer is larger than the input.
+    raw = (
+        '<doclang xmlns="https://www.doclang.ai/ns/v0"><text><![CDATA[' + "&" * 2000 + "]]></text></doclang>"
+    ).encode()
+    assert LoadedDocument.load("-", stdin_bytes=raw, max_xml_bytes=len(raw)).document.texts
+    with pytest.raises(DclqError, match=r"exceeds the \d+-byte limit"):
+        LoadedDocument.load("-", stdin_bytes=raw, max_xml_bytes=len(raw) - 1)
+
+
+def test_max_xml_bytes_applies_to_archive_member(tmp_path: Path) -> None:
+    archive = tmp_path / "report.dclx"
+    with zipfile.ZipFile(archive, "w") as package:
+        package.writestr("document.xml", DOCUMENT)
+    assert LoadedDocument.load(str(archive), max_xml_bytes=len(DOCUMENT.encode())).document.texts
+    with pytest.raises(DclqError, match=r"document\.xml exceeds"):
+        LoadedDocument.load(str(archive), max_xml_bytes=len(DOCUMENT.encode()) - 1)

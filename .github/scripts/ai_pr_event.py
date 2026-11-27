@@ -32,6 +32,9 @@ class Decision:
     run: bool
     force_review: bool
     reason: str
+    # True when a maintainer started the run (an /ai command or a manual run).
+    # Such a run may use the AI model for a PR that is otherwise skipped.
+    maintainer_requested: bool = False
 
 
 def parse_command(body: str) -> str | None:
@@ -69,7 +72,7 @@ def resolve(event_name: str, event: dict[str, Any], pull: dict[str, Any] | None 
         command = parse_command(comment.get("body") or "")
         if command is None:
             return Decision(number, False, False, "no /ai command")
-        return Decision(number, True, command == "review", f"/ai {command}")
+        return Decision(number, True, command == "review", f"/ai {command}", maintainer_requested=True)
 
     if event_name == "workflow_dispatch":
         # Only users with write access can start a dispatch, so the request
@@ -83,7 +86,7 @@ def resolve(event_name: str, event: dict[str, Any], pull: dict[str, Any] | None 
             raise ValueError(f"the PR data does not match PR #{number}")
         if pull.get("state") != "open":
             return Decision(number, False, False, "not an open PR")
-        return Decision(number, True, mode == "review", f"manual {mode}")
+        return Decision(number, True, mode == "review", f"manual {mode}", maintainer_requested=True)
 
     raise ValueError(f"unsupported event: {event_name}")
 
@@ -114,13 +117,17 @@ def main(argv: list[str] | None = None) -> int:
     event = json.loads(args.event_path.read_text("utf-8"))
     pull = json.loads(args.pull_request.read_text("utf-8")) if args.pull_request is not None else None
     decision = resolve(args.event_name, event, pull)
-    print(f"PR #{decision.pr}: run={decision.run}, force_review={decision.force_review} ({decision.reason})")
+    print(
+        f"PR #{decision.pr}: run={decision.run}, force_review={decision.force_review}, "
+        f"maintainer_requested={decision.maintainer_requested} ({decision.reason})"
+    )
     github_output = os.environ.get("GITHUB_OUTPUT")
     if github_output:
         with Path(github_output).open("a", encoding="utf-8") as handle:
             handle.write(f"pr={decision.pr}\n")
             handle.write(f"run={'true' if decision.run else 'false'}\n")
             handle.write(f"force_review={'true' if decision.force_review else 'false'}\n")
+            handle.write(f"maintainer_requested={'true' if decision.maintainer_requested else 'false'}\n")
     return 0
 
 

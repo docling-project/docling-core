@@ -35,12 +35,14 @@ from docling_core.transforms.serializer.common import (
     _PageBreakSerResult,
     _should_use_legacy_annotations,
     create_ser_result,
+    get_inline_content_group,
     markdown_link_destination,
 )
 from docling_core.types.doc import (
     BaseMeta,
     CaptionPlacement,
     CodeItem,
+    CodeLanguageLabel,
     ContentLayer,
     CoordOrigin,
     DescriptionAnnotation,
@@ -79,6 +81,7 @@ from docling_core.types.doc import (
     TextItem,
     TitleItem,
     TopicsMetaField,
+    TrackItem,
 )
 
 _logger = logging.getLogger(__name__)
@@ -227,14 +230,17 @@ def _longest_backtick_run(text: str) -> int:
 def _code_span(text: str) -> str:
     """Wrap text in a code span whose delimiter no backtick run inside can close."""
     ticks = "`" * (_longest_backtick_run(text) + 1)
-    pad = " " if text.startswith("`") or text.endswith("`") else ""
+    # CommonMark normalizes line endings, then removes one paired edge space unless all spaces.
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n").replace("\n", " ")
+    needs_space_padding = normalized.startswith(" ") and normalized.endswith(" ") and bool(normalized.strip(" "))
+    pad = " " if text.startswith("`") or text.endswith("`") or needs_space_padding else ""
     return f"{ticks}{pad}{text}{pad}{ticks}"
 
 
-def _code_block(text: str) -> str:
+def _code_block(text: str, *, lang: str = "") -> str:
     """Wrap text in a fenced code block whose fence is longer than any backtick run inside."""
     fence = "`" * max(3, _longest_backtick_run(text) + 1)
-    return f"{fence}\n{text}\n{fence}"
+    return f"{fence}{lang}\n{text}\n{fence}"
 
 
 def _inline_run_starts_line(item: TextItem, doc: DoclingDocument) -> bool:
@@ -416,16 +422,16 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
         my_visited = visited if visited is not None else set()
         params = MarkdownParams(**kwargs)
         res_parts: list[SerializationResult] = []
-        escape_html = True
-        escape_underscores = True
+        escape_html = kwargs.get("escape_html")
+        escape_underscores = kwargs.get("escape_underscores")
+        content_indent = ""
 
-        has_inline_repr = (
-            item.text == ""
-            and len(item.children) == 1
-            and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
-        )
-        if has_inline_repr:
-            text = doc_serializer.serialize(item=child_group, visited=my_visited).text
+        child_group = self._inline_content_group(item, doc)
+        if child_group is not None:
+            text = doc_serializer.serialize(item=child_group, visited=my_visited, **kwargs).text
+            if isinstance(item, TitleItem | SectionHeaderItem):
+                # Inline runs already carry GFM hard breaks, which a heading line cannot hold.
+                text = self._heading_line_breaks(text.replace("  \n", "\n"))
             processing_pending = False
         else:
             text = item.text
@@ -436,7 +442,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             # The syntax needs a space after the box, unless the text brings its own.
             text = f"- {box}{text}" if text[:1].isspace() else f"- {box} {text}"
         if isinstance(item, ListItem | TitleItem | SectionHeaderItem):
-            if not has_inline_repr:
+            if child_group is None:
                 # case where processing/formatting should be applied first (in inner scope)
                 if isinstance(item, TitleItem | SectionHeaderItem):
                     # Headings cannot span multiple lines; replace newlines with a
@@ -452,6 +458,7 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                     escape_underscores=escape_underscores,
                     formatting=item.formatting,
                     hyperlink=item.hyperlink,
+                    **{k: v for k, v in kwargs.items() if k not in ("escape_html", "escape_underscores")},
                 )
                 processing_pending = False
 
@@ -498,13 +505,15 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
 
                 pieces.append(text)
                 text_part = " ".join(pieces)
+                content_indent = " " * (len(pieces[0]) + 1) if len(pieces) > 1 else ""
             else:
                 text_part = self._format_heading(text, item, in_table_cell=in_table_cell)
         elif isinstance(item, CodeItem):
             if params.format_code_blocks:
                 # inline items and all hyperlinks: format as code span
                 bt = is_inline_scope or (params.include_hyperlinks and item.hyperlink)
-                text_part = _code_span(text) if bt else _code_block(text)
+                lang = item.code_language.value.lower() if item.code_language != CodeLanguageLabel.UNKNOWN else ""
+                text_part = _code_span(text) if bt else _code_block(text, lang=lang)
             else:
                 text_part = text
             escape_html = False
@@ -541,6 +550,18 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
             text_res = create_ser_result(text=text_part, span_source=item)
             res_parts.append(text_res)
 
+        if isinstance(item, ListItem):
+            res_parts.extend(
+                self._serialize_list_continuations(
+                    item=item,
+                    doc_serializer=doc_serializer,
+                    doc=doc,
+                    visited=my_visited,
+                    content_indent=content_indent,
+                    **kwargs,
+                )
+            )
+
         if isinstance(item, FloatingItem):
             ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
             if ftn_res.text:
@@ -552,7 +573,15 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 else:
                     res_parts.insert(0, cap_res)
 
-        text = (" " if is_inline_scope else "\n\n").join([r.text for r in res_parts])
+        texts = [r.text for r in res_parts]
+        sep = " " if is_inline_scope else "\n\n"
+        if isinstance(item, ListItem) and len(texts) > 1:
+            # A blank line after a marker without text ends the item: the first block goes on the next line.
+            first_sep = "\n" if text_part and child_group is None and item.text == "" else sep
+            # MarkdownListSerializer joins the items with "\n": the trailing "\n" makes a blank line before the next one.
+            text = f"{texts[0]}{first_sep}{sep.join(texts[1:])}\n"
+        else:
+            text = sep.join(texts)
         if processing_pending:
             text = doc_serializer.post_process(
                 text=text,
@@ -560,8 +589,47 @@ class MarkdownTextSerializer(BaseModel, BaseTextSerializer):
                 escape_underscores=escape_underscores,
                 formatting=item.formatting,
                 hyperlink=item.hyperlink,
+                **{k: v for k, v in kwargs.items() if k not in ("escape_html", "escape_underscores")},
             )
         return create_ser_result(text=text, span_source=res_parts)
+
+    @staticmethod
+    def _inline_content_group(item: TextItem, doc: DoclingDocument) -> InlineGroup | None:
+        """Return the inline group that holds the text of an item with empty text.
+
+        For a list item the group only has to be the first child, because continuation
+        blocks can follow it.
+
+        Args:
+            item: The text item to inspect.
+            doc: The document used to resolve the children of the item.
+
+        Returns:
+            The inline group that is the text of the item, or `None`.
+        """
+        if isinstance(item, ListItem) and item.text == "" and item.children:
+            first_child = item.children[0].resolve(doc)
+            return first_child if isinstance(first_child, InlineGroup) else None
+        return get_inline_content_group(item, doc)
+
+    def _serialize_list_continuations(
+        self,
+        *,
+        item: ListItem,
+        doc_serializer: BaseDocSerializer,
+        doc: DoclingDocument,
+        visited: set[str],
+        content_indent: str,
+        **kwargs: Any,
+    ) -> list[SerializationResult]:
+        """Serialize the block children of a list item, indented to its content column."""
+        # an item whose children are only sub-lists is left to the list serializer
+        if all(c.cref in visited or isinstance(c.resolve(doc), ListGroup) for c in item.children):
+            return []
+        parts = doc_serializer.get_parts(item=item, visited=visited, **kwargs)
+        for part in parts:
+            part.text = textwrap.indent(part.text, content_indent)
+        return parts
 
     def _format_heading(
         self,
@@ -1034,12 +1102,13 @@ class MarkdownPictureSerializer(BasePictureSerializer):
 
     def _serialize_image_part(
         self,
-        item: PictureItem,
+        item: FloatingItem,
         doc: DoclingDocument,
         image_mode: ImageRefMode,
         image_placeholder: str,
         **kwargs: Any,
     ) -> SerializationResult:
+        """Serialize the image of a picture, or the cover of a track, by the image mode."""
         error_response = (
             "<!-- 🖼️❌ Image not available. Please use `PdfPipelineOptions(generate_picture_images=True)` -->"
         )
@@ -1174,11 +1243,25 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                 my_parts.append(p)
 
         indent_str = list_level * params.indent * " "
-        my_texts = [
-            # avoid additional marker on already evaled sublists
-            (c.text if c.text and c.text[0] == " " else f"{indent_str}{c.text}")
-            for c in my_parts
-        ]
+        my_texts: list[str] = []
+        item_seen = False
+        for c in my_parts:
+            sublist = self._sublist_child_of_part(part=c, item=item, doc=doc)
+            if sublist is not None and not item_seen:
+                # Markdown has no sub-list without a parent item: an indented block
+                # with no item before it is an indented code block, so hang the
+                # sub-list on an empty item of this list.
+                marker = self._orphan_sublist_marker(sublist=sublist, item=item, doc=doc)
+                my_texts.append(
+                    self._fold_orphan_sublist(text=c.text, marker=marker, indent_str=indent_str, indent=params.indent)
+                )
+            elif c.text and c.text[0] == " ":
+                # avoid additional marker on already evaled sublists
+                my_texts.append(c.text)
+            else:
+                my_texts.append(textwrap.indent(c.text, indent_str))
+            if not isinstance(c, _PageBreakSerResult):
+                item_seen = True
         text_res = ""
         for i, text in enumerate(my_texts):
             if i:
@@ -1190,7 +1273,52 @@ class MarkdownListSerializer(BaseModel, BaseListSerializer):
                     else sep
                 )
             text_res += text
-        return create_ser_result(text=text_res, span_source=my_parts)
+        # drop the trailing "\n" that MarkdownTextSerializer adds to the last item
+        return create_ser_result(text=text_res.rstrip("\n"), span_source=my_parts)
+
+    @staticmethod
+    def _sublist_child_of_part(*, part: SerializationResult, item: ListGroup, doc: DoclingDocument) -> ListGroup | None:
+        """Return the child ListGroup of ``item`` that ``part`` was serialized from, if any.
+
+        The spans of a part lead back to the child of the list it belongs to: a list item,
+        or a sub-list that is a child of the list group rather than of a list item.
+        """
+        if not part.spans:
+            return None
+        node: NodeItem = part.spans[0].item
+        while node.parent is not None:
+            parent = node.parent.resolve(doc)
+            if parent.self_ref == item.self_ref:
+                return node if isinstance(node, ListGroup) else None
+            node = parent
+        return None
+
+    @staticmethod
+    def _fold_orphan_sublist(*, text: str, marker: str, indent_str: str, indent: int) -> str:
+        """Put ``marker`` in front of the first line of an already indented sub-list.
+
+        The marker goes on the same line as the sub-list's first item: a bare marker on a
+        line of its own would be read as a setext heading underline when a paragraph line
+        (the text of an enclosing list item) precedes it. The marker is padded so that the
+        sub-list's own markers stay at the content column of the new item, which keeps the
+        following lines of the sub-list in that same list instead of nested one level deeper.
+        """
+        first, newline, rest = text.partition("\n")
+        gap = " " * min(max(indent - len(marker), 1), 4)
+        return f"{indent_str}{marker}{gap}{first.lstrip()}{newline}{rest}"
+
+    @staticmethod
+    def _orphan_sublist_marker(*, sublist: ListGroup, item: ListGroup, doc: DoclingDocument) -> str:
+        """Return the marker of the empty item that holds a sub-list no item precedes.
+
+        The marker follows the numbering of the list: the position of the sub-list among the
+        children of the list when the list is enumerated, a dash otherwise.
+        """
+        if item.first_item_is_enumerated(doc):
+            for pos, child in enumerate(item.children):
+                if child.cref == sublist.self_ref:
+                    return f"{pos + 1}."
+        return "-"
 
 
 class MarkdownInlineSerializer(BaseInlineSerializer):
@@ -1234,8 +1362,21 @@ class MarkdownFallbackSerializer(BaseFallbackSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Serializes the passed item."""
-        if isinstance(item, GroupItem):
+        # a track is serialized as its captions, its cover (like the image of a picture) and its cues
+        if isinstance(item, GroupItem | TrackItem):
             parts = doc_serializer.get_parts(item=item, **kwargs)
+            if isinstance(item, TrackItem):
+                if item.image is not None and item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+                    params = MarkdownParams(**kwargs)
+                    cover_res = MarkdownPictureSerializer()._serialize_image_part(
+                        item=item,
+                        doc=doc,
+                        image_mode=params.image_mode,
+                        image_placeholder=params.image_placeholder,
+                    )
+                    parts = [cover_res, *parts]
+                if (cap_res := doc_serializer.serialize_captions(item=item, **kwargs)).text:
+                    parts = [cap_res, *parts]
             text_res = "\n\n".join([p.text for p in parts if p.text])
             return create_ser_result(text=text_res, span_source=parts)
         elif isinstance(item, (FieldRegionItem, FieldItem)):
@@ -1283,25 +1424,26 @@ class MarkdownDocSerializer(DocSerializer):
         """Apply Markdown-specific strikethrough serialization."""
         return f"~~{text}~~"
 
-    def _fallback_formatting(self, text: str, tag: str) -> str:
-        if self.params.formatting_fallback_mode == FormattingFallbackMode.HTML:
+    def _fallback_formatting(self, text: str, tag: str, **kwargs: Any) -> str:
+        params = self.params.merge_with_patch(patch=kwargs)
+        if params.formatting_fallback_mode == FormattingFallbackMode.HTML:
             return f"<{tag}>{text}</{tag}>"
         return text
 
     @override
     def serialize_underline(self, text: str, **kwargs: Any):
         """Apply Markdown-specific underline serialization."""
-        return self._fallback_formatting(text, "u")
+        return self._fallback_formatting(text, "u", **kwargs)
 
     @override
     def serialize_subscript(self, text: str, **kwargs: Any):
         """Apply Markdown-specific subscript serialization."""
-        return self._fallback_formatting(text, "sub")
+        return self._fallback_formatting(text, "sub", **kwargs)
 
     @override
     def serialize_superscript(self, text: str, **kwargs: Any):
         """Apply Markdown-specific superscript serialization."""
-        return self._fallback_formatting(text, "sup")
+        return self._fallback_formatting(text, "sup", **kwargs)
 
     @override
     def serialize_hyperlink(
@@ -1351,8 +1493,8 @@ class MarkdownDocSerializer(DocSerializer):
         self,
         text: str,
         *,
-        escape_html: bool = True,
-        escape_underscores: bool = True,
+        escape_html: bool | None = None,
+        escape_underscores: bool | None = None,
         formatting: Formatting | None = None,
         hyperlink: AnyUrl | PurePath | None = None,
         **kwargs: Any,
@@ -1360,14 +1502,17 @@ class MarkdownDocSerializer(DocSerializer):
         """Apply some text post-processing steps."""
         res = text
         params = self.params.merge_with_patch(patch=kwargs)
-        if escape_underscores and params.escape_underscores:
+        escape_underscores = params.escape_underscores if escape_underscores is None else escape_underscores
+        escape_html = params.escape_html if escape_html is None else escape_html
+        if escape_underscores:
             res = self._escape_underscores(text)
-        if escape_html and params.escape_html:
+        if escape_html:
             res = html.escape(res, quote=False)
         res = super().post_process(
             text=res,
             formatting=formatting,
             hyperlink=hyperlink,
+            **kwargs,
         )
         return res
 

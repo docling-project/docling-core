@@ -37,6 +37,7 @@ from docling_core.transforms.serializer.common import (
     _get_annotation_text,
     _should_use_legacy_annotations,
     create_ser_result,
+    get_inline_content_group,
     hyperlink_uri,
 )
 from docling_core.transforms.serializer.html_styles import (
@@ -48,6 +49,7 @@ from docling_core.types.doc.base import ImageRefMode
 from docling_core.types.doc.document import (
     BaseMeta,
     CodeItem,
+    CodeLanguageLabel,
     CodeMetaField,
     ContentLayer,
     DescriptionAnnotation,
@@ -82,6 +84,7 @@ from docling_core.types.doc.document import (
     TextItem,
     TitleItem,
     TopicsMetaField,
+    TrackItem,
 )
 from docling_core.types.doc.labels import DocItemLabel
 from docling_core.types.doc.utils import (
@@ -163,13 +166,9 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
         res_parts: list[SerializationResult] = []
         post_processed = False
 
-        has_inline_repr = (
-            item.text == ""
-            and len(item.children) == 1
-            and isinstance((child_group := item.children[0].resolve(doc)), InlineGroup)
-        )
-        if has_inline_repr:
-            text = doc_serializer.serialize(item=child_group, visited=my_visited).text
+        child_group = get_inline_content_group(item, doc)
+        if child_group is not None:
+            text = doc_serializer.serialize(item=child_group, visited=my_visited, **kwargs).text
             post_processed = True
         else:
             text = item.text
@@ -178,7 +177,9 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 if not isinstance(item, CodeItem):
                     text = text.replace("\n", "<br>")
             if not isinstance(item, CodeItem | FormulaItem | ListItem):
-                text = doc_serializer.post_process(text=text, formatting=item.formatting, hyperlink=item.hyperlink)
+                text = doc_serializer.post_process(
+                    text=text, formatting=item.formatting, hyperlink=item.hyperlink, **kwargs
+                )
                 post_processed = True
 
         # Prepare the HTML based on item type
@@ -195,23 +196,26 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 image_mode=params.image_mode,
                 formula_to_mathml=params.formula_to_mathml,
                 is_inline_scope=is_inline_scope,
-                text_is_html=has_inline_repr,
+                text_is_html=child_group is not None,
             )
 
         elif isinstance(item, CodeItem):
-            text = f"<code>{text}</code>" if is_inline_scope else f"<pre><code>{text}</code></pre>"
+            lang = item.code_language.value.lower() if item.code_language != CodeLanguageLabel.UNKNOWN else ""
+            code_class = f' class="language-{html.escape(lang)}"' if lang and not is_inline_scope else ""
+            text = f"<code>{text}</code>" if is_inline_scope else f"<pre><code{code_class}>{text}</code></pre>"
 
         elif isinstance(item, ListItem):
             # List items are handled by list serializer
             text_parts: list[str] = []
             if text:
-                if has_inline_repr:
+                if child_group is not None:
                     text = f"\n{text}\n"
                 else:
                     text = doc_serializer.post_process(
                         text=text,
                         formatting=item.formatting,
                         hyperlink=item.hyperlink,
+                        **kwargs,
                     )
                     post_processed = True
                 text_parts.append(text)
@@ -252,12 +256,13 @@ class HTMLTextSerializer(BaseModel, BaseTextSerializer):
                 text=text,
                 formatting=item.formatting,
                 hyperlink=item.hyperlink,
+                **kwargs,
             )
 
         # Recurse into children for branches that don't already consume them.
-        # has_inline_repr already consumed the single InlineGroup child; ListItem
-        # recursion is handled inline in its branch above.
-        if not has_inline_repr and not isinstance(item, ListItem) and item.children:
+        # The leading InlineGroup is already visited; headings can also have
+        # body children. ListItem recursion is handled in its branch above.
+        if not isinstance(item, ListItem) and item.children and (child_group is None or len(item.children) > 1):
             nested_text = "\n".join(
                 r.text
                 for r in doc_serializer.get_parts(
@@ -457,7 +462,7 @@ class HTMLTableSerializer(BaseTableSerializer):
                         content = ser_res.text
                         span_source = [ser_res]
                     else:
-                        content = html.escape(cell.text.strip())
+                        content = html.escape(cell.text.strip()).replace("\n", "<br>")
                         span_source = item
 
                     celltag = "td"
@@ -584,6 +589,25 @@ class HTMLTableSerializer(BaseTableSerializer):
         return headings_list, data_list
 
 
+def _image_html(item: FloatingItem, doc: DoclingDocument, image_mode: ImageRefMode) -> str:
+    """The ``<img>`` of the image of a picture, or of the cover of a track, by the image mode ("" if none)."""
+    if image_mode == ImageRefMode.EMBEDDED:
+        # short-cut: we already have the image in base64
+        if isinstance(item.image, ImageRef) and isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "data":
+            return f'<img src="{html.escape(str(item.image.uri))}">'
+        # get the item.image._pil or crop it out of the page-image
+        img = item.get_image(doc)
+        if img is not None:
+            return f'<img src="data:image/png;base64,{item._image_to_base64(img)}">'
+        _logger.warning("Could not get image")
+    elif image_mode == ImageRefMode.REFERENCED:
+        if isinstance(item.image, ImageRef) and not (
+            isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "data"
+        ):
+            return f'<img src="{html.escape(_escape_uri_path(item.image.uri))}">'
+    return ""
+
+
 class HTMLPictureSerializer(BasePictureSerializer):
     """HTML-specific picture item serializer."""
 
@@ -618,42 +642,28 @@ class HTMLPictureSerializer(BasePictureSerializer):
 
         img_text = ""
         if item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
-            if params.image_mode == ImageRefMode.EMBEDDED:
-                # short-cut: we already have the image in base64
-                if (
+            if (
+                params.image_mode == ImageRefMode.EMBEDDED
+                and not (
                     isinstance(item.image, ImageRef)
                     and isinstance(item.image.uri, AnyUrl)
                     and item.image.uri.scheme == "data"
-                ):
-                    img_text = f'<img src="{html.escape(str(item.image.uri))}">'
-                elif len(item.prov) > 1:  # more than 1 provenance
-                    img_text = '<table style="border-collapse: collapse; width: 100%;">\n'
-                    for ind, prov in enumerate(item.prov):
-                        img = item.get_image(doc, prov_index=ind)
-
-                        if img is not None:
-                            imgb64 = item._image_to_base64(img)
-                            img_text += get_img_row(imgb64=imgb64, ind=ind)
-                        else:
-                            _logger.warning("Could not get image")
-
-                    img_text += "</table>\n"
-
-                else:
-                    # get the item.image._pil or crop it out of the page-image
-                    img = item.get_image(doc)
+                )
+                and len(item.prov) > 1  # more than 1 provenance
+            ):
+                img_text = '<table style="border-collapse: collapse; width: 100%;">\n'
+                for ind, prov in enumerate(item.prov):
+                    img = item.get_image(doc, prov_index=ind)
 
                     if img is not None:
                         imgb64 = item._image_to_base64(img)
-                        img_text = f'<img src="data:image/png;base64,{imgb64}">'
+                        img_text += get_img_row(imgb64=imgb64, ind=ind)
                     else:
                         _logger.warning("Could not get image")
 
-            elif params.image_mode == ImageRefMode.REFERENCED:
-                if isinstance(item.image, ImageRef) and not (
-                    isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "data"
-                ):
-                    img_text = f'<img src="{html.escape(_escape_uri_path(item.image.uri))}">'
+                img_text += "</table>\n"
+            else:
+                img_text = _image_html(item=item, doc=doc, image_mode=params.image_mode)
 
         if img_text:
             res_parts.append(create_ser_result(text=img_text, span_source=item))
@@ -726,6 +736,7 @@ class _HTMLGraphDataSerializer:
         # If we have roots, make a list structure
         if root_ids:
             parts.append(f'<ul class="{class_name}">')
+            rendered: set[int] = set()
             for root_id in root_ids:
                 parts.append(
                     self._render_cell_tree(
@@ -734,6 +745,7 @@ class _HTMLGraphDataSerializer:
                         child_links=child_links,
                         value_links=value_links,
                         level=0,
+                        rendered=rendered,
                     )
                 )
             parts.append("</ul>")
@@ -763,8 +775,15 @@ class _HTMLGraphDataSerializer:
         child_links: dict,
         value_links: dict,
         level: int,
+        rendered: set[int],
     ) -> str:
-        """Recursively render a cell and its children as a nested list."""
+        """Recursively render a cell and its children as a nested list.
+
+        Each cell is rendered once per graph: a child that was already rendered is
+        skipped. A cell with several parents therefore appears only under the first
+        parent that reaches it, and a cycle in the to_child links ends.
+        """
+        rendered.add(cell_id)
         cell = cell_map[cell_id]
         cell_text = html.escape(cell.text)
 
@@ -778,13 +797,18 @@ class _HTMLGraphDataSerializer:
 
             cell_text = f"<strong>{cell_text}</strong>: {', '.join(value_texts)}"
 
+        child_ids = [child_id for child_id in child_links.get(cell_id, []) if child_id not in rendered]
+
         # If this cell has children, create a nested list
-        if child_links.get(cell_id):
+        if child_ids:
             children_html = []
             children_html.append(f"<li>{cell_text}</li>")
             children_html.append("<ul>")
 
-            for child_id in child_links[cell_id]:
+            for child_id in child_ids:
+                # An earlier sibling's subtree may have rendered this child already.
+                if child_id in rendered:
+                    continue
                 children_html.append(
                     self._render_cell_tree(
                         cell_id=child_id,
@@ -792,13 +816,14 @@ class _HTMLGraphDataSerializer:
                         child_links=child_links,
                         value_links=value_links,
                         level=level + 1,
+                        rendered=rendered,
                     )
                 )
 
             children_html.append("</ul>")
             return "\n".join(children_html)
 
-        elif cell_id in value_links:
+        elif cell_id in value_links or cell_id in child_links:
             return f"<li>{cell_text}</li>"
         else:
             # Leaf node - just render the cell
@@ -964,9 +989,23 @@ class HTMLFallbackSerializer(BaseFallbackSerializer):
         **kwargs: Any,
     ) -> SerializationResult:
         """Fallback serializer for items not handled by other serializers."""
-        if isinstance(item, GroupItem):
+        # a track is serialized as its captions, its cover (like the image of a picture) and its cues
+        if isinstance(item, GroupItem | TrackItem):
             parts = doc_serializer.get_parts(item=item, **kwargs)
             text_res = "\n".join([p.text for p in parts if p.text])
+            if isinstance(item, TrackItem):
+                head: list[SerializationResult] = []
+                if (cap_res := doc_serializer.serialize_captions(item=item, **kwargs)).text:
+                    head.append(cap_res)
+                if item.image is not None and item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
+                    params = HTMLParams(**kwargs)
+                    if cover := _image_html(item=item, doc=doc, image_mode=params.image_mode):
+                        head.append(create_ser_result(text=cover, span_source=item))
+                if head:
+                    # a <figcaption> needs a <figure>, which also holds the cover
+                    parts = [*head, *parts]
+                    head_text = "\n".join(r.text for r in head)
+                    text_res = f"<figure>\n{head_text}\n{text_res}\n</figure>"
             return create_ser_result(text=text_res, span_source=parts)
         else:
             return create_ser_result(

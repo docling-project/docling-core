@@ -96,7 +96,7 @@ Affiliation 2</content></text>
   </code>
   <text>Here a formula block:</text>
   <formula>E=mc^2</formula>
-  <text>Some formatting chops: <bold>bold </bold><italic>italic </italic><underline>underline </underline><strikethrough>strikethrough </strikethrough><subscript>subscript </subscript><superscript>superscript </superscript>hyperlink <![CDATA[& ]]><strikethrough><underline><italic><bold>everything at the same time.</bold></italic></underline></strikethrough></text>
+  <text>Some formatting chops: <bold>bold </bold><italic>italic </italic><underline>underline </underline><strikethrough>strikethrough </strikethrough><subscript>subscript </subscript><superscript>superscript </superscript><text><href uri="."/><content>hyperlink </content></text><![CDATA[& ]]><text><href uri="https://github.com/DS4SD/docling"/><strikethrough><underline><italic><bold>everything at the same time.</bold></italic></underline></strikethrough></text></text>
   <list class="ordered">
     <ldiv>
       <marker>(i)</marker>

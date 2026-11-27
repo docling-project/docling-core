@@ -8,11 +8,12 @@ import json
 import logging
 import mimetypes
 import re
+import shutil
 import sys
 import tempfile
 import typing
 import warnings
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO, StringIO
@@ -26,6 +27,7 @@ from typing import (
     Union,
 )
 from urllib.parse import unquote
+from xml.etree import ElementTree
 
 import numpy as np
 import pandas as pd
@@ -96,9 +98,13 @@ from docling_core.types.doc.common.reference import (
     CV2_INSTALLED,
     FineRef,
     ImageRef,
+    MediaRef,
     PageItem,
     ProvenanceItem,
     RefItem,
+    _is_deleted,
+    _shift_index,
+    media_type_of,
 )
 from docling_core.types.doc.common.scalars import CharSpan, LevelNumber, Uint64
 from docling_core.types.doc.common.source import BaseSource, SourceType, TrackSource
@@ -148,6 +154,7 @@ from docling_core.types.doc.items.table.table_data import (
     TableData,
 )
 from docling_core.types.doc.items.text import FormulaItem, ListItem, SectionHeaderItem, TextItem, TitleItem
+from docling_core.types.doc.items.track import TrackItem
 from docling_core.types.doc.labels import (
     CodeLanguageLabel,
     DocItemLabel,
@@ -233,6 +240,7 @@ class DoclingDocument(BaseModel):
     form_items: list[FormItem] = []
     field_regions: list[FieldRegionItem] = []
     field_items: list[FieldItem] = []
+    tracks: list[TrackItem] = []
 
     pages: dict[int, PageItem] = {}  # empty as default
 
@@ -241,7 +249,7 @@ class DoclingDocument(BaseModel):
         dumped = handler(self)
 
         # suppress serializing certain fields when empty:
-        for field in {"field_regions", "field_items"}:
+        for field in {"field_regions", "field_items", "tracks"}:
             if dumped.get(field) == []:
                 del dumped[field]
 
@@ -329,40 +337,12 @@ class DoclingDocument(BaseModel):
             }
         )
 
-    @classmethod
-    def _clamp_provenance_bbox_to_page(cls, *, prov: ProvenanceItem, page_size: Size) -> None:
-        prov.bbox = cls._clamp_bbox_to_page(
-            bbox=prov.bbox,
-            page_size=page_size,
-            page_no=prov.page_no,
-            bbox_label="Provenance bbox",
-        )
+    def _doc_item_lists(self) -> tuple[Iterable[NodeItem], ...]:
+        """All item lists that can hold items with provenance (everything but `groups`).
 
-    def _clamp_provenance_bboxes_to_pages(self) -> None:
-        def clamp_prov(prov: ProvenanceItem) -> None:
-            page = self.pages.get(prov.page_no)
-            if page is not None:
-                self._clamp_provenance_bbox_to_page(prov=prov, page_size=page.size)
-
-        def clamp_table_cell_bboxes(table: TableItem) -> None:
-            page_nos = {prov.page_no for prov in table.prov}
-            if len(page_nos) != 1:
-                return
-            page_no = next(iter(page_nos))
-            page = self.pages.get(page_no)
-            if page is None:
-                return
-
-            for cell in table.data.table_cells:
-                if cell.bbox is not None:
-                    cell.bbox = self._clamp_bbox_to_page(
-                        bbox=cell.bbox,
-                        page_size=page.size,
-                        page_no=page_no,
-                        bbox_label="Table cell bbox",
-                    )
-
-        item_lists: tuple[Iterable[NodeItem], ...] = (
+        A new item list field must be added here (guarded by a test).
+        """
+        return (
             self.texts,
             self.pictures,
             self.tables,
@@ -370,18 +350,45 @@ class DoclingDocument(BaseModel):
             self.form_items,
             self.field_regions,
             self.field_items,
+            self.tracks,
         )
-        for item_list in item_lists:
+
+    def _iter_page_bboxes(self) -> Iterator[tuple[int, BoundingBox, ProvenanceItem | TableCell]]:
+        """Yield `(page_no, bbox, holder)` for every bbox anchored on a page.
+
+        Single source of truth for code that must visit every page bbox of the
+        document: item provenances, table cell bboxes of single-page tables and
+        key-value/form graph cell provenances. `holder` is the object whose
+        `bbox` attribute holds the yielded bbox.
+        """
+        for item_list in self._doc_item_lists():
             for item in item_list:
                 if isinstance(item, DocItem):
                     for prov in item.prov:
-                        clamp_prov(prov)
+                        yield prov.page_no, prov.bbox, prov
                 if isinstance(item, TableItem):
-                    clamp_table_cell_bboxes(item)
+                    # cell bboxes belong to a page only for single-page tables
+                    page_nos = {prov.page_no for prov in item.prov}
+                    if len(page_nos) == 1:
+                        page_no = next(iter(page_nos))
+                        for cell in item.data.table_cells:
+                            if cell.bbox is not None:
+                                yield page_no, cell.bbox, cell
                 if isinstance(item, KeyValueItem | FormItem):
-                    for cell in item.graph.cells:
-                        if cell.prov is not None:
-                            clamp_prov(cell.prov)
+                    for graph_cell in item.graph.cells:
+                        if graph_cell.prov is not None:
+                            yield graph_cell.prov.page_no, graph_cell.prov.bbox, graph_cell.prov
+
+    def _clamp_provenance_bboxes_to_pages(self) -> None:
+        for page_no, bbox, holder in self._iter_page_bboxes():
+            page = self.pages.get(page_no)
+            if page is not None:
+                holder.bbox = self._clamp_bbox_to_page(
+                    bbox=bbox,
+                    page_size=page.size,
+                    page_no=page_no,
+                    bbox_label="Table cell bbox" if isinstance(holder, TableCell) else "Provenance bbox",
+                )
 
     @model_validator(mode="before")
     @classmethod
@@ -601,11 +608,12 @@ class DoclingDocument(BaseModel):
             if not refs:
                 return num_removed
 
-            lookup: dict[str, dict[int, int]] = {"groups": {int(ref.cref.split("/")[2]): -1 for ref in refs}}
-            for index in sorted(lookup["groups"], reverse=True):
+            lookup: dict[str, list[int]] = {"groups": sorted(int(ref.cref.split("/")[2]) for ref in refs)}
+            for index in reversed(lookup["groups"]):
                 del self.groups[index]
+            crefs = {ref.cref for ref in refs}
             for node in self._iterate_all_nodes():
-                self._update_node_with_lookup(node=node, refs_to_be_deleted=refs, lookup=lookup)
+                self._update_node_with_lookup(node=node, refs_to_be_deleted=crefs, lookup=lookup)
             num_removed += len(refs)
 
     class _KVMigrData(BaseModel):
@@ -1088,6 +1096,17 @@ class DoclingDocument(BaseModel):
 
             self.field_items.append(item)
 
+        elif isinstance(item, TrackItem):
+            item_label = "tracks"
+            item_index = len(self.tracks)
+
+            cref = f"#/{item_label}/{item_index}"
+
+            item.self_ref = cref
+            item.parent = parent_ref
+
+            self.tracks.append(item)
+
         elif isinstance(item, ListGroup | InlineGroup):
             item_label = "groups"
             item_index = len(self.groups)
@@ -1155,6 +1174,8 @@ class DoclingDocument(BaseModel):
         if not refs:
             return
 
+        crefs = {r.cref for r in refs}
+
         # Identify the to_be_deleted_items
         for item, stack in self._iterate_items_with_stack(
             with_groups=True,
@@ -1163,7 +1184,7 @@ class DoclingDocument(BaseModel):
         ):
             ref = item.get_ref()
 
-            if ref in refs:
+            if ref.cref in crefs:
                 to_be_deleted_items[tuple(stack)] = ref.cref
 
             substacks = [stack[0 : i + 1] for i in range(len(stack) - 1)]
@@ -1184,54 +1205,47 @@ class DoclingDocument(BaseModel):
                 _logger.debug(f"deleted item in tree at stack: {stack_} => {ref_}")
 
         # Create a new lookup of the orphans:
-        # dict of item_label (`texts`, `tables`, ...) to a
-        # dict of item_label with delta (default = -1).
-        lookup: dict[str, dict[int, int]] = {}
+        # dict of item_label (`texts`, `tables`, ...) to the sorted indices of the deleted items.
+        deleted: dict[str, set[int]] = {}
 
         for stack_, ref_ in to_be_deleted_items.items():
             path = ref_.split("/")
             if len(path) == 3:
-                item_label = path[1]
-                item_index = int(path[2])
+                deleted.setdefault(path[1], set()).add(int(path[2]))
 
-                if item_label not in lookup:
-                    lookup[item_label] = {}
-
-                lookup[item_label][item_index] = -1
+        lookup = {item_label: sorted(item_inds) for item_label, item_inds in deleted.items()}
 
         # Remove the orphans in reverse order
         for item_label, item_inds in lookup.items():
-            for item_index, _ in sorted(item_inds.items(), reverse=True):  # delete the last in the list first!
+            for item_index in reversed(item_inds):  # delete the last in the list first!
                 _logger.debug(f"deleting item in doc for {item_label} for {item_index}")
                 del self.__getattribute__(item_label)[item_index]
 
         # Update all nodes, not only those reachable from body via children: orphaned items
         # (e.g. captions whose parent does not list them as children) must be renumbered too
         for node in self._iterate_all_nodes():
-            self._update_node_with_lookup(node=node, refs_to_be_deleted=refs, lookup=lookup)
+            self._update_node_with_lookup(node=node, refs_to_be_deleted=crefs, lookup=lookup)
 
     # Update the references
-    def _update_ref_with_lookup(self, item_label: str, item_index: int, lookup: dict[str, dict[int, int]]) -> RefItem:
+    def _update_ref_with_lookup(self, item_label: str, item_index: int, lookup: dict[str, list[int]]) -> RefItem:
         """Update ref with lookup."""
         if item_label not in lookup:  # Nothing to be done
             return RefItem(cref=f"#/{item_label}/{item_index}")
 
-        # Count how many items have been deleted in front of you
-        delta = sum(val if item_index >= key else 0 for key, val in lookup[item_label].items())
-        new_index = item_index + delta
+        new_index = _shift_index(item_index, lookup[item_label])
 
         return RefItem(cref=f"#/{item_label}/{new_index}")
 
     def _update_refitems_with_lookup(
         self,
         ref_items: list[RefItem],
-        refs_to_be_deleted: list[RefItem],
-        lookup: dict[str, dict[int, int]],
+        refs_to_be_deleted: set[str],
+        lookup: dict[str, list[int]],
     ) -> list[RefItem]:
         """Update refitems with lookup."""
         new_refitems = []
         for ref_item in ref_items:
-            if ref_item not in refs_to_be_deleted:  # if ref_item is in ref, then delete/skip them
+            if ref_item.cref not in refs_to_be_deleted:  # refs to deleted items are dropped
                 path = ref_item._split_ref_to_path()
                 if len(path) == 3:
                     new_refitems.append(
@@ -1262,19 +1276,20 @@ class DoclingDocument(BaseModel):
             self.form_items,
             self.field_regions,
             self.field_items,
+            self.tracks,
         ):
             yield from item_list
 
     def _update_node_with_lookup(
         self,
         node: NodeItem,
-        refs_to_be_deleted: list[RefItem],
-        lookup: dict[str, dict[int, int]],
-    ):
+        refs_to_be_deleted: set[str],
+        lookup: dict[str, list[int]],
+    ) -> None:
         """Update the references of a single node with lookup."""
         # Update the comments references on any DocItem
         if isinstance(node, DocItem):
-            node.comments = [ref_item for ref_item in node.comments if ref_item not in refs_to_be_deleted]
+            node.comments = [ref_item for ref_item in node.comments if ref_item.cref not in refs_to_be_deleted]
             for ref_item in node.comments:
                 ref_item._update_with_lookup(lookup=lookup)
 
@@ -1310,7 +1325,7 @@ class DoclingDocument(BaseModel):
             for graph_cell in node.graph.cells:
                 if graph_cell.item_ref is None or len(path := graph_cell.item_ref._split_ref_to_path()) != 3:
                     continue
-                if int(path[2]) in lookup.get(path[1], {}):  # the referenced item was deleted
+                if _is_deleted(int(path[2]), lookup.get(path[1], [])):  # the referenced item was deleted
                     graph_cell.item_ref = None
                 else:
                     graph_cell.item_ref = self._update_ref_with_lookup(
@@ -1957,6 +1972,49 @@ class DoclingDocument(BaseModel):
         parent.children.append(RefItem(cref=cref))
 
         return fig_item
+
+    def add_track(
+        self,
+        image: ImageRef | None = None,
+        caption: TextItem | RefItem | None = None,
+        prov: ProvenanceItem | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
+        audio: MediaRef | None = None,
+        video: MediaRef | None = None,
+    ) -> TrackItem:
+        """Add a track: a time-aligned media transcript.
+
+        Add the cues of the track as its children, e.g. with ``add_text(...,
+        parent=track, source=TrackSource(...))``.
+
+        :param image: Optional[ImageRef]: The cover of the track. (Default value = None)
+        :param caption: Optional[Union[TextItem, RefItem]]: (Default value = None)
+        :param prov: Optional[ProvenanceItem]: The location of the track. (Default value = None)
+        :param parent: Optional[NodeItem]: (Default value = None)
+        :param content_layer: Optional[ContentLayer]: (Default value = None)
+        :param audio: Optional[MediaRef]: The audio recording. (Default value = None)
+        :param video: Optional[MediaRef]: The video recording. (Default value = None)
+
+        :returns: TrackItem: The newly created TrackItem.
+        """
+        if not parent:
+            parent = self.body
+
+        cref = f"#/tracks/{len(self.tracks)}"
+
+        track_item = TrackItem(image=image, audio=audio, video=video, self_ref=cref, parent=parent.get_ref())
+        if prov:
+            track_item.prov.append(prov)
+        if content_layer:
+            track_item.content_layer = content_layer
+        if caption:
+            track_item.captions.append(caption.get_ref())
+
+        self.tracks.append(track_item)
+        parent.children.append(RefItem(cref=cref))
+
+        return track_item
 
     def add_title(
         self,
@@ -2943,6 +3001,44 @@ class DoclingDocument(BaseModel):
 
         return picture_item
 
+    def insert_track(
+        self,
+        sibling: NodeItem,
+        image: ImageRef | None = None,
+        caption: TextItem | RefItem | None = None,
+        prov: ProvenanceItem | None = None,
+        content_layer: ContentLayer | None = None,
+        after: bool = True,
+        audio: MediaRef | None = None,
+        video: MediaRef | None = None,
+    ) -> TrackItem:
+        """Creates a new TrackItem item and inserts it into the document.
+
+        :param sibling: NodeItem:
+        :param image: Optional[ImageRef]: The cover of the track. (Default value = None)
+        :param caption: Optional[Union[TextItem, RefItem]]: (Default value = None)
+        :param prov: Optional[ProvenanceItem]: The location of the track. (Default value = None)
+        :param content_layer: Optional[ContentLayer]: (Default value = None)
+        :param after: bool: (Default value = True)
+        :param audio: Optional[MediaRef]: The audio recording. (Default value = None)
+        :param video: Optional[MediaRef]: The video recording. (Default value = None)
+
+        :returns: TrackItem: The newly created TrackItem.
+        """
+        stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
+
+        track_item = TrackItem(image=image, audio=audio, video=video, self_ref="#", parent=parent_ref)
+        if prov:
+            track_item.prov.append(prov)
+        if content_layer:
+            track_item.content_layer = content_layer
+        if caption:
+            track_item.captions.append(caption.get_ref())
+
+        self._insert_in_structure(item=track_item, stack=stack, after=after)
+
+        return track_item
+
     def insert_title(
         self,
         sibling: NodeItem,
@@ -3577,14 +3673,12 @@ class DoclingDocument(BaseModel):
         # Yield non-group items or group items when with_groups=True
 
         # Combine conditions to have a single yield point
-        should_yield = (
-            (not isinstance(root, GroupItem) or with_groups)
-            and (
-                not isinstance(root, DocItem)
-                or (page_nrs is None or any(prov.page_no in page_nrs for prov in root.prov))
-            )
-            and root.content_layer in my_layers
+        on_page = (
+            not isinstance(root, DocItem) or page_nrs is None or any(prov.page_no in page_nrs for prov in root.prov)
         )
+        should_yield = (not isinstance(root, GroupItem) or with_groups) and on_page and root.content_layer in my_layers
+        # the cues of a track have no location of their own: they are on the pages of the track
+        child_page_nrs = None if isinstance(root, TrackItem) and on_page else page_nrs
 
         if should_yield:
             yield root, my_stack
@@ -3612,7 +3706,7 @@ class DoclingDocument(BaseModel):
                     child,
                     with_groups=with_groups,
                     traverse_pictures=traverse_pictures,
-                    page_nrs=page_nrs,
+                    page_nrs=child_page_nrs,
                     _stack=my_stack,
                     included_content_layers=my_layers,
                 )
@@ -3622,7 +3716,7 @@ class DoclingDocument(BaseModel):
     def _clear_picture_pil_cache(self):
         """Clear cache storage of all images."""
         for item, level in self.iterate_items(with_groups=False):
-            if isinstance(item, PictureItem):
+            if isinstance(item, PictureItem | TrackItem):
                 if item.image is not None and item.image._pil is not None:
                     item.image._pil.close()
 
@@ -3644,7 +3738,13 @@ class DoclingDocument(BaseModel):
             ValueError: If a referenced path is not a regular file or exceeds
                 ``settings.max_image_decoded_size``.
         """
-        items: list[FloatingItem] = [*self.pictures, *self.tables, *self.key_value_items, *self.form_items]
+        items: list[FloatingItem] = [
+            *self.pictures,
+            *self.tables,
+            *self.key_value_items,
+            *self.form_items,
+            *self.tracks,
+        ]
         image_refs = [item.image for item in items if item.image is not None]
         image_refs += [page.image for page in self.pages.values() if page.image is not None]
         for image_ref in image_refs:
@@ -3655,7 +3755,7 @@ class DoclingDocument(BaseModel):
         result: list[Path] = []
 
         for item, level in self.iterate_items(with_groups=False):
-            if isinstance(item, PictureItem):
+            if isinstance(item, PictureItem | TrackItem):
                 if item.image is not None:
                     if (
                         isinstance(item.image.uri, AnyUrl)
@@ -3678,7 +3778,7 @@ class DoclingDocument(BaseModel):
         result: DoclingDocument = copy.deepcopy(self)
 
         for ix, (item, level) in enumerate(result.iterate_items(with_groups=True)):
-            if isinstance(item, PictureItem):
+            if isinstance(item, PictureItem | TrackItem):
                 if item.image is not None and item.image._local_path() is not None:
                     # go through pil_image so local reads honor the same settings gate
                     tmp_image = item.image.pil_image
@@ -3759,7 +3859,8 @@ class DoclingDocument(BaseModel):
 
         img_count = 0
         for item, _ in result.iterate_items(page_no=page_no, with_groups=False):
-            if isinstance(item, PictureItem):
+            # a track's image is its cover
+            if isinstance(item, PictureItem | TrackItem):
                 img = item.get_image(doc=self)
                 if img is not None:
                     hexhash = PictureItem._image_to_hexhash(img)
@@ -5343,11 +5444,19 @@ class DoclingDocument(BaseModel):
         image_mode: ImageRefMode = ImageRefMode.REFERENCED,
         xsize: int | None = None,
         ysize: int | None = None,
+        allow_local_media: bool = False,
+        source: Path | bytes | None = None,
     ) -> None:
         """Save the document as a DocLang OPC archive (``.dclx``).
 
         Picture and page images are always stored outside the markup, under
         ``assets/`` and ``pages/`` in the archive respectively.
+
+        DocLang does not record page numbers: the n-th page of the markup is the n-th
+        page of the document. Pages are therefore numbered consecutively from 1 in the
+        archive, and ``pages/{n}.png`` holds the image of the n-th page in ascending
+        page-number order. Gaps and a first page number other than 1 are not preserved
+        when the archive is loaded.
 
         ``image_mode`` controls the picture images: ``REFERENCED`` (default) stores each
         picture's image (cropped from its page image if it has none of its own) under
@@ -5359,6 +5468,20 @@ class DoclingDocument(BaseModel):
         elements so the grouping survives a round trip.
 
         ``xsize`` / ``ysize`` set the location coordinate grid (default: DocLang default resolution).
+
+        The ``audio`` and ``video`` of each track are stored as ``audio/{N}.*`` and
+        ``video/{N}.*``, where ``N`` is the position of its ``<track>``. A media file is
+        read if its ``MediaRef`` was made with ``from_file`` or comes from a loaded archive,
+        and media made with ``from_bytes`` is written as is.
+        Other local paths are document content, and are read only with ``allow_local_media``
+        (for trusted documents) or ``settings.allow_media_file_uri``. Media that cannot be
+        read is left out, with a warning.
+
+        ``source`` is the original document the content was converted from, as a file path
+        or as bytes. It is stored unchanged in the archive, which records its file name and
+        media type from ``origin`` (for a path without ``origin``, its own name and the media
+        type guessed from it). A source that is also stored as the media of a track is not
+        stored twice.
 
         ``include_namespace`` declares the DocLang namespace on the root element. It is
         required for ``validate`` to pass, as the schema only declares the namespaced root.
@@ -5404,21 +5527,32 @@ class DoclingDocument(BaseModel):
             }
 
             pages: dict[int, Path] = {}
-            for p_no, page in self.pages.items():
+            for archive_page_no, p_no in enumerate(sorted(self.pages), start=1):
+                page = self.pages[p_no]
                 if page.image is None:
                     continue
                 img = page.image.pil_image
                 if img is None:
                     continue
-                page_path = pages_dir / f"{p_no}.png"
+                page_path = pages_dir / f"{archive_page_no}.png"
                 page_path.parent.mkdir(parents=True, exist_ok=True)
                 _normalize_image_for_png(img).save(page_path)
-                pages[p_no] = page_path
+                pages[archive_page_no] = page_path
             if pages:
                 pack_kwargs["pages"] = pages
 
             if assets_dir.is_dir() and any(assets_dir.iterdir()):
                 pack_kwargs["assets"] = assets_dir
+
+            pack_kwargs |= self._doclang_archive_media(
+                serializer=serializer,
+                markup=document_path,
+                staging_root=staging_root,
+                allow_local_media=allow_local_media,
+            )
+
+            if source is not None:
+                pack_kwargs |= self._doclang_archive_source(source)
 
             pack(**pack_kwargs)
 
@@ -5428,6 +5562,68 @@ class DoclingDocument(BaseModel):
         else:
             artifacts_dir.mkdir(parents=True, exist_ok=True)
             _write_archive(artifacts_dir)
+
+    def _doclang_archive_source(self, source: Path | bytes) -> dict[str, Any]:
+        """The ``pack`` arguments for the original source, named and typed after ``origin``."""
+        if not isinstance(source, (bytes, Path)):
+            raise TypeError(f"source must be a Path or bytes, not {type(source).__name__}")
+        kwargs: dict[str, Any] = {"source": source}
+        if self.origin is not None:
+            kwargs["source_name"] = self.origin.filename
+            kwargs["source_mimetype"] = self.origin.mimetype
+        elif isinstance(source, Path):
+            kwargs["source_name"] = source.name
+            if (guessed := mimetypes.guess_type(source.name)[0]) is not None:
+                kwargs["source_mimetype"] = guessed
+        return kwargs
+
+    def _doclang_archive_media(
+        self,
+        *,
+        serializer: Any,
+        markup: Path,
+        staging_root: Path,
+        allow_local_media: bool,
+    ) -> dict[str, dict[int, Path]]:
+        """Map each track's audio and video to its ``<track>`` position, for ``pack``."""
+        media: dict[str, dict[int, Path]] = {"audio": {}, "video": {}}
+        tracks = [track for track in self.tracks if track.audio is not None or track.video is not None]
+        if not tracks:
+            return {}
+        numbers: dict[str, int] = serializer.track_numbers
+        written = sum(
+            1 for el in ElementTree.parse(markup).iter() if isinstance(el.tag, str) and el.tag.endswith("track")
+        )
+        if written != len(serializer._track_order):
+            raise RuntimeError("Cannot match the written tracks to their media")
+        for track in tracks:
+            if (number := numbers.get(track.self_ref)) is None:
+                _logger.warning(f"Media of {track.self_ref} not stored: the track is not written")
+                continue
+            for kind, ref in (("audio", track.audio), ("video", track.video)):
+                if ref is None:
+                    continue
+                content = ref._readable_content(allow_local=allow_local_media)
+                if content is None:
+                    _logger.warning(
+                        f"{kind.capitalize()} of {track.self_ref} not stored: it is not a readable local file, "
+                        "or reading local media is not enabled (allow_local_media)"
+                    )
+                    continue
+                staged = staging_root / "media" / kind / f"{number}.{ref.extension}"
+                if isinstance(content, bytes):
+                    staged.parent.mkdir(parents=True, exist_ok=True)
+                    staged.write_bytes(content)
+                    media[kind][number] = staged
+                    continue
+                path = content.resolve()
+                if path.suffix.lower() != f".{ref.extension}":
+                    # the archive takes the file extension from the media type, not from the path
+                    staged.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(path, staged)
+                    path = staged
+                media[kind][number] = path
+        return {kind: files for kind, files in media.items() if files}
 
     @classmethod
     def load_from_doclang_archive(
@@ -5441,13 +5637,18 @@ class DoclingDocument(BaseModel):
     ) -> "DoclingDocument":
         """Load a DoclingDocument from a DocLang OPC archive (``.dclx``).
 
-        The archive is extracted to ``artifacts_dir`` (default: ``<name>_artifacts`` next
-        to the ``.dclx`` file). Relative ``<src uri=\"...\"/>`` paths and optional
-        ``pages/`` images are resolved inside that directory.
+        By default nothing is written next to the archive: it is extracted to a temporary
+        directory, which is removed once the document is loaded. Picture and page images
+        are then held as ``data:`` URIs, and the audio and video of tracks as bytes
+        (``MediaRef.from_bytes``), so the whole package is kept in memory.
+
+        With ``artifacts_dir``, the archive is extracted there and kept: images and media
+        reference the extracted files, and large media is not held in memory.
 
         Args:
             filename: Path to the ``.dclx`` archive.
-            artifacts_dir: Optional extraction directory for package members.
+            artifacts_dir: Optional directory to extract the package members to, and to keep
+                them in. A relative path is taken from the folder of the ``.dclx`` file.
             validate: When True, run DocLang XSD/Schematron validation on ``document.xml``.
             max_member_size: Maximum uncompressed size in bytes for any single archive member
                 (default: 512 MiB).
@@ -5459,17 +5660,49 @@ class DoclingDocument(BaseModel):
             parsing. Archive ``assets/`` and ``pages/`` images are capped by
             ``settings.max_image_decoded_size`` before Pillow opens them.
 
+            The bytes of the audio and video of tracks are not part of the document's JSON
+            (see ``MediaRef.from_bytes``). Without ``artifacts_dir``, the in-memory copy is the
+            only one: a document saved as JSON keeps the media type and the path inside the
+            archive, but not the recording. To convert a ``.dclx`` with media to JSON, load it
+            with ``artifacts_dir`` (and save it with ``allow_local_media`` later), or keep the
+            archive.
+
             Unlike JSON, DocLang carries no schema version, so archives written by docling-core
             before schema 1.11.0 (the inline whitespace contract) are loaded as current: their
             inline runs were stored without boundary whitespace and now join without a separator
             (``Normal**bold**tail``). Re-convert the source, or keep JSON for long-term storage.
         """
-        from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
-
         if isinstance(filename, str):
             filename = Path(filename)
+        extract_kwargs: dict[str, Any] = {
+            "validate": validate,
+            "max_member_size": max_member_size,
+            "max_total_size": max_total_size,
+        }
 
-        artifacts_dir, _ = cls(name="")._get_output_paths(filename, artifacts_dir)
+        if artifacts_dir is not None:
+            artifacts_dir, _ = cls(name="")._get_output_paths(filename, artifacts_dir)
+            return cls._load_extracted_doclang_archive(filename, artifacts_dir=artifacts_dir, **extract_kwargs)
+
+        with tempfile.TemporaryDirectory() as staging_name:
+            staging_root = Path(staging_name)
+            doc = cls._load_extracted_doclang_archive(filename, artifacts_dir=staging_root, **extract_kwargs)
+            cls._embed_doclang_archive_files(doc=doc, archive_root=staging_root)
+        return doc
+
+    @classmethod
+    def _load_extracted_doclang_archive(
+        cls,
+        filename: Path,
+        *,
+        artifacts_dir: Path,
+        validate: bool,
+        max_member_size: int,
+        max_total_size: int,
+    ) -> "DoclingDocument":
+        """Extract ``filename`` to ``artifacts_dir`` and load it, referencing the extracted files."""
+        from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
+
         safe_extract_zip_archive(
             filename,
             artifacts_dir,
@@ -5500,7 +5733,73 @@ class DoclingDocument(BaseModel):
         )
         doc.name = filename.stem
         cls._restore_doclang_archive_page_images(doc=doc, archive_root=artifacts_dir)
+        cls._restore_doclang_archive_track_media(doc=doc, archive_root=artifacts_dir)
         return doc
+
+    @staticmethod
+    def _embed_doclang_archive_files(*, doc: "DoclingDocument", archive_root: Path) -> None:
+        """Read the images and media that reference files in ``archive_root`` into memory.
+
+        Afterwards the document no longer refers to ``archive_root``, which can be removed.
+        Images become ``data:`` URIs of their stored bytes (not re-encoded), and media is
+        held with ``MediaRef.from_bytes``, under its path inside the archive.
+        """
+        archive_root = archive_root.resolve()
+
+        def archive_member(uri: AnyUrl | Path) -> Path | None:
+            return uri if isinstance(uri, Path) and uri.is_relative_to(archive_root) else None
+
+        items: list[FloatingItem] = [
+            *doc.pictures,
+            *doc.tables,
+            *doc.key_value_items,
+            *doc.form_items,
+            *doc.tracks,
+        ]
+        image_refs = [item.image for item in items if item.image is not None]
+        image_refs += [page.image for page in doc.pages.values() if page.image is not None]
+        for image_ref in image_refs:
+            if (path := archive_member(image_ref.uri)) is None:
+                continue
+            encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+            image_ref.uri = AnyUrl(f"data:{image_ref.mimetype};base64,{encoded}")
+
+        for track in doc.tracks:
+            for kind in ("audio", "video"):
+                ref: MediaRef | None = getattr(track, kind)
+                if ref is None or (path := archive_member(ref.uri)) is None:
+                    continue
+                member = Path(path.relative_to(archive_root).as_posix())
+                setattr(track, kind, MediaRef.from_bytes(path.read_bytes(), ref.mimetype, uri=member))
+
+    @staticmethod
+    def _restore_doclang_archive_track_media(*, doc: "DoclingDocument", archive_root: Path) -> None:
+        """Set the audio and video of the N-th track from ``audio/{N}.*`` and ``video/{N}.*``."""
+        archive_root = archive_root.resolve()
+        for kind in ("audio", "video"):
+            media_dir = archive_root / kind
+            if not media_dir.is_dir():
+                continue
+            for media_file in sorted(media_dir.iterdir()):
+                if media_file.is_symlink() or not media_file.is_file():
+                    continue
+                resolved = resolve_archive_path(archive_root, f"{kind}/{media_file.name}")
+                stem = media_file.stem
+                mimetype = media_type_of(media_file.name)
+                if not stem.isdigit() or not 1 <= int(stem) <= len(doc.tracks):
+                    _logger.warning(f"Ignoring {kind}/{media_file.name}: no track with this number")
+                    continue
+                if mimetype is None or not mimetype.startswith(f"{kind}/"):
+                    _logger.warning(f"Ignoring {kind}/{media_file.name}: unsupported media type")
+                    continue
+                track = doc.tracks[int(stem) - 1]
+                if getattr(track, kind) is not None:
+                    _logger.warning(f"Ignoring {kind}/{media_file.name}: the track has {kind} already")
+                    continue
+                ref = MediaRef(mimetype=mimetype, uri=resolved)
+                # extracted from the archive by us, so saving may read it again
+                ref._content = resolved
+                setattr(track, kind, ref)
 
     @staticmethod
     def _restore_doclang_archive_page_images(*, doc: "DoclingDocument", archive_root: Path) -> None:
@@ -5642,6 +5941,42 @@ class DoclingDocument(BaseModel):
 
         self.pages[page_no] = pitem
         return pitem
+
+    def get_min_page_sizes(self) -> dict[int, Size]:
+        """Get the smallest page size that contains all content, for every page with content.
+
+        The size of a page is the largest horizontal and vertical coordinate
+        over all bounding boxes anchored on it: item provenances, table cell
+        bboxes and key-value/form graph cell provenances, in every content
+        layer. Coordinates are measured from ``0``, as the page-bounds
+        validation does, so with these sizes validation does not clamp any
+        content bbox from above. Negative coordinates are not accounted for and
+        are still clamped to ``0``.
+
+        Returns:
+            A mapping from 1-based page number to minimum page size, for each
+            page that has at least one bounding box.
+        """
+        sizes: dict[int, Size] = {}
+        for page_no, bbox, _ in self._iter_page_bboxes():
+            size = sizes.setdefault(page_no, Size(width=0.0, height=0.0))
+            size.width = max(size.width, bbox.l, bbox.r)
+            size.height = max(size.height, bbox.t, bbox.b)
+        return sizes
+
+    def get_min_page_size(self, page_no: int) -> Size:
+        """Get the smallest page size that contains all content of a page.
+
+        See `get_min_page_sizes`, which computes all pages in one pass.
+
+        Args:
+            page_no: 1-based page number to measure.
+
+        Returns:
+            The minimum page size, ``Size(width=0, height=0)`` if the page has
+            no bounding boxes.
+        """
+        return self.get_min_page_sizes().get(page_no, Size(width=0.0, height=0.0))
 
     def get_visualization(
         self,
@@ -5868,6 +6203,7 @@ class DoclingDocument(BaseModel):
             self.form_items,
             self.field_regions,
             self.field_items,
+            self.tracks,
         ]
         for item_list in item_lists:
             for item in item_list:
@@ -5971,6 +6307,7 @@ class DoclingDocument(BaseModel):
         form_items: list[FormItem] = []
         field_regions: list[FieldRegionItem] = []
         field_items: list[FieldItem] = []
+        tracks: list[TrackItem] = []
 
         pages: dict[int, PageItem] = {}
 
@@ -6003,6 +6340,7 @@ class DoclingDocument(BaseModel):
                 "form_items",
                 "field_regions",
                 "field_items",
+                "tracks",
             ]
             start_indices = {k: len(self.get_item_list(k)) for k in post_processing_keys}
 
@@ -6137,6 +6475,7 @@ class DoclingDocument(BaseModel):
         self.form_items = doc_index.form_items
         self.field_regions = doc_index.field_regions
         self.field_items = doc_index.field_items
+        self.tracks = doc_index.tracks
         self.pages = doc_index.pages
         self.name = doc_index.get_name()
 

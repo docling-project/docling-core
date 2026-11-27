@@ -1,16 +1,21 @@
 """Define classes for DocLang serialization.
 
-Aligned to the DocLang specification version ``_DOCLANG_VERSION``, partially:
-``<track>`` is not supported yet.
+Aligned to the DocLang specification version ``_DOCLANG_VERSION``. A ``<track>`` is
+written without ``<chapter>`` and per-cue ``<audio>``, which have no counterpart in
+``DoclingDocument`` yet.
 """
 
+import base64
 import copy
 import re
 import warnings
 import xml.etree.ElementTree as ET
+from bisect import bisect_left, bisect_right
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from enum import Enum
 from functools import cached_property
+from io import BytesIO
 from itertools import groupby
 from pathlib import Path, PurePath
 from typing import Annotated, Any, Optional, Union, cast
@@ -109,6 +114,8 @@ from docling_core.types.doc import (
     TableItem,
     TabularChartMetaField,
     TextItem,
+    TrackItem,
+    TrackSource,
 )
 from docling_core.types.doc.base import CoordOrigin, ImageRefMode
 from docling_core.types.doc.document import (
@@ -127,7 +134,7 @@ from docling_core.types.doc.labels import (
     GroupLabel,
     PictureClassificationLabel,
 )
-from docling_core.types.doc.utils import get_text_direction
+from docling_core.types.doc.utils import _normalize_image_for_png, get_text_direction
 
 __all__ = [
     "ContentType",
@@ -241,7 +248,16 @@ class DocLangParams(CommonParams):
     add_table_cell_location: Annotated[bool, _advanced_field()] = False
     add_referenced_caption: Annotated[bool, _advanced_field()] = True
     add_referenced_footnote: Annotated[bool, _advanced_field()] = True
-    add_page_break: Annotated[bool, _advanced_field()] = True
+    add_page_break: Annotated[
+        bool,
+        _advanced_field(
+            detail=(
+                "Emit <page_break/> between content on different pages. When False, a list that "
+                "spans pages is serialized as one <list>, and the fragments of a multi-page "
+                "text item or table stay threaded without a page break between them."
+            ),
+        ),
+    ] = True
     add_content: Annotated[bool, _advanced_field()] = True
     content_types: Annotated[
         set[ContentType],
@@ -337,6 +353,17 @@ def _create_src_token(*, uri: str) -> str:
     )
 
 
+def _image_src_uri(*, item: FloatingItem, doc: DoclingDocument, params: DocLangParams) -> str | None:
+    """Return the ``<src>`` URI of the image of a floating item for the image mode, if any."""
+    if params.image_mode in [ImageRefMode.REFERENCED, ImageRefMode.EMBEDDED] and item.image and item.image.uri:
+        return str(item.image.uri)
+    if params.image_mode == ImageRefMode.EMBEDDED and (img := item.get_image(doc)):
+        buffer = BytesIO()
+        _normalize_image_for_png(img).save(buffer, format="PNG")
+        return f"data:image/png;base64,{base64.b64encode(buffer.getvalue()).decode('utf-8')}"
+    return None
+
+
 def _create_href_token(*, uri: str) -> str:
     """Emit `<href uri="..."/>` in element head."""
     return DocLangVocabulary._create_selfclosing_token(
@@ -349,6 +376,25 @@ def _text_item_hyperlink_uri(item: DocItem) -> str | None:
     if isinstance(item, TextItem) and item.hyperlink is not None:
         return hyperlink_uri(item.hyperlink)
     return None
+
+
+def _shared_href(*, group: InlineGroup, doc: DoclingDocument) -> str | None:
+    """Return the link shared by all runs of ``group``, if its enclosing element can carry it.
+
+    An href applies to all content of its element, so it can move up to the
+    element head only when every run, and the host's own text, has that link.
+    """
+    parent = group.parent.resolve(doc) if group.parent else None
+    # A heading reads formatted-only content as flat text, so its runs must keep their links.
+    # A host's own link covers only its own text: with none, there is nothing to write it on.
+    if isinstance(parent, ListItem | InlineGroup | TitleItem | SectionHeaderItem):
+        return None
+    uris = {_text_item_hyperlink_uri(child.resolve(doc)) for child in group.children}
+    if len(uris) != 1 or (uri := uris.pop()) is None:
+        return None
+    if isinstance(parent, TextItem) and parent.text and _text_item_hyperlink_uri(parent) != uri:
+        return None
+    return uri
 
 
 def _meta_field_serialization_allowed(name: str, params: DocLangParams) -> bool:
@@ -366,6 +412,7 @@ def _element_head_prefix(
     caption_text: str | None = None,
     custom_text: str | None = None,
     include_href: bool = True,
+    href_uri: str | None = None,
     include_layer: bool = True,
     include_item_meta_head: bool = True,
     thread_id: str | None = None,
@@ -376,7 +423,7 @@ def _element_head_prefix(
         parts.append(_create_label_token(value=label_value))
     if thread_id:
         parts.append(DocLangVocabulary._create_threading_token(thread_id=thread_id))
-    if include_href and (href_uri := _text_item_hyperlink_uri(item)):
+    if include_href and (href_uri := href_uri or _text_item_hyperlink_uri(item)):
         parts.append(_create_href_token(uri=href_uri))
     if include_layer and (layer_token := _create_layer_token(item=item, params=params)):
         parts.append(layer_token)
@@ -453,7 +500,10 @@ def _serialize_satellite(
     region), the latter serialized like any other child.
     """
     head = _element_head_prefix(item=item, doc=doc, params=params)
-    content = _escape_text(item.text, params) if item.text and content_type in params.content_types else ""
+    content = ""
+    if item.text and content_type in params.content_types:
+        # escape first, so that a CDATA section ends up inside the direction wrapper
+        content = doc_serializer.post_process(text=_escape_text(item.text, params), **kwargs)
     nested = ""
     if item.children and content_type in params.content_types:
         excluded = doc_serializer.get_excluded_refs(**kwargs)
@@ -655,6 +705,22 @@ def _escape_text(text: str, params: DocLangParams, *, wrap_multiline: bool = Tru
         # text = f'<{el_str} xml:space="preserve">{text}</{el_str}>'
         text = _wrap(text=text, wrap_tag=DocLangToken.CONTENT.value)
     return text
+
+
+_CDATA_SECTION_RE = re.compile(r"<!\[CDATA\[(.*?)\]\]>", re.DOTALL)
+
+
+def _unescape_text(text: str) -> str:
+    """Return the characters that ``_escape_text`` output reads as.
+
+    Drops the ``<content>`` wrapper and the CDATA delimiters, so that properties of the text
+    itself (e.g. its direction) are not skewed by the escaping markup.
+    """
+    open_tag = f"<{DocLangToken.CONTENT.value}>"
+    close_tag = f"</{DocLangToken.CONTENT.value}>"
+    if text.startswith(open_tag) and text.endswith(close_tag):
+        text = text[len(open_tag) : -len(close_tag)]
+    return _CDATA_SECTION_RE.sub(lambda m: m.group(1), text)
 
 
 def _collapse_whitespace(node: Node) -> None:
@@ -878,7 +944,9 @@ class DocLangListSerializer(BaseModel, BaseListSerializer):
 
         ordered = item.first_item_is_enumerated(doc)
         list_close = f"</{DocLangToken.LIST.value}>"
-        spans_pages = any(
+        # A list is split into threaded per-page blocks only to place page breaks
+        # between them; without page breaks it stays one block.
+        spans_pages = params.add_page_break and any(
             child_segments[i][1] is not None
             and child_segments[i + 1][1] is not None
             and child_segments[i][1] != child_segments[i + 1][1]
@@ -968,6 +1036,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
             # Split multi-provenance items into per-provenance fragments linked by
             # a shared thread_id; insert page breaks when page_no changes.
             # List items are not split here; cross-page lists are handled at list-group level.
+            params = DocLangParams(**kwargs)
             thread_id = _allocate_thread_id(doc_serializer, item)
             res: list[SerializationResult] = []
             for idp, prov_ in enumerate(item.prov):
@@ -999,7 +1068,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
 
             out_parts: list[str] = []
             for idp, tres in enumerate(res):
-                if idp > 0 and item.prov[idp - 1].page_no != item.prov[idp].page_no:
+                if idp > 0 and params.add_page_break and item.prov[idp - 1].page_no != item.prov[idp].page_no:
                     pb = _PageBreakNode(
                         self_ref=f"#/pb/{idp}",
                         prev_page=item.prov[idp - 1].page_no,
@@ -1056,7 +1125,11 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
             string or None, and tok is the DocLangToken or None.
         """
         if item.text:
-            if use_virtual_text and not self._list_item_has_segment_siblings(item=item, doc=doc):
+            if (
+                use_virtual_text
+                and _text_item_hyperlink_uri(item) is None
+                and not self._list_item_has_segment_siblings(item=item, doc=doc)
+            ):
                 return None, None
             tok = DocLangToken.TEXT
             return f"<{tok.value}>", tok
@@ -1214,7 +1287,17 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 item=item, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
             )
 
-        include_href = not is_inline_scope
+        # An href applies to all content of its element. A linked run needs its own
+        # element head, unless the enclosing element carries the link (_shared_href).
+        href_uri = _text_item_hyperlink_uri(item)
+        parent_group = item.parent.resolve(doc) if is_inline_scope and item.parent else None
+        if isinstance(parent_group, InlineGroup) and href_uri == _shared_href(group=parent_group, doc=doc):
+            href_uri = None
+        first_child = item.children[0].resolve(doc) if item.children else None
+        # A host of runs carries a link only if all its content shares it.
+        runs_href = _shared_href(group=first_child, doc=doc) if isinstance(first_child, InlineGroup) else None
+        head_href = runs_href if isinstance(first_child, InlineGroup) else href_uri
+        include_href = head_href is not None
         if not skip_location:
             # An inline run is located through its host.
             head_params = params.model_copy()
@@ -1228,6 +1311,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                     caption_text=caption_head or None,
                     custom_text=custom_head or None,
                     include_href=include_href,
+                    href_uri=head_href,
                     # An inline run inherits its host's layer; a head token here is invalid mid-content.
                     include_layer=not is_inline_scope,
                     thread_id=thread_id,
@@ -1238,8 +1322,8 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                 parts.append(_create_label_token(value=code_label))
             if thread_id:
                 parts.append(DocLangVocabulary._create_threading_token(thread_id=thread_id))
-            if include_href and (href_uri := _text_item_hyperlink_uri(item)):
-                parts.append(_create_href_token(uri=href_uri))
+            if head_href:
+                parts.append(_create_href_token(uri=head_href))
             if layer_token := _create_layer_token(item=item, params=params):
                 parts.append(layer_token)
             if custom_head:
@@ -1251,7 +1335,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
             or (isinstance(item, FormulaItem) and ContentType.TEXT_FORMULA in params.content_types)
             or (not isinstance(item, CodeItem | FormulaItem) and ContentType.TEXT_OTHER in params.content_types)
         ):
-            first_child_item = item.children[0].resolve(doc) if item.children else None
+            first_child_item = first_child
             if isinstance(first_child_item, InlineGroup):
                 # Only serialize the first child (InlineGroup) as the text content
                 # Other children are hierarchical subordinates and will be serialized separately.
@@ -1264,6 +1348,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                         text=own_part,
                         formatting=item.formatting,
                         hyperlink=None,
+                        **kwargs,
                     )
                     if item.label == DocItemLabel.HANDWRITTEN_TEXT:
                         own_part = _wrap(text=own_part, wrap_tag=DocLangToken.HANDWRITING.value)
@@ -1276,6 +1361,10 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                             selected=(item.label == DocItemLabel.CHECKBOX_SELECTED)
                         )
                         own_part = checkbox_token + own_part
+                    if href_uri and runs_href is None:
+                        own_part = _wrap(
+                            text=_create_href_token(uri=href_uri) + own_part, wrap_tag=DocLangToken.TEXT.value
+                        )
                     # Join with a plain space rather than the pretty-printing delimiter:
                     # own_part and inline_part are two runs of the same inline flow, so
                     # they need a real word boundary even in minimized (non-pretty) output.
@@ -1297,6 +1386,7 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
                     text=text_part,
                     formatting=item.formatting,
                     hyperlink=None,
+                    **kwargs,
                 )
                 if item.label == DocItemLabel.HANDWRITTEN_TEXT:
                     text_part = _wrap(text=text_part, wrap_tag=DocLangToken.HANDWRITING.value)
@@ -1321,8 +1411,13 @@ class DocLangTextSerializer(BaseModel, BaseTextSerializer):
             # This allows the list serializer to detect all-empty lists and suppress them
             return create_ser_result(text="", span_source=item)
 
+        if is_inline_scope and href_uri and not text_part:
+            # A linked run whose content is excluded leaves nothing to link.
+            return create_ser_result(text="", span_source=item)
+
         if wrap_open_token is not None and not (
             is_inline_scope
+            and href_uri is None
             and item.label
             in {
                 DocItemLabel.TEXT,
@@ -1535,12 +1630,7 @@ class DocLangPictureSerializer(BasePictureSerializer):
                     )
                     tabular_body = _wrap(text=otsl_content, wrap_tag=DocLangToken.TABULAR.value)
 
-        uri: str | None = None
-        if params.image_mode in [ImageRefMode.REFERENCED, ImageRefMode.EMBEDDED] and item.image and item.image.uri:
-            uri = str(item.image.uri)
-        elif params.image_mode == ImageRefMode.EMBEDDED and (img := item.get_image(doc)):
-            imgb64 = item._image_to_base64(img)
-            uri = f"data:image/png;base64,{imgb64}"
+        uri = _image_src_uri(item=item, doc=doc, params=params)
         # v0.6 picture body: preamble (<src>, <tabular>), then semantic children.
         if uri:
             picture_body_parts.append(_create_src_token(uri=uri))
@@ -1746,7 +1836,7 @@ class DocLangTableSerializer(BaseTableSerializer):
                         parts.append(cell_loc)
                     if ContentType.TABLE_CELL in params.content_types:
                         if not isinstance(cell, RichTableCell):
-                            content = _escape_text(content, params)
+                            content = doc_serializer.post_process(text=_escape_text(content, params), **kwargs)
                             if not params.use_virtual_text:
                                 content = _wrap(text=content, wrap_tag=DocLangToken.TEXT.value)
                         parts.append(content)
@@ -1876,7 +1966,7 @@ class DocLangTableSerializer(BaseTableSerializer):
 
             out_parts: list[str] = []
             for idp, tres in enumerate(res):
-                if idp > 0 and item.prov[idp - 1].page_no != item.prov[idp].page_no:
+                if idp > 0 and params.add_page_break and item.prov[idp - 1].page_no != item.prov[idp].page_no:
                     pb = _PageBreakNode(
                         self_ref=f"#/pb/{idp}",
                         prev_page=item.prov[idp - 1].page_no,
@@ -1928,6 +2018,9 @@ class DocLangInlineSerializer(BaseInlineSerializer):
             should_wrap = False
         else:
             should_wrap = True
+        # A link shared by all runs moves to the <text> wrapper (see _shared_href).
+        if should_wrap and (href_uri := _shared_href(group=item, doc=doc)):
+            parts.append(create_ser_result(text=_create_href_token(uri=href_uri)))
         # The runs emit no layer of their own, so the <text> wrapper carries the group's.
         if should_wrap and (layer_token := _create_layer_token(item=item, params=params)):
             parts.append(create_ser_result(text=layer_token))
@@ -1998,6 +2091,251 @@ class DocLangInlineSerializer(BaseInlineSerializer):
         return create_ser_result(text=text_res, span_source=parts)
 
 
+def _track_source(item: NodeItem) -> TrackSource | None:
+    """Return the track source of a cue item, if it has one."""
+    if isinstance(item, DocItem):
+        return next((source for source in item.source if isinstance(source, TrackSource)), None)
+    return None
+
+
+def _create_timestamp_tokens(*, msecs: int) -> str:
+    """Write a time offset as a DocLang timestamp run: ``<seconds>`` plus the other non-zero units."""
+    hours, rest = divmod(msecs, 3_600_000)
+    minutes, rest = divmod(rest, 60_000)
+    seconds, millis = divmod(rest, 1000)
+    return "".join(
+        DocLangVocabulary._create_selfclosing_token(token=token, attrs={DocLangAttributeKey.VALUE: value})
+        for token, value in (
+            (DocLangToken.HOURS, hours),
+            (DocLangToken.MINUTES, minutes),
+            (DocLangToken.SECONDS, seconds),
+            (DocLangToken.MSECS, millis),
+        )
+        if value or token == DocLangToken.SECONDS
+    )
+
+
+@dataclass
+class _TrackTurn:
+    """A transcript turn: its text and its track source."""
+
+    text: str
+    source: TrackSource
+
+
+@dataclass
+class _TrackCueBlock:
+    """The cues of a track that share a start and an end time."""
+
+    start: int
+    end: int
+    frame: PictureItem | None = None
+    turns: list[_TrackTurn] = field(default_factory=list)
+
+
+def _is_timed_unit(item: NodeItem, doc: DoclingDocument) -> bool:
+    """Whether an item is a cue: a timed text or picture, or an inline group of timed texts."""
+    if isinstance(item, InlineGroup):
+        runs = [ref.resolve(doc) for ref in item.children]
+        return bool(runs) and all(isinstance(run, TextItem) and _track_source(run) for run in runs)
+    return isinstance(item, TextItem | PictureItem) and _track_source(item) is not None
+
+
+def _track_turns(item: NodeItem, doc: DoclingDocument) -> list[_TrackTurn]:
+    """Return the turns of a timed text, or of an inline group split where time or voice changes.
+
+    A text with empty text takes the text of its inline group child (a formatted turn).
+    Formatting is not kept.
+    """
+    if isinstance(item, TextItem) and (source := _track_source(item)):
+        text = item.text or "".join(
+            run.text
+            for ref in item.children
+            if isinstance(group := ref.resolve(doc), InlineGroup)
+            for run_ref in group.children
+            if isinstance(run := run_ref.resolve(doc), TextItem)
+        )
+        return [_TrackTurn(text=text, source=source)]
+    turns: list[_TrackTurn] = []
+    for ref in item.children:
+        run = ref.resolve(doc)
+        if isinstance(run, TextItem) and (source := _track_source(run)):
+            last = turns[-1].source if turns else None
+            if last and (last.start_time, last.end_time, last.voice) == (
+                source.start_time,
+                source.end_time,
+                source.voice,
+            ):
+                turns[-1].text += run.text
+            else:
+                turns.append(_TrackTurn(text=run.text, source=source))
+    return turns
+
+
+def _track_cue_blocks(cues: list[tuple[int, int, _TrackTurn | PictureItem]]) -> list[_TrackCueBlock]:
+    """Group cues into blocks, in order of start time.
+
+    Consecutive turns with the same start and end time share a block. A frame is the
+    still at its start time: it goes in the first block that starts then and has no frame
+    yet, else in a block of its own.
+    """
+    ordered = sorted(cues, key=lambda cue: cue[0])
+    blocks: list[_TrackCueBlock] = []
+    for start, end, cue in ordered:
+        if isinstance(cue, _TrackTurn):
+            if not blocks or (blocks[-1].start, blocks[-1].end) != (start, end):
+                blocks.append(_TrackCueBlock(start=start, end=end))
+            blocks[-1].turns.append(cue)
+    for start, _, cue in ordered:
+        if isinstance(cue, PictureItem):
+            block = next((b for b in blocks if b.start == start and b.frame is None), None)
+            if block is None:
+                block = _TrackCueBlock(start=start, end=start)
+                blocks.append(block)
+            block.frame = cue
+    return sorted(blocks, key=lambda block: block.start)
+
+
+def _serialize_track_cues(
+    *,
+    items: list[NodeItem],
+    owner: str,
+    doc_serializer: BaseDocSerializer,
+    doc: DoclingDocument,
+    params: DocLangParams,
+    **kwargs: Any,
+) -> str:
+    """Serialize timed items as the cue blocks of a track."""
+    excluded = doc_serializer.get_excluded_refs(**kwargs)
+    visited: set[str] = kwargs.get("visited") or set()
+    cues: list[tuple[int, int, _TrackTurn | PictureItem]] = []
+    add_text = ContentType.TEXT_OTHER in params.content_types
+    for item in items:
+        if item.self_ref in excluded:
+            continue
+        # the track writes its cues itself: the document walk must not write them again
+        visited.update(
+            node.self_ref
+            for node, _ in doc.iterate_items(
+                root=item, with_groups=True, traverse_pictures=True, included_content_layers=set(ContentLayer)
+            )
+        )
+        if not _is_timed_unit(item, doc):
+            warnings.warn(
+                f"{item.self_ref} in track {owner} is not a text or picture with a track source, "
+                "so it is not serialized",
+                stacklevel=2,
+            )
+        elif isinstance(item, PictureItem) and (source := _track_source(item)):
+            cues.append((round(source.start_time * 1000), round(source.end_time * 1000), item))
+        elif add_text:  # without text, a turn and its voice are left out
+            cues.extend(
+                (round(turn.source.start_time * 1000), round(turn.source.end_time * 1000), turn)
+                for turn in _track_turns(item, doc)
+            )
+
+    body: list[str] = []
+    for block in _track_cue_blocks(cues):
+        body.append(DocLangVocabulary._create_selfclosing_token(token=DocLangToken.BDIV))
+        body.append(_create_timestamp_tokens(msecs=block.start))
+        if block.end > block.start:
+            body.append(_create_timestamp_tokens(msecs=block.end))
+        if block.frame is not None:
+            frame_caption = _serialize_floating_caption_head(
+                item=block.frame, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
+            )
+            frame_parts = [_element_head_prefix(item=block.frame, doc=doc, params=params, caption_text=frame_caption)]
+            if frame_uri := _image_src_uri(item=block.frame, doc=doc, params=params):
+                frame_parts.append(_create_src_token(uri=frame_uri))
+            body.append(_wrap(text="".join(frame_parts), wrap_tag=DocLangToken.FRAME.value))
+        for index, turn in enumerate(block.turns):
+            if turn.source.voice:
+                body.append(_wrap(text=_escape_text(turn.source.voice, params), wrap_tag=DocLangToken.VOICE.value))
+            elif index > 0:
+                # an empty voice ends the previous turn
+                body.append(_wrap(text="", wrap_tag=DocLangToken.VOICE.value))
+            body.append(_escape_text(turn.text, params))
+    return "".join(body)
+
+
+def _serialize_track(
+    *,
+    item: TrackItem,
+    doc_serializer: BaseDocSerializer,
+    doc: DoclingDocument,
+    **kwargs: Any,
+) -> SerializationResult:
+    """Serialize a track as ``<track>``: element head, ``<cover>``, then one cue block per time.
+
+    The cues are the children that are a text or a picture with a ``TrackSource``. Each
+    text is a transcript turn, after a ``<voice>`` when the source has one. A picture is
+    the ``<frame>`` of its cue block.
+    """
+    params = DocLangParams(**kwargs)
+    excluded = doc_serializer.get_excluded_refs(**kwargs)
+    if item.self_ref in excluded:
+        return create_ser_result()
+
+    _claim_track(doc_serializer, item.self_ref)
+    caption_head = _serialize_floating_caption_head(
+        item=item, doc_serializer=doc_serializer, doc=doc, params=params, **kwargs
+    )
+    head = _element_head_prefix(item=item, doc=doc, params=params, caption_text=caption_head or None)
+    cover = ""
+    if cover_uri := _image_src_uri(item=item, doc=doc, params=params):
+        cover = _wrap(text=_create_src_token(uri=cover_uri), wrap_tag=DocLangToken.COVER.value)
+    caption_refs = {ref.cref for ref in item.captions}
+    cues = _serialize_track_cues(
+        items=[child for ref in item.children if (child := ref.resolve(doc)).self_ref not in caption_refs],
+        owner=item.self_ref,
+        doc_serializer=doc_serializer,
+        doc=doc,
+        params=params,
+        **kwargs,
+    )
+    inner = head + cover + cues
+    if not inner and params.suppress_empty_elements:
+        _release_track(doc_serializer, item.self_ref)
+        return create_ser_result()
+    return create_ser_result(text=_wrap(text=inner, wrap_tag=DocLangToken.TRACK.value), span_source=item)
+
+
+def _claim_track(doc_serializer: BaseDocSerializer, key: str) -> None:
+    """Record a ``<track>`` in document order, before its content may add nested ones."""
+    if isinstance(doc_serializer, DocLangDocSerializer) and key not in doc_serializer._track_order:
+        doc_serializer._track_order.append(key)
+
+
+def _release_track(doc_serializer: BaseDocSerializer, key: str) -> None:
+    """Forget a ``<track>`` that turned out empty and is not written."""
+    if isinstance(doc_serializer, DocLangDocSerializer) and key in doc_serializer._track_order:
+        doc_serializer._track_order.remove(key)
+
+
+_IMPLICIT_TRACK = "(implicit)"
+
+
+def _implicit_track(item: NodeItem, doc: DoclingDocument) -> list[NodeItem]:
+    """Return the run of timed sibling items that starts at a timed item outside a ``TrackItem``.
+
+    Consecutive timed items form an implicit track, which any other item ends. A track
+    cannot cross an element boundary, so the run stays within the parent of the item.
+    """
+    if item.parent is None or not _is_timed_unit(item, doc):
+        return []
+    parent = item.parent.resolve(doc)
+    if isinstance(parent, TrackItem):
+        return []
+    siblings = [ref.resolve(doc) for ref in parent.children]
+    start = next(i for i, sibling in enumerate(siblings) if sibling.self_ref == item.self_ref)
+    run: list[NodeItem] = []
+    for sibling in siblings[start:]:
+        if not _is_timed_unit(sibling, doc):
+            break
+        run.append(sibling)
+    return run
+
+
 class DocLangFallbackSerializer(BaseFallbackSerializer):
     """Fallback serializer concatenating text for list/inline groups."""
 
@@ -2047,6 +2385,8 @@ class DocLangFallbackSerializer(BaseFallbackSerializer):
             if isinstance(item, FieldItem):
                 text_res = _wrap_in_field_region_if_needed(text=text_res, item=item, doc=doc)
             return create_ser_result(text=text_res, span_source=parts)
+        elif isinstance(item, TrackItem):
+            return _serialize_track(item=item, doc_serializer=doc_serializer, doc=doc, **kwargs)
         return create_ser_result()
 
 
@@ -2103,6 +2443,15 @@ class DocLangDocSerializer(DocSerializer):
     _suppressed_page_breaks: set[tuple[int, int]] = PrivateAttr(default_factory=set)
     _next_thread_id: int = PrivateAttr(default=1)
     _thread_id_by_ref: dict[str, str] = PrivateAttr(default_factory=dict)
+    _track_order: list[str] = PrivateAttr(default_factory=list)
+
+    @property
+    def track_numbers(self) -> dict[str, int]:
+        """The 1-based position of each written ``<track>``, by the ``self_ref`` of its ``TrackItem``.
+
+        Available after ``serialize``. Implicit tracks count, but have no entry.
+        """
+        return {key: i + 1 for i, key in enumerate(self._track_order) if not key.startswith(_IMPLICIT_TRACK)}
 
     @cached_property
     def _satellites_of_some_item(self) -> set[str]:
@@ -2134,6 +2483,30 @@ class DocLangDocSerializer(DocSerializer):
             if key in self._suppressed_page_breaks:
                 self._suppressed_page_breaks.discard(key)
                 return create_ser_result()
+        if item is not None and (run := _implicit_track(item, self.doc)):
+            my_kwargs = {**self.params.model_dump(), **kwargs}
+            my_visited = visited if visited is not None else set()
+            my_visited.add(item.self_ref)
+            track_key = f"{_IMPLICIT_TRACK}{item.self_ref}"
+            _claim_track(self, track_key)
+            cues = _serialize_track_cues(
+                items=run,
+                owner="(implicit)",
+                doc_serializer=self,
+                doc=self.doc,
+                params=DocLangParams(**my_kwargs),
+                **(my_kwargs | {"visited": my_visited}),
+            )
+            if not cues:
+                _release_track(self, track_key)
+                return create_ser_result()
+            spans = [
+                create_ser_result(span_source=cue)
+                for unit in run
+                for cue in ([unit] if isinstance(unit, DocItem) else [ref.resolve(self.doc) for ref in unit.children])
+                if isinstance(cue, DocItem)
+            ]
+            return create_ser_result(text=_wrap(text=cues, wrap_tag=DocLangToken.TRACK.value), span_source=spans)
         return super().serialize(
             item=item,
             list_level=list_level,
@@ -2254,6 +2627,56 @@ class DocLangDocSerializer(DocSerializer):
         self._strip_text_from_element(root)
         out = ET.tostring(root, encoding="unicode", method="xml", short_empty_elements=True)
         return out
+
+    def _serializes_all_pages(self) -> bool:
+        """Return whether the parameters leave out no page of the document."""
+        return (
+            self.params.pages is None
+            and self.params.start_idx == 0
+            and self.params.stop_idx == CommonParams.model_fields["stop_idx"].default
+        )
+
+    def _first_content_page(self) -> int | None:
+        """Return the page of the first provenance of the first item that has one, if any."""
+        for item, _ in self.doc.iterate_items(with_groups=False, included_content_layers=self.params.layers):
+            if isinstance(item, DocItem) and item.prov:
+                return item.prov[0].page_no
+        return None
+
+    def _align_page_breaks(self, text: str) -> str:
+        """Replace page-break markers by one ``<page_break/>`` per page declared in the document.
+
+        A transition from page ``prev`` to page ``next`` emits one break for each page
+        in ``doc.pages`` in the range ``(prev, next]``, and at least one. When the whole
+        document is serialized, the declared pages before the first and after the last
+        serialized page are covered as well. The number of breaks is bounded by the
+        number of declared pages; page numbers that are not declared do not add breaks.
+
+        Args:
+            text: The serialized document body containing page-break markers.
+
+        Returns:
+            The text with the markers replaced by ``<page_break/>`` elements.
+        """
+        page_sep = DocLangVocabulary._create_selfclosing_token(token=DocLangToken.PAGE_BREAK)
+        declared_pages = sorted(self.doc.pages)
+        breaks = list(self._get_page_breaks(text=text))
+        for full_match, prev_page, next_page in breaks:
+            skipped = bisect_right(declared_pages, next_page) - bisect_right(declared_pages, prev_page)
+            # a transition needs a break even when neither page is declared
+            text = text.replace(full_match, page_sep * max(1, skipped))
+
+        if not declared_pages or not self._serializes_all_pages():
+            return text
+        if breaks:
+            first_page = breaks[0][1]
+            last_page = max(next_page for _, _, next_page in breaks)
+        else:
+            content_page = self._first_content_page()
+            first_page = last_page = declared_pages[0] if content_page is None else content_page
+        leading = page_sep * bisect_left(declared_pages, first_page)
+        trailing = page_sep * (len(declared_pages) - bisect_right(declared_pages, last_page))
+        return f"{leading}{text}{trailing}"
 
     def _order_fragmented_parts_by_page(
         self,
@@ -2377,10 +2800,7 @@ class DocLangDocSerializer(DocSerializer):
         text_res = delim.join([p.text for p in parts if p.text])
 
         if self.params.add_page_break:
-            # Always emit well-formed page breaks using the vocabulary
-            page_sep = DocLangVocabulary._create_selfclosing_token(token=DocLangToken.PAGE_BREAK)
-            for full_match, _, _ in self._get_page_breaks(text=text_res):
-                text_res = text_res.replace(full_match, page_sep)
+            text_res = self._align_page_breaks(text_res)
 
         text_res = f"{open_token}{head}{text_res}{close_token}"
 
@@ -2477,6 +2897,6 @@ class DocLangDocSerializer(DocSerializer):
             **kwargs,
         )
         params = self.params.merge_with_patch(patch=kwargs)
-        if params.include_formatting and get_text_direction(text) == "rtl":
+        if params.include_formatting and get_text_direction(_unescape_text(text)) == "rtl":
             res = self.serialize_rtl(text=res, **kwargs)
         return res

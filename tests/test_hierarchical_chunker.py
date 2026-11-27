@@ -15,7 +15,15 @@ from docling_core.transforms.chunker.hierarchical_chunker import (
 from docling_core.transforms.deserializer.doclang import DocLangDocDeserializer
 from docling_core.transforms.serializer.html import HTMLDocSerializer
 from docling_core.transforms.serializer.markdown import MarkdownParams, MarkdownTableSerializer
-from docling_core.types.doc import ContentLayer, DocItemLabel, DoclingDocument, PictureItem, TableData, TextItem
+from docling_core.types.doc import (
+    ContentLayer,
+    DocItemLabel,
+    DoclingDocument,
+    DocumentOrigin,
+    PictureItem,
+    TableData,
+    TextItem,
+)
 
 from .test_utils import assert_or_generate_json_ground_truth, build_single_cell_rich_table_doc
 
@@ -50,6 +58,41 @@ def test_rich_heading_chunk_metadata(kind: str, body: str, prefix: str) -> None:
     assert chunks[0].meta.headings == [f"{prefix}$E=mc^2$"]
 
 
+@pytest.mark.parametrize("kind", ["title", "section_header"])
+@pytest.mark.parametrize("following", ["paragraph", "subsection"])
+def test_rich_heading_with_body_children_chunk_metadata(kind: str, following: str) -> None:
+    """A rich heading with body children is chunk context for the body, not a body chunk of its own."""
+    doc = DoclingDocument(name="rich-heading")
+    heading = doc.add_title(text="") if kind == "title" else doc.add_heading(text="", level=1)
+    inline = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="Energy ", parent=inline)
+    doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=inline)
+    body_parent = doc.add_heading(text="Subsection", level=4, parent=heading) if following == "subsection" else heading
+    doc.add_text(label=DocItemLabel.TEXT, text="Body.", parent=body_parent)
+
+    chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker(always_emit_headings=True).chunk(doc)]
+
+    assert [chunk.text for chunk in chunks] == ["Body."]
+    expected_headings = ["Energy $E=mc^2$"] + (["Subsection"] if following == "subsection" else [])
+    assert chunks[0].meta.headings == expected_headings
+
+
+def test_rich_heading_takes_only_its_leading_inline_group_as_title() -> None:
+    """A second inline group under a rich heading is body content, not part of the heading."""
+    doc = DoclingDocument(name="rich-heading")
+    heading = doc.add_heading(text="", level=1)
+    title_group = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="Energy ", parent=title_group)
+    doc.add_text(label=DocItemLabel.FORMULA, text="E=mc^2", parent=title_group)
+    body_group = doc.add_inline_group(parent=heading)
+    doc.add_text(label=DocItemLabel.TEXT, text="Second ", parent=body_group)
+    doc.add_text(label=DocItemLabel.TEXT, text="group", parent=body_group)
+
+    assert doc.export_to_markdown() == "## Energy $E=mc^2$\n\nSecond group"
+    chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker().chunk(doc)]
+    assert [(chunk.text, chunk.meta.headings) for chunk in chunks] == [("Second group", ["Energy $E=mc^2$"])]
+
+
 def test_rich_heading_is_emitted_before_a_sibling_heading() -> None:
     doc = DoclingDocument(name="rich-heading")
     heading = doc.add_heading(text="", level=1)
@@ -62,6 +105,19 @@ def test_rich_heading_is_emitted_before_a_sibling_heading() -> None:
     chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker(always_emit_headings=True).chunk(doc)]
     assert [chunk.text for chunk in chunks] == ["", "Body."]
     assert [chunk.meta.headings for chunk in chunks] == [["Energy $E=mc^2$"], ["Next"]]
+
+
+def test_heading_only_chunks_keep_origin() -> None:
+    origin = DocumentOrigin(filename="doc.pdf", mimetype="application/pdf", binary_hash=42)
+    doc = DoclingDocument(name="headings", origin=origin)
+    doc.add_heading(text="Empty", level=1)
+    doc.add_heading(text="Full", level=1)
+    doc.add_text(label=DocItemLabel.TEXT, text="Body.")
+    doc.add_heading(text="Trailing", level=1)
+
+    chunks = [DocChunk.model_validate(chunk) for chunk in HierarchicalChunker(always_emit_headings=True).chunk(doc)]
+    assert [chunk.text for chunk in chunks] == ["", "Body.", ""]
+    assert [chunk.meta.origin for chunk in chunks] == [origin, origin, origin]
 
 
 @pytest.mark.parametrize("kind", ["table", "picture"])

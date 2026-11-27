@@ -49,7 +49,7 @@ item 2 of neighboring list
 
 Here a code block:
 
-```
+```python
 print("Hello world")
 ```
 
