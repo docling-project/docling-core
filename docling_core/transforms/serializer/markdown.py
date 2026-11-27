@@ -725,6 +725,46 @@ def _flatten_header_rows(header_rows: list[list[str]], num_cols: int) -> list[st
     return flattened
 
 
+def _serialize_image_part(
+    item: FloatingItem,
+    doc: DoclingDocument,
+    image_mode: ImageRefMode,
+    image_placeholder: str,
+    **kwargs: Any,
+) -> SerializationResult:
+    """Render a floating item's image per the image mode.
+
+    Shared by the picture and table serializers and by the cover of a track,
+    so all honor image_mode identically for any FloatingItem that carries an image.
+    """
+    error_response = "<!-- 🖼️❌ Image not available. Please use `PdfPipelineOptions(generate_picture_images=True)` -->"
+    if image_mode == ImageRefMode.PLACEHOLDER:
+        text_res = image_placeholder
+    elif image_mode == ImageRefMode.EMBEDDED:
+        # short-cut: we already have the image in base64
+        if isinstance(item.image, ImageRef) and isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "data":
+            text_res = f"![Image]({markdown_link_destination(item.image.uri)})"
+        else:
+            # get the item.image._pil or crop it out of the page-image
+            img = item.get_image(doc=doc)
+            if img is not None:
+                imgb64 = item._image_to_base64(img)
+                text_res = f"![Image](data:image/png;base64,{imgb64})"
+            else:
+                text_res = error_response
+    elif image_mode == ImageRefMode.REFERENCED:
+        if not isinstance(item.image, ImageRef) or (
+            isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "data"
+        ):
+            text_res = image_placeholder
+        else:
+            text_res = f"![Image]({MarkdownPictureSerializer._escape_uri_path(item.image.uri)})"
+    else:
+        text_res = image_placeholder
+
+    return create_ser_result(text=text_res, span_source=item)
+
+
 class MarkdownTableSerializer(BaseTableSerializer):
     """Markdown-specific table item serializer.
 
@@ -898,6 +938,20 @@ class MarkdownTableSerializer(BaseTableSerializer):
             if table_text:
                 res_parts.append(create_ser_result(text=table_text, span_source=item))
 
+            # Emit the table image alongside the text grid when one was generated.
+            # Tables without an image (the common case) stay a strict no-op, and
+            # so does a table whose image cannot be referenced (e.g. a data: URI
+            # in REFERENCED mode, since only picture images are saved to files).
+            if item.image is not None and params.image_mode != ImageRefMode.PLACEHOLDER:
+                img_res = _serialize_image_part(
+                    item=item,
+                    doc=doc,
+                    image_mode=params.image_mode,
+                    image_placeholder=params.image_placeholder,
+                )
+                if img_res.text and img_res.text != params.image_placeholder:
+                    res_parts.append(img_res)
+
         ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
         if ftn_res.text:
             res_parts.append(ftn_res)
@@ -944,7 +998,7 @@ class MarkdownPictureSerializer(BasePictureSerializer):
                 if ann_res.text:
                     res_parts.append(ann_res)
 
-            img_res = self._serialize_image_part(
+            img_res = _serialize_image_part(
                 item=item,
                 doc=doc,
                 image_mode=params.image_mode,
@@ -977,52 +1031,6 @@ class MarkdownPictureSerializer(BasePictureSerializer):
         text_res = "\n\n".join([r.text for r in res_parts if r.text])
 
         return create_ser_result(text=text_res, span_source=res_parts)
-
-    def _serialize_image_part(
-        self,
-        item: FloatingItem,
-        doc: DoclingDocument,
-        image_mode: ImageRefMode,
-        image_placeholder: str,
-        **kwargs: Any,
-    ) -> SerializationResult:
-        """Serialize the image of a picture, or the cover of a track, by the image mode."""
-        error_response = (
-            "<!-- 🖼️❌ Image not available. Please use `PdfPipelineOptions(generate_picture_images=True)` -->"
-        )
-        if image_mode == ImageRefMode.PLACEHOLDER:
-            text_res = image_placeholder
-        elif image_mode == ImageRefMode.EMBEDDED:
-            # short-cut: we already have the image in base64
-            if (
-                isinstance(item.image, ImageRef)
-                and isinstance(item.image.uri, AnyUrl)
-                and item.image.uri.scheme == "data"
-            ):
-                text = f"![Image]({markdown_link_destination(item.image.uri)})"
-                text_res = text
-            else:
-                # get the item.image._pil or crop it out of the page-image
-                img = item.get_image(doc=doc)
-
-                if img is not None:
-                    imgb64 = item._image_to_base64(img)
-                    text = f"![Image](data:image/png;base64,{imgb64})"
-
-                    text_res = text
-                else:
-                    text_res = error_response
-        elif image_mode == ImageRefMode.REFERENCED:
-            if not isinstance(item.image, ImageRef) or (
-                isinstance(item.image.uri, AnyUrl) and item.image.uri.scheme == "data"
-            ):
-                text_res = image_placeholder
-            else:
-                text_res = f"![Image]({self._escape_uri_path(item.image.uri)})"
-        else:
-            text_res = image_placeholder
-
-        return create_ser_result(text=text_res, span_source=item)
 
     @staticmethod
     def _escape_uri_path(value: AnyUrl | PurePath) -> str:
@@ -1245,7 +1253,7 @@ class MarkdownFallbackSerializer(BaseFallbackSerializer):
             if isinstance(item, TrackItem):
                 if item.image is not None and item.self_ref not in doc_serializer.get_excluded_refs(**kwargs):
                     params = MarkdownParams(**kwargs)
-                    cover_res = MarkdownPictureSerializer()._serialize_image_part(
+                    cover_res = _serialize_image_part(
                         item=item,
                         doc=doc,
                         image_mode=params.image_mode,
