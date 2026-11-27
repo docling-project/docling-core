@@ -3,6 +3,7 @@
 import logging
 import threading
 from html.parser import HTMLParser
+from importlib.metadata import version
 from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
 from typing import TypeAlias, Union
 from unittest.mock import MagicMock, patch
@@ -1037,6 +1038,38 @@ def _cell(text: str, row: int, col: int, *, row_span: int = 1, column_header: bo
         row_span=row_span,
         column_header=column_header,
     )
+
+
+def test_md_sparse_table_keeps_blank_rows_and_column_alignment():
+    doc = DoclingDocument(name="sparse")
+    doc.add_table(
+        data=TableData(
+            num_rows=5,
+            num_cols=2,
+            table_cells=[
+                _cell("N", 0, 0, column_header=True),
+                _cell("T", 0, 1, column_header=True),
+                _cell("12", 1, 0),
+                _cell("x", 1, 1),
+                _cell("314", 4, 0),
+                _cell("end", 4, 1),
+            ],
+        )
+    )
+    # tabulate 0.9 infers text when a numeric column includes a blank.
+    if version("tabulate").startswith("0.9."):
+        expected = "| N   | T   |\n|-----|-----|\n| 12  | x   |\n|     |     |\n|     |     |\n| 314 | end |"
+    else:
+        expected = "|   N | T   |\n|-----|-----|\n|  12 | x   |\n|     |     |\n|     |     |\n| 314 | end |"
+    assert doc.export_to_markdown() == expected
+
+
+def test_md_table_reflects_edit_between_exports():
+    doc = DoclingDocument(name="edit")
+    table = doc.add_table(data=TableData(num_rows=2, num_cols=1, table_cells=[_cell("H", 0, 0)]))
+    assert doc.export_to_markdown(compact_tables=True) == "| H |\n| - |\n|  |"
+    doc.add_table_cell(table_item=table, cell=_cell("new", 1, 0))
+    assert doc.export_to_markdown(compact_tables=True) == "| H |\n| - |\n| new |"
 
 
 @pytest.mark.parametrize(
