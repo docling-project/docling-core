@@ -63,12 +63,14 @@ from docling_core.types.doc.document import DoclingDocument
 from docling_core.types.doc.items.code import CodeItem
 from docling_core.types.doc.items.content import ContentItem
 from docling_core.types.doc.items.form import (
+    FieldControl,
     FieldHeadingItem,
     FieldItem,
     FieldRegionItem,
     FieldValueItem,
 )
 from docling_core.types.doc.items.group import (
+    BlockQuoteGroup,
     GroupItem,
     InlineGroup,
     ListGroup,

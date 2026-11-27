@@ -111,8 +111,21 @@ from docling_core.types.doc.common.source import BaseSource, SourceType, TrackSo
 from docling_core.types.doc.doctags import DocTagsDocument, DocTagsPage
 from docling_core.types.doc.items.code import CodeItem
 from docling_core.types.doc.items.content import ContentItem
-from docling_core.types.doc.items.form import FieldHeadingItem, FieldItem, FieldRegionItem, FieldValueItem
-from docling_core.types.doc.items.group import GroupItem, InlineGroup, ListGroup, OrderedList, UnorderedList
+from docling_core.types.doc.items.form import (
+    FieldControl,
+    FieldHeadingItem,
+    FieldItem,
+    FieldRegionItem,
+    FieldValueItem,
+)
+from docling_core.types.doc.items.group import (
+    BlockQuoteGroup,
+    GroupItem,
+    InlineGroup,
+    ListGroup,
+    OrderedList,
+    UnorderedList,
+)
 from docling_core.types.doc.items.key_value import FormItem, GraphCell, GraphData, GraphLink, KeyValueItem
 from docling_core.types.doc.items.node import DocItem, FloatingItem, NodeItem
 from docling_core.types.doc.items.picture.charts import (
@@ -230,7 +243,7 @@ class DoclingDocument(BaseModel):
     )  # List[RefItem] = []
     body: GroupItem = GroupItem(name="_root_", self_ref="#/body")  # List[RefItem] = []
 
-    groups: list[ListGroup | InlineGroup | GroupItem] = []
+    groups: list[ListGroup | InlineGroup | BlockQuoteGroup | GroupItem] = []
     texts: list[
         TitleItem | SectionHeaderItem | ListItem | CodeItem | FormulaItem | FieldHeadingItem | FieldValueItem | TextItem
     ] = []
@@ -547,10 +560,14 @@ class DoclingDocument(BaseModel):
         """
         num_repaired = 0
         for node in self._iterate_all_nodes():
-            if not isinstance(node, FloatingItem):
+            if isinstance(node, FloatingItem):
+                refs = [*node.captions, *node.footnotes, *node.references]
+            elif isinstance(node, BlockQuoteGroup):
+                refs = list(node.captions)
+            else:
                 continue
             node_ref = node.get_ref()
-            for ref in [*node.captions, *node.footnotes, *node.references]:
+            for ref in refs:
                 try:
                     item = ref.resolve(doc=self)
                 except (IndexError, AttributeError):
@@ -1293,6 +1310,14 @@ class DoclingDocument(BaseModel):
             for ref_item in node.comments:
                 ref_item._update_with_lookup(lookup=lookup)
 
+        # Update the attribution references of block quotes
+        if isinstance(node, BlockQuoteGroup):
+            node.captions = self._update_refitems_with_lookup(
+                ref_items=node.captions,
+                refs_to_be_deleted=refs_to_be_deleted,
+                lookup=lookup,
+            )
+
         # Update the captions, references and footnote references
         if isinstance(node, FloatingItem):
             node.captions = self._update_refitems_with_lookup(
@@ -1601,6 +1626,38 @@ class DoclingDocument(BaseModel):
         _parent.children.append(RefItem(cref=cref))
         return group
 
+    def add_block_quote_group(
+        self,
+        name: str | None = None,
+        parent: NodeItem | None = None,
+        content_layer: ContentLayer | None = None,
+        cite: AnyUrl | None = None,
+    ) -> BlockQuoteGroup:
+        """Creates a new BlockQuoteGroup item and appends it to the document.
+
+        The quoted blocks are added as children of the returned group. An attribution
+        is a ``caption`` text item added as a child of the group and appended to its
+        ``captions``.
+
+        :param name: Optional[str]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param cite: Optional[AnyUrl]: URL of the quotation source.  (Default value = None)
+
+        :returns: BlockQuoteGroup: The newly created BlockQuoteGroup item.
+        """
+        _parent = parent or self.body
+        cref = f"#/groups/{len(self.groups)}"
+        group = BlockQuoteGroup(self_ref=cref, parent=_parent.get_ref(), cite=cite)
+        if name is not None:
+            group.name = name
+        if content_layer:
+            group.content_layer = content_layer
+
+        self.groups.append(group)
+        _parent.children.append(RefItem(cref=cref))
+        return group
+
     def add_group(
         self,
         label: GroupLabel | None = None,
@@ -1623,6 +1680,12 @@ class DoclingDocument(BaseModel):
             )
         elif label == GroupLabel.INLINE:
             return self.add_inline_group(
+                name=name,
+                parent=parent,
+                content_layer=content_layer,
+            )
+        elif label == GroupLabel.BLOCK_QUOTE:
+            return self.add_block_quote_group(
                 name=name,
                 parent=parent,
                 content_layer=content_layer,
@@ -2382,14 +2445,33 @@ class DoclingDocument(BaseModel):
         parent: NodeItem | None = None,
         content_layer: ContentLayer | None = None,
         *,
+        control: FieldControl | None = None,
+        description: str | None = None,
+        required: bool = False,
+        options: list[str] | None = None,
         source: SourceType | None = None,
     ) -> FieldItem:
-        """add_kv_entry."""
+        """Add one form field to the document.
+
+        :param prov: Optional[ProvenanceItem]:  (Default value = None)
+        :param parent: Optional[NodeItem]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param control: Optional[FieldControl]: the kind of control, when known
+        :param description: Optional[str]: producer-supplied description of what
+            to enter, e.g. an AcroForm /TU tooltip
+        :param required: bool: whether a value must be supplied
+        :param options: Optional[list[str]]: the values a CHOICE or RADIO
+            control accepts
+        """
         _parent = parent or self.body
         cref = f"#/field_items/{len(self.field_items)}"
         item = FieldItem(
             self_ref=cref,
             parent=_parent.get_ref(),
+            control=control,
+            description=description,
+            required=required,
+            options=list(options) if options else [],
         )
         if prov:
             item.prov.append(prov)
@@ -2673,6 +2755,38 @@ class DoclingDocument(BaseModel):
 
         return group
 
+    def insert_block_quote_group(
+        self,
+        sibling: NodeItem,
+        name: str | None = None,
+        content_layer: ContentLayer | None = None,
+        cite: AnyUrl | None = None,
+        after: bool = True,
+    ) -> BlockQuoteGroup:
+        """Creates a new BlockQuoteGroup item and inserts it into the document.
+
+        :param sibling: NodeItem:
+        :param name: Optional[str]:  (Default value = None)
+        :param content_layer: Optional[ContentLayer]:  (Default value = None)
+        :param cite: Optional[AnyUrl]: URL of the quotation source.  (Default value = None)
+        :param after: bool:  (Default value = True)
+
+        :returns: BlockQuoteGroup: The newly created BlockQuoteGroup item.
+        """
+        # Get stack and parent reference of the sibling
+        stack, parent_ref = self._get_insertion_stack_and_parent(sibling=sibling)
+
+        group = BlockQuoteGroup(self_ref="#", parent=parent_ref, cite=cite)
+
+        if name is not None:
+            group.name = name
+        if content_layer:
+            group.content_layer = content_layer
+
+        self._insert_in_structure(item=group, stack=stack, after=after)
+
+        return group
+
     def insert_group(
         self,
         sibling: NodeItem,
@@ -2700,6 +2814,13 @@ class DoclingDocument(BaseModel):
             )
         elif label == GroupLabel.INLINE:
             return self.insert_inline_group(
+                sibling=sibling,
+                name=name,
+                content_layer=content_layer,
+                after=after,
+            )
+        elif label == GroupLabel.BLOCK_QUOTE:
+            return self.insert_block_quote_group(
                 sibling=sibling,
                 name=name,
                 content_layer=content_layer,

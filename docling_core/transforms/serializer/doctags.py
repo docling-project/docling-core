@@ -28,6 +28,7 @@ from docling_core.transforms.serializer.common import (
     get_inline_content_group,
 )
 from docling_core.types.doc.document import (
+    BlockQuoteGroup,
     BoundingBox,
     CodeItem,
     DocItem,
@@ -622,7 +623,7 @@ class DocTagsDocSerializer(DocSerializer):
     @override
     def serialize_captions(
         self,
-        item: FloatingItem,
+        item: FloatingItem | BlockQuoteGroup,
         **kwargs: Any,
     ) -> SerializationResult:
         """Serialize the item's captions."""

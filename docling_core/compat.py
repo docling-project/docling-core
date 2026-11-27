@@ -194,11 +194,81 @@ def list_projectors() -> list[tuple[int, int]]:
 # ---------------------------------------------------------------------------
 # Projectors — one per schema minor bump within docling-core v2.x
 # ---------------------------------------------------------------------------
-# These cover every schema version step from the current schema (1.12) down
+# These cover every schema version step from the current schema (1.14) down
 # to the oldest v2.x schema (1.5).  Each projector represents the *minimal*
 # structural downgrade that allows an old client's Pydantic model to parse
 # the serialised dict without error.  Full semantic fidelity is not always
 # possible; the goal is a document that validates rather than crashes.
+
+# --- 1.14 → 1.13 ----------------------------------------------------------
+# Schema 1.14:
+#   • Added FieldItem.control, .description, .required and .options, giving
+#     AcroForm field metadata a typed home at document level.
+#   FieldItem is a strict model (extra="forbid"), so a 1.13 client raises on
+#   any of the four keys.
+#
+# Downgrade strategy:
+#   • Drop the four keys from every field item. The metadata has no 1.13
+#     equivalent to map onto -- the page-level PdfWidget entries it is derived
+#     from are unaffected and survive the downgrade untouched.
+# ---------------------------------------------------------------------------
+
+_NEW_FIELD_ITEM_KEYS_1_14 = {"control", "description", "required", "options"}
+
+
+@register_projector(from_minor=14, to_minor=13)
+def _project_1_14_to_1_13(data: dict) -> dict:
+    """Downgrade a schema 1.14 document dict to schema 1.13.
+
+    Handles:
+    - Strips ``control``, ``description``, ``required`` and ``options`` from
+      all ``FieldItem`` dicts.
+    """
+    data = dict(data)
+
+    data["field_items"] = [
+        {k: v for k, v in item.items() if k not in _NEW_FIELD_ITEM_KEYS_1_14} for item in data.get("field_items", [])
+    ]
+
+    data["version"] = "1.13.0"
+    return data
+
+
+# --- 1.13 → 1.12 ----------------------------------------------------------
+# Schema 1.13:
+#   • Added GroupLabel.BLOCK_QUOTE and the BlockQuoteGroup subtype with the
+#     optional "cite" (source URL) and "captions" (attribution refs) fields.
+#   Old clients reject the unknown label value and, with extra="forbid",
+#   the unknown fields.
+#
+# Downgrade strategy:
+#   • Relabel "block_quote" groups to "unspecified" and strip "cite" and
+#     "captions". The attribution item stays in place as a plain caption
+#     child, so old clients still read it after the quoted blocks.
+# ---------------------------------------------------------------------------
+
+
+@register_projector(from_minor=13, to_minor=12)
+def _project_1_13_to_1_12(data: dict) -> dict:
+    """Downgrade a schema 1.13 document dict to schema 1.12.
+
+    Handles:
+    - Relabels ``block_quote`` groups to ``unspecified``.
+    - Strips the ``cite`` and ``captions`` fields from group dicts.
+    """
+    data = dict(data)
+
+    new_groups = []
+    for group in data.get("groups", []):
+        group = {k: v for k, v in group.items() if k not in {"cite", "captions"}}
+        if group.get("label") == "block_quote":
+            group["label"] = "unspecified"
+        new_groups.append(group)
+    data["groups"] = new_groups
+
+    data["version"] = "1.12.0"
+    return data
+
 
 # --- 1.12 → 1.11 ----------------------------------------------------------
 # Schema 1.12 (docling-core v2.108.0):
