@@ -35,6 +35,7 @@ from docling_core.transforms.serializer.base import (
     BaseTextSerializer,
     SerializationResult,
     Span,
+    TableCellSpan,
 )
 from docling_core.types.doc import (
     ContentLayer,
@@ -270,10 +271,38 @@ def create_ser_result(
                 if (span_id := span.item.self_ref) not in span_ids:
                     span_ids.add(span_id)
                     spans.append(span)
-    return SerializationResult(
+    result = SerializationResult(
         text=text,
         spans=spans,
     )
+    if not isinstance(span_source, DocItem) and any(part.cell_spans for part in span_source):
+        result.cell_spans = _shift_cell_spans(text=text, results=span_source)
+    return result
+
+
+def _shift_cell_spans(*, text: str, results: list[SerializationResult]) -> list[TableCellSpan]:
+    """Move the cell spans of the parts to their position in `text`.
+
+    The parts are located in order, each one after the previous. The cell spans
+    of a part whose text is not found verbatim in `text` (e.g. after it was
+    reindented) are dropped, as their positions are no longer known.
+    """
+    shifted: list[TableCellSpan] = []
+    cursor = 0
+    for ser_res in results:
+        if not ser_res.text:
+            continue
+        pos = text.find(ser_res.text, cursor)
+        if pos == -1:
+            continue
+        cursor = pos + len(ser_res.text)
+        if pos == 0:
+            shifted.extend(ser_res.cell_spans)
+            continue
+        for cell_span in ser_res.cell_spans:
+            start, end = cell_span.charspan
+            shifted.append(cell_span.model_copy(update={"charspan": (start + pos, end + pos)}))
+    return shifted
 
 
 def get_inline_content_group(item: TextItem, doc: DoclingDocument) -> InlineGroup | None:

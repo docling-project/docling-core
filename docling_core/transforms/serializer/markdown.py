@@ -26,6 +26,7 @@ from docling_core.transforms.serializer.base import (
     BaseTableSerializer,
     BaseTextSerializer,
     SerializationResult,
+    TableCellSpan,
 )
 from docling_core.transforms.serializer.common import (
     CommonParams,
@@ -76,6 +77,7 @@ from docling_core.types.doc import (
     RichTableCell,
     SectionHeaderItem,
     SummaryMetaField,
+    TableCell,
     TableItem,
     TabularChartMetaField,
     TextItem,
@@ -297,6 +299,12 @@ class MarkdownParams(CommonParams):
             )
         ),
     ] = False
+    table_cell_spans: bool = Field(
+        default=False,
+        description=(
+            "Whether to report where each table cell is in the text, in the `cell_spans` of the serialization result."
+        ),
+    )
     include_picture_classification: bool = Field(
         default=True,
         description="Include the picture classification prediction (the image's predicted class).",
@@ -772,17 +780,81 @@ def _flatten_header_rows(header_rows: list[list[str]], num_cols: int) -> list[st
         share a label.  GFM has no way to represent more than one header row,
         so this is an unavoidable lossy flattening.
     """
-    if not header_rows:
-        return [""] * num_cols
-    flattened = []
+    return [HEADER_ROW_SEPARATOR.join(text for _, text in parts) for parts in _header_parts(header_rows, num_cols)]
+
+
+def _header_parts(header_rows: list[list[str]], num_cols: int) -> list[list[tuple[int, str]]]:
+    """Get, per column, the header texts that `_flatten_header_rows` joins, with the row each one comes from."""
+    columns = []
     for col_idx in range(num_cols):
-        parts: list[str] = []
-        for row in header_rows:
+        parts: list[tuple[int, str]] = []
+        for row_idx, row in enumerate(header_rows):
             text = row[col_idx] if col_idx < len(row) else ""
-            if text and (not parts or parts[-1] != text):
-                parts.append(text)
-        flattened.append(HEADER_ROW_SEPARATOR.join(parts))
-    return flattened
+            if text and (not parts or parts[-1][1] != text):
+                parts.append((row_idx, text))
+        columns.append(parts)
+    return columns
+
+
+def _table_cell_spans(
+    *,
+    item: TableItem,
+    grid: list[list[TableCell]],
+    rows: list[list[str]],
+    num_headers: int,
+    table_text: str,
+) -> list[TableCellSpan]:
+    """Find the range of each cell in a table rendered by `MarkdownTableSerializer`.
+
+    Each rendered row is one line, whose cells are delimited by its pipes (pipes
+    in the cell texts are escaped). A header cell is one part of its column's
+    flattened header. Cells without text get no span. If a line does not hold
+    the expected cell texts, no span is returned for the table rather than a
+    wrong one.
+    """
+    lines = table_text.split("\n")
+    num_cols = len(rows[0])
+    if len(lines) != len(rows) - num_headers + 2:
+        return []
+    header = _header_parts(rows[:num_headers], num_cols)
+    # the header line, then the body lines (the separator line is skipped)
+    line_parts = [(0, header)] + [
+        (line_idx, [[(row_idx, text)] for text in rows[row_idx]])
+        for line_idx, row_idx in enumerate(range(num_headers, len(rows)), start=2)
+    ]
+    line_starts = [0]
+    for line in lines:
+        line_starts.append(line_starts[-1] + len(line) + 1)
+
+    cell_spans: list[TableCellSpan] = []
+    for line_idx, columns in line_parts:
+        line = lines[line_idx]
+        pipes = [i for i, char in enumerate(line) if char == "|"]
+        if len(pipes) != num_cols + 1:
+            return []
+        for col_idx, parts in enumerate(columns):
+            segment = line[pipes[col_idx] + 1 : pipes[col_idx + 1]]
+            expected = HEADER_ROW_SEPARATOR.join(text for _, text in parts)
+            if segment.strip() != expected.strip():
+                return []
+            text_start = line_starts[line_idx] + pipes[col_idx] + 1 + len(segment) - len(segment.lstrip())
+            # `expected` is rendered without its leading whitespace
+            pos = -(len(expected) - len(expected.lstrip()))
+            for row_idx, text in parts:
+                if text.strip():
+                    start = text_start + pos + len(text) - len(text.lstrip())
+                    # the values are already validated: model_construct keeps large tables fast
+                    cell_spans.append(
+                        TableCellSpan.model_construct(
+                            item=item,
+                            cell=grid[row_idx][col_idx],
+                            row=row_idx,
+                            col=col_idx,
+                            charspan=(start, start + len(text.strip())),
+                        )
+                    )
+                pos += len(text) + len(HEADER_ROW_SEPARATOR)
+    return cell_spans
 
 
 class MarkdownTableSerializer(BaseTableSerializer):
@@ -910,7 +982,9 @@ class MarkdownTableSerializer(BaseTableSerializer):
 
             rows = []
             rich_texts: dict[tuple[int, int], str] = {}
-            for row in item.data.grid:
+            grid = item.data.grid
+            cell_spans: list[TableCellSpan] = []
+            for row in grid:
                 rendered_row = []
                 for col in row:
                     if isinstance(col, RichTableCell):
@@ -953,10 +1027,16 @@ class MarkdownTableSerializer(BaseTableSerializer):
 
                 if params.compact_tables:
                     table_text = self._compact_table(table_text)
+                if params.table_cell_spans:
+                    cell_spans = _table_cell_spans(
+                        item=item, grid=grid, rows=rows, num_headers=num_headers, table_text=table_text
+                    )
             else:
                 table_text = ""
             if table_text:
-                res_parts.append(create_ser_result(text=table_text, span_source=item))
+                table_res = create_ser_result(text=table_text, span_source=item)
+                table_res.cell_spans = cell_spans
+                res_parts.append(table_res)
 
         ftn_res = doc_serializer.serialize_footnotes(item=item, **kwargs)
         if ftn_res.text:

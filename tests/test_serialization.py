@@ -14,7 +14,7 @@ from PIL import Image
 from pydantic import AnyUrl
 
 from docling_core.transforms.chunker.hierarchical_chunker import TripletTableSerializer
-from docling_core.transforms.serializer.common import _DEFAULT_LABELS
+from docling_core.transforms.serializer.common import _DEFAULT_LABELS, create_ser_result
 from docling_core.transforms.serializer.doclang import DocLangDocSerializer, DocLangParams
 from docling_core.transforms.serializer.html import (
     HTMLDocSerializer,
@@ -44,6 +44,7 @@ from docling_core.types.doc.document import (
     DescriptionAnnotation,
     EntitiesMetaField,
     EntityMention,
+    FloatingMeta,
     Formatting,
     GraphCell,
     GraphData,
@@ -1246,6 +1247,107 @@ def test_md_pipe_in_table():
     )
     ser = doc.export_to_markdown()
     assert ser == "| Fruits &#124; Veggies   |\n|-------------------------|"
+
+
+def _cell_span_texts(res) -> list[tuple[str, int, int]]:
+    return [(res.text[span.charspan[0] : span.charspan[1]], span.row, span.col) for span in res.cell_spans]
+
+
+@pytest.mark.parametrize(
+    "params",
+    [{}, {"compact_tables": True}, {"page_break_placeholder": "<!-- page break -->"}],
+)
+def test_md_table_cell_spans_in_document(params):
+    doc = DoclingDocument(name="")
+    doc.add_heading(text="Parts")
+    doc.add_text(label=DocItemLabel.TEXT, text="Stock at the end of the year.")
+    table = doc.add_table(data=TableData(num_rows=3, num_cols=2))
+    for row_idx, row in enumerate([["item", "qty"], ["bolt", "3600"], ["nut", "3600"]]):
+        for col_idx, text in enumerate(row):
+            doc.add_table_cell(table_item=table, cell=_cell(text, row_idx, col_idx, column_header=row_idx == 0))
+
+    plain = MarkdownDocSerializer(doc=doc, params=MarkdownParams(**params)).serialize()
+    res = MarkdownDocSerializer(doc=doc, params=MarkdownParams(table_cell_spans=True, **params)).serialize()
+
+    assert plain.cell_spans == []
+    assert res.text == plain.text
+    assert _cell_span_texts(res) == [
+        ("item", 0, 0),
+        ("qty", 0, 1),
+        ("bolt", 1, 0),
+        ("3600", 1, 1),
+        ("nut", 2, 0),
+        ("3600", 2, 1),
+    ]
+    assert res.cell_spans[3].charspan != res.cell_spans[5].charspan
+    assert all(span.item is table for span in res.cell_spans)
+    assert all(span.cell is cell for span, cell in zip(res.cell_spans, table.data.table_cells))
+
+
+def test_md_table_cell_spans_stacked_header():
+    doc = _table_with_rows(
+        [["Product", "Tier 1", "Tier 2"], ["", "0-99", "100+"], ["CAT-001", "10.00", "9.00"]],
+        num_header_rows=2,
+    )
+    res = MarkdownDocSerializer(doc=doc, params=MarkdownParams(table_cell_spans=True)).serialize()
+    assert _cell_span_texts(res) == [
+        ("Product", 0, 0),
+        ("Tier 1", 0, 1),
+        ("0-99", 1, 1),
+        ("Tier 2", 0, 2),
+        ("100+", 1, 2),
+        ("CAT-001", 2, 0),
+        ("10.00", 2, 1),
+        ("9.00", 2, 2),
+    ]
+
+
+def test_md_table_cell_spans_rich_header_cell(col_span_rich_table_doc):
+    doc = col_span_rich_table_doc
+    res = MarkdownDocSerializer(doc=doc, params=MarkdownParams(table_cell_spans=True)).serialize()
+    assert _cell_span_texts(res) == [
+        ("Partner", 0, 1),
+        ("Partner", 0, 2),
+        ("Status", 1, 0),
+        ("Done", 1, 1),
+        ("Open", 1, 2),
+    ]
+    assert isinstance(res.cell_spans[0].cell, RichTableCell)
+    assert res.cell_spans[0].cell is res.cell_spans[1].cell
+
+
+def test_md_table_cell_spans_with_caption_and_meta():
+    doc = _table_with_rows([["item", "qty"], ["bolt", "3600"]], num_header_rows=1)
+    table = doc.tables[0]
+    caption = doc.add_text(label=DocItemLabel.CAPTION, text="Table 1: | item | qty |", parent=table)
+    table.captions.append(caption.get_ref())
+    table.meta = FloatingMeta(summary=SummaryMetaField(text="Stock of bolts."))
+
+    for item in (None, table):
+        res = MarkdownDocSerializer(doc=doc, params=MarkdownParams(table_cell_spans=True)).serialize(item=item)
+        assert "Table 1:" in res.text
+        assert "Stock of bolts." in res.text
+        assert _cell_span_texts(res) == [("item", 0, 0), ("qty", 0, 1), ("bolt", 1, 0), ("3600", 1, 1)]
+
+
+def test_md_table_cell_spans_dropped_when_text_changes():
+    doc = _table_with_rows([["item", "qty"], ["bolt", "3600"]], num_header_rows=1)
+    res = MarkdownDocSerializer(doc=doc, params=MarkdownParams(table_cell_spans=True)).serialize()
+    indented = create_ser_result(text="> " + res.text.replace("\n", "\n> "), span_source=[res])
+    assert len(res.cell_spans) == 4
+    assert indented.cell_spans == []
+
+
+def test_md_table_cell_spans_real_document():
+    doc = DoclingDocument.load_from_json(Path("./tests/data/doc/2408.09869v3_enriched.json"))
+    res = MarkdownDocSerializer(doc=doc, params=MarkdownParams(table_cell_spans=True)).serialize()
+
+    assert {span.item.self_ref for span in res.cell_spans} == {
+        table.self_ref for table in doc.tables if table.data.table_cells
+    }
+    for span in res.cell_spans:
+        rendered = span.cell.text.replace("\n", " ").replace("|", "&#124;").strip()
+        assert res.text[span.charspan[0] : span.charspan[1]] == rendered
 
 
 def test_md_heading_in_rich_table_cell_renders_as_plain_text():
