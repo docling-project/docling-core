@@ -478,7 +478,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
         params_json = params.model_dump_json()
         refs = self._excluded_refs_cache.get(params_json)
         if refs is None:
-            track_pages = self._track_pages() if params.pages is not None else {}
+            inherited_pages = self._inherited_pages() if params.pages is not None else {}
             refs = {
                 item.self_ref
                 for ix, (item, _) in enumerate(
@@ -497,7 +497,7 @@ class DocSerializer(BaseModel, BaseDocSerializer):
                             or item.content_layer not in params.layers
                             or (
                                 params.pages is not None
-                                and (item.prov[0].page_no if item.prov else track_pages.get(item.self_ref))
+                                and (item.prov[0].page_no if item.prov else inherited_pages.get(item.self_ref))
                                 not in params.pages
                             )
                         )
@@ -523,8 +523,12 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             self._excluded_refs_cache[params_json] = refs
         return refs
 
-    def _track_pages(self) -> dict[str, int]:
-        """The page of each item inside a located track: cues have no location of their own."""
+    def _inherited_pages(self) -> dict[str, int]:
+        """The page of items that take their location from a located container.
+
+        Cues inside a track have no location of their own, and the content of a
+        rich table cell may have none either: both follow their container's page.
+        """
         pages: dict[str, int] = {}
         for track in self.doc.tracks:
             if not track.prov:
@@ -534,6 +538,19 @@ class DocSerializer(BaseModel, BaseDocSerializer):
             ):
                 if node is not track:
                     pages.setdefault(node.self_ref, track.prov[0].page_no)
+        for table in self.doc.tables:
+            if not table.prov:
+                continue
+            for cell in table.data.table_cells:
+                if not isinstance(cell, RichTableCell):
+                    continue
+                for node, _ in self.doc.iterate_items(
+                    root=cell.ref.resolve(self.doc),
+                    with_groups=True,
+                    traverse_pictures=True,
+                    included_content_layers=set(ContentLayer),
+                ):
+                    pages.setdefault(node.self_ref, table.prov[0].page_no)
         return pages
 
     @abstractmethod
