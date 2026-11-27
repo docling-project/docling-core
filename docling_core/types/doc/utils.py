@@ -246,9 +246,10 @@ def get_text_direction(text: str) -> str:
 
 def otsl_extract_tokens_and_text(s: str) -> tuple[list[str], list[str]]:
     """Extract OTSL tokens and text from an OTSL string."""
-    # Pattern to match anything enclosed by < >
-    # (including the angle brackets themselves)
-    pattern = r"(<[^>]+>)"
+    # Pattern to match a tag such as "<fcel>", "</otsl>" or "<loc_140/>": the name starts
+    # with a letter or "_" and holds no whitespace, so that a "<" in the cell text
+    # (e.g. "P < 0.05" or "<0.001") is not read as a tag swallowing the next token
+    pattern = r"(</?[A-Za-z_][^\s<>]*>)"
     # Find all tokens (e.g. "<otsl>", "<loc_140>", etc.)
     tokens = re.findall(pattern, s)
     # Remove any tokens that start with "<loc_"

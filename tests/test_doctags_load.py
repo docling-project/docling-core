@@ -152,6 +152,24 @@ def test_doctags_load_preserves_angle_brackets_in_text():
     assert [t.text for t in doc.texts] == [original]
 
 
+def test_doctags_load_preserves_angle_brackets_in_table_cells():
+    # Same as above for table cells: a "<" in a cell must not swallow the next OTSL token.
+    doctags = (
+        "<doctag><otsl><loc_10><loc_10><loc_400><loc_100>"
+        "<ched>Group<ched>P<nl><fcel>A<fcel>P < 0.05<nl><fcel>B<fcel><0.001<nl>"
+        "</otsl></doctag>"
+    )
+
+    doctags_doc = DocTagsDocument.from_doctags_and_image_pairs([doctags], None)
+    doc = DoclingDocument.load_from_doctags(doctags_doc)
+
+    assert [[cell.text for cell in row] for row in doc.tables[0].data.grid] == [
+        ["Group", "P"],
+        ["A", "P < 0.05"],
+        ["B", "<0.001"],
+    ]
+
+
 def test_doctags_inline():
     src_path = Path("tests/data/doc/2408.09869v3_enriched.dt")
     with open(src_path) as f:
