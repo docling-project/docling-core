@@ -23,6 +23,7 @@ class PlainTextParams(MarkdownParams):
 
     escape_underscores: bool = False
     escape_html: bool = False
+    escape_table_pipes: bool = False
     image_placeholder: str = ""
     format_code_blocks: bool = False
 
