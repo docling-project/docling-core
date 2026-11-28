@@ -194,11 +194,31 @@ def list_projectors() -> list[tuple[int, int]]:
 # ---------------------------------------------------------------------------
 # Projectors — one per schema minor bump within docling-core v2.x
 # ---------------------------------------------------------------------------
-# These cover every schema version step from the current schema (1.12) down
+# These cover every schema version step from the current schema down
 # to the oldest v2.x schema (1.5).  Each projector represents the *minimal*
 # structural downgrade that allows an old client's Pydantic model to parse
 # the serialised dict without error.  Full semantic fidelity is not always
 # possible; the goal is a document that validates rather than crashes.
+
+# --- 1.13 → 1.12 ----------------------------------------------------------
+# Schema 1.13: optional layout provenance on groups, body and furniture.
+# Downgrade strategy: drop "prov" from body, furniture and every group; content
+# provenance and hierarchy are untouched.
+# ---------------------------------------------------------------------------
+
+
+@register_projector(from_minor=13, to_minor=12)
+def _project_1_13_to_1_12(data: dict) -> dict:
+    """Strip group provenance while preserving content provenance and hierarchy."""
+    data = dict(data)
+    for key in ("body", "furniture"):
+        if key in data:
+            data[key] = {k: v for k, v in data[key].items() if k != "prov"}
+    if "groups" in data:
+        data["groups"] = [{k: v for k, v in group.items() if k != "prov"} for group in data["groups"]]
+    data["version"] = "1.12.0"
+    return data
+
 
 # --- 1.12 → 1.11 ----------------------------------------------------------
 # Schema 1.12 (docling-core v2.108.0):

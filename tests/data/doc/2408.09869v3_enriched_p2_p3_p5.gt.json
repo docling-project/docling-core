@@ -1,6 +1,6 @@
 {
   "schema_name": "DoclingDocument",
-  "version": "1.12.0",
+  "version": "1.13.0",
   "name": "2408.09869v3",
   "furniture": {
     "self_ref": "#/furniture",
@@ -250,7 +250,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 2,
@@ -267,6 +266,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "Here is what Docling delivers today:",
       "text": "Here is what Docling delivers today:"
     },
@@ -277,7 +277,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "list_item",
       "prov": [
         {
           "page_no": 2,
@@ -294,6 +293,7 @@
           ]
         }
       ],
+      "label": "list_item",
       "orig": "\u00b7 Converts PDF documents to JSON or Markdown format, stable and lightning fast",
       "text": "Converts PDF documents to JSON or Markdown format, stable and lightning fast",
       "enumerated": false,
@@ -306,7 +306,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "list_item",
       "prov": [
         {
           "page_no": 2,
@@ -323,6 +322,7 @@
           ]
         }
       ],
+      "label": "list_item",
       "orig": "\u00b7 Understands detailed page layout, reading order, locates figures and recovers table structures",
       "text": "Understands detailed page layout, reading order, locates figures and recovers table structures",
       "enumerated": false,
@@ -335,7 +335,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "list_item",
       "prov": [
         {
           "page_no": 2,
@@ -352,6 +351,7 @@
           ]
         }
       ],
+      "label": "list_item",
       "orig": "\u00b7 Extracts metadata from the document, such as title, authors, references and language",
       "text": "Extracts metadata from the document, such as title, authors, references and language",
       "enumerated": false,
@@ -364,7 +364,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "list_item",
       "prov": [
         {
           "page_no": 2,
@@ -381,6 +380,7 @@
           ]
         }
       ],
+      "label": "list_item",
       "orig": "\u00b7 Optionally applies OCR, e.g. for scanned PDFs",
       "text": "Optionally applies OCR, e.g. for scanned PDFs",
       "enumerated": false,
@@ -393,7 +393,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "list_item",
       "prov": [
         {
           "page_no": 2,
@@ -410,6 +409,7 @@
           ]
         }
       ],
+      "label": "list_item",
       "orig": "\u00b7 Can be configured to be optimal for batch-mode (i.e high throughput, low time-to-solution) or interactive mode (compromise on efficiency, low time-to-solution)",
       "text": "Can be configured to be optimal for batch-mode (i.e high throughput, low time-to-solution) or interactive mode (compromise on efficiency, low time-to-solution)",
       "enumerated": false,
@@ -422,7 +422,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "list_item",
       "prov": [
         {
           "page_no": 2,
@@ -439,6 +438,7 @@
           ]
         }
       ],
+      "label": "list_item",
       "orig": "\u00b7 Can leverage different accelerators (GPU, MPS, etc).",
       "text": "Can leverage different accelerators (GPU, MPS, etc).",
       "enumerated": false,
@@ -451,7 +451,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "section_header",
       "prov": [
         {
           "page_no": 2,
@@ -468,6 +467,7 @@
           ]
         }
       ],
+      "label": "section_header",
       "orig": "2 Getting Started",
       "text": "2 Getting Started",
       "level": 1
@@ -479,7 +479,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 2,
@@ -496,6 +495,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "To use Docling, you can simply install the docling package from PyPI. Documentation and examples are available in our GitHub repository at ",
       "text": "To use Docling, you can simply install the docling package from PyPI. Documentation and examples are available in our GitHub repository at  "
     },
@@ -506,7 +506,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 2,
@@ -523,6 +522,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "github.com/DS4SD/docling",
       "text": "github.com/DS4SD/docling ",
       "hyperlink": "https://github.com/DS4SD/docling"
@@ -534,7 +534,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 2,
@@ -551,6 +550,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": ". All required model assets 1 are downloaded to a local huggingface datasets cache on first use, unless you choose to pre-install the model assets in advance.",
       "text": ". All required model assets 1 are downloaded to a local huggingface datasets cache on first use, unless you choose to pre-install the model assets in advance."
     },
@@ -561,7 +561,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 2,
@@ -578,6 +577,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "Docling provides an easy code interface to convert PDF documents from file system, URLs or binary streams, and retrieve the output in either JSON or Markdown format. For convenience, separate methods are offered to convert single documents or batches of documents. A basic usage example is illustrated below. Further examples are available in the Doclign code repository.",
       "text": "Docling provides an easy code interface to convert PDF documents from file system, URLs or binary streams, and retrieve the output in either JSON or Markdown format. For convenience, separate methods are offered to convert single documents or batches of documents. A basic usage example is illustrated below. Further examples are available in the Doclign code repository."
     },
@@ -588,7 +588,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "code",
       "prov": [
         {
           "page_no": 2,
@@ -605,6 +604,7 @@
           ]
         }
       ],
+      "label": "code",
       "orig": "from docling.document_converter import DocumentConverter Large",
       "text": "from docling.document_converter import DocumentConverter Large",
       "captions": [],
@@ -619,7 +619,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "code",
       "prov": [
         {
           "page_no": 2,
@@ -636,6 +635,7 @@
           ]
         }
       ],
+      "label": "code",
       "orig": "source = \"https://arxiv.org/pdf/2206.01062\" # PDF path or URL converter = DocumentConverter() result = converter.convert_single(source) print(result.render_as_markdown()) # output: \"## DocLayNet: A Human -Annotated Dataset for Document -Layout Analysis [...]\"",
       "text": "source = \"https://arxiv.org/pdf/2206.01062\" # PDF path or URL converter = DocumentConverter() result = converter.convert_single(source) print(result.render_as_markdown()) # output: \"## DocLayNet: A Human -Annotated Dataset for Document -Layout Analysis [...]\"",
       "captions": [],
@@ -650,7 +650,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 2,
@@ -667,6 +666,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "Optionally, you can configure custom pipeline features and runtime options, such as turning on or off features (e.g. OCR, table structure recognition), enforcing limits on the input document size, and defining the budget of CPU threads. Advanced usage examples and options are documented in the README file. Docling also provides a Dockerfile to demonstrate how to install and run it inside a container.",
       "text": "Optionally, you can configure custom pipeline features and runtime options, such as turning on or off features (e.g. OCR, table structure recognition), enforcing limits on the input document size, and defining the budget of CPU threads. Advanced usage examples and options are documented in the README file. Docling also provides a Dockerfile to demonstrate how to install and run it inside a container."
     },
@@ -677,7 +677,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "section_header",
       "prov": [
         {
           "page_no": 2,
@@ -694,6 +693,7 @@
           ]
         }
       ],
+      "label": "section_header",
       "orig": "3 Processing pipeline",
       "text": "3 Processing pipeline",
       "level": 1
@@ -705,7 +705,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 2,
@@ -722,6 +721,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "Docling implements a linear pipeline of operations, which execute sequentially on each given document (see Fig. 1). Each document is first parsed by a PDF backend, which retrieves the programmatic text tokens, consisting of string content and its coordinates on the page, and also renders a bitmap image of each page to support downstream operations. Then, the standard model pipeline applies a sequence of AI models independently on every page in the document to extract features and content, such as layout and table structures. Finally, the results from all pages are aggregated and passed through a post-processing stage, which augments metadata, detects the document language, infers reading-order and eventually assembles a typed document object which can be serialized to JSON or Markdown.",
       "text": "Docling implements a linear pipeline of operations, which execute sequentially on each given document (see Fig. 1). Each document is first parsed by a PDF backend, which retrieves the programmatic text tokens, consisting of string content and its coordinates on the page, and also renders a bitmap image of each page to support downstream operations. Then, the standard model pipeline applies a sequence of AI models independently on every page in the document to extract features and content, such as layout and table structures. Finally, the results from all pages are aggregated and passed through a post-processing stage, which augments metadata, detects the document language, infers reading-order and eventually assembles a typed document object which can be serialized to JSON or Markdown."
     },
@@ -732,7 +732,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "section_header",
       "prov": [
         {
           "page_no": 2,
@@ -749,6 +748,7 @@
           ]
         }
       ],
+      "label": "section_header",
       "orig": "3.1 PDF backends",
       "text": "3.1 PDF backends",
       "level": 1
@@ -760,7 +760,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 2,
@@ -777,6 +776,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "Two basic requirements to process PDF documents in our pipeline are a) to retrieve all text content and their geometric coordinates on each page and b) to render the visual representation of each page as it would appear in a PDF viewer. Both these requirements are encapsulated in Docling's PDF backend interface. While there are several open-source PDF parsing libraries available for python, we faced major obstacles with all of them for different reasons, among which were restrictive",
       "text": "Two basic requirements to process PDF documents in our pipeline are a) to retrieve all text content and their geometric coordinates on each page and b) to render the visual representation of each page as it would appear in a PDF viewer. Both these requirements are encapsulated in Docling's PDF backend interface. While there are several open-source PDF parsing libraries available for python, we faced major obstacles with all of them for different reasons, among which were restrictive"
     },
@@ -787,7 +787,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "footnote",
       "prov": [
         {
           "page_no": 2,
@@ -804,6 +803,7 @@
           ]
         }
       ],
+      "label": "footnote",
       "orig": "1 see huggingface.co/ds4sd/docling-models/",
       "text": "1 see huggingface.co/ds4sd/docling-models/"
     },
@@ -814,7 +814,6 @@
       },
       "children": [],
       "content_layer": "furniture",
-      "label": "page_footer",
       "prov": [
         {
           "page_no": 2,
@@ -831,6 +830,7 @@
           ]
         }
       ],
+      "label": "page_footer",
       "orig": "2",
       "text": "2"
     },
@@ -841,7 +841,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "caption",
       "prov": [
         {
           "page_no": 3,
@@ -858,6 +857,7 @@
           ]
         }
       ],
+      "label": "caption",
       "orig": "Figure 1: Sketch of Docling's default processing pipeline. The inner part of the model pipeline is easily customizable and extensible.",
       "text": "Figure 1: Sketch of Docling's default processing pipeline. The inner part of the model pipeline is easily customizable and extensible."
     },
@@ -868,7 +868,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -885,6 +884,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "Layout",
       "text": "Layout"
     },
@@ -895,7 +895,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -912,6 +911,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "Analysis",
       "text": "Analysis"
     },
@@ -922,7 +922,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -939,6 +938,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "Serialize as",
       "text": "Serialize as"
     },
@@ -949,7 +949,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -966,6 +965,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "JSON",
       "text": "JSON"
     },
@@ -976,7 +976,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -993,6 +992,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "or Markdown",
       "text": "or Markdown"
     },
@@ -1003,7 +1003,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -1020,6 +1019,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "{;}",
       "text": "{;}"
     },
@@ -1030,7 +1030,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -1047,6 +1046,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "Parse",
       "text": "Parse"
     },
@@ -1057,7 +1057,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -1074,6 +1073,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "PDF pages",
       "text": "PDF pages"
     },
@@ -1084,7 +1084,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -1101,6 +1100,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "Table",
       "text": "Table"
     },
@@ -1111,7 +1111,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -1128,6 +1127,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "Structure",
       "text": "Structure"
     },
@@ -1138,7 +1138,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -1155,6 +1154,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "OCR",
       "text": "OCR"
     },
@@ -1165,7 +1165,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -1182,6 +1181,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "Model Pipeline",
       "text": "Model Pipeline"
     },
@@ -1192,7 +1192,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -1209,6 +1208,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "Assemble results,",
       "text": "Assemble results,"
     },
@@ -1219,7 +1219,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -1236,6 +1235,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "Apply document",
       "text": "Apply document"
     },
@@ -1246,7 +1246,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -1263,6 +1262,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "post-processing",
       "text": "post-processing"
     },
@@ -1273,7 +1273,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -1290,6 +1289,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "licensing (e.g. pymupdf [7]), poor speed or unrecoverable quality issues, such as merged text cells across far-apart text tokens or table columns (pypdfium, PyPDF) [15, 14].",
       "text": "licensing (e.g. pymupdf [7]), poor speed or unrecoverable quality issues, such as merged text cells across far-apart text tokens or table columns (pypdfium, PyPDF) [15, 14]."
     },
@@ -1300,7 +1300,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -1317,6 +1316,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "We therefore decided to provide multiple backend choices, and additionally open-source a custombuilt PDF parser, which is based on the low-level qpdf [4] library. It is made available in a separate package named docling-parse and powers the default PDF backend in Docling. As an alternative, we provide a PDF backend relying on pypdfium , which may be a safe backup choice in certain cases, e.g. if issues are seen with particular font encodings.",
       "text": "We therefore decided to provide multiple backend choices, and additionally open-source a custombuilt PDF parser, which is based on the low-level qpdf [4] library. It is made available in a separate package named docling-parse and powers the default PDF backend in Docling. As an alternative, we provide a PDF backend relying on pypdfium , which may be a safe backup choice in certain cases, e.g. if issues are seen with particular font encodings."
     },
@@ -1327,7 +1327,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "section_header",
       "prov": [
         {
           "page_no": 3,
@@ -1344,6 +1343,7 @@
           ]
         }
       ],
+      "label": "section_header",
       "orig": "3.2 AI models",
       "text": "3.2 AI models",
       "level": 1
@@ -1355,7 +1355,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -1372,6 +1371,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "As part of Docling, we initially release two highly capable AI models to the open-source community, which have been developed and published recently by our team. The first model is a layout analysis model, an accurate object-detector for page elements [13]. The second model is TableFormer [12, 9], a state-of-the-art table structure recognition model. We provide the pre-trained weights (hosted on huggingface) and a separate package for the inference code as docling-ibm-models . Both models are also powering the open-access deepsearch-experience, our cloud-native service for knowledge exploration tasks.",
       "text": "As part of Docling, we initially release two highly capable AI models to the open-source community, which have been developed and published recently by our team. The first model is a layout analysis model, an accurate object-detector for page elements [13]. The second model is TableFormer [12, 9], a state-of-the-art table structure recognition model. We provide the pre-trained weights (hosted on huggingface) and a separate package for the inference code as docling-ibm-models . Both models are also powering the open-access deepsearch-experience, our cloud-native service for knowledge exploration tasks."
     },
@@ -1382,7 +1382,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "section_header",
       "prov": [
         {
           "page_no": 3,
@@ -1399,6 +1398,7 @@
           ]
         }
       ],
+      "label": "section_header",
       "orig": "Layout Analysis Model",
       "text": "Layout Analysis Model",
       "level": 1
@@ -1410,7 +1410,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -1427,6 +1426,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "Our layout analysis model is an object-detector which predicts the bounding-boxes and classes of various elements on the image of a given page. Its architecture is derived from RT-DETR [16] and re-trained on DocLayNet [13], our popular human-annotated dataset for document-layout analysis, among other proprietary datasets. For inference, our implementation relies on the onnxruntime [5].",
       "text": "Our layout analysis model is an object-detector which predicts the bounding-boxes and classes of various elements on the image of a given page. Its architecture is derived from RT-DETR [16] and re-trained on DocLayNet [13], our popular human-annotated dataset for document-layout analysis, among other proprietary datasets. For inference, our implementation relies on the onnxruntime [5]."
     },
@@ -1437,7 +1437,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -1454,6 +1453,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "The Docling pipeline feeds page images at 72 dpi resolution, which can be processed on a single CPU with sub-second latency. All predicted bounding-box proposals for document elements are post-processed to remove overlapping proposals based on confidence and size, and then intersected with the text tokens in the PDF to group them into meaningful and complete units such as paragraphs, section titles, list items, captions, figures or tables.",
       "text": "The Docling pipeline feeds page images at 72 dpi resolution, which can be processed on a single CPU with sub-second latency. All predicted bounding-box proposals for document elements are post-processed to remove overlapping proposals based on confidence and size, and then intersected with the text tokens in the PDF to group them into meaningful and complete units such as paragraphs, section titles, list items, captions, figures or tables."
     },
@@ -1464,7 +1464,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "section_header",
       "prov": [
         {
           "page_no": 3,
@@ -1481,6 +1480,7 @@
           ]
         }
       ],
+      "label": "section_header",
       "orig": "Table Structure Recognition",
       "text": "Table Structure Recognition",
       "level": 1
@@ -1492,7 +1492,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 3,
@@ -1509,6 +1508,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "The TableFormer model [12], first published in 2022 and since refined with a custom structure token language [9], is a vision-transformer model for table structure recovery. It can predict the logical row and column structure of a given table based on an input image, and determine which table cells belong to column headers, row headers or the table body. Compared to earlier approaches, TableFormer handles many characteristics of tables, such as partial or no borderlines, empty cells, rows or columns, cell spans and hierarchy both on column-heading or row-heading level, tables with inconsistent indentation or alignment and other complexities. For inference, our implementation relies on PyTorch [2].",
       "text": "The TableFormer model [12], first published in 2022 and since refined with a custom structure token language [9], is a vision-transformer model for table structure recovery. It can predict the logical row and column structure of a given table based on an input image, and determine which table cells belong to column headers, row headers or the table body. Compared to earlier approaches, TableFormer handles many characteristics of tables, such as partial or no borderlines, empty cells, rows or columns, cell spans and hierarchy both on column-heading or row-heading level, tables with inconsistent indentation or alignment and other complexities. For inference, our implementation relies on PyTorch [2]."
     },
@@ -1519,7 +1519,6 @@
       },
       "children": [],
       "content_layer": "furniture",
-      "label": "page_footer",
       "prov": [
         {
           "page_no": 3,
@@ -1536,6 +1535,7 @@
           ]
         }
       ],
+      "label": "page_footer",
       "orig": "3",
       "text": "3"
     },
@@ -1546,7 +1546,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 5,
@@ -1563,6 +1562,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "torch runtimes backing the Docling pipeline. We will deliver updates on this topic at in a future version of this report.",
       "text": "torch runtimes backing the Docling pipeline. We will deliver updates on this topic at in a future version of this report."
     },
@@ -1573,7 +1573,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "caption",
       "prov": [
         {
           "page_no": 5,
@@ -1590,6 +1589,7 @@
           ]
         }
       ],
+      "label": "caption",
       "orig": "Table 1: Runtime characteristics of Docling with the standard model pipeline and settings, on our test dataset of 225 pages, on two different systems. OCR is disabled. We show the time-to-solution (TTS), computed throughput in pages per second, and the peak memory used (resident set size) for both the Docling-native PDF backend and for the pypdfium backend, using 4 and 16 threads.",
       "text": "Table 1: Runtime characteristics of Docling with the standard model pipeline and settings, on our test dataset of 225 pages, on two different systems. OCR is disabled. We show the time-to-solution (TTS), computed throughput in pages per second, and the peak memory used (resident set size) for both the Docling-native PDF backend and for the pypdfium backend, using 4 and 16 threads."
     },
@@ -1600,7 +1600,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "section_header",
       "prov": [
         {
           "page_no": 5,
@@ -1617,6 +1616,7 @@
           ]
         }
       ],
+      "label": "section_header",
       "orig": "5 Applications",
       "text": "5 Applications",
       "level": 1
@@ -1628,7 +1628,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 5,
@@ -1645,6 +1644,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "Thanks to the high-quality, richly structured document conversion achieved by Docling, its output qualifies for numerous downstream applications. For example, Docling can provide a base for detailed enterprise document search, passage retrieval or classification use-cases, or support knowledge extraction pipelines, allowing specific treatment of different structures in the document, such as tables, figures, section structure or references. For popular generative AI application patterns, such as retrieval-augmented generation (RAG), we provide quackling , an open-source package which capitalizes on Docling's feature-rich document output to enable document-native optimized vector embedding and chunking. It plugs in seamlessly with LLM frameworks such as LlamaIndex [8]. Since Docling is fast, stable and cheap to run, it also makes for an excellent choice to build document-derived datasets. With its powerful table structure recognition, it provides significant benefit to automated knowledge-base construction [11, 10]. Docling is also integrated within the open IBM data prep kit [6], which implements scalable data transforms to build large-scale multi-modal training datasets.",
       "text": "Thanks to the high-quality, richly structured document conversion achieved by Docling, its output qualifies for numerous downstream applications. For example, Docling can provide a base for detailed enterprise document search, passage retrieval or classification use-cases, or support knowledge extraction pipelines, allowing specific treatment of different structures in the document, such as tables, figures, section structure or references. For popular generative AI application patterns, such as retrieval-augmented generation (RAG), we provide quackling , an open-source package which capitalizes on Docling's feature-rich document output to enable document-native optimized vector embedding and chunking. It plugs in seamlessly with LLM frameworks such as LlamaIndex [8]. Since Docling is fast, stable and cheap to run, it also makes for an excellent choice to build document-derived datasets. With its powerful table structure recognition, it provides significant benefit to automated knowledge-base construction [11, 10]. Docling is also integrated within the open IBM data prep kit [6], which implements scalable data transforms to build large-scale multi-modal training datasets."
     },
@@ -1655,7 +1655,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "section_header",
       "prov": [
         {
           "page_no": 5,
@@ -1672,6 +1671,7 @@
           ]
         }
       ],
+      "label": "section_header",
       "orig": "6 Future work and contributions",
       "text": "6 Future work and contributions",
       "level": 1
@@ -1683,7 +1683,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 5,
@@ -1700,6 +1699,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "Docling is designed to allow easy extension of the model library and pipelines. In the future, we plan to extend Docling with several more models, such as a figure-classifier model, an equationrecognition model, a code-recognition model and more. This will help improve the quality of conversion for specific types of content, as well as augment extracted document metadata with additional information. Further investment into testing and optimizing GPU acceleration as well as improving the Docling-native PDF backend are on our roadmap, too.",
       "text": "Docling is designed to allow easy extension of the model library and pipelines. In the future, we plan to extend Docling with several more models, such as a figure-classifier model, an equationrecognition model, a code-recognition model and more. This will help improve the quality of conversion for specific types of content, as well as augment extracted document metadata with additional information. Further investment into testing and optimizing GPU acceleration as well as improving the Docling-native PDF backend are on our roadmap, too."
     },
@@ -1710,7 +1710,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "text",
       "prov": [
         {
           "page_no": 5,
@@ -1727,6 +1726,7 @@
           ]
         }
       ],
+      "label": "text",
       "orig": "We encourage everyone to propose or implement additional features and models, and will gladly take your inputs and contributions under review . The codebase of Docling is open for use and contribution, under the MIT license agreement and in alignment with our contributing guidelines included in the Docling repository. If you use Docling in your projects, please consider citing this technical report.",
       "text": "We encourage everyone to propose or implement additional features and models, and will gladly take your inputs and contributions under review . The codebase of Docling is open for use and contribution, under the MIT license agreement and in alignment with our contributing guidelines included in the Docling repository. If you use Docling in your projects, please consider citing this technical report."
     },
@@ -1737,7 +1737,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "section_header",
       "prov": [
         {
           "page_no": 5,
@@ -1754,6 +1753,7 @@
           ]
         }
       ],
+      "label": "section_header",
       "orig": "References",
       "text": "References",
       "level": 1
@@ -1765,7 +1765,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "list_item",
       "prov": [
         {
           "page_no": 5,
@@ -1782,6 +1781,7 @@
           ]
         }
       ],
+      "label": "list_item",
       "orig": "[1] J. AI. Easyocr: Ready-to-use ocr with 80+ supported languages. https://github.com/ JaidedAI/EasyOCR , 2024. Version: 1.7.0.",
       "text": "J. AI. Easyocr: Ready-to-use ocr with 80+ supported languages. https://github.com/ JaidedAI/EasyOCR , 2024. Version: 1.7.0.",
       "enumerated": true,
@@ -1794,7 +1794,6 @@
       },
       "children": [],
       "content_layer": "body",
-      "label": "list_item",
       "prov": [
         {
           "page_no": 5,
@@ -1811,6 +1810,7 @@
           ]
         }
       ],
+      "label": "list_item",
       "orig": "[2] J. Ansel, E. Yang, H. He, N. Gimelshein, A. Jain, M. Voznesensky, B. Bao, P. Bell, D. Berard, E. Burovski, G. Chauhan, A. Chourdia, W. Constable, A. Desmaison, Z. DeVito, E. Ellison, W. Feng, J. Gong, M. Gschwind, B. Hirsh, S. Huang, K. Kalambarkar, L. Kirsch, M. Lazos, M. Lezcano, Y. Liang, J. Liang, Y. Lu, C. Luk, B. Maher, Y. Pan, C. Puhrsch, M. Reso, M. Saroufim, M. Y. Siraichi, H. Suk, M. Suo, P. Tillet, E. Wang, X. Wang, W. Wen, S. Zhang, X. Zhao, K. Zhou, R. Zou, A. Mathews, G. Chanan, P. Wu, and S. Chintala. Pytorch 2: Faster",
       "text": "J. Ansel, E. Yang, H. He, N. Gimelshein, A. Jain, M. Voznesensky, B. Bao, P. Bell, D. Berard, E. Burovski, G. Chauhan, A. Chourdia, W. Constable, A. Desmaison, Z. DeVito, E. Ellison, W. Feng, J. Gong, M. Gschwind, B. Hirsh, S. Huang, K. Kalambarkar, L. Kirsch, M. Lazos, M. Lezcano, Y. Liang, J. Liang, Y. Lu, C. Luk, B. Maher, Y. Pan, C. Puhrsch, M. Reso, M. Saroufim, M. Y. Siraichi, H. Suk, M. Suo, P. Tillet, E. Wang, X. Wang, W. Wen, S. Zhang, X. Zhao, K. Zhou, R. Zou, A. Mathews, G. Chanan, P. Wu, and S. Chintala. Pytorch 2: Faster",
       "enumerated": true,
@@ -1823,7 +1823,6 @@
       },
       "children": [],
       "content_layer": "furniture",
-      "label": "page_footer",
       "prov": [
         {
           "page_no": 5,
@@ -1840,6 +1839,7 @@
           ]
         }
       ],
+      "label": "page_footer",
       "orig": "5",
       "text": "5"
     }
@@ -1907,7 +1907,6 @@
           "text": "In this image, we can see some text and images."
         }
       },
-      "label": "picture",
       "prov": [
         {
           "page_no": 3,
@@ -1924,6 +1923,7 @@
           ]
         }
       ],
+      "label": "picture",
       "captions": [
         {
           "$ref": "#/texts/21"
@@ -1967,7 +1967,6 @@
           "type": "performance data"
         }
       },
-      "label": "table",
       "prov": [
         {
           "page_no": 5,
@@ -1984,6 +1983,7 @@
           ]
         }
       ],
+      "label": "table",
       "captions": [
         {
           "$ref": "#/texts/48"
