@@ -263,6 +263,13 @@ class MarkdownParams(CommonParams):
     page_break_placeholder: str | None = None  # e.g. "<!-- page break -->"
     escape_underscores: bool = True
     escape_html: bool = True
+    escape_table_pipes: bool = Field(
+        default=True,
+        description=(
+            "Escape `|` inside table cells as `&#124;` so the Markdown table stays valid. "
+            "Plain text turns this off to keep the cell text readable."
+        ),
+    )
     mark_meta: bool = Field(default=False, description="Mark meta sections.")
     include_annotations: bool = Field(
         default=True,
@@ -925,9 +932,11 @@ class MarkdownTableSerializer(BaseTableSerializer):
                         cell_text = rich_texts[key]
                     else:
                         cell_text = col.text or ""
-                    # Newlines and pipes must be escaped in every cell so the
-                    # markdown table stays valid.
-                    rendered_row.append(cell_text.replace("\n", " ").replace("|", "&#124;"))
+                    # Newlines must be escaped in every cell so the markdown table stays
+                    # valid; the pipe is escaped only where the cell syntax would break.
+                    if params.escape_table_pipes:
+                        cell_text = cell_text.replace("|", "&#124;")
+                    rendered_row.append(cell_text.replace("\n", " "))
                 rows.append(rendered_row)
             if len(rows) > 0:
                 # Resolve the column headers to the single row GFM allows

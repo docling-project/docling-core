@@ -64,3 +64,37 @@ def test_plain_text_from_json():
     exp_file = src.parent / f"{src.stem}.gt.txt"
     ser = PlainTextDocSerializer(doc=doc, params=PlainTextParams())
     verify(exp_file=exp_file, actual=ser.serialize().text)
+
+
+def test_plain_text_keeps_a_pipe_in_a_table_cell():
+    """A pipe in a table cell is text, not the `&#124;` Markdown escape (#1076)."""
+    from docling_core.types.doc import DocItemLabel, TableCell, TableData
+
+    doc = DoclingDocument(name="x")
+    doc.add_text(label=DocItemLabel.TEXT, text="a | b")
+    rows = [("Range", "Note"), ("0|1", "x<y & z")]
+    doc.add_table(
+        data=TableData(
+            num_rows=2,
+            num_cols=2,
+            table_cells=[
+                TableCell(
+                    text=text,
+                    start_row_offset_idx=row_idx,
+                    end_row_offset_idx=row_idx + 1,
+                    start_col_offset_idx=col_idx,
+                    end_col_offset_idx=col_idx + 1,
+                    column_header=row_idx == 0,
+                )
+                for row_idx, row in enumerate(rows)
+                for col_idx, text in enumerate(row)
+            ],
+        )
+    )
+
+    text = doc.export_to_text()
+
+    assert "0|1" in text
+    assert "&#124;" not in text
+    # Markdown keeps the escape, for the table syntax.
+    assert "&#124;" in doc.export_to_markdown()
